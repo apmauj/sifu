@@ -1,0 +1,57 @@
+services:
+  # Backend - FastAPI
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: sifu-backend
+    ports:
+      - "8000:8000"
+    volumes:
+      # Volumen para persistir la base de datos
+      - ./data:/app/data
+      # Volumen para desarrollo (opcional, comentar en producción)
+      - .:/app
+    environment:
+      - PYTHONPATH=/app
+      - PYTHONUNBUFFERED=1
+      - DATABASE_PATH=/app/data/ui_data.db
+    networks:
+      - sifu-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Frontend - React/Nginx
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: sifu-frontend
+    ports:
+      - "31001:80"
+    depends_on:
+      - backend
+    networks:
+      - sifu-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  # Volumen nombrado para datos persistentes
+  ui_data:
+    driver: local
+
+networks:
+  # Red interna para comunicación entre servicios
+  sifu-network:
+    driver: bridge

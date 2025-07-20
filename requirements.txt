@@ -1,0 +1,13 @@
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+pandas==2.1.4
+openpyxl==3.1.2
+xlrd==2.0.1
+pydantic==2.5.0
+python-multipart==0.0.6
+httpx==0.25.2
+sqlalchemy==2.0.23
+python-dateutil==2.8.2
+requests==2.31.0
+beautifulsoup4==4.13.4
+py-bcu==1.0.5 

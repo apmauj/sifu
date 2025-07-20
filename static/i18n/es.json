@@ -1,0 +1,122 @@
+{
+  "app": {
+    "title": "SIFU",
+    "subtitle": "Sistema de Índices Financieros - Uruguay 🇺🇾"
+  },
+  "navigation": {
+    "ui_tab": "Unidad Indexada (UI)",
+    "ur_tab": "Unidad Reajustable (UR)"
+  },
+  "ui": {
+    "title": "Consultar UI",
+    "query_types": {
+      "latest": "Valor más reciente",
+      "date": "Fecha específica",
+      "range": "Rango de fechas"
+    },
+    "labels": {
+      "query_type": "Tipo de consulta:",
+      "date": "Fecha:",
+      "start_date": "Fecha inicio:",
+      "end_date": "Fecha fin:"
+    },
+    "buttons": {
+      "search": "Consultar UI",
+      "refresh": "Actualizar Datos",
+      "updating": "Actualizando..."
+    },
+    "messages": {
+      "select_date": "Por favor selecciona una fecha",
+      "select_both_dates": "Por favor selecciona ambas fechas",
+      "no_data_found": "No se encontraron datos para la fecha consultada",
+      "server_error": "Error del servidor",
+      "unknown_error": "Error desconocido",
+      "update_error": "Error al actualizar"
+    }
+  },
+  "ur": {
+    "title": "Consultar UR",
+    "query_types": {
+      "latest": "Valor más reciente",
+      "year_month": "Año y mes específico",
+      "year": "Año completo",
+      "range": "Rango de períodos"
+    },
+    "labels": {
+      "query_type": "Tipo de consulta:",
+      "year": "Año:",
+      "month": "Mes:",
+      "start_year": "Año inicio:",
+      "start_month": "Mes inicio:",
+      "end_year": "Año fin:",
+      "end_month": "Mes fin:"
+    },
+    "buttons": {
+      "search": "Consultar UR",
+      "refresh": "Actualizar datos"
+    },
+    "messages": {
+      "select_year_month": "Por favor selecciona año y mes",
+      "select_year": "Por favor selecciona un año",
+      "complete_all_fields": "Por favor completa todos los campos del rango",
+      "no_data_found": "No se encontraron datos para la consulta realizada",
+      "server_error": "Error del servidor",
+      "unknown_error": "Error desconocido",
+      "update_error": "Error al actualizar datos"
+    }
+  },
+  "months": {
+    "1": "Enero",
+    "2": "Febrero", 
+    "3": "Marzo",
+    "4": "Abril",
+    "5": "Mayo",
+    "6": "Junio",
+    "7": "Julio",
+    "8": "Agosto",
+    "9": "Septiembre",
+    "10": "Octubre",
+    "11": "Noviembre",
+    "12": "Diciembre"
+  },
+  "table": {
+    "headers": {
+      "date": "Fecha",
+      "year": "Año",
+      "month": "Mes", 
+      "value": "Valor"
+    }
+  },
+  "stats": {
+    "records": "Registros",
+    "last_value": "Último Valor",
+    "average": "Promedio"
+  },
+  "chart": {
+    "ui_evolution": "Evolución de UI",
+    "ur_evolution": "Evolución de UR"
+  },
+  "loading": "Cargando...",
+  "common": {
+    "success": "Éxito",
+    "error": "Error",
+    "warning": "Advertencia",
+    "select_language": "Seleccionar idioma"
+  },
+  "backend_messages": {
+    "ui_value_retrieved": "Valor de UI para {date} obtenido exitosamente",
+    "no_data_showing_closest": "No hay datos para {date}. Mostrando valor anterior más cercano",
+    "ui_range_retrieved": "Valores de UI para el rango {start_date} - {end_date} obtenidos exitosamente. {count} registros encontrados",
+    "latest_ui_retrieved": "Último valor de UI obtenido exitosamente",
+    "no_ui_data_available": "No hay datos de UI disponibles. Ejecute /api/refresh para cargar datos.",
+    "ur_value_retrieved": "Valor de UR para {period} obtenido exitosamente",
+    "latest_ur_retrieved": "Valor UR más reciente obtenido exitosamente",
+    "no_ur_data_available": "No hay datos de UR disponibles para {period}",
+    "no_ur_data_general": "No hay datos de UR disponibles",
+    "ur_values_retrieved": "Obtenidos {count} valores de UR para {period}",
+    "month_validation": "El mes debe estar entre 1 y 12",
+    "months_validation": "Los meses deben estar entre 1 y 12",
+    "period_validation": "El período inicial debe ser anterior o igual al período final",
+    "internal_server_error": "Error interno del servidor"
+  }
+} 
