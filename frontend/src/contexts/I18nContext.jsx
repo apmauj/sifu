@@ -28,20 +28,26 @@ export const I18nProvider = ({ children }) => {
     try {
       setIsLoading(true);
       
-      // Detectar si estamos en el gateway
-      const basePath = window.location.pathname.startsWith('/sifu') ? '/sifu' : '';
+      // Detectar si estamos en desarrollo
+      const isDev = process.env.NODE_ENV === 'development';
+      const basePath = !isDev && window.location.pathname.startsWith('/sifu') ? '/sifu' : '';
       
       // Add cache busting parameter in development
       const cacheBuster = process.env.NODE_ENV === 'development' ? `?t=${Date.now()}` : '';
-      const response = await fetch(`${basePath}/i18n/${lang}.json${cacheBuster}`);
+      const staticUrl = isDev
+        ? `http://localhost:8000/static/i18n/${lang}.json${cacheBuster}`
+        : `${basePath}/static/i18n/${lang}.json${cacheBuster}`;
+      const response = await fetch(staticUrl);
       
       if (response.ok) {
         const data = await response.json();
         setTranslations(data);
       } else {
         console.warn(`⚠️ I18nContext: No se pudo cargar ${lang}, usando fallback`);
-        // Fallback to default language
-        const fallbackResponse = await fetch(`${basePath}/i18n/${FALLBACK_LANGUAGE}.json${cacheBuster}`);
+        const fallbackUrl = isDev
+          ? `http://localhost:8000/static/i18n/${FALLBACK_LANGUAGE}.json${cacheBuster}`
+          : `${basePath}/static/i18n/${FALLBACK_LANGUAGE}.json${cacheBuster}`;
+        const fallbackResponse = await fetch(fallbackUrl);
         const fallbackData = await fallbackResponse.json();
         setTranslations(fallbackData);
       }
