@@ -1,15 +1,7 @@
 import React from 'react';
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { ExclamationTriangleIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import { useI18n } from '../contexts/I18nContext';
-import { 
-  CURRENCY, 
-  CURRENCY_LOCALE, 
-  CURRENCY_DECIMALS, 
-  NO_RESULTS_MESSAGE, 
-  NO_RESULTS_HINT,
-  MONTHS
-} from '../constants';
 
 const URResultsDisplay = ({ results, searchType, isLoading, error }) => {
   const { t, translateBackendMessage, currentLanguage } = useI18n();
@@ -85,7 +77,36 @@ const URResultsDisplay = ({ results, searchType, isLoading, error }) => {
     });
   };
 
-  // Show loading state
+  // Estos datos pueden ser undefined, pero los hooks SIEMPRE deben ejecutarse
+  const data = React.useMemo(() => {
+    if (!results || !results.data) return [];
+    return Array.isArray(results.data) ? results.data : [results.data];
+  }, [results]);
+
+  const stats = React.useMemo(() => calculateStats(data), [data]);
+  const dataWithVariations = React.useMemo(() => calculateMonthlyVariations(data), [data]);
+  const sortedData = React.useMemo(() => {
+    return [...data].sort((a, b) => {
+      if (a.year !== b.year) return a.year - b.year;
+      return a.month - b.month;
+    });
+  }, [data]);
+  const chartData = React.useMemo(() => {
+    return sortedData.map(item => ({
+      name: formatPeriod(item.year, item.month),
+      value: item.value,
+      year: item.year,
+      month: item.month
+    }));
+  }, [sortedData, currentLanguage]);
+  const variationChartData = React.useMemo(() => {
+    return dataWithVariations.slice(1).map(item => ({
+      ...item,
+      name: formatPeriod(item.year, item.month)
+    }));
+  }, [dataWithVariations, currentLanguage]);
+
+  // Render condicional SOLO aquí, después de todos los hooks
   if (isLoading) {
     return (
       <div className="card">
@@ -97,7 +118,6 @@ const URResultsDisplay = ({ results, searchType, isLoading, error }) => {
     );
   }
 
-  // Show error
   if (error) {
     return (
       <div className="card">
@@ -126,34 +146,7 @@ const URResultsDisplay = ({ results, searchType, isLoading, error }) => {
     );
   }
 
-  const data = Array.isArray(results.data) ? results.data : [results.data];
-  const stats = calculateStats(data);
-  const dataWithVariations = calculateMonthlyVariations(data);
-
-  // Sort data chronologically for correct charts
-  const sortedData = [...data].sort((a, b) => {
-    if (a.year !== b.year) return a.year - b.year;
-    return a.month - b.month;
-  });
-
-  // Chart data that updates when language changes
-  const chartData = React.useMemo(() => {
-    return sortedData.map(item => ({
-      name: formatPeriod(item.year, item.month),
-      value: item.value,
-      year: item.year,
-      month: item.month
-    }));
-  }, [sortedData, currentLanguage]);
-
-  // Variation chart data that updates when language changes
-  const variationChartData = React.useMemo(() => {
-    return dataWithVariations.slice(1).map(item => ({
-      ...item,
-      name: formatPeriod(item.year, item.month)
-    }));
-  }, [dataWithVariations, currentLanguage]);
-
+  // Render principal (sin URInfoSummary)
   return (
     <div className="space-y-6">
       {/* Summary Card */}
@@ -346,4 +339,4 @@ const URResultsDisplay = ({ results, searchType, isLoading, error }) => {
   );
 };
 
-export default URResultsDisplay; 
+export default URResultsDisplay;

@@ -1,15 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import Header from './components/Header';
-import SearchForm from './components/SearchForm';
-import ResultsDisplay from './components/ResultsDisplay';
-import URSearchForm from './components/URSearchForm';
-import URResultsDisplay from './components/URResultsDisplay';
+import UIPanel from './components/UIPanel';
+import URPanel from './components/URPanel';
+import ExchangeRatePanel from './components/ExchangeRatePanel';
 import ExchangeSearchForm from './components/ExchangeSearchForm';
 import ExchangeResultsDisplay from './components/ExchangeResultsDisplay';
-import ExchangeRatePanel from './components/ExchangeRatePanel';
 import BROUPanel from './components/BROUPanel';
-import uiService from './services/api';
-import urService from './services/urService';
 import exchangeService from './services/exchangeService';
 import { useI18n } from './contexts/I18nContext';
 import { useToast } from './contexts/ToastContext';
@@ -70,19 +66,6 @@ function App() {
   // Toast notifications hook
   const { showSuccess, showError, showInfo } = useToast();
   
-  // UI states
-  const [results, setResults] = useState(null);
-  const [searchType, setSearchType] = useState('single');
-  const [isLoading, setIsLoading] = useState(false);
-  const [appInfo, setAppInfo] = useState(null);
-  const [error, setError] = useState(null);
-  
-  // UR states
-  const [urResults, setUrResults] = useState(null);
-  const [urSearchType, setUrSearchType] = useState('single');
-  const [isUrLoading, setIsUrLoading] = useState(false);
-  const [urError, setUrError] = useState(null);
-  
   // Exchange states
   const [exchangeResults, setExchangeResults] = useState(null);
   const [exchangeSearchType, setExchangeSearchType] = useState('latest');
@@ -93,181 +76,19 @@ function App() {
   const [activeTab, setActiveTab] = useState('ui'); // 'ui', 'ur', 'exchange', or 'brou'
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Load initial information when component mounts
+    // Load initial information when component mounts
   useEffect(() => {
     const initializeApp = async () => {
       try {
-        await loadAppInfo();
-        await loadTodaysValue();
-        await loadLatestUR();
+        console.log('App initializing...');
         await loadLatestExchange();
       } catch (error) {
         console.error('Error initializing app:', error);
-        setError(t('errors.app_initialization') || 'Error al inicializar la aplicación');
       }
     };
 
     initializeApp();
   }, []);
-
-  const loadAppInfo = async () => {
-    try {
-      const info = await uiService.getInfo();
-      if (info && info.success !== false) {
-        setAppInfo(info);
-      }
-    } catch (error) {
-      console.error('Error cargando información de la app:', error);
-    }
-  };
-
-  const loadTodaysValue = async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      
-      // Get today's date in YYYY-MM-DD format using local timezone
-      const today = getTodayLocal();
-      
-      // Try to get today's value
-      const todayValue = await uiService.getByDate(today);
-      
-      if (todayValue && todayValue.success && todayValue.data) {
-        setResults(todayValue);
-        setSearchType('single');
-      } else {
-        // If no value for today, show the latest available
-        const latest = await uiService.getLatest();
-        if (latest && latest.success && latest.data) {
-          setResults(latest);
-          setSearchType('single');
-        } else {
-          setError(t('errors.no_ui_data') || 'No se encontraron datos de UI disponibles');
-        }
-      }
-    } catch (error) {
-      console.error('Error cargando valor del día:', error);
-      // Fallback to latest available value
-      try {
-        const latest = await uiService.getLatest();
-        if (latest && latest.success && latest.data) {
-          setResults(latest);
-          setSearchType('single');
-        } else {
-          setError(t('errors.ui_load_failed') || 'No se pudo cargar el valor de UI');
-        }
-      } catch (fallbackError) {
-        console.error('Error cargando último valor:', fallbackError);
-        setError(t('errors.server_connection') || 'No se pudo conectar con el servidor');
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleSearch = async (searchParams) => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      let response;
-
-      if (searchParams.type === 'single') {
-        response = await uiService.getByDate(searchParams.fecha);
-        setSearchType('single');
-      } else {
-        response = await uiService.getByRange(
-          searchParams.fechaInicio, 
-          searchParams.fechaFin
-        );
-        setSearchType('range');
-      }
-
-      setResults(response);
-      
-      // Mostrar notificación toast con el mensaje del backend
-      if (response && response.success && response.message) {
-        const translatedMessage = translateBackendMessage(response.message);
-        showSuccess(translatedMessage);
-      }
-    } catch (error) {
-      console.error('Error en búsqueda:', error);
-      const errorMessage = t('errors.search_failed') || 'Error al realizar la consulta. Por favor, intenta nuevamente.';
-      setError(errorMessage);
-      showError(errorMessage);
-      setResults({
-        success: false,
-        message: t('errors.search_data_error') || 'Error al consultar los datos'
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // UR functions
-  const handleURSearch = async (searchParams) => {
-    try {
-      setIsUrLoading(true);
-      setUrError(null);
-      let response;
-
-      if (searchParams.type === 'single') {
-        if (searchParams.subtype === 'month') {
-          response = await urService.getByYearMonth(searchParams.year, searchParams.month);
-          setUrSearchType('single');
-        } else {
-          response = await urService.getByYear(searchParams.year);
-          setUrSearchType('year');
-        }
-      } else {
-        response = await urService.getByRange(
-          searchParams.startYear, 
-          searchParams.startMonth,
-          searchParams.endYear,
-          searchParams.endMonth
-        );
-        setUrSearchType('range');
-      }
-
-      setUrResults(response);
-      
-      // Mostrar notificación toast con el mensaje del backend
-      if (response && response.success && response.message) {
-        const translatedMessage = translateBackendMessage(response.message);
-        showSuccess(translatedMessage, 5000);
-      }
-    } catch (error) {
-      console.error('Error en búsqueda UR:', error);
-      const errorMessage = t('errors.ur_search_failed') || 'Error al realizar la consulta de UR. Por favor, intenta nuevamente.';
-      setUrError(errorMessage);
-      showError(errorMessage);
-      setUrResults({
-        success: false,
-        message: t('errors.ur_data_error') || 'Error al consultar los datos de UR'
-      });
-    } finally {
-      setIsUrLoading(false);
-    }
-  };
-
-  const loadLatestUR = async () => {
-    try {
-      setIsUrLoading(true);
-      setUrError(null);
-      
-      const latest = await urService.getLatest();
-      if (latest && latest.success && latest.data) {
-        setUrResults(latest);
-        setUrSearchType('single');
-      } else {
-        setUrError(t('errors.no_ur_data') || 'No se encontraron datos de UR disponibles');
-      }
-    } catch (error) {
-      console.error('Error cargando último valor UR:', error);
-      setUrError(t('errors.ur_load_failed') || 'No se pudo cargar el valor de UR');
-    } finally {
-      setIsUrLoading(false);
-    }
-  };
 
   // Exchange functions
   const handleExchangeSearch = async (searchParams) => {
@@ -348,43 +169,19 @@ function App() {
   const handleRefresh = async () => {
     try {
       setIsRefreshing(true);
-      setError(null);
-      setUrError(null);
       setExchangeError(null);
       
-      if (activeTab === 'ui') {
-        const response = await uiService.refresh();
-        
-        if (response.success) {
-          // Reload app info after refresh
-          await loadAppInfo();
-          
-          // Show success message
-          setError(null);
-          const successMessage = translateBackendMessage(response.message) || t('common.refresh_success') || 'Datos actualizados correctamente';
-          showSuccess(successMessage);
-          
-          // Load updated daily value
-          await loadTodaysValue();
-        } else {
-          const errorMessage = response.message || t('errors.refresh_failed') || 'Error al actualizar los datos';
-          setError(errorMessage);
-          showError(errorMessage);
-        }
-      } else if (activeTab === 'ur') {
+      if (activeTab === 'ur') {
         const response = await urService.refresh();
         
         if (response.success) {
           // Show success message
-          setUrError(null);
           const successMessage = translateBackendMessage(response.message) || t('common.ur_refresh_success') || 'Datos de UR actualizados correctamente';
           showSuccess(successMessage);
           
-          // Load updated latest UR value
-          await loadLatestUR();
+          // UR data refresh is now handled internally by URPanel component
         } else {
           const errorMessage = response.message || t('errors.ur_refresh_failed') || 'Error al actualizar los datos de UR';
-          setUrError(errorMessage);
           showError(errorMessage);
         }
       } else if (activeTab === 'exchange') {
@@ -404,15 +201,11 @@ function App() {
           showError(errorMessage);
         }
       }
+      // UI refresh is now handled internally by UIPanel component
     } catch (error) {
       console.error('Error en refresh:', error);
-      if (activeTab === 'ui') {
-        const errorMessage = t('errors.refresh_failed') || 'Error al actualizar los datos. Por favor, intenta nuevamente.';
-        setError(errorMessage);
-        showError(errorMessage);
-      } else if (activeTab === 'ur') {
+      if (activeTab === 'ur') {
         const errorMessage = t('errors.ur_refresh_failed') || 'Error al actualizar los datos de UR. Por favor, intenta nuevamente.';
-        setUrError(errorMessage);
         showError(errorMessage);
       } else if (activeTab === 'exchange') {
         const errorMessage = t('errors.exchange_refresh_failed') || 'Error al actualizar las cotizaciones. Por favor, intenta nuevamente.';
@@ -503,107 +296,14 @@ function App() {
           {/* Contenido de UI */}
           {activeTab === 'ui' && (
             <>
-              {/* Información de la aplicación UI */}
-              {appInfo && (
-                <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h2 className="text-sm font-medium text-blue-900">
-                        📊 {t('ui.data_status') || 'Estado de los datos UI'}
-                      </h2>
-                      <p className="text-sm text-blue-700">
-                        {appInfo.total_records} {t('common.records') || 'registros'} {t('ui.available') || 'disponibles'}
-                        {appInfo.date_range?.min_date && appInfo.date_range?.max_date && (
-                          <span> • {t('common.period') || 'Período'}: {appInfo.date_range.min_date} a {appInfo.date_range.max_date}</span>
-                        )}
-                      </p>
-                    </div>
-                    {appInfo.latest_ui && (
-                      <div className="text-right">
-                        <div className="text-sm text-blue-600">{t('ui.latest_value') || 'Último valor disponible'}:</div>
-                        <div className="text-lg font-semibold text-blue-900">
-                          ${(appInfo.latest_ui.value || 0).toFixed(4)} • {appInfo.latest_ui.date}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* Mensaje de error UI */}
-              {error && (
-                <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
-                  <div className="flex">
-                    <div className="flex-shrink-0">
-                      <span className="text-red-400">⚠️</span>
-                    </div>
-                    <div className="ml-3">
-                      <h3 className="text-sm font-medium text-red-800">Error UI</h3>
-                      <p className="text-sm text-red-700">{error}</p>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              <div className="grid lg:grid-cols-2 gap-8 items-start">
-                {/* Formulario de búsqueda UI */}
-                <div>
-                  <SearchForm 
-                    onSearch={handleSearch} 
-                    isLoading={isLoading}
-                  />
-                </div>
-
-                {/* Resultados UI */}
-                <div>
-                  <ResultsDisplay 
-                    results={results} 
-                    searchType={searchType}
-                    isLoading={isLoading}
-                    error={error}
-                  />
-                </div>
-              </div>
+              <UIPanel />
             </>
           )}
 
           {/* Contenido de UR */}
           {activeTab === 'ur' && (
             <>
-              {/* Mensaje de error UR */}
-              {urError && (
-                <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
-                  <div className="flex">
-                    <div className="flex-shrink-0">
-                      <span className="text-red-400">⚠️</span>
-                    </div>
-                    <div className="ml-3">
-                      <h3 className="text-sm font-medium text-red-800">Error UR</h3>
-                      <p className="text-sm text-red-700">{urError}</p>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              <div className="grid lg:grid-cols-2 gap-8 items-start">
-                {/* Formulario de búsqueda UR */}
-                <div>
-                  <URSearchForm 
-                    onSearch={handleURSearch} 
-                    isLoading={isUrLoading}
-                  />
-                </div>
-
-                {/* Resultados UR */}
-                <div>
-                  <URResultsDisplay 
-                    results={urResults} 
-                    searchType={urSearchType}
-                    isLoading={isUrLoading}
-                    error={urError}
-                  />
-                </div>
-              </div>
+              <URPanel />
             </>
           )}
 

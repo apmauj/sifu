@@ -161,7 +161,12 @@
     "ur_values": "Valores de UR",
     "variation_percentage": "Variación %",
     "period_information": "Información del Período",
-    "ur_title": "Unidad Reajustable (UR)"
+    "ur_title": "Unidad Reajustable (UR)",
+    "data_status": "Estado de los datos UR",
+    "records_available": "registros disponibles",
+    "period": "Período",
+    "latest_available": "Último valor disponible",
+    "loading_info": "Cargando información..."
   },
   "exchange": {
     "title": "Cotizaciones de Monedas Extranjeras",

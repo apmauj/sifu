@@ -107,6 +107,23 @@ const urService = {
       }
     }
   },
+
+  // Simplified function to get UR summary information using existing getInfo
+  getURInfo: async () => {
+    try {
+      const data = await urService.getInfo();
+      return {
+        success: true,
+        data: data
+      };
+    } catch (error) {
+      console.error('Error fetching UR info:', error);
+      return {
+        success: false,
+        error: error.response?.data?.message || error.message || 'Error al obtener información de UR'
+      };
+    }
+  },
 };
 
-export default urService; 
+export default urService;
