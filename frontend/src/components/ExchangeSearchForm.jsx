@@ -107,16 +107,13 @@ const ExchangeSearchForm = ({ onSearch, isLoading }) => {
     const finalCurrency = currency === 'ALL' ? null : currency;
 
     switch (action) {
-      case 'today':
+      case 'today': {
         setSearchType('date');
         const today = getTodayLocal();
         setSearchDate(today);
-        onSearch({
-          type: 'date',
-          date: today,
-          currency: finalCurrency,
-        });
+        onSearch({ type: 'date', date: today, currency: finalCurrency });
         break;
+      }
       case 'latest':
         setSearchType('latest');
         onSearch({
@@ -156,8 +153,8 @@ const ExchangeSearchForm = ({ onSearch, isLoading }) => {
   ];
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6">
-      <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center">
+  <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-md p-6">
+      <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6 flex items-center">
         <ExchangeIcon className="w-8 h-8 mr-3 text-blue-600" />
         {t('exchange.search_title') || 'Consultar Cotizaciones'}
       </h2>
@@ -171,7 +168,7 @@ const ExchangeSearchForm = ({ onSearch, isLoading }) => {
 
       {/* Selector de moneda */}
       <div className="mb-4">
-        <label htmlFor="currency" className="block text-sm font-medium text-gray-700 mb-1">
+        <label htmlFor="currency" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
           {t('exchange.currency') || 'Moneda'}
         </label>
         <select
@@ -179,7 +176,7 @@ const ExchangeSearchForm = ({ onSearch, isLoading }) => {
           ref={currencyRef}
           value={selectedCurrency}
           onChange={handleCurrencyChange}
-          className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+          className="w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500"
         >
           {getSupportedCurrencies().map(currency => (
             <option key={currency.code} value={currency.code}>
@@ -191,7 +188,7 @@ const ExchangeSearchForm = ({ onSearch, isLoading }) => {
 
       {/* Botones de acción rápida */}
       <div className="mb-6">
-        <h3 className="text-sm font-medium text-gray-700 mb-3">
+        <h3 className="text-sm font-medium text-gray-800 dark:text-gray-200 mb-3">
           {t('common.quick_actions') || 'Acciones rápidas'}
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
@@ -199,7 +196,7 @@ const ExchangeSearchForm = ({ onSearch, isLoading }) => {
             type="button"
             onClick={() => handleQuickAction('latest')}
             disabled={isLoading}
-            className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm flex items-center justify-center"
+            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm flex items-center justify-center"
           >
             <ChartIcon className="w-4 h-4 mr-2" />
             {t('exchange.latest_rates') || 'Últimas cotizaciones'}
@@ -208,7 +205,7 @@ const ExchangeSearchForm = ({ onSearch, isLoading }) => {
             type="button"
             onClick={() => handleQuickAction('today')}
             disabled={isLoading}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm flex items-center justify-center"
+            className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed text-sm flex items-center justify-center"
           >
             <TodayIcon className="w-4 h-4 mr-2" />
             {t('common.today') || 'Hoy'}
@@ -217,7 +214,7 @@ const ExchangeSearchForm = ({ onSearch, isLoading }) => {
             type="button"
             onClick={() => handleQuickAction('week')}
             disabled={isLoading}
-            className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm flex items-center justify-center"
+            className="px-4 py-2 bg-blue-400 text-white rounded-md hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-sm flex items-center justify-center"
           >
             <WeekIcon className="w-4 h-4 mr-2" />
             {t('common.last_week') || 'Última semana'}
@@ -227,7 +224,7 @@ const ExchangeSearchForm = ({ onSearch, isLoading }) => {
 
       {/* Selector de tipo de búsqueda */}
       <div className="mb-6">
-        <h3 className="text-sm font-medium text-gray-700 mb-3">
+  <h3 className="text-sm font-medium text-gray-800 dark:text-gray-200 mb-3">
           {t('exchange.search_type') || 'Tipo de consulta'}
         </h3>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
@@ -237,7 +234,7 @@ const ExchangeSearchForm = ({ onSearch, isLoading }) => {
             className={`px-3 py-2 rounded-md text-sm font-medium ${
               searchType === 'latest'
                 ? 'bg-blue-600 text-white'
-                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                : 'bg-gray-200 text-gray-800 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600'
             }`}
           >
             {t('exchange.latest') || 'Últimas'}
@@ -248,7 +245,7 @@ const ExchangeSearchForm = ({ onSearch, isLoading }) => {
             className={`px-3 py-2 rounded-md text-sm font-medium ${
               searchType === 'date'
                 ? 'bg-blue-600 text-white'
-                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                : 'bg-gray-200 text-gray-800 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600'
             }`}
           >
             {t('exchange.by_date') || 'Por fecha'}
@@ -259,7 +256,7 @@ const ExchangeSearchForm = ({ onSearch, isLoading }) => {
             className={`px-3 py-2 rounded-md text-sm font-medium ${
               searchType === 'range'
                 ? 'bg-blue-600 text-white'
-                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                : 'bg-gray-200 text-gray-800 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600'
             }`}
           >
             {t('exchange.by_range') || 'Por rango'}
@@ -270,7 +267,7 @@ const ExchangeSearchForm = ({ onSearch, isLoading }) => {
             className={`px-3 py-2 rounded-md text-sm font-medium ${
               searchType === 'history'
                 ? 'bg-blue-600 text-white'
-                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                : 'bg-gray-200 text-gray-800 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600'
             }`}
           >
             {t('exchange.history') || 'Historial'}
@@ -293,14 +290,14 @@ const ExchangeSearchForm = ({ onSearch, isLoading }) => {
 
         {searchType === 'date' && (
           <div className="mb-4">
-            <label htmlFor="date" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="date" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               {t('exchange.date') || 'Fecha'}
             </label>
             <input
               type="date"
               id="date"
               ref={dateRef}
-              className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              className="w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500"
               value={searchDate}
               onChange={(e) => setSearchDate(e.target.value)}
               max={getTodayLocal()}
@@ -318,7 +315,7 @@ const ExchangeSearchForm = ({ onSearch, isLoading }) => {
                 type="date"
                 id="startDate"
                 ref={startDateRef}
-                className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                className="w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
                 max={getTodayLocal()}
@@ -332,7 +329,7 @@ const ExchangeSearchForm = ({ onSearch, isLoading }) => {
                 type="date"
                 id="endDate"
                 ref={endDateRef}
-                className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                className="w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
                 max={getTodayLocal()}
@@ -343,13 +340,16 @@ const ExchangeSearchForm = ({ onSearch, isLoading }) => {
 
         {searchType === 'history' && (
           <div className="mb-4">
-            <label htmlFor="limit" className="block text-sm font-medium text-gray-700 mb-1">
+            <label
+              htmlFor="limit"
+              className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+            >
               {t('exchange.history_limit') || 'Cantidad de registros'}
             </label>
             <input
               type="number"
               id="limit"
-              className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              className="w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500 placeholder-gray-400 dark:placeholder-gray-500"
               value={historyLimit}
               onChange={(e) => setHistoryLimit(e.target.value)}
               min="1"

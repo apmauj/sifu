@@ -1,4 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+// Sentinel de módulo para evitar doble inicialización con React StrictMode
+let APP_INIT_DONE = false;
 import Header from './components/Header';
 import UIPanel from './components/UIPanel';
 import URPanel from './components/URPanel';
@@ -7,6 +9,8 @@ import ExchangeSearchForm from './components/ExchangeSearchForm';
 import ExchangeResultsDisplay from './components/ExchangeResultsDisplay';
 import BROUPanel from './components/BROUPanel';
 import exchangeService from './services/exchangeService';
+import uiService from './services/api';
+import urService from './services/urService';
 import { useI18n } from './contexts/I18nContext';
 import { useToast } from './contexts/ToastContext';
 import { getTodayLocal } from './utils/dateUtils';
@@ -15,6 +19,9 @@ import {
   OFFICIAL_URLS
 } from './constants';
 import { CalculatorIcon, ChartIcon, ExchangeIcon, BankIcon, SummaryIcon } from './components/icons';
+import Card, { CardBody } from './components/ui/Card';
+import { Tabs, Tab } from './components/ui/Tabs';
+import { useHourlySyncedUpdate } from './hooks/useHourlySyncedUpdate';
 
 // Error Boundary Component
 class ErrorBoundary extends React.Component {
@@ -71,10 +78,15 @@ function App() {
   const [exchangeSearchType, setExchangeSearchType] = useState('latest');
   const [isExchangeLoading, setIsExchangeLoading] = useState(false);
   const [exchangeError, setExchangeError] = useState(null);
+  // Ref para evitar múltiples intentos de auto-inicialización
+  const initialExchangeFetchAttemptedRef = useRef(false);
   
   // Tab and refresh state
   const [activeTab, setActiveTab] = useState('ui'); // 'ui', 'ur', 'exchange', or 'brou'
   const [isRefreshing, setIsRefreshing] = useState(false);
+  // Keys to trigger child panels to refetch when refresh completes
+  const [uiRefreshKey, setUiRefreshKey] = useState(0);
+  const [urRefreshKey, setUrRefreshKey] = useState(0);
 
     // Load initial information when component mounts
   useEffect(() => {
@@ -86,7 +98,8 @@ function App() {
         console.error('Error initializing app:', error);
       }
     };
-
+  if (APP_INIT_DONE) return;
+  APP_INIT_DONE = true;
     initializeApp();
   }, []);
 
@@ -146,23 +159,66 @@ function App() {
     }
   };
 
-  const loadLatestExchange = async () => {
+  const loadLatestExchange = async (options = {}) => {
+    const { skipAutoInit = false } = options;
     try {
       setIsExchangeLoading(true);
       setExchangeError(null);
-      
       const latest = await exchangeService.getLatest();
+
       if (latest && latest.success && latest.data) {
         setExchangeResults(latest);
         setExchangeSearchType('latest');
       } else {
-        setExchangeError(t('errors.no_exchange_data') || 'No se encontraron datos de cotizaciones disponibles');
+        // Si no hay datos y aún no intentamos inicializar, lanzamos un refresh inicial
+        if (!skipAutoInit && !initialExchangeFetchAttemptedRef.current) {
+          await attemptInitialExchangeBootstrap();
+        } else {
+          setExchangeError(t('errors.no_exchange_data') || 'No se encontraron datos de cotizaciones disponibles');
+        }
       }
     } catch (error) {
       console.error('Error cargando últimas cotizaciones:', error);
-      setExchangeError(t('errors.exchange_load_failed') || 'No se pudo cargar las cotizaciones');
+      if (!skipAutoInit && !initialExchangeFetchAttemptedRef.current) {
+        await attemptInitialExchangeBootstrap();
+      } else {
+        setExchangeError(t('errors.exchange_load_failed') || 'No se pudo cargar las cotizaciones');
+      }
     } finally {
       setIsExchangeLoading(false);
+    }
+  };
+  // Refresco horario automático sólo cuando la pestaña de cotizaciones está activa y el tipo actual es 'latest'
+  const hourlyExchangeRefresh = useCallback(async () => {
+    if (activeTab === 'exchange' && exchangeSearchType === 'latest' && !isExchangeLoading) {
+      await loadLatestExchange({ skipAutoInit: true });
+    }
+  }, [activeTab, exchangeSearchType, isExchangeLoading]);
+
+  useHourlySyncedUpdate(hourlyExchangeRefresh, true, { runImmediately: false });
+
+  // Intento de bootstrap inicial si la base está vacía
+  const attemptInitialExchangeBootstrap = async () => {
+    initialExchangeFetchAttemptedRef.current = true;
+    showInfo(t('exchange.initial_bootstrap_loading') || 'Cargando cotizaciones iniciales desde el BCU...');
+    try {
+      // refresh sin sample data (datos reales)
+      const response = await exchangeService.refresh(false);
+      if (response?.success) {
+        const successMessage = translateBackendMessage(response.message) || t('common.exchange_refresh_success') || 'Cotizaciones actualizadas correctamente';
+        showSuccess(successMessage);
+        // Volvemos a cargar latest pero evitando bucle de reinicio
+        await loadLatestExchange({ skipAutoInit: true });
+      } else {
+        const errorMessage = response?.message || t('errors.exchange_refresh_failed') || 'Error al actualizar las cotizaciones';
+        setExchangeError(errorMessage);
+        showError(errorMessage);
+      }
+    } catch (err) {
+      console.error('Error en bootstrap inicial de cotizaciones:', err);
+      const errorMessage = t('errors.exchange_refresh_failed') || 'Error al obtener cotizaciones iniciales';
+      setExchangeError(errorMessage);
+      showError(errorMessage);
     }
   };
 
@@ -171,26 +227,36 @@ function App() {
       setIsRefreshing(true);
       setExchangeError(null);
       
-      if (activeTab === 'ur') {
-        const response = await urService.refresh();
-        
+      if (activeTab === 'ui') {
+        // Refresh UI data (INE) and trigger UIPanel to refetch
+        const response = await uiService.refresh();
         if (response.success) {
-          // Show success message
+          const successMessage = translateBackendMessage(response.message) || t('common.ui_refresh_success') || 'Datos de UI actualizados correctamente';
+          showSuccess(successMessage);
+          setUiRefreshKey((k) => k + 1);
+        } else {
+          const errorMessage = response.message || t('errors.ui_refresh_failed') || 'Error al actualizar los datos de UI';
+          showError(errorMessage);
+        }
+      } else if (activeTab === 'ur') {
+        // Refresh UR data (BHU) and trigger URPanel to refetch
+        const response = await urService.refresh();
+        if (response.success) {
           const successMessage = translateBackendMessage(response.message) || t('common.ur_refresh_success') || 'Datos de UR actualizados correctamente';
           showSuccess(successMessage);
-          
-          // UR data refresh is now handled internally by URPanel component
+          setUrRefreshKey((k) => k + 1);
         } else {
           const errorMessage = response.message || t('errors.ur_refresh_failed') || 'Error al actualizar los datos de UR';
           showError(errorMessage);
         }
       } else if (activeTab === 'exchange') {
-        const response = await exchangeService.refresh(true); // Use sample data for now
+        // Usar siempre datos reales (sin sample)
+        const response = await exchangeService.refresh(false);
         
         if (response.success) {
           // Show success message
           setExchangeError(null);
-          const successMessage = translateBackendMessage(response.message) || t('common.exchange_refresh_success') || 'Cotizaciones actualizadas correctamente';
+          const successMessage = translateBackendMessage(response.message) || t('common.exchange_refresh_success') || t('bcu.updated') || 'Cotizaciones BCU actualizadas';
           showSuccess(successMessage);
           
           // Load updated latest exchange rates
@@ -204,7 +270,10 @@ function App() {
       // UI refresh is now handled internally by UIPanel component
     } catch (error) {
       console.error('Error en refresh:', error);
-      if (activeTab === 'ur') {
+      if (activeTab === 'ui') {
+        const errorMessage = t('errors.ui_refresh_failed') || 'Error al actualizar los datos de UI. Por favor, intenta nuevamente.';
+        showError(errorMessage);
+      } else if (activeTab === 'ur') {
         const errorMessage = t('errors.ur_refresh_failed') || 'Error al actualizar los datos de UR. Por favor, intenta nuevamente.';
         showError(errorMessage);
       } else if (activeTab === 'exchange') {
@@ -231,7 +300,7 @@ function App() {
 
   return (
     <ErrorBoundary>
-      <div className="min-h-screen bg-gray-50" data-testid="app-component">
+  <div className="min-h-screen bg-gray-50 dark:bg-gray-950" data-testid="app-component">
         <Header 
           onRefresh={handleRefresh} 
           isRefreshing={isRefreshing}
@@ -240,109 +309,70 @@ function App() {
         {/* Panel de cotizaciones BCU en tiempo real */}
         <ExchangeRatePanel />
         
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {/* Tabs de navegación */}
+  <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* Tabs de navegación modernos */}
           <div className="mb-6">
-            <div className="border-b border-gray-200">
-              <nav className="-mb-px flex space-x-8">
-                <button
-                  onClick={() => setActiveTab('ui')}
-                  className={`py-2 px-1 border-b-2 font-medium text-sm flex items-center ${
-                    activeTab === 'ui'
-                      ? 'border-blue-500 text-blue-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                  }`}
-                >
-                  <CalculatorIcon className="w-4 h-4 mr-2" />
-                  {t('navigation.ui_calculator') || 'Unidad Indexada (UI)'}
-                </button>
-                <button
-                  onClick={() => setActiveTab('ur')}
-                  className={`py-2 px-1 border-b-2 font-medium text-sm flex items-center ${
-                    activeTab === 'ur'
-                      ? 'border-purple-500 text-purple-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                  }`}
-                >
-                  <ChartIcon className="w-4 h-4 mr-2" />
-                  {t('navigation.ur_calculator') || 'Unidad Reajustable (UR)'}
-                </button>
-                <button
-                  onClick={() => setActiveTab('exchange')}
-                  className={`py-2 px-1 border-b-2 font-medium text-sm flex items-center ${
-                    activeTab === 'exchange'
-                      ? 'border-green-500 text-green-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                  }`}
-                >
-                  <ExchangeIcon className="w-4 h-4 mr-2" />
-                  {t('navigation.exchange_rates') || 'Cotizaciones'}
-                </button>
-                <button
-                  onClick={() => setActiveTab('brou')}
-                  className={`py-2 px-1 border-b-2 font-medium text-sm flex items-center ${
-                    activeTab === 'brou'
-                      ? 'border-blue-500 text-blue-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                  }`}
-                >
-                  <BankIcon className="w-4 h-4 mr-2" />
-                  BROU
-                </button>
-              </nav>
-            </div>
+            <Tabs value={activeTab} onChange={setActiveTab}>
+              <Tab value="ui" icon={CalculatorIcon}>{t('navigation.ui_calculator') || 'Unidad Indexada (UI)'}</Tab>
+              <Tab value="ur" icon={ChartIcon}>{t('navigation.ur_calculator') || 'Unidad Reajustable (UR)'}</Tab>
+              <Tab value="exchange" icon={ExchangeIcon}>{t('navigation.exchange_rates') || 'Cotizaciones'}</Tab>
+              <Tab value="brou" icon={BankIcon}>BROU</Tab>
+            </Tabs>
           </div>
 
           {/* Contenido de UI */}
           {activeTab === 'ui' && (
             <>
-              <UIPanel />
+              <UIPanel refreshKey={uiRefreshKey} />
             </>
           )}
 
           {/* Contenido de UR */}
           {activeTab === 'ur' && (
             <>
-              <URPanel />
+              <URPanel refreshKey={urRefreshKey} />
             </>
           )}
 
           {/* Contenido de Exchange Rates */}
           {activeTab === 'exchange' && (
             <>
-              {/* Mensaje de error Exchange */}
               {exchangeError && (
-                <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
-                  <div className="flex">
-                    <div className="flex-shrink-0">
-                      <span className="text-red-400">⚠️</span>
+                <Card className="mb-6 border-red-200/70 bg-red-50">
+                  <CardBody>
+                    <div className="flex">
+                      <div className="flex-shrink-0">
+                        <span className="text-red-400">⚠️</span>
+                      </div>
+                      <div className="ml-3">
+                        <h3 className="text-sm font-medium text-red-800">Error Cotizaciones</h3>
+                        <p className="text-sm text-red-700">{exchangeError}</p>
+                      </div>
                     </div>
-                    <div className="ml-3">
-                      <h3 className="text-sm font-medium text-red-800">Error Cotizaciones</h3>
-                      <p className="text-sm text-red-700">{exchangeError}</p>
-                    </div>
-                  </div>
-                </div>
+                  </CardBody>
+                </Card>
               )}
 
               <div className="grid lg:grid-cols-2 gap-8 items-start">
-                {/* Formulario de búsqueda Exchange */}
-                <div>
-                  <ExchangeSearchForm 
-                    onSearch={handleExchangeSearch} 
-                    isLoading={isExchangeLoading}
-                  />
-                </div>
+                <Card>
+                  <CardBody>
+                    <ExchangeSearchForm 
+                      onSearch={handleExchangeSearch} 
+                      isLoading={isExchangeLoading}
+                    />
+                  </CardBody>
+                </Card>
 
-                {/* Resultados Exchange */}
-                <div>
-                  <ExchangeResultsDisplay 
-                    results={exchangeResults} 
-                    searchType={exchangeSearchType}
-                    isLoading={isExchangeLoading}
-                    error={exchangeError}
-                  />
-                </div>
+                <Card>
+                  <CardBody>
+                    <ExchangeResultsDisplay 
+                      results={exchangeResults} 
+                      searchType={exchangeSearchType}
+                      isLoading={isExchangeLoading}
+                      error={exchangeError}
+                    />
+                  </CardBody>
+                </Card>
               </div>
             </>
           )}

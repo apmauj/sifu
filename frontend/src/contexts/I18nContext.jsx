@@ -28,9 +28,10 @@ export const I18nProvider = ({ children }) => {
     try {
       setIsLoading(true);
       
-      // En Vite, los archivos en public/ se sirven desde la raíz
-      const cacheBuster = process.env.NODE_ENV === 'development' ? `?t=${Date.now()}` : '';
-      const translationUrl = `/i18n/${lang}.json${cacheBuster}`;
+  // En Vite, los archivos en public/ se sirven desde BASE_URL (p.ej. /sifu/ en prod)
+  const base = import.meta.env.BASE_URL || '/';
+  const cacheBuster = process.env.NODE_ENV === 'development' ? `?t=${Date.now()}` : '';
+  const translationUrl = `${base}i18n/${lang}.json${cacheBuster}`;
       
       const response = await fetch(translationUrl);
       
@@ -38,8 +39,8 @@ export const I18nProvider = ({ children }) => {
         const data = await response.json();
         setTranslations(data);
       } else {
-        console.warn(`⚠️ I18nContext: No se pudo cargar ${lang}, usando fallback`);
-        const fallbackUrl = `/i18n/${FALLBACK_LANGUAGE}.json${cacheBuster}`;
+  console.warn(`⚠️ I18nContext: No se pudo cargar ${lang}, usando fallback`);
+  const fallbackUrl = `${base}i18n/${FALLBACK_LANGUAGE}.json${cacheBuster}`;
         const fallbackResponse = await fetch(fallbackUrl);
         const fallbackData = await fallbackResponse.json();
         setTranslations(fallbackData);
@@ -188,6 +189,11 @@ export const I18nProvider = ({ children }) => {
         params: (match) => ({ date: match[1], count: match[2] })
       },
       {
+        pattern: /^Exchange rates for (.+) retrieved successfully$/,
+        key: 'backend_messages.exchange_date_retrieved_no_count',
+        params: (match) => ({ date: match[1] })
+      },
+      {
         pattern: /^([A-Z]{3}) exchange rate for (.+) retrieved successfully$/,
         key: 'backend_messages.exchange_date_currency_retrieved',
         params: (match) => ({ currency: match[1], date: match[2] })
@@ -198,6 +204,11 @@ export const I18nProvider = ({ children }) => {
         params: (match) => ({ start_date: match[1], end_date: match[2], count: match[3] })
       },
       {
+        pattern: /^Exchange rates for range (.+) - (.+) retrieved successfully$/,
+        key: 'backend_messages.exchange_range_retrieved_no_count',
+        params: (match) => ({ start_date: match[1], end_date: match[2] })
+      },
+      {
         pattern: /^([A-Z]{3}) history retrieved successfully\. (\d+) records found$/,
         key: 'backend_messages.exchange_currency_history_retrieved',
         params: (match) => ({ currency: match[1], count: match[2] })
@@ -206,6 +217,16 @@ export const I18nProvider = ({ children }) => {
         pattern: /^Exchange rates for ([A-Z]{3}) retrieved successfully$/,
         key: 'backend_messages.exchange_currency_history_retrieved',
         params: (match) => ({ currency: match[1] })
+      },
+      {
+        pattern: /^Exchange data refreshed successfully$/,
+        key: 'backend_messages.exchange_refresh_success',
+        params: () => ({})
+      },
+      {
+        pattern: /^Exchange rates refreshed successfully$/,
+        key: 'backend_messages.exchange_refresh_success',
+        params: () => ({})
       }
     ];
 
