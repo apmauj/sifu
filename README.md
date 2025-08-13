@@ -1,5 +1,7 @@
 # SIFU - Sistema de Índices Financieros del Uruguay
 
+[![Deploy Frontend to GitHub Pages](https://github.com/apmauj/sifu/actions/workflows/deploy-frontend.yml/badge.svg)](https://github.com/apmauj/sifu/actions/workflows/deploy-frontend.yml)
+
 Sistema web para consulta de índices financieros y tasas de cambio en Uruguay.
 
 ## 🚀 Características
@@ -48,11 +50,23 @@ uvicorn main:app --reload --host 0.0.0.0 --port 8000
 cd frontend
 npm install
 npm run dev
+
+### Probar el build de Pages en local
+
+Para reproducir GitHub Pages (base "/sifu/") en local:
+
+```powershell
+# Construir
+npm --prefix frontend run build
+
+# Servir dist con base /sifu (usa un servidor simple)
+npm --prefix frontend exec npx serve -s dist -l 5174
+# Luego abre http://localhost:5174/sifu/
 ```
 
 ## 📁 Estructura del Proyecto
 
-```
+```text
 sifu/
 ├── backend/                 # FastAPI backend
 │   ├── main.py             # Punto de entrada
@@ -122,13 +136,12 @@ docker-compose build --no-cache
 ## 🌍 Internacionalización
 
 El proyecto soporta múltiples idiomas:
+
 - Español (ES)
 - Inglés (EN)
 - Portugués (PT)
 
-Los archivos de traducción se encuentran en:
-- Frontend: `frontend/src/i18n/locales/`
-- Backend: `static/i18n/`
+Los archivos de traducción se sirven desde `frontend/public/i18n` en producción (Pages) y se incluyen fallbacks embebidos en `frontend/src/locales` por si el hosting no entrega `/i18n/*.json`.
 
 ## 🧪 Testing
 
@@ -166,4 +179,13 @@ Si encuentras algún problema o tienes preguntas, por favor abre un issue en el 
 
 ---
 
-**Desarrollado con ❤️ para Uruguay** 
+### Desarrollado con ❤️ para Uruguay
+
+---
+
+### GitHub Pages
+
+El frontend se publica automáticamente en GitHub Pages en cada push a `master` dentro de `frontend/`.
+
+- URL: <https://apmauj.github.io/sifu/>
+- Backend configurable con `VITE_PUBLIC_API_URL` (secret del repo) si no se sirve en `/sifu/api`.

@@ -64,6 +64,20 @@ export const I18nProvider = ({ children }) => {
         data = await fetchFirstOk(fallbackCandidates);
       }
 
+      // Último recurso: usar traducciones embebidas en el bundle (src/locales)
+      if (!data) {
+        try {
+          const embeddedLocales = import.meta.glob('../locales/*.json', { eager: true });
+          const pick = (code) => {
+            const match = Object.entries(embeddedLocales).find(([path]) => path.endsWith(`/${code}.json`));
+            return match ? match[1].default || match[1] : null;
+          };
+          data = pick(lang) || pick(FALLBACK_LANGUAGE);
+        } catch (e) {
+          // ignore
+        }
+      }
+
       if (data) {
         setTranslations(data);
       } else {
