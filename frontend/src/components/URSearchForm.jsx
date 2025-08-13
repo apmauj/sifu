@@ -157,9 +157,9 @@ const URSearchForm = ({ onSearch, isLoading }) => {
   };
 
   return (
-    <div className="card fade-in">
+    <div className="fade-in">
       <div className="mb-6">
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">
+        <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
           {t('ur.search_title') || 'Consultar Valor de UR'}
         </h2>
         
@@ -175,7 +175,7 @@ const URSearchForm = ({ onSearch, isLoading }) => {
               onChange={(e) => setSearchType(e.target.value)}
               className="mr-2 text-uruguay-blue focus:ring-uruguay-blue"
             />
-            <span className="text-sm font-medium text-gray-700">{t('ur.specific_period') || 'Período específico'}</span>
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('ur.specific_period') || 'Período específico'}</span>
           </label>
           <label className="flex items-center" htmlFor="searchType-range-ur">
             <input
@@ -187,7 +187,7 @@ const URSearchForm = ({ onSearch, isLoading }) => {
               onChange={(e) => setSearchType(e.target.value)}
               className="mr-2 text-uruguay-blue focus:ring-uruguay-blue"
             />
-            <span className="text-sm font-medium text-gray-700">{t('ur.period_range') || 'Rango de períodos'}</span>
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('ur.period_range') || 'Rango de períodos'}</span>
           </label>
         </div>
 
@@ -204,7 +204,7 @@ const URSearchForm = ({ onSearch, isLoading }) => {
                 onChange={(e) => setSubtype(e.target.value)}
                 className="mr-2 text-uruguay-blue focus:ring-uruguay-blue"
               />
-              <span className="text-sm font-medium text-gray-700">{t('ur.specific_month') || 'Mes específico'}</span>
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('ur.specific_month') || 'Mes específico'}</span>
             </label>
             <label className="flex items-center" htmlFor="subtype-year">
               <input
@@ -216,7 +216,7 @@ const URSearchForm = ({ onSearch, isLoading }) => {
                 onChange={(e) => setSubtype(e.target.value)}
                 className="mr-2 text-uruguay-blue focus:ring-uruguay-blue"
               />
-              <span className="text-sm font-medium text-gray-700">{t('ur.full_year') || 'Año completo'}</span>
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('ur.full_year') || 'Año completo'}</span>
             </label>
           </div>
         )}
@@ -226,7 +226,7 @@ const URSearchForm = ({ onSearch, isLoading }) => {
         {searchType === 'single' ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label htmlFor="year" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="year" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 <CalendarIcon className="w-4 h-4 inline mr-1" />
                 {t('common.year') || 'Año'}
               </label>
@@ -263,7 +263,7 @@ const URSearchForm = ({ onSearch, isLoading }) => {
 
             {subtype === 'month' && (
               <div>
-                <label htmlFor="month" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="month" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   <CalendarIcon className="w-4 h-4 inline mr-1" />
                   {t('common.month') || 'Mes'}
                 </label>
@@ -301,14 +301,14 @@ const URSearchForm = ({ onSearch, isLoading }) => {
         ) : (
           <div className="space-y-6">
             {/* Start Period Section */}
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center">
+            <div className="bg-gray-50 dark:bg-gray-700/60 p-4 rounded-lg">
+              <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center">
                 <CalendarIcon className="w-4 h-4 mr-2" />
                 {t('ur.start_period') || 'Período inicio'}
               </h4>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label htmlFor="startYear" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="startYear" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     {t('common.year') || 'Año'}
                   </label>
                   <Controller
@@ -361,7 +361,7 @@ const URSearchForm = ({ onSearch, isLoading }) => {
                 </div>
 
                 <div>
-                  <label htmlFor="startMonth" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="startMonth" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     {t('common.month') || 'Mes'}
                   </label>
                   <Controller
@@ -415,14 +415,14 @@ const URSearchForm = ({ onSearch, isLoading }) => {
             </div>
 
             {/* End Period Section */}
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center">
+            <div className="bg-gray-50 dark:bg-gray-700/60 p-4 rounded-lg">
+              <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center">
                 <CalendarIcon className="w-4 h-4 mr-2" />
                 {t('ur.end_period') || 'Período fin'}
               </h4>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label htmlFor="endYear" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="endYear" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     {t('common.year') || 'Año'}
                   </label>
                   <Controller
@@ -475,7 +475,7 @@ const URSearchForm = ({ onSearch, isLoading }) => {
                 </div>
 
                 <div>
-                  <label htmlFor="endMonth" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="endMonth" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     {t('common.month') || 'Mes'}
                   </label>
                   <Controller
@@ -572,7 +572,7 @@ const URSearchForm = ({ onSearch, isLoading }) => {
       </form>
 
       {urInfo && (
-        <div className="text-sm text-gray-600 text-center pt-2">
+  <div className="text-sm text-gray-600 dark:text-gray-300 text-center pt-2">
           {t('ur.data_available') || 'Datos disponibles:'} {urInfo.total_records || 0} {t('ur.records') || 'registros'}
           {urInfo.date_range && urInfo.date_range.min_year && urInfo.date_range.max_year && (
             <span>

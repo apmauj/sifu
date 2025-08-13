@@ -189,3 +189,7 @@ El frontend se publica automáticamente en GitHub Pages en cada push a `master` 
 
 - URL: <https://apmauj.github.io/sifu/>
 - Backend configurable con `VITE_PUBLIC_API_URL` (secret del repo) si no se sirve en `/sifu/api`.
+
+Por qué no corre el backend en Pages: GitHub Pages solo sirve archivos estáticos. El backend (FastAPI/Python) debe hospedarse aparte y exponerse por HTTPS. Luego el frontend se construye con `VITE_PUBLIC_API_URL` apuntando a `https://TU-BACKEND/api`.
+
+Guía: ver `docs/DEPLOY_BACKEND.md` para opciones rápidas (Render, VPS con Docker Compose o túnel temporal).

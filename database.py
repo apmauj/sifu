@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine, Column, Float, Date, Integer, DateTime, String
+from sqlalchemy import create_engine, Column, Float, Date, Integer, DateTime, String, UniqueConstraint
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from datetime import datetime
@@ -42,6 +42,7 @@ class URRecord(Base):
     
     # Make year-month combination unique
     __table_args__ = (
+        UniqueConstraint('year', 'month', name='uq_ur_year_month'),
         {'sqlite_autoincrement': True},
     )
 
@@ -62,6 +63,7 @@ class ExchangeRateRecord(Base):
     
     # Make date-currency combination unique
     __table_args__ = (
+        UniqueConstraint('date', 'currency', name='uq_exchange_date_currency'),
         {'sqlite_autoincrement': True},
     )
 

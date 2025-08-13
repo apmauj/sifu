@@ -206,7 +206,7 @@ const QuickSelectors = ({
             key={selector.key}
             type="button"
             onClick={() => type === 'UI' ? handleUIClick(selector) : handleURClick(selector)}
-            className="text-xs px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded-full transition-colors duration-200 border border-gray-300 hover:border-gray-400 whitespace-nowrap"
+            className="text-xs px-3 py-1 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 rounded-full transition-colors duration-200 border border-gray-300 hover:border-gray-400 dark:border-gray-600 dark:hover:border-gray-500 dark:text-gray-100 whitespace-nowrap"
             title={`${t('common.select') || 'Seleccionar'} ${translateLabel(selector).toLowerCase()}`}
           >
             {translateLabel(selector)}
@@ -219,7 +219,7 @@ const QuickSelectors = ({
             key={maxDateSelector.key}
             type="button"
             onClick={() => onSingleSelect?.(maxDate)}
-            className="text-xs px-3 py-1 bg-blue-100 hover:bg-blue-200 rounded-full transition-colors duration-200 border border-blue-300 hover:border-blue-400 whitespace-nowrap"
+            className="text-xs px-3 py-1 bg-blue-100 hover:bg-blue-200 dark:bg-blue-900/40 dark:hover:bg-blue-900/60 rounded-full transition-colors duration-200 border border-blue-300 hover:border-blue-400 dark:border-blue-800 dark:hover:border-blue-700 dark:text-blue-200 whitespace-nowrap"
             title={t('ui.select_latest_available') || 'Seleccionar la última fecha disponible con datos'}
           >
             {maxDateSelector.label}

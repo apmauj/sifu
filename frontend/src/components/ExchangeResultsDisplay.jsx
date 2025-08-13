@@ -67,14 +67,14 @@ const ExchangeResultsDisplay = ({ results, searchType, isLoading, error }) => {
   // Mostrar loading
   if (isLoading) {
     return (
-      <div className="bg-white rounded-lg shadow-md p-6">
+	<div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-md p-6">
         <div className="flex items-center justify-center py-12">
           <div className="text-center">
             <svg className="animate-spin -ml-1 mr-3 h-8 w-8 text-blue-600 mx-auto mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
             </svg>
-            <p className="text-gray-600">{t('common.loading') || 'Cargando cotizaciones...'}</p>
+            <p className="text-gray-600 dark:text-gray-300">{t('common.loading') || 'Cargando cotizaciones...'}</p>
           </div>
         </div>
       </div>
@@ -84,17 +84,17 @@ const ExchangeResultsDisplay = ({ results, searchType, isLoading, error }) => {
   // Mostrar error
   if (error) {
     return (
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+  <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-md p-6">
+    <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
           <div className="flex">
             <div className="flex-shrink-0">
               <span className="text-red-400 text-xl">⚠️</span>
             </div>
             <div className="ml-3">
-              <h3 className="text-sm font-medium text-red-800">
+      <h3 className="text-sm font-medium text-red-800 dark:text-red-300">
                 {t('common.error') || 'Error'}
               </h3>
-              <p className="text-sm text-red-700">{error}</p>
+      <p className="text-sm text-red-700 dark:text-red-400">{error}</p>
             </div>
           </div>
         </div>
@@ -105,13 +105,13 @@ const ExchangeResultsDisplay = ({ results, searchType, isLoading, error }) => {
   // No hay resultados
   if (!results || !results.success || !results.data) {
     return (
-      <div className="bg-white rounded-lg shadow-md p-6">
+  <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-md p-6">
         <div className="text-center py-12">
           <span className="text-6xl mb-4 block">💱</span>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">
+ 	  <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
             {t('exchange.no_results') || 'Sin resultados'}
           </h3>
-          <p className="text-gray-600">
+ 	  <p className="text-gray-600 dark:text-gray-300">
             {t('exchange.no_results_description') || 'Realiza una consulta para ver las cotizaciones.'}
           </p>
         </div>
@@ -463,13 +463,13 @@ const ExchangeResultsDisplay = ({ results, searchType, isLoading, error }) => {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6">
+    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-md p-6">
       <div className="text-center mb-8">
-        <ExchangeIcon className="w-16 h-16 mx-auto mb-4 text-blue-600" />
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
+        {/* Eliminamos ícono azul grande para reducir ruido visual y mejor contraste en dark */}
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">
           {t('exchange.results_title') || 'Resultados de Cotizaciones'}
         </h1>
-        <p className="text-gray-600">
+	<p className="text-gray-600 dark:text-gray-400">
           {t('exchange.results_subtitle') || 'Consulta realizada exitosamente'}
         </p>
       </div>
@@ -479,39 +479,39 @@ const ExchangeResultsDisplay = ({ results, searchType, isLoading, error }) => {
         // Vista de tarjetas en una sola columna
         <div className="space-y-4">
           {filteredData.map((rate, index) => (
-            <div key={`${rate.date}-${rate.currency}-${index}`} className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-6">
+            <div key={`${rate.date}-${rate.currency}-${index}`} className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-700 border border-blue-200 dark:border-gray-600/70 rounded-lg p-6 shadow-sm dark:shadow-[0_0_0_1px_rgba(255,255,255,0.04)]">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center">
                   <span className="text-3xl mr-3">{getCurrencyInfo(rate.currency)?.flag || '💱'}</span>
                   <div>
-                    <h3 className="text-xl font-bold text-gray-900">{rate.currency}</h3>
-                    <p className="text-sm text-gray-600">{getCurrencyInfo(rate.currency)?.name || rate.currency}</p>
+                    <h3 className="text-xl font-bold text-gray-900 dark:text-gray-50">{rate.currency}</h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-300">{getCurrencyInfo(rate.currency)?.name || rate.currency}</p>
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="text-sm text-gray-500">{rate.date}</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">{rate.date}</p>
                   {rate.arbitrage && (
-                    <p className="text-sm text-blue-600 font-medium">{rate.arbitrage}</p>
+                    <p className="text-sm text-blue-600 dark:text-blue-400 font-medium">{rate.arbitrage}</p>
                   )}
                 </div>
               </div>
               
               <div className="grid grid-cols-3 gap-4">
-                <div className="text-center p-3 bg-white rounded-lg shadow-sm">
-                  <p className="text-sm text-gray-600 mb-1">{t('exchange.buy_rate') || 'Compra'}</p>
+                <div className="text-center p-3 bg-white dark:bg-gray-900/40 rounded-lg shadow-sm">
+                  <p className="text-sm text-gray-600 dark:text-gray-300 mb-1">{t('exchange.buy_rate') || 'Compra'}</p>
                   <p className="text-xl font-bold text-green-600">
                     ${formatExchangeRate(rate.buy_rate)}
                   </p>
                 </div>
-                <div className="text-center p-3 bg-white rounded-lg shadow-sm">
-                  <p className="text-sm text-gray-600 mb-1">{t('exchange.sell_rate') || 'Venta'}</p>
+                <div className="text-center p-3 bg-white dark:bg-gray-900/40 rounded-lg shadow-sm">
+                  <p className="text-sm text-gray-600 dark:text-gray-300 mb-1">{t('exchange.sell_rate') || 'Venta'}</p>
                   <p className="text-xl font-bold text-red-600">
                     ${formatExchangeRate(rate.sell_rate)}
                   </p>
                 </div>
                 {rate.average_rate && (
-                  <div className="text-center p-3 bg-white rounded-lg shadow-sm">
-                    <p className="text-sm text-gray-600 mb-1">{t('exchange.average_rate') || 'Promedio'}</p>
+                  <div className="text-center p-3 bg-white dark:bg-gray-900/40 rounded-lg shadow-sm">
+                    <p className="text-sm text-gray-600 dark:text-gray-300 mb-1">{t('exchange.average_rate') || 'Promedio'}</p>
                     <p className="text-xl font-bold text-blue-600">
                       ${formatExchangeRate(rate.average_rate)}
                     </p>
@@ -526,12 +526,12 @@ const ExchangeResultsDisplay = ({ results, searchType, isLoading, error }) => {
         <div className="space-y-6">
           <div className="mb-4 flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-600">
-                {t('exchange.total_records') || 'Total de registros'}: <strong>{filteredData.length}</strong>
+              <span className="text-sm text-gray-600 dark:text-gray-300">
+                {t('exchange.total_records') || 'Total de registros'}: <strong className="text-gray-900 dark:text-gray-100">{filteredData.length}</strong>
               </span>
               {filteredData.length > 0 && (
-                <span className="text-sm text-gray-600">
-                  {t('common.period') || 'Período'}: <strong>{filteredData[filteredData.length - 1]?.date} - {filteredData[0]?.date}</strong>
+                <span className="text-sm text-gray-600 dark:text-gray-300">
+                  {t('common.period') || 'Período'}: <strong className="text-gray-900 dark:text-gray-100">{filteredData[filteredData.length - 1]?.date} - {filteredData[0]?.date}</strong>
                 </span>
               )}
             </div>
@@ -550,23 +550,23 @@ const ExchangeResultsDisplay = ({ results, searchType, isLoading, error }) => {
 
       {/* Resumen estadístico para múltiples resultados */}
       {filteredData.length > 1 && (
-        <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+        <div className="mt-6 p-4 bg-gray-50 dark:bg-gray-700/60 rounded-lg">
           <div className="flex items-center mb-4">
             <SummaryIcon className="w-6 h-6 mr-3 text-blue-600" />
-            <h2 className="text-xl font-semibold text-gray-900">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
               {t('exchange.summary') || 'Resumen'}
             </h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
             <div>
-              <p className="text-gray-600">{t('exchange.currencies_included') || 'Monedas incluidas'}:</p>
-              <p className="font-medium">
+              <p className="text-gray-600 dark:text-gray-300">{t('exchange.currencies_included') || 'Monedas incluidas'}:</p>
+              <p className="font-medium text-gray-900 dark:text-gray-100">
                 {[...new Set(filteredData.map(rate => rate.currency))].join(', ')}
               </p>
             </div>
             <div>
-              <p className="text-gray-600">{t('exchange.date_range') || 'Rango de fechas'}:</p>
-              <p className="font-medium">
+              <p className="text-gray-600 dark:text-gray-300">{t('exchange.date_range') || 'Rango de fechas'}:</p>
+              <p className="font-medium text-gray-900 dark:text-gray-100">
                 {filteredData.length > 1 
                   ? `${filteredData[filteredData.length - 1]?.date} - ${filteredData[0]?.date}`
                   : filteredData[0]?.date
@@ -574,19 +574,19 @@ const ExchangeResultsDisplay = ({ results, searchType, isLoading, error }) => {
               </p>
             </div>
             <div>
-              <p className="text-gray-600">{t('exchange.total_records') || 'Total de registros'}:</p>
-              <p className="font-medium">{filteredData.length}</p>
+              <p className="text-gray-600 dark:text-gray-300">{t('exchange.total_records') || 'Total de registros'}:</p>
+              <p className="font-medium text-gray-900 dark:text-gray-100">{filteredData.length}</p>
             </div>
           </div>
         </div>
       )}
 
       {/* Información adicional */}
-      <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-        <h4 className="text-sm font-medium text-blue-900 mb-2">
+      <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-lg">
+        <h4 className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-2">
           ℹ️ {t('exchange.rates_info') || 'Información sobre las cotizaciones'}
         </h4>
-        <ul className="text-xs text-blue-700 space-y-1">
+        <ul className="text-xs text-blue-700 dark:text-blue-200 space-y-1">
           <li>• <strong>{t('exchange.buy_rate') || 'Compra'}:</strong> {t('exchange.buy_description') || 'Precio al que el banco compra la moneda extranjera'}</li>
           <li>• <strong>{t('exchange.sell_rate') || 'Venta'}:</strong> {t('exchange.sell_description') || 'Precio al que el banco vende la moneda extranjera'}</li>
           <li>• <strong>{t('exchange.average_rate') || 'Promedio'}:</strong> {t('exchange.average_description') || 'Promedio entre compra y venta (cuando está disponible)'}</li>

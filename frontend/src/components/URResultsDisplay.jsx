@@ -111,8 +111,8 @@ const URResultsDisplay = ({ results, searchType, isLoading, error }) => {
     return (
       <div className="card">
         <div className="flex items-center justify-center py-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mr-3"></div>
-          <span className="text-gray-600">{t('common.loading') || 'Cargando...'}</span>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500 mr-3"></div>
+          <span className="text-gray-600 dark:text-gray-300">{t('common.loading') || 'Cargando...'}</span>
         </div>
       </div>
     );
@@ -122,9 +122,9 @@ const URResultsDisplay = ({ results, searchType, isLoading, error }) => {
     return (
       <div className="card">
         <div className="text-center py-8">
-          <ExclamationTriangleIcon className="w-12 h-12 text-red-500 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">{t('common.error') || 'Error'}</h3>
-          <p className="text-gray-600">{error}</p>
+          <ExclamationTriangleIcon className="w-12 h-12 text-red-500 dark:text-red-400 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">{t('common.error') || 'Error'}</h3>
+          <p className="text-gray-600 dark:text-gray-300">{error}</p>
         </div>
       </div>
     );
@@ -134,11 +134,11 @@ const URResultsDisplay = ({ results, searchType, isLoading, error }) => {
     return (
       <div className="card">
         <div className="text-center py-8">
-          <MagnifyingGlassIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">
+          <MagnifyingGlassIcon className="w-12 h-12 text-gray-400 dark:text-gray-500 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
             {t('ur.no_results') || 'No se encontraron valores de UR'}
           </h3>
-          <p className="text-gray-600">
+          <p className="text-gray-600 dark:text-gray-300">
             {t('ur.no_results_hint') || 'Intenta con otro período o usa los selectores rápidos'}
           </p>
         </div>
@@ -152,13 +152,13 @@ const URResultsDisplay = ({ results, searchType, isLoading, error }) => {
       {/* Summary Card */}
       <div className="card">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-gray-900">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
             {searchType === 'single' ? 
               (t('ur.ur_value') || 'Valor UR') : 
               (t('ur.ur_values') || 'Valores UR')
             }
           </h3>
-          <div className="text-sm text-gray-500">
+          <div className="text-sm text-gray-500 dark:text-gray-400">
             {data.length} {data.length === 1 ? (t('common.record') || 'registro') : (t('common.records') || 'registros')}
           </div>
         </div>
@@ -166,10 +166,10 @@ const URResultsDisplay = ({ results, searchType, isLoading, error }) => {
         {searchType === 'single' && data.length === 1 ? (
           // Single value display
           <div className="text-center py-6">
-            <div className="text-4xl font-bold text-purple-600 mb-2">
+            <div className="text-4xl font-bold text-uruguay-blue dark:text-blue-400 mb-2">
               {formatURValue(data[0].value)}
             </div>
-            <div className="text-lg text-gray-600">
+            <div className="text-lg text-gray-600 dark:text-gray-300">
               {formatPeriod(data[0].year, data[0].month)}
             </div>
             {/* El mensaje del backend ahora se muestra como notificación toast */}
@@ -178,22 +178,22 @@ const URResultsDisplay = ({ results, searchType, isLoading, error }) => {
           // Multiple values or range display
           <div className="space-y-4">
             {stats && (
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-gray-50 rounded-lg">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-gray-50 dark:bg-gray-700/60 rounded-lg">
                 <div className="text-center">
-                  <div className="text-sm text-gray-600">{t('ur.initial_value') || 'Valor inicial'}</div>
-                  <div className="text-lg font-semibold text-gray-900">{formatURValue(stats.initialValue)}</div>
+          <div className="text-sm text-gray-600 dark:text-gray-300">{t('ur.initial_value') || 'Valor inicial'}</div>
+          <div className="text-lg font-semibold text-gray-900 dark:text-gray-100">{formatURValue(stats.initialValue)}</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-sm text-gray-600">{t('ur.final_value') || 'Valor final'}</div>
-                  <div className="text-lg font-semibold text-gray-900">{formatURValue(stats.finalValue)}</div>
+          <div className="text-sm text-gray-600 dark:text-gray-300">{t('ur.final_value') || 'Valor final'}</div>
+          <div className="text-lg font-semibold text-gray-900 dark:text-gray-100">{formatURValue(stats.finalValue)}</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-sm text-gray-600">{t('common.average') || 'Promedio'}</div>
-                  <div className="text-lg font-semibold text-gray-900">{formatURValue(stats.avg)}</div>
+          <div className="text-sm text-gray-600 dark:text-gray-300">{t('common.average') || 'Promedio'}</div>
+          <div className="text-lg font-semibold text-gray-900 dark:text-gray-100">{formatURValue(stats.avg)}</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-sm text-gray-600">{t('ur.total_variation') || 'Variación total'}</div>
-                  <div className={`text-lg font-semibold ${stats.totalVariation >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+          <div className="text-sm text-gray-600 dark:text-gray-300">{t('ur.total_variation') || 'Variación total'}</div>
+          <div className={`text-lg font-semibold ${stats.totalVariation >= 0 ? 'text-green-500' : 'text-red-500'}`}>
                     {formatPercentage(stats.totalVariation)}
                   </div>
                 </div>
@@ -208,25 +208,27 @@ const URResultsDisplay = ({ results, searchType, isLoading, error }) => {
       {/* Chart */}
       {data.length > 1 && (
         <div className="card">
-          <h4 className="text-lg font-semibold text-gray-900 mb-4">
+          <h4 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
             {t('ur.ur_evolution') || 'Evolución de la UR'}
           </h4>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" />
+                <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
                 <XAxis 
                   dataKey="name" 
                   angle={-45}
                   textAnchor="end"
                   height={80}
                   fontSize={12}
+                  tick={{ fill: '#d1d5db' }}
                 />
                 <YAxis 
                   domain={['dataMin - 10', 'dataMax + 10']}
                   tickFormatter={formatURValue}
                   width={85}
                   fontSize={10}
+                  tick={{ fill: '#d1d5db' }}
                 />
                 <Tooltip 
                   formatter={(value) => [formatURValue(value), t('ur.ur_value') || 'Valor UR']}
@@ -235,10 +237,10 @@ const URResultsDisplay = ({ results, searchType, isLoading, error }) => {
                 <Line 
                   type="monotone" 
                   dataKey="value" 
-                  stroke="#7c3aed" 
+                  stroke="#2563eb" 
                   strokeWidth={2}
-                  dot={{ fill: '#7c3aed', strokeWidth: 2, r: 4 }}
-                  activeDot={{ r: 6, stroke: '#7c3aed', strokeWidth: 2 }}
+                  dot={{ fill: '#2563eb', strokeWidth: 2, r: 4 }}
+                  activeDot={{ r: 6, stroke: '#2563eb', strokeWidth: 2 }}
                 />
               </LineChart>
             </ResponsiveContainer>
@@ -249,34 +251,35 @@ const URResultsDisplay = ({ results, searchType, isLoading, error }) => {
       {/* Monthly Variations Chart */}
       {dataWithVariations.length > 1 && (
         <div className="card">
-          <h4 className="text-lg font-semibold text-gray-900 mb-4">
+          <h4 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
             {t('ur.monthly_percentage_variation') || 'Variación Porcentual Mensual'}
           </h4>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={variationChartData}>
-                <CartesianGrid strokeDasharray="3 3" />
+                <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
                 <XAxis 
                   dataKey="name"
                   angle={-45}
                   textAnchor="end"
                   height={80}
                   fontSize={12}
+                  tick={{ fill: '#d1d5db' }}
                 />
-                <YAxis tickFormatter={(value) => `${value}%`} />
+                <YAxis tickFormatter={(value) => `${value}%`} tick={{ fill: '#d1d5db' }} />
                 <Tooltip 
                   formatter={(value) => [formatPercentage(value), t('ur.variation_percentage') || 'Variación %']}
                   labelStyle={{ color: '#374151' }}
                 />
                 <Bar 
                   dataKey="variation" 
-                  fill="#7c3aed"
+                  fill="#fbbf24"
                   name={t('ur.variation_percentage') || 'Variación %'}
                 />
               </BarChart>
             </ResponsiveContainer>
           </div>
-          <p className="text-sm text-gray-600 mt-2">
+          <p className="text-sm text-gray-600 dark:text-gray-300 mt-2">
             {t('ur.variation_note') || 'Muestra el cambio porcentual respecto al mes anterior'}
           </p>
         </div>
@@ -284,43 +287,43 @@ const URResultsDisplay = ({ results, searchType, isLoading, error }) => {
 
       {/* Data Table */}
       <div className="card">
-        <h4 className="text-lg font-semibold text-gray-900 mb-4">
+        <h4 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
           {t('ur.period_information') || 'Información del Período'}
         </h4>
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-600">
+            <thead className="bg-gray-50 dark:bg-gray-700/60">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                   {t('common.period') || 'Período'}
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                   {t('ur.ur_value') || 'Valor UR'}
                 </th>
                 {dataWithVariations.length > 1 && (
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                     {t('ur.variation_percentage') || 'Variación %'}
                   </th>
                 )}
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
               {(dataWithVariations.length > 1 ? dataWithVariations : data).map((item, index) => (
-                <tr key={`${item.year}-${item.month}`} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                <tr key={`${item.year}-${item.month}`} className={index % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50 dark:bg-gray-700/40'}>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">
                     {formatPeriod(item.year, item.month)}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
                     {formatURValue(item.value)}
                   </td>
                   {dataWithVariations.length > 1 && (
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
                       {item.variation !== null ? (
-                        <span className={item.variation >= 0 ? 'text-green-600' : 'text-red-600'}>
+                        <span className={item.variation >= 0 ? 'text-green-500' : 'text-red-500'}>
                           {formatPercentage(item.variation)}
                         </span>
                       ) : (
-                        <span className="text-gray-400">-</span>
+                        <span className="text-gray-400 dark:text-gray-500">-</span>
                       )}
                     </td>
                   )}
@@ -332,7 +335,7 @@ const URResultsDisplay = ({ results, searchType, isLoading, error }) => {
       </div>
 
       {/* Data Source */}
-      <div className="text-center text-sm text-gray-500">
+  <div className="text-center text-sm text-gray-500 dark:text-gray-400">
         {t('ur.data_source') || 'Fuente: Banco Hipotecario del Uruguay (BHU)'}
       </div>
     </div>

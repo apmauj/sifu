@@ -7,9 +7,10 @@ import { useEffect, useRef } from 'react';
  * @param {boolean} enabled - Si el hook está habilitado (default: true)
  * @returns {Function} cleanup function para limpiar manualmente si es necesario
  */
-export const useHourlySyncedUpdate = (updateFunction, enabled = true) => {
+export const useHourlySyncedUpdate = (updateFunction, enabled = true, options = {}) => {
   const timeoutRef = useRef(null);
   const intervalRef = useRef(null);
+  const hasRunInitialRef = useRef(false);
 
   /**
    * Calcula el tiempo en milisegundos hasta el próximo minuto cero de la hora
@@ -40,9 +41,13 @@ export const useHourlySyncedUpdate = (updateFunction, enabled = true) => {
     if (!enabled || typeof updateFunction !== 'function') {
       return cleanup;
     }
-
-    // Ejecutar inmediatamente al montar el componente
-    updateFunction();
+    const runImmediately = options.runImmediately !== false;
+    
+    // Ejecutar inmediatamente al montar el componente (evitar doble ejecución en StrictMode)
+    if (runImmediately && !hasRunInitialRef.current) {
+      hasRunInitialRef.current = true;
+      updateFunction();
+    }
 
     // Calcular tiempo hasta la próxima hora en punto
     const timeToNextHour = getTimeToNextHour();
@@ -57,7 +62,7 @@ export const useHourlySyncedUpdate = (updateFunction, enabled = true) => {
 
     // Función de limpieza para el useEffect
     return cleanup;
-  }, [updateFunction, enabled]);
+  }, [updateFunction, enabled, options.runImmediately]);
 
   // Retornar función de limpieza manual por si se necesita
   return cleanup;

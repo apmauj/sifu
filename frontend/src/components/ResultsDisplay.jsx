@@ -39,15 +39,15 @@ const ResultsDisplay = ({ results, searchType }) => {
 
   if (!results || !results.success) {
     return (
-      <div className="card fade-in">
+      <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6 fade-in">
         <div className="text-center py-8">
-          <div className="text-gray-400 mb-4">
+          <div className="text-gray-400 dark:text-gray-500 mb-4">
             <ChartBarIcon className="w-16 h-16 mx-auto" />
           </div>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">
+          <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
             {results?.message || t('ui.no_results') || NO_RESULTS_MESSAGE}
           </h3>
-          <p className="text-gray-600">
+          <p className="text-gray-600 dark:text-gray-300">
             {t('ui.no_results_hint') || NO_RESULTS_HINT}
           </p>
         </div>
@@ -92,7 +92,7 @@ const ResultsDisplay = ({ results, searchType }) => {
 
   const renderSingleResult = (data) => {
     return (
-      <div className="card fade-in">
+      <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6 fade-in">
         <div className="text-center">
           <div className="flex justify-center mb-4">
             <div className="flex items-center justify-center w-16 h-16 bg-uruguay-blue rounded-full">
@@ -100,21 +100,21 @@ const ResultsDisplay = ({ results, searchType }) => {
             </div>
           </div>
           
-          <h3 className="text-2xl font-bold text-gray-900 mb-2">
+          <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">
             {t('ui.ui_value') || 'Valor de la UI'}
           </h3>
           
-          <div className="bg-gray-50 rounded-lg p-6 mb-4">
-            <div className="text-3xl font-bold text-uruguay-blue mb-2">
+          <div className="bg-gray-50 dark:bg-gray-700/60 rounded-lg p-6 mb-4">
+            <div className="text-3xl font-bold text-uruguay-blue dark:text-blue-300 mb-2">
               {formatCurrency(data.value || data.valor)}
             </div>
-            <div className="flex items-center justify-center text-gray-600">
+            <div className="flex items-center justify-center text-gray-600 dark:text-gray-300">
               <CalendarIcon className="w-4 h-4 mr-2" />
               {formatDate(data.date || data.fecha)}
             </div>
           </div>
           
-          <div className="text-sm text-gray-500">
+          <div className="text-sm text-gray-500 dark:text-gray-400">
             {t('ui.data_source') || DATA_SOURCE_LABEL}
           </div>
         </div>
@@ -136,45 +136,45 @@ const ResultsDisplay = ({ results, searchType }) => {
     return (
       <div className="space-y-6">
         {/* Resumen */}
-        <div className="card fade-in">
-          <h3 className="text-xl font-bold text-gray-900 mb-4">
+        <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6 fade-in">
+          <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4">
             {t('ui.period_summary') || 'Resumen del Período'}
           </h3>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-gray-50 rounded-lg p-4">
-              <div className="text-sm text-gray-600 mb-1">{t('ui.initial_value') || 'Valor inicial'}</div>
-              <div className="text-lg font-semibold text-gray-900">
+            <div className="bg-gray-50 dark:bg-gray-700/60 rounded-lg p-4">
+              <div className="text-sm text-gray-600 dark:text-gray-300 mb-1">{t('ui.initial_value') || 'Valor inicial'}</div>
+              <div className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                 {formatCurrency(oldest.value || oldest.valor)}
               </div>
-              <div className="text-xs text-gray-500">
+              <div className="text-xs text-gray-500 dark:text-gray-400">
                 {formatDate(oldest.date || oldest.fecha)}
               </div>
             </div>
             
-            <div className="bg-gray-50 rounded-lg p-4">
-              <div className="text-sm text-gray-600 mb-1">{t('ui.final_value') || 'Valor final'}</div>
-              <div className="text-lg font-semibold text-gray-900">
+            <div className="bg-gray-50 dark:bg-gray-700/60 rounded-lg p-4">
+              <div className="text-sm text-gray-600 dark:text-gray-300 mb-1">{t('ui.final_value') || 'Valor final'}</div>
+              <div className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                 {formatCurrency(latest.value || latest.valor)}
               </div>
-              <div className="text-xs text-gray-500">
+              <div className="text-xs text-gray-500 dark:text-gray-400">
                 {formatDate(latest.date || latest.fecha)}
               </div>
             </div>
             
             {variation && (
-              <div className="bg-gray-50 rounded-lg p-4">
-                <div className="text-sm text-gray-600 mb-1">{t('common.variation') || 'Variación'}</div>
+              <div className="bg-gray-50 dark:bg-gray-700/60 rounded-lg p-4">
+                <div className="text-sm text-gray-600 dark:text-gray-300 mb-1">{t('common.variation') || 'Variación'}</div>
                 <div className={`text-lg font-semibold flex items-center ${
                   variation.trend === 'up' ? 'text-green-600' : 
-                  variation.trend === 'down' ? 'text-red-600' : 'text-gray-900'
+                  variation.trend === 'down' ? 'text-red-600' : 'text-gray-900 dark:text-gray-100'
                 }`}>
                   {renderTrendIcon(variation.trend)}
                   <span className="ml-1">
                     {variation.percentage.toFixed(4)}%
                   </span>
                 </div>
-                <div className="text-xs text-gray-500">
+                <div className="text-xs text-gray-500 dark:text-gray-400">
                   {formatCurrency(Math.abs(variation.absolute))}
                 </div>
               </div>
@@ -183,13 +183,13 @@ const ResultsDisplay = ({ results, searchType }) => {
         </div>
 
         {/* Gráfico de líneas: Valor de la UI */}
-        <div className="card fade-in">
-          <h3 className="text-lg font-semibold mb-4">{t('ui.ui_evolution') || 'Evolución del valor de la UI'}</h3>
+        <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6 fade-in">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">{t('ui.ui_evolution') || 'Evolución del valor de la UI'}</h3>
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={chartData} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="fecha" tick={{ fontSize: 12 }} />
-              <YAxis tick={{ fontSize: 12 }} domain={['auto', 'auto']} />
+              <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+              <XAxis dataKey="fecha" tick={{ fontSize: 12, fill: '#d1d5db' }} />
+              <YAxis tick={{ fontSize: 12, fill: '#d1d5db' }} domain={['auto', 'auto']} />
               <Tooltip formatter={formatCurrency} labelFormatter={v => `${t('common.date') || 'Fecha'}: ${v}`} />
               <Legend />
               <Line type="monotone" dataKey="valor" name={t('ui.ui_value') || 'Valor UI'} stroke="#2563eb" strokeWidth={2} dot={false} />
@@ -198,13 +198,13 @@ const ResultsDisplay = ({ results, searchType }) => {
         </div>
 
         {/* Gráfico de líneas: Variación porcentual diaria */}
-        <div className="card fade-in">
-          <h3 className="text-lg font-semibold mb-4">{t('ui.daily_percentage_variation') || 'Variación porcentual diaria'}</h3>
+        <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6 fade-in">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">{t('ui.daily_percentage_variation') || 'Variación porcentual diaria'}</h3>
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={chartData} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="fecha" tick={{ fontSize: 12 }} />
-              <YAxis tick={{ fontSize: 12 }} domain={['auto', 'auto']} unit="%" />
+              <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+              <XAxis dataKey="fecha" tick={{ fontSize: 12, fill: '#d1d5db' }} />
+              <YAxis tick={{ fontSize: 12, fill: '#d1d5db' }} domain={['auto', 'auto']} unit="%" />
               <Tooltip formatter={v => `${v}%`} labelFormatter={v => `${t('common.date') || 'Fecha'}: ${v}`} />
               <Legend />
               <Line type="monotone" dataKey="variacion" name={t('ui.variation_percentage') || 'Variación %'} stroke="#f59e42" strokeWidth={2} dot={false} />
@@ -221,15 +221,15 @@ const ResultsDisplay = ({ results, searchType }) => {
         renderSingleResult(results.data) : 
         Array.isArray(results.data) && results.data.length > 0 ? 
           renderRangeResults(results.data) : 
-          <div className="card fade-in">
+          <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6 fade-in">
             <div className="text-center py-8">
-              <div className="text-gray-400 mb-4">
+              <div className="text-gray-400 dark:text-gray-500 mb-4">
                 <ChartBarIcon className="w-16 h-16 mx-auto" />
               </div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
+              <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
                 {t('ui.no_data_found') || 'No se encontraron datos'}
               </h3>
-              <p className="text-gray-600">
+              <p className="text-gray-600 dark:text-gray-300">
                 {t('ui.no_results_description') || 'Realiza una consulta para ver los valores de UI.'}
               </p>
             </div>

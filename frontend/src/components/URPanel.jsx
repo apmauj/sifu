@@ -3,8 +3,9 @@ import URSearchForm from './URSearchForm';
 import URResultsDisplay from './URResultsDisplay';
 import urService from '../services/urService';
 import { useI18n } from '../contexts/I18nContext';
+import Card, { CardBody } from './ui/Card';
 
-const URPanel = () => {
+const URPanel = ({ refreshKey }) => {
   const { t, currentLanguage } = useI18n();
   const [urInfo, setUrInfo] = React.useState({});
   const [urInfoLoading, setUrInfoLoading] = React.useState(true);
@@ -34,16 +35,14 @@ const URPanel = () => {
     return `${monthName} ${year}`;
   };
 
+  const hasRequestedInfoRef = React.useRef(false);
   React.useEffect(() => {
     const fetchURInfo = async () => {
       setUrInfoLoading(true);
       setUrInfoError(null);
       try {
         const response = await urService.getInfo();
-        
-        // Manejar tanto respuesta directa como envuelta
         const data = response.data || response;
-        
         if (data && data.total_records) {
           setUrInfo(data);
         } else {
@@ -58,35 +57,42 @@ const URPanel = () => {
         setUrInfoLoading(false);
       }
     };
+    if (hasRequestedInfoRef.current && !refreshKey) return; // evita doble fetch StrictMode inicial
+    hasRequestedInfoRef.current = true;
     fetchURInfo();
-  }, [t, currentLanguage]);
+  }, [refreshKey, t, currentLanguage]);
 
-  // Cargar automáticamente los últimos valores de UR al inicializar
+  // Cargar automáticamente el último valor de UR cuando la info esté disponible.
+  // Usamos un ref para evitar llamadas duplicadas en StrictMode sin bloquear refrescos manuales.
+  const loadedLatestRef = React.useRef(false);
   React.useEffect(() => {
     const loadLatestUR = async () => {
-      if (!urInfoLoading && urInfo.latest_value) {
+      if (!urInfoLoading && urInfo.latest_value && !loadedLatestRef.current) {
         try {
           setSearchLoading(true);
           setResults(null);
           setSearchType('single');
-          
-          // Buscar el valor más reciente usando el año y mes del latest_value
-          const response = await urService.getByYearMonth(urInfo.latest_value.year, urInfo.latest_value.month);
+          const { year, month } = urInfo.latest_value;
+          const response = await urService.getByYearMonth(year, month);
           setResults(response);
         } catch (err) {
           console.error('Error loading latest UR:', err);
-          setResults({ 
-            success: false, 
-            message: t('ur.query_error') || 'Error al cargar últimos valores de UR' 
+          setResults({
+            success: false,
+            message: t('ur.query_error') || 'Error al cargar últimos valores de UR'
           });
         } finally {
           setSearchLoading(false);
+          loadedLatestRef.current = true;
         }
       }
     };
-    
+    // Si llega un refreshKey forzamos la recarga del último valor
+    if (refreshKey) {
+      loadedLatestRef.current = false;
+    }
     loadLatestUR();
-  }, [urInfo, urInfoLoading, t]);
+  }, [urInfo, urInfoLoading, t, refreshKey]);
 
   // Función para buscar valores de UR
   const handleSearch = async (params) => {
@@ -120,7 +126,7 @@ const URPanel = () => {
   return (
     <div>
       {/* Panel azul de estado de datos UR */}
-      <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+  <div className="mb-6 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-xl p-4">
         {urInfoLoading ? (
           <span className="text-blue-700 text-sm">{t('common.loading') || 'Cargando información...'}</span>
         ) : urInfoError ? (
@@ -128,10 +134,10 @@ const URPanel = () => {
         ) : (
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-sm font-medium text-blue-900">
+              <h2 className="text-sm font-medium text-blue-900 dark:text-blue-100">
                 📊 Estado de los datos UR
               </h2>
-              <p className="text-sm text-blue-700">
+              <p className="text-sm text-blue-800 dark:text-blue-100/90">
                 {urInfo && urInfo.total_records ? urInfo.total_records.toLocaleString() : 'N/D'} {t('ur.records') || 'registros'} disponibles
                 {urInfo && urInfo.year_range && (
                   <span> • {t('common.period') || 'Período'}: {urInfo.year_range.min_year} a {urInfo.year_range.max_year}</span>
@@ -140,8 +146,8 @@ const URPanel = () => {
             </div>
             {urInfo && urInfo.latest_value && (
               <div className="text-right">
-                <div className="text-sm text-blue-600">{t('ur.latest_value') || 'Último valor disponible'}:</div>
-                <div className="text-lg font-semibold text-blue-900">
+                <div className="text-sm text-blue-700 dark:text-blue-100">{t('ur.latest_value') || 'Último valor disponible'}:</div>
+                <div className="text-lg font-semibold text-blue-900 dark:text-white">
                   {formatURValue(urInfo.latest_value.value)} • {formatPeriod(urInfo.latest_value.year, urInfo.latest_value.month)}
                 </div>
               </div>
@@ -151,8 +157,16 @@ const URPanel = () => {
       </div>
       {/* Formulario de búsqueda y resultados */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <URSearchForm onSearch={handleSearch} isLoading={searchLoading} />
-        <URResultsDisplay results={results} searchType={searchType} isLoading={searchLoading} />
+        <Card>
+          <CardBody>
+            <URSearchForm onSearch={handleSearch} isLoading={searchLoading} />
+          </CardBody>
+        </Card>
+        <Card>
+          <CardBody>
+            <URResultsDisplay results={results} searchType={searchType} isLoading={searchLoading} />
+          </CardBody>
+        </Card>
       </div>
     </div>
   );

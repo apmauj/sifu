@@ -13,9 +13,14 @@ services:
       # Volumen para desarrollo (opcional, comentar en producción)
       - .:/app
     environment:
-      - PYTHONPATH=/app
-      - PYTHONUNBUFFERED=1
-      - DATABASE_PATH=/app/data/ui_data.db
+      PYTHONPATH: /app
+      PYTHONUNBUFFERED: "1"
+      DATABASE_PATH: /app/data/ui_data.db
+      SCHEDULER_ENABLED: "true"
+      SCHEDULER_TIMEZONE: America/Montevideo
+      UI_REFRESH_CRON: "0 3 * * *"
+      EXCHANGE_REFRESH_CRON: "0 3 * * *"
+      UR_REFRESH_CRON: "0 4 1 * *"
     networks:
       - sifu-network
     restart: unless-stopped

@@ -20,7 +20,7 @@ Write-Host "📁 Directorio: $(Get-Location)" -ForegroundColor Cyan
 Write-Host "🚀 Iniciando servidor FastAPI..." -ForegroundColor Green
 Write-Host ""
 Write-Host "🌐 URL: http://localhost:8000" -ForegroundColor White
-Write-Host "📖 API Docs: http://localhost:8000/docs" -ForegroundColor White
+Write-Host "📖 API Docs: http://localhost:8000/api/docs" -ForegroundColor White
 Write-Host "🔧 Auto-reload: Activado" -ForegroundColor White
 Write-Host ""
 Write-Host "Presiona Ctrl+C para detener el servidor" -ForegroundColor Yellow

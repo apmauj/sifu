@@ -15,6 +15,22 @@ from excel_processor import ExcelProcessor, URExcelProcessor, ExchangeRateExcelP
 from brou_processor import BROUProcessor
 from constants import *
 
+# APScheduler (background jobs)
+from typing import TYPE_CHECKING, Any
+if TYPE_CHECKING:
+    from apscheduler.schedulers.asyncio import AsyncIOScheduler  # type: ignore
+    from apscheduler.triggers.cron import CronTrigger  # type: ignore
+    import pytz  # type: ignore
+else:
+    try:
+        from apscheduler.schedulers.asyncio import AsyncIOScheduler  # type: ignore
+        from apscheduler.triggers.cron import CronTrigger  # type: ignore
+        import pytz  # type: ignore
+    except Exception:
+        AsyncIOScheduler = None  # type: ignore
+        CronTrigger = None  # type: ignore
+        pytz = None  # type: ignore
+
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -63,12 +79,80 @@ app.add_middleware(
     allow_headers=CORS_ALLOW_HEADERS,
 )
 
+@app.get("/", tags=["🏠 Sistema"])
+async def root_index():
+    return {
+        "name": API_TITLE,
+        "version": API_VERSION,
+        "docs": API_DOCS_URL,
+        "health": ENDPOINT_HEALTH,
+    }
+
+# -----------------------------------------------------------------------------
+# Scheduler setup (optional)
+# -----------------------------------------------------------------------------
+scheduler: Any = None
+
+def _add_jobs(_scheduler):
+    tz = pytz.timezone(SCHEDULER_TIMEZONE) if pytz else None
+
+    # UI daily refresh
+    def job_ui_refresh():
+        try:
+            from database import SessionLocal
+            db = SessionLocal()
+            logger.info("[Scheduler] Running UI refresh job...")
+            success, message, total_records = excel_processor.refresh_data(db)
+            logger.info(f"[Scheduler][UI] success={success} msg='{message}' total_records={total_records}")
+            db.close()
+        except Exception as e:
+            logger.error(f"[Scheduler][UI] error: {e}")
+
+    # Exchange historical daily refresh
+    def job_exchange_refresh():
+        try:
+            from database import SessionLocal
+            db = SessionLocal()
+            logger.info("[Scheduler] Running Exchange refresh job...")
+            success, message, total_records = exchange_rate_excel_processor.refresh_data(db)
+            logger.info(f"[Scheduler][EXCHANGE] success={success} msg='{message}' total_records={total_records}")
+            db.close()
+        except Exception as e:
+            logger.error(f"[Scheduler][EXCHANGE] error: {e}")
+
+    # UR monthly refresh
+    def job_ur_refresh():
+        try:
+            from database import SessionLocal
+            db = SessionLocal()
+            logger.info("[Scheduler] Running UR refresh job...")
+            success, message, count = ur_excel_processor.refresh_data(db)
+            logger.info(f"[Scheduler][UR] success={success} msg='{message}' count={count}")
+            db.close()
+        except Exception as e:
+            logger.error(f"[Scheduler][UR] error: {e}")
+
+    # Parse cron strings
+    def _cron(trigger_expr: str):
+        # expected format: "m h dom mon dow"
+        parts = trigger_expr.split()
+        if len(parts) != 5:
+            raise ValueError(f"Invalid cron expression: {trigger_expr}")
+        minute, hour, day, month, dow = parts
+        return CronTrigger(minute=minute, hour=hour, day=day, month=month, day_of_week=dow, timezone=tz)
+
+    _scheduler.add_job(job_ui_refresh, _cron(CRON_UI_REFRESH), id="ui_refresh", replace_existing=True)
+    _scheduler.add_job(job_exchange_refresh, _cron(CRON_EXCHANGE_REFRESH), id="exchange_refresh", replace_existing=True)
+    _scheduler.add_job(job_ur_refresh, _cron(CRON_UR_REFRESH), id="ur_refresh", replace_existing=True)
+    logger.info("[Scheduler] Jobs scheduled: ui_refresh, exchange_refresh, ur_refresh")
+
 # Excel processor instance
 excel_processor = ExcelProcessor()
 ur_excel_processor = URExcelProcessor()
 exchange_rate_excel_processor = ExchangeRateExcelProcessor()
 exchange_rate_bcu_processor = ExchangeRateBCUProcessor()
 brou_processor = BROUProcessor()
+
 
 # Mount static files only if they exist
 if os.path.exists(STATIC_DIRECTORY):
@@ -296,6 +380,30 @@ async def startup_event():
         db.close()
     except Exception as e:
         logger.error(f"Error in startup: {e}")
+
+    # Start background scheduler if enabled and available
+    try:
+        if SCHEDULER_ENABLED and AsyncIOScheduler and CronTrigger:
+            global scheduler
+            scheduler = AsyncIOScheduler()
+            _add_jobs(scheduler)
+            scheduler.start()
+            logger.info(f"[Scheduler] Started (tz={SCHEDULER_TIMEZONE})")
+        else:
+            logger.info("[Scheduler] Disabled or APScheduler not installed")
+    except Exception as e:
+        logger.error(f"[Scheduler] Failed to start: {e}")
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    # Gracefully stop scheduler
+    global scheduler
+    if scheduler:
+        try:
+            scheduler.shutdown(wait=False)
+            logger.info("[Scheduler] Stopped")
+        except Exception as e:
+            logger.error(f"[Scheduler] Error on shutdown: {e}")
 
 @app.get("/api/ur/latest", tags=["💰 Unidad Reajustable (UR)"])
 async def get_latest_ur(db: Session = Depends(get_db)):
@@ -956,8 +1064,4 @@ async def get_current_brou_rates():
             "success": False,
             "message": f"Error interno: {str(e)}",
             "data": None
-        }
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True) 
+    }

@@ -3,8 +3,9 @@ import SearchForm from './SearchForm';
 import ResultsDisplay from './ResultsDisplay';
 import uiService from '../services/api';
 import { useI18n } from '../contexts/I18nContext';
+import Card, { CardBody } from './ui/Card';
 
-const UIPanel = () => {
+const UIPanel = ({ refreshKey }) => {
   const { t, currentLanguage } = useI18n();
   const [uiInfo, setUiInfo] = React.useState({});
   const [uiInfoLoading, setUiInfoLoading] = React.useState(true);
@@ -25,14 +26,17 @@ const UIPanel = () => {
     }).format(value);
   };
 
+  const hasRequestedInfoRef = React.useRef(false);
   React.useEffect(() => {
     const fetchUIInfo = async () => {
       setUiInfoLoading(true);
       setUiInfoError(null);
       try {
         const response = await uiService.getInfo();
-        if (response && response.total_records) {
-          setUiInfo(response);
+        // Aceptar forma directa o envuelta { success, data }
+        const data = response?.data || response;
+        if (data && data.total_records) {
+          setUiInfo(data);
         } else {
           setUiInfo({});
           setUiInfoError(t('errors.search_data_error') || 'Error al cargar información de UI');
@@ -45,35 +49,39 @@ const UIPanel = () => {
         setUiInfoLoading(false);
       }
     };
+    if (hasRequestedInfoRef.current && !refreshKey) return; // evita doble llamada StrictMode
+    hasRequestedInfoRef.current = true;
     fetchUIInfo();
-  }, [t, currentLanguage]);
+  }, [t, currentLanguage, refreshKey]);
 
   // Cargar automáticamente los últimos valores de UI al inicializar
+  const loadedLatestRef = React.useRef(false);
   React.useEffect(() => {
     const loadLatestUI = async () => {
-      if (!uiInfoLoading && uiInfo.latest_ui) {
+      if (!uiInfoLoading && uiInfo.latest_ui && !loadedLatestRef.current) {
         try {
           setSearchLoading(true);
           setResults(null);
           setSearchType('single');
-          
-          // Buscar el valor más reciente usando la fecha del latest_ui
           const response = await uiService.getByDate(uiInfo.latest_ui.date);
           setResults(response);
         } catch (err) {
           console.error('Error loading latest UI:', err);
-          setResults({ 
-            success: false, 
-            message: t('errors.search_data_error') || 'Error al cargar últimos valores de UI' 
+          setResults({
+            success: false,
+            message: t('errors.search_data_error') || 'Error al cargar últimos valores de UI'
           });
         } finally {
           setSearchLoading(false);
+          loadedLatestRef.current = true;
         }
       }
     };
-    
+    if (refreshKey) {
+      loadedLatestRef.current = false; // permitir recarga tras refresh manual
+    }
     loadLatestUI();
-  }, [uiInfo, uiInfoLoading, t]);
+  }, [uiInfo, uiInfoLoading, t, refreshKey]);
 
   // Función para buscar valores de UI
   const handleSearch = async (params) => {
@@ -99,7 +107,7 @@ const UIPanel = () => {
   return (
     <div>
       {/* Panel azul de estado de datos UI */}
-      <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+  <div className="mb-6 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-xl p-4">
         {uiInfoLoading ? (
           <span className="text-blue-700 text-sm">{t('common.loading') || 'Cargando información...'}</span>
         ) : uiInfoError ? (
@@ -107,10 +115,10 @@ const UIPanel = () => {
         ) : (
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-sm font-medium text-blue-900">
+              <h2 className="text-sm font-medium text-blue-900 dark:text-blue-100">
                 📊 {t('ui.data_status') || 'Estado de los datos UI'}
               </h2>
-              <p className="text-sm text-blue-700">
+              <p className="text-sm text-blue-800 dark:text-blue-100/90">
                 {uiInfo && uiInfo.total_records ? uiInfo.total_records.toLocaleString() : 'N/D'} {t('common.records') || 'registros'} {t('ui.available') || 'disponibles'}
                 {uiInfo && uiInfo.date_range && (
                   <span> • {t('common.period') || 'Período'}: {uiInfo.date_range.min_date} a {uiInfo.date_range.max_date}</span>
@@ -119,8 +127,8 @@ const UIPanel = () => {
             </div>
             {uiInfo && uiInfo.latest_ui && (
               <div className="text-right">
-                <div className="text-sm text-blue-600">{t('ui.latest_value') || 'Último valor disponible'}:</div>
-                <div className="text-lg font-semibold text-blue-900">
+                <div className="text-sm text-blue-700 dark:text-blue-100">{t('ui.latest_value') || 'Último valor disponible'}:</div>
+                <div className="text-lg font-semibold text-blue-900 dark:text-white">
                   {formatUIValue(uiInfo.latest_ui.value)} • {uiInfo.latest_ui.date}
                 </div>
               </div>
@@ -130,8 +138,16 @@ const UIPanel = () => {
       </div>
       {/* Formulario de búsqueda y resultados */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <SearchForm onSearch={handleSearch} isLoading={searchLoading} />
-        <ResultsDisplay results={results} searchType={searchType} isLoading={searchLoading} />
+        <Card>
+          <CardBody>
+            <SearchForm onSearch={handleSearch} isLoading={searchLoading} />
+          </CardBody>
+        </Card>
+        <Card>
+          <CardBody>
+            <ResultsDisplay results={results} searchType={searchType} isLoading={searchLoading} />
+          </CardBody>
+        </Card>
       </div>
     </div>
   );

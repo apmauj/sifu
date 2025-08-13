@@ -66,6 +66,7 @@ setupInterceptors(api);
 setupInterceptors(directApi);
 
 // Servicios de la API
+let infoInFlightPromise = null;
 const uiService = {
   // Obtener último valor de UI
   getLatest: async () => {
@@ -84,7 +85,14 @@ const uiService = {
 
   // Obtener información general de los datos
   getInfo: async () => {
-    return makeRequest((apiInstance) => apiInstance.get('/info'));
+    if (infoInFlightPromise) {
+      return infoInFlightPromise;
+    }
+    infoInFlightPromise = makeRequest((apiInstance) => apiInstance.get('/info'))
+      .finally(() => {
+        infoInFlightPromise = null;
+      });
+    return infoInFlightPromise;
   },
 
   // Actualizar datos desde el INE

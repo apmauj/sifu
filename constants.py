@@ -1,11 +1,16 @@
 """
 Constants and configuration values for the SIFU application
 """
+import os
 
 # =============================================================================
 # DATABASE CONFIGURATION
 # =============================================================================
-DATABASE_URL = "sqlite:///./ui_data.db"
+# Prefer environment variables to define database location.
+# DATABASE_PATH points to a SQLite file path (e.g., /app/data/ui_data.db)
+# DATABASE_URL can override fully (e.g., postgresql://...)
+DATABASE_PATH = os.getenv("DATABASE_PATH", "./ui_data.db")
+DATABASE_URL = os.getenv("DATABASE_URL", f"sqlite:///{DATABASE_PATH}")
 DATABASE_CONNECT_ARGS = {"check_same_thread": False}
 
 # Table names
@@ -39,15 +44,35 @@ API_DOCS_URL = "/api/docs"
 API_REDOC_URL = "/api/redoc"
 
 # CORS Configuration
-CORS_ALLOW_ORIGINS = ["*"]  # In production, specify specific domains
+# Avoid wildcard origins together with credentials. Default to no credentials.
+# In production, set allowed origins explicitly via environment variable ALLOW_ORIGINS (comma-separated).
+_env_origins = os.getenv("ALLOW_ORIGINS")
+CORS_ALLOW_ORIGINS = [o.strip() for o in _env_origins.split(",") if o.strip()] if _env_origins else ["*"]
 CORS_ALLOW_METHODS = ["*"]
 CORS_ALLOW_HEADERS = ["*"]
-CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_CREDENTIALS = False
 
 # Static files
 STATIC_DIRECTORY = "static"
 STATIC_MOUNT_PATH = "/static"
 STATIC_NAME = "static"
+
+# =============================================================================
+# SCHEDULER (APScheduler) CONFIGURATION
+# =============================================================================
+# Enable/disable the background scheduler via env (default: enabled)
+SCHEDULER_ENABLED = os.getenv("SIFU_SCHEDULER_ENABLED", "true").lower() in ("1", "true", "yes", "on")
+
+# Timezone used by cron triggers (defaults to Montevideo)
+SCHEDULER_TIMEZONE = os.getenv("TIMEZONE", "America/Montevideo")
+
+# Cron expressions (standard 5-field: min hour day month weekday)
+# Daily UI refresh at 02:00
+CRON_UI_REFRESH = os.getenv("CRON_UI_REFRESH", "0 2 * * *")
+# Daily Exchange historical refresh at 03:00
+CRON_EXCHANGE_REFRESH = os.getenv("CRON_EXCHANGE_REFRESH", "0 3 * * *")
+# Monthly UR refresh on day 1 at 04:00
+CRON_UR_REFRESH = os.getenv("CRON_UR_REFRESH", "0 4 1 * *")
 
 # =============================================================================
 # API ENDPOINTS
@@ -169,6 +194,19 @@ MAX_EXCHANGE_RATE = 1000000
 VALID_CURRENCY_CODES = ["USD", "EUR", "ARS", "BRL", "PYG", "UYU"]
 
 # =============================================================================
+# SCHEDULER CONFIGURATION
+# =============================================================================
+# Enable or disable background scheduler via env
+SCHEDULER_ENABLED = os.getenv("SCHEDULER_ENABLED", "true").lower() == "true"
+SCHEDULER_TIMEZONE = os.getenv("SCHEDULER_TIMEZONE", "UTC")
+
+# Cron expressions (crontab format) for APScheduler
+# Default: UI and Exchange refresh daily at 03:00 UTC; UR refresh on day 1 at 04:00 UTC
+UI_REFRESH_CRON = os.getenv("UI_REFRESH_CRON", "0 3 * * *")
+EXCHANGE_REFRESH_CRON = os.getenv("EXCHANGE_REFRESH_CRON", "0 3 * * *")
+UR_REFRESH_CRON = os.getenv("UR_REFRESH_CRON", "0 4 1 * *")
+
+# =============================================================================
 # LOGGING MESSAGES
 # =============================================================================
 LOG_STARTING_APP = "🚀 Starting SIFU..."
@@ -216,3 +254,12 @@ FIELD_AVAILABLE_YEARS = "available_years"
 # =============================================================================
 MIN_MONTH = 1
 MAX_MONTH = 12 
+
+# =============================================================================
+# SCHEDULER SETTINGS (ENV-configurable)
+# =============================================================================
+SCHEDULER_ENABLED = os.getenv("SCHEDULER_ENABLED", "true").lower() == "true"
+# Cron-like strings or simple presets for APScheduler triggers
+SCHEDULE_UI_REFRESH_CRON = os.getenv("SCHEDULE_UI_REFRESH_CRON", "0 2 * * *")  # daily 02:00
+SCHEDULE_EXCHANGE_REFRESH_CRON = os.getenv("SCHEDULE_EXCHANGE_REFRESH_CRON", "0 3 * * *")  # daily 03:00
+SCHEDULE_UR_REFRESH_CRON = os.getenv("SCHEDULE_UR_REFRESH_CRON", "0 4 1 * *")  # monthly day 1 at 04:00
