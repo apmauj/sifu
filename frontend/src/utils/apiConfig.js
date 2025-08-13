@@ -11,11 +11,15 @@ const isDevelopment = import.meta.env.DEV;
  * @returns {string} URL base para las API calls
  */
 export const getApiBaseUrl = () => {
-  // Si estamos accediendo desde el gateway, usar la ruta del gateway
+  // 1) Si se define una URL pública para producción, usarla (ideal para GitHub Pages)
+  if (import.meta.env.VITE_PUBLIC_API_URL) {
+    return import.meta.env.VITE_PUBLIC_API_URL;
+  }
+  // 2) Si estamos accediendo desde /sifu (p.ej. detrás de Nginx o GitHub Pages con backend propio), usar /sifu/api
   if (typeof window !== 'undefined' && window.location.pathname.startsWith('/sifu')) {
     return '/sifu/api';
   }
-  // Forzar en producción el uso de /sifu/api
+  // 3) En producción sin VITE_PUBLIC_API_URL, dejar /sifu/api como valor por defecto
   if (import.meta.env.PROD) {
     return '/sifu/api';
   }
