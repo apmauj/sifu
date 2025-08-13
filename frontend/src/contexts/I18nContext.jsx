@@ -27,23 +27,48 @@ export const I18nProvider = ({ children }) => {
   const loadTranslations = useCallback(async (lang) => {
     try {
       setIsLoading(true);
-      
-  // En Vite, los archivos en public/ se sirven desde BASE_URL (p.ej. /sifu/ en prod)
-  const base = import.meta.env.BASE_URL || '/';
-  const cacheBuster = process.env.NODE_ENV === 'development' ? `?t=${Date.now()}` : '';
-  const translationUrl = `${base}i18n/${lang}.json${cacheBuster}`;
-      
-      const response = await fetch(translationUrl);
-      
-      if (response.ok) {
-        const data = await response.json();
+      const cacheBuster = import.meta.env.DEV ? `?t=${Date.now()}` : '';
+      const base = import.meta.env.BASE_URL || '/';
+
+      // Posibles ubicaciones (soporta GitHub Pages, rutas relativas y base personalizada)
+      const candidates = [
+        `${base}i18n/${lang}.json${cacheBuster}`,
+        `/sifu/i18n/${lang}.json${cacheBuster}`,
+        `/i18n/${lang}.json${cacheBuster}`,
+        `i18n/${lang}.json${cacheBuster}`,
+      ];
+
+      const fetchFirstOk = async (urls) => {
+        for (const url of urls) {
+          try {
+            const res = await fetch(url, { cache: 'no-cache' });
+            if (res.ok) {
+              return await res.json();
+            }
+          } catch (e) {
+            // Continúa probando siguientes rutas
+          }
+        }
+        return null;
+      };
+
+      let data = await fetchFirstOk(candidates);
+      if (!data) {
+        console.warn(`⚠️ I18nContext: No se pudo cargar '${lang}'. Probando fallback '${FALLBACK_LANGUAGE}'`);
+        const fallbackCandidates = [
+          `${base}i18n/${FALLBACK_LANGUAGE}.json${cacheBuster}`,
+          `/sifu/i18n/${FALLBACK_LANGUAGE}.json${cacheBuster}`,
+          `/i18n/${FALLBACK_LANGUAGE}.json${cacheBuster}`,
+          `i18n/${FALLBACK_LANGUAGE}.json${cacheBuster}`,
+        ];
+        data = await fetchFirstOk(fallbackCandidates);
+      }
+
+      if (data) {
         setTranslations(data);
       } else {
-  console.warn(`⚠️ I18nContext: No se pudo cargar ${lang}, usando fallback`);
-  const fallbackUrl = `${base}i18n/${FALLBACK_LANGUAGE}.json${cacheBuster}`;
-        const fallbackResponse = await fetch(fallbackUrl);
-        const fallbackData = await fallbackResponse.json();
-        setTranslations(fallbackData);
+        console.error('❌ I18nContext: No se encontró ningún archivo de traducción');
+        setTranslations({});
       }
     } catch (error) {
       console.error('❌ I18nContext: Error loading translations:', error);
