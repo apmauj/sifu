@@ -1,4 +1,5 @@
-from fastapi import FastAPI, HTTPException, Depends, BackgroundTasks
+from fastapi import FastAPI, HTTPException, Depends, BackgroundTasks, Response
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse
@@ -6,6 +7,8 @@ from sqlalchemy.orm import Session
 from datetime import date, datetime
 from typing import List, Optional
 import logging
+import uuid
+import time
 import os
 
 from database import get_db
@@ -152,6 +155,83 @@ ur_excel_processor = URExcelProcessor()
 exchange_rate_excel_processor = ExchangeRateExcelProcessor()
 exchange_rate_bcu_processor = ExchangeRateBCUProcessor()
 brou_processor = BROUProcessor()
+
+# =============================================================================
+# Simple in-memory job manager for long-running tasks (exchange historical refresh)
+# =============================================================================
+from threading import Lock
+
+class JobStatus:
+    PENDING = "pending"
+    RUNNING = "running"
+    SUCCESS = "success"
+    ERROR = "error"
+
+class JobManager:
+    def __init__(self):
+        self._jobs: dict[str, dict] = {}
+        self._lock = Lock()
+
+    def create_job(self, job_type: str) -> str:
+        job_id = str(uuid.uuid4())
+        with self._lock:
+            self._jobs[job_id] = {
+                "job_id": job_id,
+                "type": job_type,
+                "status": JobStatus.PENDING,
+                "message": None,
+                "created_at": time.time(),
+                "started_at": None,
+                "finished_at": None,
+                "duration": None,
+                "result": None,
+                "error": None,
+            }
+        return job_id
+
+    def mark_running(self, job_id: str):
+        with self._lock:
+            job = self._jobs.get(job_id)
+            if job and job["status"] == JobStatus.PENDING:
+                job["status"] = JobStatus.RUNNING
+                job["started_at"] = time.time()
+
+    def mark_success(self, job_id: str, message: str, result: dict | None):
+        with self._lock:
+            job = self._jobs.get(job_id)
+            if job:
+                job["status"] = JobStatus.SUCCESS
+                job["message"] = message
+                job["finished_at"] = time.time()
+                if job.get("started_at"):
+                    job["duration"] = job["finished_at"] - job["started_at"]
+                job["result"] = result
+
+    def mark_error(self, job_id: str, error: str):
+        with self._lock:
+            job = self._jobs.get(job_id)
+            if job:
+                job["status"] = JobStatus.ERROR
+                job["error"] = error
+                job["message"] = error
+                job["finished_at"] = time.time()
+                if job.get("started_at"):
+                    job["duration"] = job["finished_at"] - job["started_at"]
+
+    def get(self, job_id: str) -> dict | None:
+        with self._lock:
+            job = self._jobs.get(job_id)
+            # Return a shallow copy to avoid external mutation
+            return dict(job) if job else None
+
+    def find_running_job(self, job_type: str) -> str | None:
+        with self._lock:
+            for jid, meta in self._jobs.items():
+                if meta["type"] == job_type and meta["status"] in (JobStatus.PENDING, JobStatus.RUNNING):
+                    return jid
+        return None
+
+job_manager = JobManager()
 
 
 # Mount static files only if they exist
@@ -851,17 +931,12 @@ async def refresh_exchange_rate_historical_data(db: Session = Depends(get_db)):
     **⚠️ Nota**: Para datos actuales usar `/current` (BCU). Este endpoint es para históricos.
     """
     try:
-        logger.info("Starting historical exchange rate data update from INE...")
-        
-        # Execute the historical data update
+        logger.info("Starting historical exchange rate data update from INE (synchronous endpoint)...")
         success, message, total_records = exchange_rate_excel_processor.refresh_data(db)
-        
         if success:
-            # Get statistics after the update
             service = ExchangeRateService(db)
             total_db_records = service.get_total_records()
             min_date, max_date = service.get_date_range_available()
-            
             return ExchangeRateResponse(
                 success=True,
                 message=message,
@@ -874,20 +949,102 @@ async def refresh_exchange_rate_historical_data(db: Session = Depends(get_db)):
                     }
                 }
             ).dict()
-        else:
-            return ExchangeRateResponse(
-                success=False,
-                message=message,
-                data=None
-            ).dict()
-    
+        return ExchangeRateResponse(success=False, message=message, data=None).dict()
     except Exception as e:
         logger.error(f"Error refreshing historical exchange rate data: {e}")
-        return ExchangeRateResponse(
-            success=False,
-            message=f"Internal error: {str(e)}",
-            data=None
-        ).dict()
+        return ExchangeRateResponse(success=False, message=f"Internal error: {str(e)}", data=None).dict()
+
+
+# -----------------------------------------------------------------------------
+# ASYNC JOB VERSION (202 Accepted + polling)
+# -----------------------------------------------------------------------------
+ASYNC_JOB_TYPE_EXCHANGE_REFRESH = "exchange_rate_refresh"
+
+def _run_exchange_refresh_job(job_id: str):  # runs in background thread
+    """Internal function executed in background to perform the heavy refresh and update job metadata."""
+    job_manager.mark_running(job_id)
+    # New DB session (cannot reuse dependency outside request context)
+    from database import SessionLocal
+    db_local = SessionLocal()
+    try:
+        logger.info(f"[Job {job_id}] Running exchange historical refresh")
+        success, message, total_records = exchange_rate_excel_processor.refresh_data(db_local)
+        if success:
+            service = ExchangeRateService(db_local)
+            total_db_records = service.get_total_records()
+            min_date, max_date = service.get_date_range_available()
+            result_summary = {
+                "total_records": total_records,
+                "total_db_records": total_db_records,
+                "date_range": {
+                    "min_date": min_date.isoformat() if min_date else None,
+                    "max_date": max_date.isoformat() if max_date else None
+                }
+            }
+            job_manager.mark_success(job_id, message, result_summary)
+            logger.info(f"[Job {job_id}] Completed successfully")
+        else:
+            job_manager.mark_error(job_id, message or "Unknown failure")
+            logger.warning(f"[Job {job_id}] Failed: {message}")
+    except Exception as e:  # noqa: BLE001
+        logger.error(f"[Job {job_id}] Exception: {e}")
+        job_manager.mark_error(job_id, f"Exception: {e}")
+    finally:
+        db_local.close()
+
+
+@app.post("/api/exchange-rate/refresh-async", status_code=202, tags=["💱 Cotizaciones de Monedas"], summary="Iniciar actualización histórica (asíncrona)")
+async def start_exchange_rate_refresh_async(background_tasks: BackgroundTasks):
+    """Inicia la actualización histórica de cotizaciones en background.
+
+    Respuesta inmediata (202 Accepted) con un job_id para consultar estado.
+    Si ya existe un job en curso para este tipo, se devuelve ese job en lugar de crear otro.
+    """
+    # Avoid parallel duplicate jobs
+    existing = job_manager.find_running_job(ASYNC_JOB_TYPE_EXCHANGE_REFRESH)
+    if existing:
+        job = job_manager.get(existing)
+        return JSONResponse(status_code=202, content={
+            "job_id": existing,
+            "status": job["status"],
+            "message": "Job already running",
+            "type": job["type"],
+        })
+
+    job_id = job_manager.create_job(ASYNC_JOB_TYPE_EXCHANGE_REFRESH)
+    background_tasks.add_task(_run_exchange_refresh_job, job_id)
+    return {"job_id": job_id, "status": JobStatus.PENDING, "message": "Job accepted", "type": ASYNC_JOB_TYPE_EXCHANGE_REFRESH}
+
+
+@app.get("/api/jobs/{job_id}", tags=["💱 Cotizaciones de Monedas"], summary="Estado de un job")
+async def get_job_status(job_id: str):
+    job = job_manager.get(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    # Provide ISO timestamps if present
+    def _ts(ts):
+        return None if ts is None else datetime.utcfromtimestamp(ts).isoformat() + "Z"
+    job_out = dict(job)
+    for fld in ("created_at", "started_at", "finished_at"):
+        job_out[fld] = _ts(job_out[fld])
+    return job_out
+
+
+@app.get("/api/jobs", tags=["💱 Cotizaciones de Monedas"], summary="Listado de jobs (debug)")
+async def list_jobs():
+    # WARNING: In-memory only; suitable for development/testing
+    ids = []
+    # Access internal structure safely
+    for job_id in list(job_manager._jobs.keys()):  # type: ignore[attr-defined]
+        job = job_manager.get(job_id)
+        if job:
+            ids.append({"job_id": job_id, "type": job["type"], "status": job["status"]})
+    return {"jobs": ids}
+
+
+@app.get("/api/exchange-rate/refresh-status/{job_id}", tags=["💱 Cotizaciones de Monedas"], summary="Alias estado refresh histórico")
+async def get_exchange_refresh_status(job_id: str):
+    return await get_job_status(job_id)
 
 
 @app.get("/api/exchange-rate/current", tags=["💱 Cotizaciones de Monedas"])

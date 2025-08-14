@@ -200,25 +200,56 @@ function App() {
   // Intento de bootstrap inicial si la base está vacía
   const attemptInitialExchangeBootstrap = async () => {
     initialExchangeFetchAttemptedRef.current = true;
-    showInfo(t('exchange.initial_bootstrap_loading') || 'Cargando cotizaciones iniciales desde el BCU...');
+    showInfo(t('exchange.initial_bootstrap_loading') || 'Cargando cotizaciones iniciales (job asíncrono)...');
     try {
-      // refresh sin sample data (datos reales)
-      const response = await exchangeService.refresh(false);
-      if (response?.success) {
-        const successMessage = translateBackendMessage(response.message) || t('common.exchange_refresh_success') || 'Cotizaciones actualizadas correctamente';
-        showSuccess(successMessage);
-        // Volvemos a cargar latest pero evitando bucle de reinicio
-        await loadLatestExchange({ skipAutoInit: true });
+      const jobStart = await exchangeService.startAsyncHistoricalRefresh();
+      if (jobStart?.job_id) {
+        await pollExchangeJob(jobStart.job_id, {
+          successToast: true,
+          autoReload: true,
+        });
       } else {
-        const errorMessage = response?.message || t('errors.exchange_refresh_failed') || 'Error al actualizar las cotizaciones';
-        setExchangeError(errorMessage);
-        showError(errorMessage);
+        showError(t('errors.exchange_refresh_failed') || 'No se pudo iniciar el job de actualización');
       }
     } catch (err) {
-      console.error('Error en bootstrap inicial de cotizaciones:', err);
-      const errorMessage = t('errors.exchange_refresh_failed') || 'Error al obtener cotizaciones iniciales';
+      console.error('Error en bootstrap inicial de cotizaciones (async):', err);
+      const errorMessage = t('errors.exchange_refresh_failed') || 'Error al iniciar job de cotizaciones';
       setExchangeError(errorMessage);
       showError(errorMessage);
+    }
+  };
+
+  // Polling de job de refresh histórico
+  const pollExchangeJob = async (jobId, options = {}) => {
+    const { intervalMs = 4000, timeoutMs = 180000, successToast = false, autoReload = false } = options;
+    const start = Date.now();
+    let statusData = null;
+    try {
+      while (true) {
+        statusData = await exchangeService.getJobStatus(jobId);
+        if (!statusData || !statusData.status) break;
+        if (['success', 'error'].includes(statusData.status)) break;
+        if (Date.now() - start > timeoutMs) {
+          showError(t('errors.exchange_refresh_timeout') || 'Timeout esperando finalización de la actualización');
+          return;
+        }
+        await new Promise(r => setTimeout(r, intervalMs));
+      }
+      if (statusData?.status === 'success') {
+        if (successToast) {
+          const msg = translateBackendMessage(statusData.message) || t('common.exchange_refresh_success') || 'Actualización completada';
+          showSuccess(msg);
+        }
+        if (autoReload) {
+          await loadLatestExchange({ skipAutoInit: true });
+        }
+      } else if (statusData?.status === 'error') {
+        const msg = statusData?.error || statusData?.message || t('errors.exchange_refresh_failed') || 'Error en actualización';
+        showError(msg);
+      }
+    } catch (err) {
+      console.error('Error en polling de job de cotizaciones:', err);
+      showError(t('errors.exchange_refresh_failed') || 'Fallo durante el monitoreo de actualización');
     }
   };
 
@@ -250,21 +281,13 @@ function App() {
           showError(errorMessage);
         }
       } else if (activeTab === 'exchange') {
-        // Usar siempre datos reales (sin sample)
-        const response = await exchangeService.refresh(false);
-        
-        if (response.success) {
-          // Show success message
-          setExchangeError(null);
-          const successMessage = translateBackendMessage(response.message) || t('common.exchange_refresh_success') || t('bcu.updated') || 'Cotizaciones BCU actualizadas';
-          showSuccess(successMessage);
-          
-          // Load updated latest exchange rates
-          await loadLatestExchange();
+        // Iniciar job async y monitorear
+        const job = await exchangeService.startAsyncHistoricalRefresh();
+        if (job?.job_id) {
+          showInfo(t('exchange.refresh_started') || 'Actualización iniciada...');
+          await pollExchangeJob(job.job_id, { successToast: true, autoReload: true });
         } else {
-          const errorMessage = response.message || t('errors.exchange_refresh_failed') || 'Error al actualizar las cotizaciones';
-          setExchangeError(errorMessage);
-          showError(errorMessage);
+          showError(t('errors.exchange_refresh_failed') || 'No se pudo iniciar la actualización');
         }
       }
       // UI refresh is now handled internally by UIPanel component

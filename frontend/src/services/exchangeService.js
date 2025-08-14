@@ -119,9 +119,25 @@ const exchangeService = {
 
   // Actualizar datos desde el BCU
   refresh: async (useSampleData = false) => {
+    // Mantener endpoint síncrono legado (podría retirarse en el futuro)
     const params = useSampleData ? { use_sample_data: true } : {};
-    return makeRequest((apiInstance) => 
+    return makeRequest((apiInstance) =>
       apiInstance.post('/exchange-rate/refresh', {}, { params })
+    );
+  },
+
+  // Iniciar refresh histórico asíncrono (202 Accepted)
+  startAsyncHistoricalRefresh: async () => {
+    return makeRequest((apiInstance) => 
+      apiInstance.post('/exchange-rate/refresh-async')
+    );
+  },
+
+  // Obtener estado de un job
+  getJobStatus: async (jobId) => {
+    if (!jobId) throw new Error('jobId requerido');
+    return makeRequest((apiInstance) => 
+      apiInstance.get(`/jobs/${jobId}`)
     );
   },
 
