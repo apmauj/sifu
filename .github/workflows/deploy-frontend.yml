@@ -27,6 +27,25 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Resolve API URL (secret/vars)
+        id: resolve_api
+        run: |
+          API_URL="${{ secrets.VITE_PUBLIC_API_URL }}"
+          if [ -z "$API_URL" ]; then
+            API_URL="${{ vars.VITE_PUBLIC_API_URL }}"
+          fi
+          if [ -z "$API_URL" ]; then
+            echo "ERROR: VITE_PUBLIC_API_URL no definido (ni secret ni repo var)." >> $GITHUB_STEP_SUMMARY
+            exit 1
+          fi
+          # Normalizar: quitar /api o slash final y re-anexar /api
+            API_URL=$(echo "$API_URL" | sed -E 's#(/api)?/?$##')
+          API_URL="$API_URL/api"
+          host=$(echo "$API_URL" | sed -E 's#https?://([^/]+)/?.*#\1#')
+          echo "API host: $host" >> $GITHUB_STEP_SUMMARY
+          # No mostramos la URL completa por seguridad; sólo longitud
+          echo "API URL length: ${#API_URL}" >> $GITHUB_STEP_SUMMARY
+          echo "VITE_PUBLIC_API_URL=$API_URL" >> $GITHUB_ENV
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -35,32 +54,17 @@ jobs:
           cache: 'npm'
           cache-dependency-path: 'frontend/package.json'
 
-      - name: Debug VITE_PUBLIC_API_URL presence
-        run: |
-          if [ -n "${{ secrets.VITE_PUBLIC_API_URL }}" ]; then
-            echo "VITE_PUBLIC_API_URL secret está definido (length=${#VITE_PUBLIC_API_URL})" >> $GITHUB_STEP_SUMMARY
-            host=$(echo "${{ secrets.VITE_PUBLIC_API_URL }}" | sed -E 's#https?://([^/]+)/?.*#\1#')
-            echo "Dominio detectado: $host" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "VITE_PUBLIC_API_URL NO está definido" >> $GITHUB_STEP_SUMMARY
-          fi
-
       - name: Install deps
         run: npm ci
 
       - name: Build
         env:
           NODE_ENV: production
-          # URL del backend público (secret preferido; fallback a variable de repo si existe)
-          VITE_PUBLIC_API_URL: ${{ secrets.VITE_PUBLIC_API_URL || vars.VITE_PUBLIC_API_URL }}
         run: npm run build --silent
 
-      - name: Fail if VITE_PUBLIC_API_URL still undefined
+      - name: Post-build summary
         run: |
-          if [ -z "$VITE_PUBLIC_API_URL" ]; then
-            echo "ERROR: VITE_PUBLIC_API_URL no definido (ni secret ni variable)." >&2
-            exit 1
-          fi
+          echo "Post-build VITE_PUBLIC_API_URL length: ${#VITE_PUBLIC_API_URL}" >> $GITHUB_STEP_SUMMARY
 
       - name: Prepare SPA 404 redirect
         run: cp dist/index.html dist/404.html
