@@ -219,7 +219,9 @@
     "no_supported_currencies": "No hay monedas soportadas",
     "no_supported_currencies_description": "Los datos contienen monedas que no están en nuestra lista de monedas soportadas.",
     "supported_currencies_list": "Monedas soportadas",
-    "currencies": {
+  "initial_bootstrap_loading": "Cargando cotizaciones iniciales (proceso en background)...",
+  "refresh_started": "Actualización de cotizaciones iniciada...",
+  "currencies": {
       "USD": "Dólar USA",
       "EUR": "Euro",
       "ARS": "Peso Arg.",
@@ -301,6 +303,7 @@
     "exchange_load_failed": "No se pudo cargar las cotizaciones",
     "refresh_failed": "Error al actualizar los datos. Por favor, intenta nuevamente.",
     "ur_refresh_failed": "Error al actualizar los datos de UR. Por favor, intenta nuevamente.",
-    "exchange_refresh_failed": "Error al actualizar las cotizaciones. Por favor, intenta nuevamente."
+  "exchange_refresh_failed": "Error al actualizar las cotizaciones. Por favor, intenta nuevamente.",
+  "exchange_refresh_timeout": "Timeout esperando finalización de la actualización de cotizaciones"
   }
 }

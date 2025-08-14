@@ -210,7 +210,9 @@
     "no_supported_currencies": "No supported currencies",
     "no_supported_currencies_description": "The data contains currencies that are not in our supported currencies list.",
     "supported_currencies_list": "Supported currencies",
-    "currencies": {
+  "initial_bootstrap_loading": "Loading initial exchange rates (background job)...",
+  "refresh_started": "Exchange rates update started...",
+  "currencies": {
       "USD": "US Dollar",
       "EUR": "Euro",
       "ARS": "Argentine Peso",
@@ -296,6 +298,7 @@
     "exchange_load_failed": "Could not load exchange rates",
     "refresh_failed": "Error updating data. Please try again.",
     "ur_refresh_failed": "Error updating UR data. Please try again.",
-    "exchange_refresh_failed": "Error updating exchange rates. Please try again."
+  "exchange_refresh_failed": "Error updating exchange rates. Please try again.",
+  "exchange_refresh_timeout": "Timeout waiting for exchange rates update to finish"
   }
 }

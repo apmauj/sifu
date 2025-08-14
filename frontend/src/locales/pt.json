@@ -210,7 +210,9 @@
     "no_supported_currencies": "Nenhuma moeda suportada",
     "no_supported_currencies_description": "Os dados contêm moedas que não estão em nossa lista de moedas suportadas.",
     "supported_currencies_list": "Moedas suportadas",
-    "currencies": {
+  "initial_bootstrap_loading": "Carregando cotações iniciais (job em background)...",
+  "refresh_started": "Atualização de cotações iniciada...",
+  "currencies": {
       "USD": "Dólar USA",
       "EUR": "Euro",
       "ARS": "Peso Argentino",
@@ -296,6 +298,7 @@
     "exchange_load_failed": "Não foi possível carregar as cotações",
     "refresh_failed": "Erro ao atualizar dados. Tente novamente.",
     "ur_refresh_failed": "Erro ao atualizar dados de UR. Tente novamente.",
-    "exchange_refresh_failed": "Erro ao atualizar cotações. Tente novamente."
+  "exchange_refresh_failed": "Erro ao atualizar cotações. Tente novamente.",
+  "exchange_refresh_timeout": "Tempo excedido aguardando a atualização das cotações"
   }
 }
