@@ -51,9 +51,16 @@ jobs:
       - name: Build
         env:
           NODE_ENV: production
-          # Opcional: define la URL del backend público (FastAPI) si no usas /sifu/api
-          VITE_PUBLIC_API_URL: ${{ secrets.VITE_PUBLIC_API_URL }}
+          # URL del backend público (secret preferido; fallback a variable de repo si existe)
+          VITE_PUBLIC_API_URL: ${{ secrets.VITE_PUBLIC_API_URL || vars.VITE_PUBLIC_API_URL }}
         run: npm run build --silent
+
+      - name: Fail if VITE_PUBLIC_API_URL still undefined
+        run: |
+          if [ -z "$VITE_PUBLIC_API_URL" ]; then
+            echo "ERROR: VITE_PUBLIC_API_URL no definido (ni secret ni variable)." >&2
+            exit 1
+          fi
 
       - name: Prepare SPA 404 redirect
         run: cp dist/index.html dist/404.html
