@@ -11,6 +11,15 @@ const isDevelopment = import.meta.env.DEV;
  * @returns {string} URL base para las API calls
  */
 export const getApiBaseUrl = () => {
+  // 0) Override manual para debugging: ?api=https://host.tld/api
+  try {
+    if (typeof window !== 'undefined') {
+      const p = new URLSearchParams(window.location.search).get('api')
+      if (p) {
+        return decodeURIComponent(p)
+      }
+    }
+  } catch (_) { /* ignore */ }
   // 1) Si se define una URL pública para producción, usarla (ideal para GitHub Pages)
   if (import.meta.env.VITE_PUBLIC_API_URL) {
     return import.meta.env.VITE_PUBLIC_API_URL;
