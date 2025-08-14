@@ -52,9 +52,9 @@
     "description": "Query historical UI values from the National Institute of Statistics of Uruguay",
     "search_title": "Query UI Value",
     "search_placeholder": "Enter a date (DD/MM/YYYY)",
-    "search_button": "Query UI",
-    "specific_date": "Specific date",
-    "date_range": "Date range",
+  "search_button": "Query UI",
+  "specific_date": "Specific date",
+  "date_range": "Date range",
     "start_date": "Start date",
     "end_date": "End date",
     "select_date": "Select a date",
@@ -239,14 +239,17 @@
       "EUR": "Euro",
       "ARS": "Argentine Peso",
       "BRL": "Brazilian Real"
-    }
+  },
+  "updated": "BROU data updated"
   },
   "bcu": {
     "title": "BCU Exchange Rates",
     "loading": "Loading exchange rates...",
-    "error": "Connection error",
-    "retry": "Retry",
-    "source": "BCU"
+  "error": "Connection error",
+  "retry": "Retry",
+  "source": "BCU",
+  "updated": "BCU exchange rates updated",
+  "error_loading": "Error getting current exchange rates"
   },
   "backend_messages": {
     "ui_value_retrieved": "UI value for {date} retrieved successfully",

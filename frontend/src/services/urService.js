@@ -32,15 +32,11 @@ api.interceptors.response.use(
 // Función auxiliar para hacer requests con fallback
 const makeRequest = async (requestFn) => {
   try {
-    console.log('Trying proxy connection...');
     const response = await requestFn(api);
-    console.log('Proxy request successful');
     return response.data;
   } catch (proxyError) {
-    console.log('Proxy failed, trying direct connection...');
     try {
       const response = await requestFn(directApi);
-      console.log('Direct request successful');
       return response.data;
     } catch (directError) {
       console.error('Both proxy and direct requests failed');

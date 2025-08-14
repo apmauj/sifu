@@ -584,22 +584,26 @@ class ExchangeRateExcelProcessor:
         """Save exchange rate records to database"""
         try:
             saved_count = 0
-            
+            seen: set[tuple[date, str]] = set()
+
             for record_date, currency, buy_rate, sell_rate, average_rate in records:
-                # Filter only supported currencies
+                # Skip unsupported
                 if currency not in SUPPORTED_CURRENCIES:
-                    logger.debug(f"Skipping unsupported currency: {currency}")
                     continue
-                # Check if already exists
+                key = (record_date, currency)
+                if key in seen:
+                    # Avoid intra-batch duplicates that would trigger UNIQUE constraint
+                    continue
+                seen.add(key)
+
                 existing = db.query(ExchangeRateRecord).filter(
                     ExchangeRateRecord.date == record_date,
                     ExchangeRateRecord.currency == currency
                 ).first()
-                
+
                 if existing:
-                    # Update if rates changed
-                    if (existing.buy_rate != buy_rate or 
-                        existing.sell_rate != sell_rate or 
+                    if (existing.buy_rate != buy_rate or
+                        existing.sell_rate != sell_rate or
                         existing.average_rate != average_rate):
                         existing.buy_rate = buy_rate
                         existing.sell_rate = sell_rate
@@ -607,26 +611,24 @@ class ExchangeRateExcelProcessor:
                         existing.updated_at = datetime.utcnow()
                         saved_count += 1
                 else:
-                    # Create new record
-                    new_record = ExchangeRateRecord(
+                    db.add(ExchangeRateRecord(
                         date=record_date,
                         currency=currency,
                         buy_rate=buy_rate,
                         sell_rate=sell_rate,
                         average_rate=average_rate,
                         arbitrage="INE"
-                    )
-                    db.add(new_record)
+                    ))
                     saved_count += 1
-            
+
             db.commit()
-            logger.info(f"Saved/updated {saved_count} exchange rate records")
+            logger.info(f"Saved/updated {saved_count} exchange rate records (unique batch size={len(seen)})")
             return saved_count
             
         except Exception as e:
             logger.error(f"Error saving exchange rates to database: {e}")
             db.rollback()
-            return 0
+            return -1  # sentinel for failure
 
     def refresh_data(self, db: Session) -> Tuple[bool, str, int]:
         """Update historical exchange rate data by downloading and processing the INE Excel"""
@@ -641,13 +643,18 @@ class ExchangeRateExcelProcessor:
             if not records:
                 return False, "Could not extract valid exchange rate data from file", 0
             
-            # Save to database
+            existing_before = db.query(ExchangeRateRecord).count()
             saved_count = self.save_to_database(db, records)
-            
+
+            if saved_count == -1:
+                return False, "Failed to persist exchange rate data", 0
             if saved_count > 0:
                 return True, f"Exchange rate data updated successfully. {saved_count} records processed", saved_count
-            else:
-                return True, "No changes in exchange rate data", 0
+            # saved_count == 0
+            if existing_before == 0:
+                # We parsed records but could not save new ones; treat as failure
+                return False, "Parsed data but no records saved (possible duplicate/constraint issue)", 0
+            return True, "No changes in exchange rate data", 0
                 
         except Exception as e:
             logger.error(f"Error in exchange rate refresh_data: {e}")

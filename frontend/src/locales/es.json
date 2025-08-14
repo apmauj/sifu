@@ -56,9 +56,9 @@
     "description": "Consulta valores históricos de UI del Instituto Nacional de Estadística de Uruguay",
     "search_title": "Consultar Valor de UI",
     "search_placeholder": "Ingresa una fecha (DD/MM/AAAA)",
-    "search_button": "Consultar UI",
-    "specific_date": "Fecha específica",
-    "date_range": "Rango de fechas",
+  "search_button": "Consultar UI",
+  "specific_date": "Fecha específica",
+  "date_range": "Rango de fechas",
     "start_date": "Fecha inicio",
     "end_date": "Fecha fin",
     "select_date": "Selecciona una fecha",
@@ -248,14 +248,17 @@
       "EUR": "Euro",
       "ARS": "Peso Arg.",
       "BRL": "Real"
-    }
+  },
+  "updated": "Datos BROU actualizados"
   },
   "bcu": {
     "title": "Cotizaciones BCU",
     "loading": "Cargando cotizaciones...",
-    "error": "Error de conexión",
-    "retry": "Reintentar",
-    "source": "BCU"
+  "error": "Error de conexión",
+  "retry": "Reintentar",
+  "source": "BCU",
+  "updated": "Cotizaciones BCU actualizadas",
+  "error_loading": "Error obteniendo cotizaciones actuales"
   },
   "backend_messages": {
     "ui_value_retrieved": "Valor de UI para {date} obtenido exitosamente",
