@@ -193,3 +193,75 @@ El frontend se publica automáticamente en GitHub Pages en cada push a `master` 
 Por qué no corre el backend en Pages: GitHub Pages solo sirve archivos estáticos. El backend (FastAPI/Python) debe hospedarse aparte y exponerse por HTTPS. Luego el frontend se construye con `VITE_PUBLIC_API_URL` apuntando a `https://TU-BACKEND/api`.
 
 Guía: ver `docs/DEPLOY_BACKEND.md` para opciones rápidas (Render, VPS con Docker Compose o túnel temporal).
+
+#### Conectar el frontend de GitHub Pages a un backend local (desde tu PC)
+
+Si querés que la versión publicada en GitHub Pages (`https://apmauj.github.io/sifu/`) use **tu backend corriendo en esta PC**, necesitás exponer temporalmente el puerto 8000 a Internet mediante un túnel seguro y luego reconstruir el frontend indicando esa URL pública.
+
+Pasos rápidos:
+
+1. Iniciar backend local con CORS correcto (opcional porque por defecto es `*`):
+	```powershell
+	# (Dentro del repo raíz)
+	python -m venv .venv
+	.\.venv\Scripts\Activate.ps1
+	pip install -r requirements.txt
+	# (Opcional) Limitar orígenes permitidos solo a GitHub Pages
+	$env:ALLOW_ORIGINS="https://apmauj.github.io"
+	uvicorn main:app --host 0.0.0.0 --port 8000
+	```
+
+2. Crear un túnel público (elige uno):
+	- **ngrok**:
+	  ```powershell
+	  # Instalar si no lo tenés (https://ngrok.com/download) y luego:
+	  ngrok http 8000
+	  ```
+	  Te dará una URL como `https://abcd-1234.ngrok-free.app`.
+	- **Cloudflare Tunnel (cloudflared)**:
+	  ```powershell
+	  cloudflared tunnel --url http://localhost:8000
+	  ```
+	  Obtendrás una URL `https://<algo>.trycloudflare.com`.
+
+3. Probar la URL del túnel: abrí `https://TU-TUNEL/api/health` en el navegador; deberías ver `{ "status": "ok", ... }`.
+
+4. Configurar el frontend para usarla: en GitHub repositorio → Settings → Secrets and variables → Actions → New repository secret:
+	- Name: `VITE_PUBLIC_API_URL`
+	- Value: `https://TU-TUNEL/api`
+
+5. Forzar un redeploy del frontend: hacé un commit mínimo (por ejemplo actualizar este README) o re‑ejecutá el workflow `Deploy Frontend to GitHub Pages`.
+
+6. Una vez publicado nuevamente, abrí `https://apmauj.github.io/sifu/` y verificá en la consola de red del navegador que las requests van a tu dominio del túnel (`/api/...`).
+
+Notas importantes:
+- Cada vez que reinicies el túnel, la URL cambia (salvo cuenta paga); deberás actualizar el secret y redeploy.
+- No uses esto para producción real; es solo para demostraciones o debugging rápido.
+- Alternativa sin rebuild: levantar localmente el frontend (`npm run dev`) y abrirlo en tu máquina; esa versión puede apuntar directamente a `http://localhost:8000/api` via proxy ya configurado en `vite.config.js`.
+ - Script auxiliar: `./run_tunnel_backend.ps1 -TunnelProvider ngrok -UpdateSecret -TriggerDeploy` automatiza backend + túnel + secret + redeploy.
+
+#### Modo totalmente Docker (backend + túnel sin scripts locales)
+
+Si preferís no instalar ngrok/cloudflared ni correr Python directamente en tu host:
+
+1. Usá el nuevo archivo `docker-compose.tunnel.yml`:
+	```powershell
+	docker compose -f docker-compose.tunnel.yml up -d --build
+	```
+2. Ver logs del túnel (cloudflared por defecto) para obtener la URL pública:
+	```powershell
+	docker logs -f sifu-tunnel | Select-String trycloudflare
+	```
+	Verás una línea con `https://<algo>.trycloudflare.com`.
+3. Probar health:
+	```powershell
+	curl https://<algo>.trycloudflare.com/api/health
+	```
+4. Actualizar el secret `VITE_PUBLIC_API_URL` en GitHub con `https://<algo>.trycloudflare.com/api` y redeploy del frontend.
+5. Cuando cambie la URL (reinicio del túnel), repetir solo pasos 2–4.
+
+Notas:
+- Alternativa ngrok: descomentá el servicio `ngrok` en `docker-compose.tunnel.yml`, definí `NGROK_AUTHTOKEN` en un `.env` y comentá el servicio `tunnel` de cloudflared.
+- Para producción real preferí un dominio propio + reverse proxy (ver `docker-compose.gateway.yml`).
+- Podés ajustar CORS cambiando `ALLOW_ORIGINS` en el servicio `backend`.
+
