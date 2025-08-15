@@ -2,6 +2,7 @@
 
 [![Deploy Frontend](https://github.com/apmauj/sifu/actions/workflows/deploy-frontend.yml/badge.svg)](https://github.com/apmauj/sifu/actions/workflows/deploy-frontend.yml)
 [![Backend CI](https://github.com/apmauj/sifu/actions/workflows/ci-backend.yml/badge.svg)](https://github.com/apmauj/sifu/actions/workflows/ci-backend.yml)
+[![Publish Backend Image](https://github.com/apmauj/sifu/actions/workflows/publish-backend-image.yml/badge.svg)](https://github.com/apmauj/sifu/actions/workflows/publish-backend-image.yml)
 
 Sistema web para consulta de índices financieros y tasas de cambio en Uruguay.
 
@@ -159,6 +160,7 @@ npm test
 
 - Workflow Backend CI: ejecuta pytest y `scripts/check_messages.py` en cada push/PR.
 - Workflow Deploy Frontend: build + deploy a GitHub Pages con API URL normalizada.
+- Workflow Publish Backend Image: construye y publica imagen Docker (tags latest, fecha y SHA) en Docker Hub.
 - Mensajes y tags centralizados en `constants.py` para respuestas homogéneas.
 - Script de control de duplicados: `python scripts/check_messages.py` (añade exit code 1 si encuentra repeticiones).
 
