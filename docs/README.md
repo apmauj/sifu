@@ -144,6 +144,10 @@ open http://localhost:8000/api/docs
 - [x] Base de datos optimizada
 - [x] Documentación completa
 - [x] Testing de servicios
+- [x] Migración lifecycle FastAPI a `lifespan`
+- [x] Centralización de mensajes y tags en constantes
+- [x] Script de verificación de mensajes repetidos
+- [x] Suite completa de pruebas verde (231 tests)
 
 ### 🚧 **En Desarrollo**
 - [ ] Frontend React (próximo)
@@ -179,5 +183,7 @@ open http://localhost:8000/api/docs
 ---
 
 **📚 Última actualización de documentación: 2025-06-16**
+\
+Actualizado roadmap y estado técnico: 2025-08-15
 
 Esta documentación refleja el estado actual del proyecto y se mantiene actualizada con cada cambio significativo en la arquitectura o funcionalidad. 

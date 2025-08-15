@@ -259,12 +259,22 @@ Query Optimization:
 
 ## 🔮 Roadmap Técnico
 
+### 🆕 Fase 0: Backend Quality & Refactors (Completado 2025-08-15)
+- [x] Migración de eventos `@app.on_event` a `lifespan` context (compatibilidad mantenida)
+- [x] Estandarización de mensajes de respuesta en `constants.py`
+- [x] Reemplazo de literales repetidos (UR/UI/Exchange) por constantes
+- [x] Incorporación de tags de OpenAPI como constantes (`TAG_UI`, `TAG_UR`, `TAG_EXCHANGE`)
+- [x] Script estático `scripts/check_messages.py` para detectar mensajes hard-coded repetidos
+- [x] Normalización de mensajes de validación de mes (singular) y ajuste de tests
+- [x] Suite completa verde (231 tests) tras refactors
+
 ### **Fase 1: Frontend Development** (Próxima)
 - [ ] React application setup
-- [ ] Component architecture
-- [ ] State management
-- [ ] Responsive design
-- [ ] API integration
+- [ ] Component architecture base (layout + routing)
+- [ ] State management (Context + hooks iniciales)
+- [ ] Responsive design (Tailwind baseline)
+- [ ] API integration (módulo fetch tipado)
+- [ ] Visualización inicial de UI / UR / Exchange
 
 ### **Fase 2: Enhanced Features**
 - [ ] Real-time data updates
@@ -306,6 +316,8 @@ Query Optimization:
 - ✅ **Type Safety**: Pydantic models everywhere
 - ✅ **Easy Testing**: Comprehensive test suite
 - ✅ **Clear Structure**: Intuitive project organization
+- ✅ **Static Quality Tooling**: Detección de mensajes repetidos
+- ✅ **Centralización de Mensajes**: Respuestas homogéneas vía constantes
 
 ## 🔍 Análisis de Complejidad
 
@@ -343,11 +355,11 @@ Error Handling         Alta           Múltiples puntos de falla
 - ✅ Error handling consistente
 
 ### **Próximos Pasos Recomendados**
-1. **Iniciar desarrollo del frontend** con React
-2. **Implementar módulos progresivamente** (UI → UR → Exchange)
-3. **Integrar visualizaciones** con Recharts
-4. **Optimizar UX/UI** para usuarios uruguayos
-5. **Implementar testing** para componentes frontend
+1. **Iniciar desarrollo del frontend** (estructura base + routing)
+2. **Publicar primera vista UI (read-only)** consumiendo endpoints existentes
+3. **Integrar visualizaciones simples** (línea UI, barras UR, multi-series Exchange)
+4. **Definir contrato de theming y componentes reutilizables**
+5. **Configurar pipeline de calidad frontend** (lint, type-check, tests básicos)
 
 ---
 
