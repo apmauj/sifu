@@ -1,17 +1,19 @@
 services:
   # Backend - FastAPI
   backend:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    # Usar imagen publicada (CI) en lugar de build local para producción
+    image: apmauj/sifu-backend:latest
+    # build:
+    #   context: .
+    #   dockerfile: Dockerfile
     container_name: sifu-backend
     ports:
       - "8000:8000"
     volumes:
       # Volumen para persistir la base de datos
       - ./data:/app/data
-      # Volumen para desarrollo (opcional, comentar en producción)
-      - .:/app
+      # (Comentado) Montar el código fuente anula la imagen. Mantener desactivado en prod.
+      # - .:/app
     environment:
       PYTHONPATH: /app
       PYTHONUNBUFFERED: "1"
