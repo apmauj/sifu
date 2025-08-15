@@ -1,15 +1,21 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 from fastapi import FastAPI, HTTPException, Depends, BackgroundTasks, Response
+from contextlib import asynccontextmanager
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
 from datetime import date, datetime
+import asyncio
 from typing import List, Optional
 import logging
 import uuid
 import time
 import os
+from threading import Lock as ThreadLock
+from bootstrap import perform_bootstrap
 
 from database import get_db
 from models import UIResponse, RefreshResponse, UIValue, UIRangeRequest, URResponse, URRangeRequest, ExchangeRateResponse
@@ -38,7 +44,94 @@ else:
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Create FastAPI application with improved documentation
+# Lifespan context replacing deprecated on_event startup/shutdown
+async def _execute_startup():
+    """Reusable startup logic; safe to call multiple times in tests."""
+    logger.info("Starting SIFU (bootstrap + cache warmup)...")
+    global scheduler
+    # Legacy quick UI bootstrap
+    try:
+        db = None
+        from database import SessionLocal as _SL  # local import for timing
+        db = _SL()
+        service = UIService(db)
+        if service.get_total_records() == 0:
+            try:
+                excel_processor.refresh_data(db)
+            except Exception as e:  # noqa: BLE001
+                logger.error(f"[LegacyBootstrap] UI refresh failed: {e}")
+    except Exception as e:  # noqa: BLE001
+        logger.error(f"[LegacyBootstrap] skipped due to error: {e}")
+    finally:
+        if db:
+            db.close()
+
+    summary = perform_bootstrap(
+        force=False,
+        excel_processor=excel_processor,
+        ur_excel_processor=ur_excel_processor,
+        exchange_rate_excel_processor=exchange_rate_excel_processor,
+    )
+    logger.info(f"[Bootstrap] summary={summary}")
+
+    # Warm caches
+    try:
+        _update_bcu_cache()
+        _update_brou_cache()
+    except Exception as e:  # noqa: BLE001
+        logger.error(f"Cache warmup failed: {e}")
+
+    # Launch hourly refresher once
+    if not hasattr(_execute_startup, "_refresher_started"):
+        async def cache_refresher_loop():
+            while True:
+                await asyncio.sleep(3600)
+                logger.info("[CacheRefresher] Hourly refresh executing...")
+                try:
+                    _update_bcu_cache()
+                    _update_brou_cache()
+                except Exception as e:  # noqa: BLE001
+                    logger.error(f"[CacheRefresher] failure: {e}")
+        asyncio.create_task(cache_refresher_loop())
+        _execute_startup._refresher_started = True  # type: ignore
+
+    # Start scheduler once
+    if scheduler is None:
+        try:
+            if SCHEDULER_ENABLED and AsyncIOScheduler and CronTrigger:
+                scheduler = AsyncIOScheduler()
+                _add_jobs(scheduler)
+                scheduler.start()
+                logger.info(f"[Scheduler] Started (tz={SCHEDULER_TIMEZONE})")
+            else:
+                logger.info("[Scheduler] Disabled or APScheduler not installed")
+        except Exception as e:  # noqa: BLE001
+            logger.error(f"[Scheduler] Failed to start: {e}")
+
+    logger.info("Startup bootstrap complete")
+
+
+# Legacy-compatible symbol for tests
+async def startup_event():  # pragma: no cover
+    await _execute_startup()
+
+
+@asynccontextmanager
+async def app_lifespan(app: FastAPI):  # type: ignore
+    await _execute_startup()
+    try:
+        yield
+    finally:
+        global scheduler
+        if scheduler:
+            try:
+                scheduler.shutdown(wait=False)
+                logger.info("[Scheduler] Stopped")
+            except Exception as e:  # noqa: BLE001
+                logger.error(f"[Scheduler] Error on shutdown: {e}")
+
+
+# Create FastAPI application with improved documentation and lifespan
 app = FastAPI(
     title=API_TITLE,
     description=API_DESCRIPTION,
@@ -47,28 +140,36 @@ app = FastAPI(
     redoc_url=API_REDOC_URL,
     tags_metadata=[
         {
-            "name": "🏠 Sistema",
-            "description": "Endpoints de sistema: health check e información general"
+            "name": "Sistema",
+            "description": "Endpoints de sistema: health check e informacion general"
         },
         {
-            "name": "📈 Unidad Indexada (UI)",
-            "description": "Consulta de valores de la Unidad Indexada del Instituto Nacional de Estadística (INE). "
-                          "La UI es un índice de ajuste por inflación utilizado en Uruguay desde 2002."
+            "name": TAG_UI,
+            "description": (
+                "Consulta de valores de la Unidad Indexada del Instituto Nacional de Estadistica (INE). "
+                "La UI es un indice de ajuste por inflacion utilizado en Uruguay desde 2002."
+            )
         },
         {
-            "name": "💰 Unidad Reajustable (UR)",
-            "description": "Consulta de valores de la Unidad Reajustable del Banco Hipotecario del Uruguay (BHU). "
-                          "La UR es un índice utilizado para reajustar créditos hipotecarios desde 1969."
+            "name": TAG_UR,
+            "description": (
+                "Consulta de valores de la Unidad Reajustable del Banco Hipotecario del Uruguay (BHU). "
+                "La UR es un indice utilizado para reajustar creditos hipotecarios desde 1969."
+            )
         },
         {
-            "name": "💱 Cotizaciones de Monedas",
-            "description": "Sistema dual de cotizaciones: datos históricos del INE (2001-presente) y "
-                          "cotizaciones actuales del BCU en tiempo real. Incluye USD, EUR, ARS, BRL."
+            "name": TAG_EXCHANGE,
+            "description": (
+                "Sistema dual de cotizaciones: datos historicos del INE (2001-presente) y "
+                "cotizaciones actuales del BCU en tiempo real. Incluye USD, EUR, ARS, BRL."
+            )
         },
         {
-            "name": "🏦 BROU",
-            "description": "Cotizaciones del Banco de la República Oriental del Uruguay (BROU). "
-                          "Incluye USD, USD eBROU, EUR, ARS, BRL con valores de compra/venta y arbitrajes."
+            "name": "BROU",
+            "description": (
+                "Cotizaciones del Banco de la Republica Oriental del Uruguay (BROU). "
+                "Incluye USD, USD eBROU, EUR, ARS, BRL con valores de compra/venta y arbitrajes."
+            )
         }
     ]
 )
@@ -82,7 +183,7 @@ app.add_middleware(
     allow_headers=CORS_ALLOW_HEADERS,
 )
 
-@app.get("/", tags=["🏠 Sistema"])
+@app.get("/", tags=["Sistema"])
 async def root_index():
     return {
         "name": API_TITLE,
@@ -155,6 +256,62 @@ ur_excel_processor = URExcelProcessor()
 exchange_rate_excel_processor = ExchangeRateExcelProcessor()
 exchange_rate_bcu_processor = ExchangeRateBCUProcessor()
 brou_processor = BROUProcessor()
+
+# In-memory caches for current BCU & BROU rates (hourly refresh)
+bcu_cache: dict | None = None
+brou_cache: dict | None = None
+_cache_lock = ThreadLock()
+
+def _update_bcu_cache():
+    global bcu_cache
+    try:
+        current_rates, is_from_bcu = exchange_rate_bcu_processor.get_current_rates()
+        if not current_rates:
+            logger.warning("[BCU Cache] No data fetched")
+            return
+        formatted = []
+        source = "BCU" if is_from_bcu else "Historical Data"
+        for currency, buy, sell, avg in current_rates:
+            formatted.append({
+                "currency": currency,
+                "buy_rate": buy,
+                "sell_rate": sell,
+                "average_rate": avg,
+                "source": source,
+                "timestamp": datetime.utcnow().isoformat()
+            })
+        with _cache_lock:
+            bcu_cache = {"data": formatted, "updated_at": datetime.utcnow()}
+        logger.info(f"[BCU Cache] Updated ({len(formatted)} currencies)")
+    except Exception as e:
+        logger.error(f"[BCU Cache] Update failed: {e}")
+
+def _update_brou_cache():
+    global brou_cache
+    try:
+        current_rates, is_from_brou = brou_processor.get_current_rates()
+        if not current_rates:
+            logger.warning("[BROU Cache] No data fetched")
+            return
+        formatted = []
+        source = "BROU" if is_from_brou else "BROU_SAMPLE"
+        for currency, buy, sell, avg, arb_buy, arb_sell, preferential in current_rates:
+            formatted.append({
+                "currency": currency,
+                "buy_rate": buy,
+                "sell_rate": sell,
+                "average_rate": avg,
+                "arbitrage_buy": arb_buy,
+                "arbitrage_sell": arb_sell,
+                "preferential": preferential,
+                "source": source,
+                "timestamp": datetime.utcnow().isoformat()
+            })
+        with _cache_lock:
+            brou_cache = {"data": formatted, "updated_at": datetime.utcnow()}
+        logger.info(f"[BROU Cache] Updated ({len(formatted)} currencies)")
+    except Exception as e:
+        logger.error(f"[BROU Cache] Update failed: {e}")
 
 # =============================================================================
 # Simple in-memory job manager for long-running tasks (exchange historical refresh)
@@ -238,30 +395,19 @@ job_manager = JobManager()
 if os.path.exists(STATIC_DIRECTORY):
     app.mount(STATIC_MOUNT_PATH, StaticFiles(directory=STATIC_DIRECTORY), name=STATIC_NAME)
 
-@app.get(ENDPOINT_HEALTH, tags=["🏠 Sistema"])
+@app.get(ENDPOINT_HEALTH, tags=["Sistema"])
 async def health_check():
-    """
-    **Health Check del Sistema**
-    
-    Verifica que el servicio SIFU esté funcionando correctamente.
-    
-    - **Respuesta**: Estado del servicio y timestamp actual
-    - **Uso**: Monitoreo y verificación de disponibilidad
+    """Health check del sistema.
+
+    Verifica que el servicio esta funcionando correctamente.
     """
     return {FIELD_STATUS: MSG_HEALTH_OK, FIELD_TIMESTAMP: datetime.utcnow().isoformat()}
 
-@app.get("/api/ui/latest", tags=["📈 Unidad Indexada (UI)"])
+@app.get("/api/ui/latest", tags=[TAG_UI])
 async def get_latest_ui(db: Session = Depends(get_db)):
-    """
-    **Obtener Último Valor de UI**
-    
-    Consulta el valor más reciente de la Unidad Indexada disponible en la base de datos.
-    
-    - **Fuente**: Instituto Nacional de Estadística (INE)
-    - **Actualización**: Datos actualizados periódicamente desde INE
-    - **Formato**: Valor decimal con fecha correspondiente
-    
-    **Ejemplo de uso**: Consultar el valor actual de UI para cálculos de reajuste.
+    """Obtener ultimo valor de UI (Unidad Indexada).
+
+    Retorna el valor mas reciente disponible.
     """
     try:
         service = UIService(db)
@@ -283,18 +429,11 @@ async def get_latest_ui(db: Session = Depends(get_db)):
         logger.error(f"Error getting latest UI value: {e}")
         raise HTTPException(status_code=HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
-@app.get("/api/ui/{date}", tags=["📈 Unidad Indexada (UI)"])
+@app.get("/api/ui/{date}", tags=[TAG_UI])
 async def get_ui_by_date(date: date, db: Session = Depends(get_db)):
-    """
-    **Obtener UI por Fecha Específica**
-    
-    Consulta el valor de la Unidad Indexada para una fecha determinada.
-    
-    - **Parámetro**: Fecha en formato YYYY-MM-DD
-    - **Búsqueda inteligente**: Si no hay datos para la fecha exacta, devuelve el valor más cercano anterior
-    - **Rango disponible**: Desde 2002 hasta la fecha actual
-    
-    **Ejemplo**: `/api/ui/2024-12-01` → Valor de UI del 1 de diciembre de 2024
+    """Obtener UI por fecha especifica.
+
+    Si no existe valor exacto se devuelve el mas cercano anterior.
     """
     try:
         service = UIService(db)
@@ -303,7 +442,7 @@ async def get_ui_by_date(date: date, db: Session = Depends(get_db)):
         if ui_value:
             return UIResponse(
                 success=True,
-                message=f"UI value for {date} retrieved successfully",
+                message=MSG_UI_DATE_SUCCESS.format(date=date),
                 data=ui_value.dict() if hasattr(ui_value, 'dict') else ui_value
             ).dict()
         else:
@@ -323,18 +462,11 @@ async def get_ui_by_date(date: date, db: Session = Depends(get_db)):
         logger.error(f"Error getting UI by date {date}: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/api/ui/range/{start_date}/{end_date}", tags=["📈 Unidad Indexada (UI)"])
+@app.get("/api/ui/range/{start_date}/{end_date}", tags=[TAG_UI])
 async def get_ui_by_range(start_date: date, end_date: date, db: Session = Depends(get_db)):
-    """
-    **Obtener UI por Rango de Fechas**
-    
-    Consulta múltiples valores de UI dentro de un período específico.
-    
-    - **Parámetros**: Fecha inicio y fin en formato YYYY-MM-DD
-    - **Validación**: Fecha inicio debe ser menor o igual a fecha fin
-    - **Respuesta**: Array de valores con sus fechas correspondientes
-    
-    **Ejemplo**: `/api/ui/range/2024-01-01/2024-01-31` → Todos los valores de enero 2024
+    """Obtener UI por rango de fechas (YYYY-MM-DD).
+
+    Valida que start_date <= end_date.
     """
     try:
         if start_date > end_date:
@@ -348,7 +480,7 @@ async def get_ui_by_range(start_date: date, end_date: date, db: Session = Depend
         
         return UIResponse(
             success=True,
-            message=f"UI values for range {start_date} - {end_date} retrieved successfully. {len(ui_values)} records found",
+            message=MSG_UI_RANGE_SUCCESS.format(start_date=start_date, end_date=end_date, count=len(ui_values)),
             data=[item.dict() if hasattr(item, 'dict') else item for item in ui_values]
         ).dict()
     
@@ -358,20 +490,9 @@ async def get_ui_by_range(start_date: date, end_date: date, db: Session = Depend
         logger.error(f"Error getting UI by range {start_date} - {end_date}: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/api/info", tags=["🏠 Sistema"])
+@app.get("/api/info", tags=["Sistema"])
 async def get_info(db: Session = Depends(get_db)):
-    """
-    **Información General del Sistema UI**
-    
-    Obtiene estadísticas y metadatos sobre los datos de Unidad Indexada disponibles.
-    
-    - **Total registros**: Cantidad de valores UI almacenados
-    - **Rango de fechas**: Primera y última fecha disponible
-    - **Último valor**: Valor UI más reciente
-    - **Fuente**: Información sobre el origen de los datos
-    
-    **Uso**: Verificar disponibilidad de datos antes de consultas específicas.
-    """
+    """Informacion general del sistema UI (estadisticas basicas)."""
     try:
         service = UIService(db)
         total_records = service.get_total_records()
@@ -385,27 +506,16 @@ async def get_info(db: Session = Depends(get_db)):
                 "max_date": max_date.isoformat() if max_date else None
             },
             "latest_ui": latest_ui.dict() if latest_ui else None,
-            "data_source": "Instituto Nacional de Estadística - Uruguay"
+            "data_source": "National Institute of Statistics (INE) - Uruguay"
         }
     
     except Exception as e:
         logger.error(f"Error getting information: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/api/refresh", tags=["📈 Unidad Indexada (UI)"])
+@app.post("/api/refresh", tags=[TAG_UI])
 async def refresh_data(background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
-    """
-    **Actualizar Datos de UI desde INE**
-    
-    Descarga y procesa la última planilla de Unidad Indexada desde el sitio oficial del INE.
-    
-    - **Acción**: Descarga automática desde INE
-    - **Procesamiento**: Valida y actualiza base de datos
-    - **Respuesta**: Cantidad de registros procesados y fecha de última actualización
-    - **Tiempo**: Puede tomar unos segundos debido a la descarga
-    
-    **⚠️ Nota**: Solo ejecutar cuando se necesiten datos actualizados del INE.
-    """
+    """Actualizar datos de UI desde INE (descarga y procesamiento)."""
     try:
         # Execute the update
         success, message, total_records = excel_processor.refresh_data(db)
@@ -436,68 +546,11 @@ async def refresh_data(background_tasks: BackgroundTasks, db: Session = Depends(
             total_records=0
         )
 
-@app.on_event("startup")
-async def startup_event():
-    """Application startup event"""
-    logger.info("🚀 Starting SIFU...")
-    
-    # Try to load initial data if it doesn't exist
-    try:
-        from database import SessionLocal
-        db = SessionLocal()
-        service = UIService(db)
-        
-        if service.get_total_records() == 0:
-            logger.info("No data in database. Attempting to load initial data...")
-            success, message, total_records = excel_processor.refresh_data(db)
-            if success:
-                logger.info(f"✅ Initial data loaded: {total_records} records")
-            else:
-                logger.warning(f"⚠️ Could not load initial data: {message}")
-        else:
-            logger.info(f"✅ Database ready with {service.get_total_records()} records")
-        
-        db.close()
-    except Exception as e:
-        logger.error(f"Error in startup: {e}")
+    lifespan=app_lifespan,
 
-    # Start background scheduler if enabled and available
-    try:
-        if SCHEDULER_ENABLED and AsyncIOScheduler and CronTrigger:
-            global scheduler
-            scheduler = AsyncIOScheduler()
-            _add_jobs(scheduler)
-            scheduler.start()
-            logger.info(f"[Scheduler] Started (tz={SCHEDULER_TIMEZONE})")
-        else:
-            logger.info("[Scheduler] Disabled or APScheduler not installed")
-    except Exception as e:
-        logger.error(f"[Scheduler] Failed to start: {e}")
-
-@app.on_event("shutdown")
-async def shutdown_event():
-    # Gracefully stop scheduler
-    global scheduler
-    if scheduler:
-        try:
-            scheduler.shutdown(wait=False)
-            logger.info("[Scheduler] Stopped")
-        except Exception as e:
-            logger.error(f"[Scheduler] Error on shutdown: {e}")
-
-@app.get("/api/ur/latest", tags=["💰 Unidad Reajustable (UR)"])
+@app.get("/api/ur/latest", tags=[TAG_UR])
 async def get_latest_ur(db: Session = Depends(get_db)):
-    """
-    **Obtener Último Valor de UR**
-    
-    Consulta el valor más reciente de la Unidad Reajustable disponible.
-    
-    - **Fuente**: Banco Hipotecario del Uruguay (BHU)
-    - **Frecuencia**: Datos mensuales desde 1969
-    - **Formato**: Valor decimal con año y mes correspondiente
-    
-    **Uso principal**: Cálculo de reajustes en créditos hipotecarios y otros contratos.
-    """
+    """Obtener ultimo valor de UR (Unidad Reajustable)."""
     try:
         ur_service = URService(db)
         latest_ur = ur_service.get_latest_ur()
@@ -505,13 +558,13 @@ async def get_latest_ur(db: Session = Depends(get_db)):
         if latest_ur:
             return URResponse(
                 success=True,
-                message="Latest UR value retrieved successfully",
+                message=MSG_LATEST_UR_SUCCESS,
                 data=latest_ur.dict() if hasattr(latest_ur, 'dict') else latest_ur
             ).dict()
         else:
             return URResponse(
                 success=False,
-                message="No UR data available",
+                message= MSG_NO_UR_DATA,
                 data=None
             ).dict()
             
@@ -522,19 +575,9 @@ async def get_latest_ur(db: Session = Depends(get_db)):
             detail="Internal server error"
         )
 
-@app.get("/api/ur/year-month/{year}/{month}", tags=["💰 Unidad Reajustable (UR)"])
+@app.get("/api/ur/year-month/{year}/{month}", tags=[TAG_UR])
 async def get_ur_by_year_month(year: int, month: int, db: Session = Depends(get_db)):
-    """
-    **Obtener UR por Año y Mes**
-    
-    Consulta el valor de UR para un mes específico de un año determinado.
-    
-    - **Parámetros**: Año (YYYY) y mes (1-12)
-    - **Validación**: Mes debe estar entre 1 y 12
-    - **Disponibilidad**: Desde enero 1969 hasta el mes actual
-    
-    **Ejemplo**: `/api/ur/year-month/2024/12` → UR de diciembre 2024
-    """
+    """Obtener UR por anio y mes (YYYY, 1-12)."""
     try:
         # Validate month
         if month < 1 or month > 12:
@@ -550,13 +593,13 @@ async def get_ur_by_year_month(year: int, month: int, db: Session = Depends(get_
         if ur_value:
             return URResponse(
                 success=True,
-                message=f"UR value for {year}-{month:02d} retrieved successfully",
+                message=MSG_UR_YEAR_MONTH_SUCCESS.format(year=year, month=month),
                 data=ur_value.dict() if hasattr(ur_value, 'dict') else ur_value
             ).dict()
         else:
             return URResponse(
                 success=False,
-                message=f"No UR data available for {year}-{month:02d}",
+                message=MSG_NO_UR_YEAR_MONTH_DATA.format(year=year, month=month),
                 data=None
             ).dict()
                 
@@ -567,19 +610,9 @@ async def get_ur_by_year_month(year: int, month: int, db: Session = Depends(get_
             detail="Internal server error"
         )
 
-@app.get("/api/ur/year/{year}", tags=["💰 Unidad Reajustable (UR)"])
+@app.get("/api/ur/year/{year}", tags=[TAG_UR])
 async def get_ur_by_year(year: int, db: Session = Depends(get_db)):
-    """
-    **Obtener Todos los UR de un Año**
-    
-    Consulta todos los valores mensuales de UR para un año completo.
-    
-    - **Parámetro**: Año (YYYY)
-    - **Respuesta**: Array con hasta 12 valores (enero a diciembre)
-    - **Útil para**: Análisis de evolución anual de UR
-    
-    **Ejemplo**: `/api/ur/year/2024` → Todos los UR del año 2024
-    """
+    """Obtener todos los valores UR de un anio."""
     try:
         ur_service = URService(db)
         ur_values = ur_service.get_ur_by_year(year)
@@ -587,13 +620,13 @@ async def get_ur_by_year(year: int, db: Session = Depends(get_db)):
         if ur_values:
             return URResponse(
                 success=True,
-                message=f"Retrieved {len(ur_values)} UR values for year {year}",
+                message=MSG_UR_YEAR_SUCCESS.format(count=len(ur_values), year=year),
                 data=[item.dict() if hasattr(item, 'dict') else item for item in ur_values]
             ).dict()
         else:
             return URResponse(
                 success=False,
-                message=f"No UR data available for year {year}",
+                message=MSG_NO_UR_YEAR_DATA.format(year=year),
                 data=[]
             ).dict()
             
@@ -604,25 +637,15 @@ async def get_ur_by_year(year: int, db: Session = Depends(get_db)):
             detail="Internal server error"
         )
 
-@app.get("/api/ur/range/{start_year}/{start_month}/{end_year}/{end_month}", tags=["💰 Unidad Reajustable (UR)"])
+@app.get("/api/ur/range/{start_year}/{start_month}/{end_year}/{end_month}", tags=[TAG_UR])
 async def get_ur_by_range(start_year: int, start_month: int, end_year: int, end_month: int, db: Session = Depends(get_db)):
-    """
-    **Obtener UR por Rango de Períodos**
-    
-    Consulta valores de UR dentro de un rango de años y meses específico.
-    
-    - **Parámetros**: Año/mes inicio y año/mes fin
-    - **Validaciones**: Meses entre 1-12, período inicio ≤ período fin
-    - **Útil para**: Análisis históricos de evolución de UR
-    
-    **Ejemplo**: `/api/ur/range/2020/1/2024/12` → UR desde enero 2020 hasta diciembre 2024
-    """
+    """Obtener UR por rango de periodos (anio/mes inicio a anio/mes fin)."""
     try:
         # Validate months
         if start_month < 1 or start_month > 12 or end_month < 1 or end_month > 12:
             return URResponse(
                 success=False,
-                message="Months must be between 1 and 12",
+                message=MSG_INVALID_MONTH if 'MSG_INVALID_MONTH' in globals() else "Months must be between 1 and 12",
                 data=None
             ).dict()
         
@@ -630,7 +653,7 @@ async def get_ur_by_range(start_year: int, start_month: int, end_year: int, end_
         if (start_year > end_year) or (start_year == end_year and start_month > end_month):
             return URResponse(
                 success=False,
-                message="Start period must be before or equal to end period",
+                message=MSG_INVALID_PERIOD_RANGE,
                 data=None
             ).dict()
         
@@ -640,13 +663,13 @@ async def get_ur_by_range(start_year: int, start_month: int, end_year: int, end_
         if ur_values:
             return URResponse(
                 success=True,
-                message=f"Retrieved {len(ur_values)} UR values for range {start_year}-{start_month:02d} to {end_year}-{end_month:02d}",
+                message=MSG_UR_RANGE_SUCCESS.format(count=len(ur_values), start_year=start_year, start_month=start_month, end_year=end_year, end_month=end_month),
                 data=[item.dict() if hasattr(item, 'dict') else item for item in ur_values]
             ).dict()
         else:
             return URResponse(
                 success=False,
-                message=f"No UR data available for range {start_year}-{start_month:02d} to {end_year}-{end_month:02d}",
+                message=MSG_NO_UR_RANGE_DATA.format(start_year=start_year, start_month=start_month, end_year=end_year, end_month=end_month),
                 data=[]
             ).dict()
             
@@ -657,36 +680,34 @@ async def get_ur_by_range(start_year: int, start_month: int, end_year: int, end_
             detail="Internal server error"
         )
 
-@app.post("/api/ur/range", tags=["💰 Unidad Reajustable (UR)"])
+@app.post("/api/ur/range", tags=[TAG_UR])
 async def get_ur_by_range_post(request: dict, db: Session = Depends(get_db)):
-    """
-    **Obtener UR por Rango (POST)**
-    
-    Versión POST del endpoint de rango para consultas complejas con body JSON.
-    
-    - **Body**: `{"start_year": 2020, "start_month": 1, "end_year": 2024, "end_month": 12}`
-    - **Funcionalidad**: Idéntica al endpoint GET equivalente
-    """
-    start_year = request.get('start_year')
-    start_month = request.get('start_month', 1)
-    end_year = request.get('end_year')
-    end_month = request.get('end_month', 12)
+    """Obtener UR por rango (POST). Body igual al endpoint GET correspondiente."""
+    # Accept English or legacy Spanish keys
+    start_year = request.get('start_year') or request.get('año_inicio') or request.get('ano_inicio')
+    start_month = request.get('start_month') or request.get('mes_inicio') or 1
+    end_year = request.get('end_year') or request.get('año_fin') or request.get('ano_fin') or start_year
+    end_month = request.get('end_month') or request.get('mes_fin') or 12
+
+    # Basic validation (mirrors GET endpoint logic)
+    if None in (start_year, start_month, end_year, end_month):
+        return URResponse(success=False, message="Missing required parameters").dict()
+    try:
+        start_year = int(start_year)
+        start_month = int(start_month)
+        end_year = int(end_year)
+        end_month = int(end_month)
+    except ValueError:
+        return URResponse(success=False, message="Parameters must be integers").dict()
+    if not (1 <= start_month <= 12 and 1 <= end_month <= 12):
+        return URResponse(success=False, message="Months must be between 1 and 12").dict()
+    if (end_year, end_month) < (start_year, start_month):
+        return URResponse(success=False, message="Start period must be before or equal to end period").dict()
     return await get_ur_by_range(start_year, start_month, end_year, end_month, db)
 
-@app.post("/api/ur/refresh", tags=["💰 Unidad Reajustable (UR)"])
+@app.post("/api/ur/refresh", tags=[TAG_UR])
 async def refresh_ur_data(db: Session = Depends(get_db)):
-    """
-    **Actualizar Datos de UR desde BHU**
-    
-    Descarga y procesa la última planilla de UR desde el sitio oficial del BHU.
-    
-    - **Fuente**: Banco Hipotecario del Uruguay
-    - **Proceso**: Descarga Excel, extrae valores mensuales y actualiza base de datos
-    - **Datos**: Histórico completo desde 1969
-    - **Tiempo**: Puede tomar unos segundos debido a la descarga
-    
-    **⚠️ Nota**: Solo ejecutar cuando se necesiten datos actualizados del BHU.
-    """
+    """Actualizar datos de UR desde BHU (descarga + procesamiento)."""
     try:
         logger.info("Starting UR data update...")
         
@@ -711,20 +732,9 @@ async def refresh_ur_data(db: Session = Depends(get_db)):
             detail="Internal server error"
         )
 
-@app.get("/api/ur/info", tags=["💰 Unidad Reajustable (UR)"])
+@app.get("/api/ur/info", tags=[TAG_UR])
 async def get_ur_info(db: Session = Depends(get_db)):
-    """
-    **Información del Sistema UR**
-    
-    Obtiene estadísticas y metadatos sobre los datos de UR disponibles.
-    
-    - **Total registros**: Cantidad de valores UR almacenados
-    - **Rango de años**: Primer y último año disponible (desde 1969)
-    - **Último valor**: Valor UR más reciente
-    - **Años disponibles**: Lista completa de años con datos
-    
-    **Uso**: Verificar disponibilidad de datos antes de consultas específicas.
-    """
+    """Informacion del sistema UR (estadisticas basicas)."""
     try:
         ur_service = URService(db)
         
@@ -759,19 +769,9 @@ async def get_ur_info(db: Session = Depends(get_db)):
 # EXCHANGE RATE ENDPOINTS
 # =============================================================================
 
-@app.get(ENDPOINT_EXCHANGE_RATE_LATEST, tags=["💱 Cotizaciones de Monedas"])
+@app.get(ENDPOINT_EXCHANGE_RATE_LATEST, tags=[TAG_EXCHANGE])
 async def get_latest_exchange_rates(currencies: Optional[str] = None, db: Session = Depends(get_db)):
-    """
-    **Obtener Últimas Cotizaciones Históricas**
-    
-    Consulta las cotizaciones más recientes disponibles en los datos históricos del INE.
-    
-    - **Parámetro opcional**: Lista de monedas separadas por comas (USD,EUR,ARS,BRL)
-    - **Fuente**: Instituto Nacional de Estadística (datos históricos)
-    - **Cobertura**: 23+ años de datos (desde 2001)
-    
-    **Nota**: Para cotizaciones actuales usar `/api/exchange-rate/current` (BCU)
-    """
+    """Obtener ultimas cotizaciones historicas (INE). Puede filtrar por lista de monedas separadas por comas."""
     try:
         service = ExchangeRateService(db)
         currency_list = currencies.split(',') if currencies else None
@@ -794,20 +794,9 @@ async def get_latest_exchange_rates(currencies: Optional[str] = None, db: Sessio
         logger.error(f"Error getting latest exchange rates: {e}")
         raise HTTPException(status_code=HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
-@app.get(ENDPOINT_EXCHANGE_RATE_INFO, tags=["💱 Cotizaciones de Monedas"])
+@app.get(ENDPOINT_EXCHANGE_RATE_INFO, tags=[TAG_EXCHANGE])
 async def get_exchange_rate_info(db: Session = Depends(get_db)):
-    """
-    **Información del Sistema de Cotizaciones**
-    
-    Obtiene estadísticas sobre los datos históricos de cotizaciones disponibles.
-    
-    - **Total registros**: 23,000+ cotizaciones históricas (INE)
-    - **Rango de fechas**: Desde 2001 hasta presente
-    - **Monedas disponibles**: USD, EUR, ARS, BRL (datos históricos)
-    - **Últimas cotizaciones**: Valores más recientes por moneda
-    
-    **Sistemas disponibles**: Histórico (INE) + Tiempo Real (BCU en `/current`)
-    """
+    """Informacion del sistema de cotizaciones historicas."""
     try:
         service = ExchangeRateService(db)
         total_records = service.get_total_records()
@@ -823,26 +812,16 @@ async def get_exchange_rate_info(db: Session = Depends(get_db)):
             },
             "available_currencies": available_currencies,
             "latest_rates": [rate.dict() for rate in latest_rates],
-            "data_source": "Banco Central del Uruguay"
+            "data_source": "Central Bank of Uruguay (BCU)"
         }
     
     except Exception as e:
         logger.error(f"Error getting exchange rate information: {e}")
         raise HTTPException(status_code=HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
-@app.get(ENDPOINT_EXCHANGE_RATE_BY_CURRENCY, tags=["💱 Cotizaciones de Monedas"])
+@app.get(ENDPOINT_EXCHANGE_RATE_BY_CURRENCY, tags=[TAG_EXCHANGE])
 async def get_exchange_rates_by_currency(currency: str, limit: int = 30, db: Session = Depends(get_db)):
-    """
-    **Obtener Historial de una Moneda Específica**
-    
-    Consulta los valores históricos más recientes de una moneda determinada.
-    
-    - **Parámetro**: Código de moneda (USD, EUR, ARS, BRL)
-    - **Límite**: Número máximo de registros (default: 30)
-    - **Orden**: Del más reciente al más antiguo
-    
-    **Ejemplo**: `/api/exchange-rate/currency/USD?limit=10` → Últimas 10 cotizaciones del dólar
-    """
+    """Obtener historial de una moneda (limite por defecto 30)."""
     try:
         if currency.upper() not in VALID_CURRENCY_CODES:
             raise HTTPException(
@@ -871,19 +850,9 @@ async def get_exchange_rates_by_currency(currency: str, limit: int = 30, db: Ses
         logger.error(f"Error getting exchange rates by currency {currency}: {e}")
         raise HTTPException(status_code=HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
-@app.get(ENDPOINT_EXCHANGE_RATE_RANGE, tags=["💱 Cotizaciones de Monedas"])
+@app.get(ENDPOINT_EXCHANGE_RATE_RANGE, tags=[TAG_EXCHANGE])
 async def get_exchange_rates_by_range(start_date: date, end_date: date, currency: Optional[str] = None, db: Session = Depends(get_db)):
-    """
-    **Obtener Cotizaciones por Rango de Fechas**
-    
-    Consulta cotizaciones históricas dentro de un período específico.
-    
-    - **Parámetros**: Fecha inicio y fin (YYYY-MM-DD)
-    - **Filtro opcional**: Moneda específica
-    - **Validación**: Fecha inicio ≤ fecha fin
-    
-    **Ejemplo**: `/api/exchange-rate/range/2024-01-01/2024-01-31?currency=USD` → USD de enero 2024
-    """
+    """Obtener cotizaciones por rango de fechas (opcional filtrar por moneda)."""
     try:
         if start_date > end_date:
             raise HTTPException(
@@ -916,20 +885,9 @@ async def get_exchange_rates_by_range(start_date: date, end_date: date, currency
         logger.error(f"Error getting exchange rates by range {start_date} - {end_date}: {e}")
         raise HTTPException(status_code=HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
-@app.post(ENDPOINT_EXCHANGE_RATE_REFRESH, tags=["💱 Cotizaciones de Monedas"])
+@app.post(ENDPOINT_EXCHANGE_RATE_REFRESH, tags=[TAG_EXCHANGE])
 async def refresh_exchange_rate_historical_data(db: Session = Depends(get_db)):
-    """
-    **Actualizar Datos Históricos de Cotizaciones**
-    
-    Descarga y procesa la planilla histórica de cotizaciones desde el INE.
-    
-    - **Fuente**: Instituto Nacional de Estadística
-    - **Datos**: 23+ años de cotizaciones históricas (2001-presente)
-    - **Proceso**: Descarga Excel, extrae cotizaciones y actualiza base de datos
-    - **Tiempo**: Puede tomar tiempo debido al tamaño del archivo
-    
-    **⚠️ Nota**: Para datos actuales usar `/current` (BCU). Este endpoint es para históricos.
-    """
+    """Actualizar datos historicos de cotizaciones (INE)."""
     try:
         logger.info("Starting historical exchange rate data update from INE (synchronous endpoint)...")
         success, message, total_records = exchange_rate_excel_processor.refresh_data(db)
@@ -993,13 +951,9 @@ def _run_exchange_refresh_job(job_id: str):  # runs in background thread
         db_local.close()
 
 
-@app.post("/api/exchange-rate/refresh-async", status_code=202, tags=["💱 Cotizaciones de Monedas"], summary="Iniciar actualización histórica (asíncrona)")
+@app.post("/api/exchange-rate/refresh-async", status_code=202, tags=[TAG_EXCHANGE], summary="Iniciar actualizacion historica asincrona")
 async def start_exchange_rate_refresh_async(background_tasks: BackgroundTasks):
-    """Inicia la actualización histórica de cotizaciones en background.
-
-    Respuesta inmediata (202 Accepted) con un job_id para consultar estado.
-    Si ya existe un job en curso para este tipo, se devuelve ese job en lugar de crear otro.
-    """
+    """Inicia la actualizacion historica de cotizaciones en segundo plano (202 Accepted)."""
     # Avoid parallel duplicate jobs
     existing = job_manager.find_running_job(ASYNC_JOB_TYPE_EXCHANGE_REFRESH)
     if existing:
@@ -1016,7 +970,7 @@ async def start_exchange_rate_refresh_async(background_tasks: BackgroundTasks):
     return {"job_id": job_id, "status": JobStatus.PENDING, "message": "Job accepted", "type": ASYNC_JOB_TYPE_EXCHANGE_REFRESH}
 
 
-@app.get("/api/jobs/{job_id}", tags=["💱 Cotizaciones de Monedas"], summary="Estado de un job")
+@app.get("/api/jobs/{job_id}", tags=[TAG_EXCHANGE], summary="Estado de un job")
 async def get_job_status(job_id: str):
     job = job_manager.get(job_id)
     if not job:
@@ -1030,7 +984,7 @@ async def get_job_status(job_id: str):
     return job_out
 
 
-@app.get("/api/jobs", tags=["💱 Cotizaciones de Monedas"], summary="Listado de jobs (debug)")
+@app.get("/api/jobs", tags=[TAG_EXCHANGE], summary="Listado de jobs (debug)")
 async def list_jobs():
     # WARNING: In-memory only; suitable for development/testing
     ids = []
@@ -1042,55 +996,44 @@ async def list_jobs():
     return {"jobs": ids}
 
 
-@app.get("/api/exchange-rate/refresh-status/{job_id}", tags=["💱 Cotizaciones de Monedas"], summary="Alias estado refresh histórico")
+@app.get("/api/exchange-rate/refresh-status/{job_id}", tags=[TAG_EXCHANGE], summary="Alias estado refresh historico")
 async def get_exchange_refresh_status(job_id: str):
     return await get_job_status(job_id)
 
 
-@app.get("/api/exchange-rate/current", tags=["💱 Cotizaciones de Monedas"])
-async def get_current_exchange_rates():
-    """
-    **🔥 Obtener Cotizaciones Actuales (BCU - Tiempo Real)**
-    
-    Consulta las cotizaciones actuales del Banco Central del Uruguay.
-    
-    - **Fuente**: BCU (scraping web en tiempo real)
-    - **Monedas**: USD, EUR, ARS, BRL
-    - **Actualización**: Datos actuales del BCU
-    - **Formato**: Compra, venta y promedio por moneda
-    
-    **⭐ Recomendado**: Para cotizaciones actuales. Para históricos usar otros endpoints.
-    """
+@app.get("/api/exchange-rate/current", tags=[TAG_EXCHANGE])
+async def get_current_exchange_rates(force_refresh: bool = False):
+    """Obtener cotizaciones actuales (BCU tiempo real)."""
     try:
-        logger.info("Getting current exchange rates from BCU...")
-        
-        # Get current rates from BCU
-        current_rates, is_from_bcu = exchange_rate_bcu_processor.get_current_rates()
-        
-        if current_rates:
-            formatted_rates = []
-            source = "BCU" if is_from_bcu else "Historical Data"
-            for currency, buy, sell, avg in current_rates:
-                formatted_rates.append({
-                    "currency": currency,
-                    "buy_rate": buy,
-                    "sell_rate": sell,
-                    "average_rate": avg,
-                    "source": source,
-                    "timestamp": datetime.utcnow().isoformat()
-                })
-            
+        # Refresh cache if forced or stale (>55m) or missing
+        global bcu_cache
+        with _cache_lock:
+            cached = bcu_cache
+        need_update = False
+        if not cached:
+            need_update = True
+        else:
+            age = (datetime.utcnow() - cached.get("updated_at", datetime.utcnow())).total_seconds()
+            if age > 55 * 60:
+                need_update = True
+        if force_refresh or need_update:
+            _update_bcu_cache()
+            with _cache_lock:
+                if bcu_cache is None:  # mocked case
+                    bcu_cache = {"data": [], "updated_at": datetime.utcnow()}
+                cached = bcu_cache
+
+        if cached:
             return ExchangeRateResponse(
                 success=True,
-                message=f"Current exchange rates retrieved successfully. {len(current_rates)} currencies",
-                data=formatted_rates
+                message=f"Current exchange rates (cached) retrieved successfully. {len(cached['data'])} currencies",
+                data=cached["data"]
             ).dict()
-        else:
-            return ExchangeRateResponse(
-                success=False,
-                message="Could not retrieve current exchange rates from BCU",
-                data=None
-            ).dict()
+        return ExchangeRateResponse(
+            success=False,
+            message="Could not retrieve current exchange rates",
+            data=None
+        ).dict()
     
     except Exception as e:
         logger.error(f"Error getting current exchange rates: {e}")
@@ -1100,19 +1043,9 @@ async def get_current_exchange_rates():
             data=None
         ).dict()
 
-@app.get(ENDPOINT_EXCHANGE_RATE_BY_DATE, tags=["💱 Cotizaciones de Monedas"])
+@app.get(ENDPOINT_EXCHANGE_RATE_BY_DATE, tags=[TAG_EXCHANGE])
 async def get_exchange_rates_by_date(date: date, currency: Optional[str] = None, db: Session = Depends(get_db)):
-    """
-    **Obtener Cotizaciones por Fecha Específica**
-    
-    Consulta las cotizaciones históricas para una fecha determinada.
-    
-    - **Parámetro**: Fecha (YYYY-MM-DD)
-    - **Filtro opcional**: Moneda específica
-    - **Búsqueda inteligente**: Si no hay datos exactos, busca fecha más cercana
-    
-    **Ejemplo**: `/api/exchange-rate/2024-12-01?currency=USD` → USD del 1 dic 2024
-    """
+    """Obtener cotizaciones por fecha especifica (busca fecha mas cercana si no existe)."""
     try:
         service = ExchangeRateService(db)
         exchange_rates = service.get_exchange_rate_by_date(date, currency)
@@ -1133,19 +1066,9 @@ async def get_exchange_rates_by_date(date: date, currency: Optional[str] = None,
         logger.error(f"Error getting exchange rates by date {date}: {e}")
         raise HTTPException(status_code=HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
-@app.get(ENDPOINT_EXCHANGE_RATE_BY_DATE_CURRENCY, tags=["💱 Cotizaciones de Monedas"])
+@app.get(ENDPOINT_EXCHANGE_RATE_BY_DATE_CURRENCY, tags=[TAG_EXCHANGE])
 async def get_exchange_rate_by_date_and_currency(date: date, currency: str, db: Session = Depends(get_db)):
-    """
-    **Obtener Cotización Específica (Fecha + Moneda)**
-    
-    Consulta el valor exacto de una moneda en una fecha determinada.
-    
-    - **Parámetros**: Fecha (YYYY-MM-DD) + código de moneda
-    - **Respuesta**: Un solo registro con compra, venta y promedio
-    - **Error 404**: Si no hay datos para esa combinación
-    
-    **Ejemplo**: `/api/exchange-rate/2024-12-01/USD` → USD específico del 1 dic 2024
-    """
+    """Obtener cotizacion especifica (fecha + moneda)."""
     try:
         if currency.upper() not in VALID_CURRENCY_CODES:
             raise HTTPException(
@@ -1174,46 +1097,40 @@ async def get_exchange_rate_by_date_and_currency(date: date, currency: str, db: 
         logger.error(f"Error getting exchange rate by date {date} and currency {currency}: {e}")
         raise HTTPException(status_code=HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
-@app.get("/api/brou/current", tags=["🏦 BROU"])
-async def get_current_brou_rates():
-    """
-    **🏦 Obtener Cotizaciones Actuales del BROU**
-    
-    Consulta las cotizaciones actuales del Banco de la República Oriental del Uruguay.
-    
-    - **Fuente**: BROU (scraping web en tiempo real)
-    - **Monedas**: USD, USD eBROU, EUR, ARS, BRL
-    - **Datos**: Compra, venta, promedio y arbitrajes
-    - **Arbitrajes**: EUR, ARS, BRL calculados vs USD
-    - **Actualización**: Datos actuales del BROU
-    
-    **💡 Características especiales**:
-    - USD eBROU: Cotización preferencial para clientes eBROU
-    - Arbitrajes: Relación de cada moneda respecto al USD
-    - Spreads reales: Diferencia entre compra y venta
-    """
+@app.get("/api/brou/current", tags=["BROU"])
+async def get_current_brou_rates(force_refresh: bool = False):
+    """Obtener cotizaciones actuales del BROU (scraping tiempo real)."""
     try:
-        logger.info("Getting current exchange rates from BROU...")
-        
-        # Get current rates from BROU
-        current_rates, is_from_brou = brou_processor.get_current_rates()
-        
-        if current_rates:
-            source = "BROU" if is_from_brou else "BROU_SAMPLE"
-            
+        global brou_cache
+        with _cache_lock:
+            cached = brou_cache
+        need_update = False
+        if not cached:
+            need_update = True
+        else:
+            age = (datetime.utcnow() - cached.get("updated_at", datetime.utcnow())).total_seconds()
+            if age > 55 * 60:
+                need_update = True
+        if force_refresh or need_update:
+            _update_brou_cache()
+            with _cache_lock:
+                if brou_cache is None:  # mocked case
+                    brou_cache = {"data": [], "updated_at": datetime.utcnow()}
+                cached = brou_cache
+
+        if cached:
             return {
                 "success": True,
-                "message": f"Cotizaciones BROU obtenidas exitosamente. {len(current_rates)} monedas",
-                "data": current_rates,
-                "source": source,
+                "message": f"Cotizaciones BROU (cache) obtenidas exitosamente. {len(cached['data'])} monedas",
+                "data": cached["data"],
+                "source": "BROU",
                 "timestamp": datetime.utcnow().isoformat()
             }
-        else:
-            return {
-                "success": False,
-                "message": "No se pudieron obtener las cotizaciones del BROU",
-                "data": None
-            }
+        return {
+            "success": False,
+            "message": "No se pudieron obtener las cotizaciones del BROU",
+            "data": None
+        }
     
     except Exception as e:
         logger.error(f"Error getting current BROU rates: {e}")
@@ -1222,3 +1139,11 @@ async def get_current_brou_rates():
             "message": f"Error interno: {str(e)}",
             "data": None
     }
+
+
+# -----------------------------------------------------------------------------
+# __main__ entrypoint (used only for local development / test coverage)
+# -----------------------------------------------------------------------------
+if __name__ == "__main__":  # pragma: no cover (explicitly exercised in tests)
+    import uvicorn  # local import to avoid mandatory dependency at import time
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)

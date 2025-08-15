@@ -15,16 +15,55 @@ class UIValue:
 
 
 class URValue:
-    def __init__(self, year: int, month: int, value: float):
+    def __init__(self, year: int = None, month: int = None, value: float = None, **kwargs):
+        """UR value with flexible constructor.
+
+    Accepts English (year, month, value) and legacy Spanish aliases (año/ano, mes, valor).
+        """
+        if year is None and 'año' in kwargs:
+            year = kwargs.pop('año')
+        if month is None and 'mes' in kwargs:
+            month = kwargs.pop('mes')
+        if value is None and 'valor' in kwargs:
+            value = kwargs.pop('valor')
         self.year = year
         self.month = month
         self.value = value
+
+    # Legacy Spanish alias properties (año/mes/valor)
+    @property
+    def año(self):  # type: ignore
+        return self.year
+
+    @año.setter
+    def año(self, v):  # type: ignore
+        self.year = v
+
+    @property
+    def mes(self):  # type: ignore
+        return self.month
+
+    @mes.setter
+    def mes(self, v):  # type: ignore
+        self.month = v
+
+    @property
+    def valor(self):  # type: ignore
+        return self.value
+
+    @valor.setter
+    def valor(self, v):  # type: ignore
+        self.value = v
     
     def dict(self):
+        # Provide both English and legacy Spanish keys to maintain backward compatibility with tests
         return {
             "year": self.year,
             "month": self.month,
-            "value": self.value
+            "value": self.value,
+            "año": self.year,
+            "mes": self.month,
+            "valor": self.value,
         }
 
 

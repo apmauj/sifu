@@ -89,19 +89,27 @@ function App() {
   const [urRefreshKey, setUrRefreshKey] = useState(0);
 
     // Load initial information when component mounts
+  // Helper seguro de traducción que cae a fallback si todavía retorna la key
+  const safeT = useCallback((key, fallback) => {
+    const val = t(key);
+    if (!val || val === key) return fallback;
+    return val;
+  }, [t]);
+
+  // Inicializar sólo cuando las traducciones estén cargadas para no mostrar keys crudas
   useEffect(() => {
-    const initializeApp = async () => {
+    if (i18nLoading) return; // Esperar
+    if (APP_INIT_DONE) return;
+    APP_INIT_DONE = true;
+    (async () => {
       try {
-        console.log('App initializing...');
+        console.log('App initializing after i18n ready...');
         await loadLatestExchange();
       } catch (error) {
         console.error('Error initializing app:', error);
       }
-    };
-  if (APP_INIT_DONE) return;
-  APP_INIT_DONE = true;
-    initializeApp();
-  }, []);
+    })();
+  }, [i18nLoading]);
 
   // Exchange functions
   const handleExchangeSearch = async (searchParams) => {
@@ -200,7 +208,7 @@ function App() {
   // Intento de bootstrap inicial si la base está vacía
   const attemptInitialExchangeBootstrap = async () => {
     initialExchangeFetchAttemptedRef.current = true;
-    showInfo(t('exchange.initial_bootstrap_loading') || 'Cargando cotizaciones iniciales (job asíncrono)...');
+  showInfo(safeT('exchange.initial_bootstrap_loading', 'Cargando cotizaciones iniciales (job asíncrono)...'));
     try {
       const jobStart = await exchangeService.startAsyncHistoricalRefresh();
       if (jobStart?.job_id) {
@@ -284,7 +292,7 @@ function App() {
         // Iniciar job async y monitorear
         const job = await exchangeService.startAsyncHistoricalRefresh();
         if (job?.job_id) {
-          showInfo(t('exchange.refresh_started') || 'Actualización iniciada...');
+          showInfo(safeT('exchange.refresh_started', 'Actualización iniciada...'));
           await pollExchangeJob(job.job_id, { successToast: true, autoReload: true });
         } else {
           showError(t('errors.exchange_refresh_failed') || 'No se pudo iniciar la actualización');
@@ -315,7 +323,7 @@ function App() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-uruguay-blue mx-auto mb-4"></div>
-                          <p className="text-gray-600">{t('common.loading') || 'Cargando...'}</p>
+                          <p className="text-gray-600">{safeT('common.loading', 'Cargando...')}</p>
         </div>
       </div>
     );

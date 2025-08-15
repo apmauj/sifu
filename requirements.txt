@@ -1,22 +1,14 @@
-fastapi==0.104.1
-uvicorn[standard]==0.24.0
-pandas==2.1.4
-openpyxl==3.1.2
-xlrd==2.0.1
-pydantic==2.5.0
+###############################
+# Aggregated requirements
+# Uso recomendado:
+#   pip install -r requirements-core.txt        (mínimo API)
+#   pip install -r requirements-excel.txt       (para bootstrap histórico)
+#   pip install -r requirements-dev.txt         (herramientas dev/tests)
+# Este archivo se mantiene para compatibilidad: incluye core + excel.
+###############################
+
+-r requirements-core.txt
+-r requirements-excel.txt
+
+# Dependencia adicional para uploads/multipart
 python-multipart==0.0.6
-httpx==0.25.2
-sqlalchemy==2.0.23
-python-dateutil==2.8.2
-requests==2.31.0
-beautifulsoup4==4.13.4
-py-bcu==1.0.5 
-apscheduler==3.10.4
-pytz==2024.1
-apscheduler==3.10.4
-pytz==2024.1
-APScheduler==3.10.4
-pytz==2024.1
-APScheduler==3.10.4
-pytz==2024.1
-APScheduler==3.10.4

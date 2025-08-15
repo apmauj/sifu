@@ -1,4 +1,9 @@
-import pandas as pd
+try:
+    import pandas as pd  # type: ignore
+except Exception:  # pragma: no cover
+    pd = None  # noqa: N816
+    import warnings
+    warnings.warn("pandas no disponible; operaciones de Excel serán omitidas en este entorno")
 import requests
 from datetime import datetime, date, timedelta
 from typing import List, Tuple, Optional
@@ -22,6 +27,9 @@ class ExcelProcessor:
     
     def download_excel(self) -> Optional[pd.DataFrame]:
         """Download Excel file from INE URL"""
+        if pd is None:
+            logger.warning("pandas not available; skipping UI Excel download")
+            return None
         try:
             logger.info(LOG_DOWNLOADING_EXCEL_INE)
             headers = {
@@ -45,6 +53,9 @@ class ExcelProcessor:
 
     def parse_excel_data(self, excel_data: pd.DataFrame) -> List[Tuple[date, float]]:
         """Parse Excel data and return a list of tuples (date, value)"""
+        if pd is None:
+            logger.warning("pandas not available; cannot parse UI Excel data")
+            return []
         try:
             records = []
             
@@ -99,6 +110,9 @@ class ExcelProcessor:
 
     def save_to_database(self, db: Session, records: List[Tuple[date, float]]) -> int:
         """Save records to database"""
+        if pd is None:
+            logger.warning("pandas not available; skipping UI save_to_database")
+            return 0
         try:
             saved_count = 0
             
@@ -129,6 +143,8 @@ class ExcelProcessor:
 
     def refresh_data(self, db: Session) -> Tuple[bool, str, int]:
         """Update data by downloading and processing the INE spreadsheet"""
+        if pd is None:
+            return False, "pandas not available; UI refresh skipped", 0
         try:
             # Download file
             excel_data = self.download_excel()
@@ -160,6 +176,9 @@ class URExcelProcessor:
     
     def download_excel(self) -> Optional[pd.DataFrame]:
         """Download UR Excel file from BHU URL"""
+        if pd is None:
+            logger.warning("pandas not available; skipping UR Excel download")
+            return None
         try:
             logger.info(LOG_DOWNLOADING_EXCEL_BHU)
             headers = {
@@ -188,6 +207,9 @@ class URExcelProcessor:
         - Columns = months
         Returns a list of tuples (year, month, value)
         """
+        if pd is None:
+            logger.warning("pandas not available; cannot parse UR Excel data")
+            return []
         try:
             records = []
             
@@ -349,6 +371,9 @@ class URExcelProcessor:
 
     def save_to_database(self, db: Session, records: List[Tuple[int, int, float]]) -> int:
         """Save UR records to database"""
+        if pd is None:
+            logger.warning("pandas not available; skipping UR save_to_database")
+            return 0
         try:
             saved_count = 0
             
@@ -382,6 +407,8 @@ class URExcelProcessor:
 
     def refresh_data(self, db: Session) -> Tuple[bool, str, int]:
         """Update UR data by downloading and processing the BHU spreadsheet"""
+        if pd is None:
+            return False, "pandas not available; UR refresh skipped", 0
         try:
             # Download file
             excel_data = self.download_excel()
@@ -414,6 +441,9 @@ class ExchangeRateExcelProcessor:
     
     def download_excel(self) -> Optional[pd.DataFrame]:
         """Download Exchange Rate Excel file from INE URL"""
+        if pd is None:
+            logger.warning("pandas not available; skipping Exchange Excel download")
+            return None
         try:
             logger.info("Downloading exchange rate Excel from INE...")
             headers = {
@@ -440,6 +470,9 @@ class ExchangeRateExcelProcessor:
         Parse INE Exchange Rate Excel data
         Returns a list of tuples (date, currency, buy_rate, sell_rate, average_rate)
         """
+        if pd is None:
+            logger.warning("pandas not available; cannot parse Exchange Excel data")
+            return []
         try:
             records = []
             
@@ -546,6 +579,9 @@ class ExchangeRateExcelProcessor:
 
     def _parse_rate_value(self, value) -> Optional[float]:
         """Parse a rate value from the Excel, handling various formats"""
+        if pd is None:
+            logger.warning("pandas not available; skipping exchange save_to_database")
+            return -1
         try:
             # Handle missing values
             if pd.isna(value) or value == '..' or value == '':
@@ -582,6 +618,8 @@ class ExchangeRateExcelProcessor:
 
     def save_to_database(self, db: Session, records: List[Tuple[date, str, float, float, Optional[float]]]) -> int:
         """Save exchange rate records to database"""
+        if pd is None:
+            return False, "pandas not available; exchange refresh skipped", 0
         try:
             saved_count = 0
             seen: set[tuple[date, str]] = set()

@@ -1,0 +1,2 @@
+# Extra para procesamiento de planillas grandes (opcional en tests rápidos)
+pandas==2.2.2

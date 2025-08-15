@@ -247,6 +247,13 @@ FIELD_MAX_YEAR = "max_year"
 FIELD_LATEST_VALUE = "latest_value"
 FIELD_AVAILABLE_YEARS = "available_years"
 
+# =============================================================================
+# API TAG NAMES (for OpenAPI grouping) - keep Spanish originals for backward compatibility
+# =============================================================================
+TAG_UI = "Unidad Indexada (UI)"
+TAG_UR = "Unidad Reajustable (UR)"
+TAG_EXCHANGE = "Cotizaciones de Monedas"
+
 
 
 # =============================================================================

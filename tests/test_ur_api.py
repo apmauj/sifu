@@ -172,7 +172,7 @@ class TestUREndpoints:
         assert response.status_code == 200
         data = response.json()
         assert data["success"] is False
-        assert "Months must be between 1 and 12" in data["message"]
+        assert "Month must be between 1 and 12" in data["message"]
     
     def test_get_ur_by_range_invalid_period(self, client, mock_ur_service):
         """Test obtener UR por rango con período inválido"""

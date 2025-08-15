@@ -252,16 +252,15 @@ class TestInfoEndpoint:
         
         with patch('main.get_db'):
             response = client.get("/api/info")
-        
-        assert response.status_code == 200
-        data = response.json()
-        # El endpoint /api/info no devuelve un campo "success", devuelve directamente los datos
-        assert data["total_records"] == 8436
-        assert data["date_range"]["min_date"] == "2002-06-01"
-        assert data["date_range"]["max_date"] == "2024-12-01"
-        assert data["latest_ui"]["date"] == "2024-12-01"
-        assert data["latest_ui"]["value"] == 6.0000
-        assert data["data_source"] == "Instituto Nacional de Estadística - Uruguay"
+            assert response.status_code == 200
+            data = response.json()
+            # El endpoint /api/info no devuelve un campo "success", devuelve directamente los datos
+            assert data["total_records"] == 8436
+            assert data["date_range"]["min_date"] == "2002-06-01"
+            assert data["date_range"]["max_date"] == "2024-12-01"
+            assert data["latest_ui"]["date"] == "2024-12-01"
+            assert data["latest_ui"]["value"] == 6.0000
+            assert data["data_source"] == "National Institute of Statistics (INE) - Uruguay"
 
     def test_get_info_no_data(self, client, mock_ui_service):
         """Test obtener información sin datos"""

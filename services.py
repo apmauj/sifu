@@ -2,7 +2,7 @@ from datetime import date
 from typing import List, Optional
 from sqlalchemy.orm import Session
 from sqlalchemy import and_, or_
-from database import UIRecord, URRecord, ExchangeRateRecord
+from database import UIRecord, URRecord, ExchangeRateRecord, SessionLocal
 from models import UIValue, URValue, ExchangeRateValue
 import logging
 
@@ -232,7 +232,7 @@ class URService:
     def get_available_years(self) -> List[int]:
         """Get list of available years"""
         try:
-            years = self.db.query(URRecord.year).distinct().order_by(URRecord.year).all()
+            years = self.db.query(URRecord.year).distinct().order_by(URRecord.year.desc()).all()
             return [year[0] for year in years]
         except Exception as e:
             logger.error(f"Error getting available years: {e}")
@@ -423,3 +423,37 @@ class ExchangeRateService:
         except Exception as e:
             logger.error(f"Error getting available currencies: {e}")
             return [] 
+
+
+# Helper functions used by bootstrap logic for lightweight table population checks
+def get_ui_table_record_count() -> int:
+    db = SessionLocal()
+    try:
+        return db.query(UIRecord).count()
+    except Exception as e:  # noqa: BLE001
+        logger.error(f"Error counting UI records: {e}")
+        return 0
+    finally:
+        db.close()
+
+
+def get_ur_table_record_count() -> int:
+    db = SessionLocal()
+    try:
+        return db.query(URRecord).count()
+    except Exception as e:  # noqa: BLE001
+        logger.error(f"Error counting UR records: {e}")
+        return 0
+    finally:
+        db.close()
+
+
+def get_exchange_rate_table_record_count() -> int:
+    db = SessionLocal()
+    try:
+        return db.query(ExchangeRateRecord).count()
+    except Exception as e:  # noqa: BLE001
+        logger.error(f"Error counting ExchangeRate records: {e}")
+        return 0
+    finally:
+        db.close()

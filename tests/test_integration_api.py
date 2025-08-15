@@ -35,16 +35,22 @@ def client(db_session, sqlite_file):
     SQLALCHEMY_DATABASE_URL = f"sqlite:///{sqlite_file}"
     engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False})
     TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
     def override_get_db():
         db = TestingSessionLocal()
         try:
             yield db
         finally:
             db.close()
+
     app.dependency_overrides[get_db] = override_get_db
-    with TestClient(app) as c:
-        yield c
-    app.dependency_overrides.clear()
+    try:
+        with TestClient(app) as c:
+            yield c
+    finally:
+        app.dependency_overrides.clear()
+        # Explicitly dispose engine to release file handle before fixture teardown
+        engine.dispose()
 
 def test_get_ui_by_date_integration(client, db_session):
     record = UIRecord(date=date(2024, 1, 1), value=5.1234)

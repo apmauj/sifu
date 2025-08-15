@@ -1,5 +1,5 @@
 from sqlalchemy import create_engine, Column, Float, Date, Integer, DateTime, String, UniqueConstraint
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import declarative_base
 from sqlalchemy.orm import sessionmaker
 from datetime import datetime
 import os
@@ -45,6 +45,31 @@ class URRecord(Base):
         UniqueConstraint('year', 'month', name='uq_ur_year_month'),
         {'sqlite_autoincrement': True},
     )
+
+    # Legacy Spanish alias properties (año/mes/valor)
+    @property
+    def año(self):  # type: ignore
+        return self.year
+
+    @año.setter
+    def año(self, v):  # type: ignore
+        self.year = v
+
+    @property
+    def mes(self):  # type: ignore
+        return self.month
+
+    @mes.setter
+    def mes(self, v):  # type: ignore
+        self.month = v
+
+    @property
+    def valor(self):  # type: ignore
+        return self.value
+
+    @valor.setter
+    def valor(self, v):  # type: ignore
+        self.value = v
 
 
 class ExchangeRateRecord(Base):

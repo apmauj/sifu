@@ -5,7 +5,7 @@ let EXCHANGE_RATE_PANEL_INIT = false;
 import exchangeService from '../services/exchangeService';
 import { useI18n } from '../contexts/I18nContext';
 import { useHourlySyncedUpdate } from '../hooks/useHourlySyncedUpdate';
-import { ChartIcon, RefreshIcon, LoadingIcon } from './icons';
+import { ChartIcon, LoadingIcon } from './icons';
 import { useToast } from '../contexts/ToastContext';
 
 const ExchangeRatePanel = () => {
@@ -16,7 +16,7 @@ const ExchangeRatePanel = () => {
   const { t } = useI18n();
   const { showSuccess, showError } = useToast();
   const didInitRef = useRef(false);
-  const manualRefreshRef = useRef(false);
+  const manualRefreshRef = useRef(false); // retained for minimal change though manual trigger removed
 
   const currencyInfo = {
     USD: { symbol: '$', flag: '🇺🇸', name: t('exchange.currencies.USD') || 'Dólar USA' },
@@ -60,10 +60,11 @@ const ExchangeRatePanel = () => {
     fetchCurrentRates();
   }, [fetchCurrentRates]);
 
-  const handleManualRefresh = () => {
-    manualRefreshRef.current = true;
-    fetchCurrentRates();
-  };
+  // Manual refresh removed (auto hourly update); leaving helper commented for potential future use
+  // const handleManualRefresh = () => {
+  //   manualRefreshRef.current = true;
+  //   fetchCurrentRates();
+  // };
 
   // Hourly sync without immediate initial fetch (to avoid duplicate on mount)
   useHourlySyncedUpdate(fetchCurrentRates, true, { runImmediately: false });
@@ -147,14 +148,11 @@ const ExchangeRatePanel = () => {
             </div>
 
             <div className="flex items-center gap-2 flex-shrink-0">
-              <button
-                onClick={handleManualRefresh}
-                disabled={isLoading}
-                className="text-xs bg-blue-600 hover:bg-blue-500 px-2 py-1 rounded transition-colors disabled:opacity-50"
-                title={t('bcu.retry') || 'Actualizar cotizaciones'}
-              >
-                {isLoading ? <LoadingIcon className="w-4 h-4" /> : <RefreshIcon className="w-4 h-4" />}
-              </button>
+              {isLoading ? (
+                <LoadingIcon className="w-4 h-4 animate-spin" />
+              ) : (
+                <span className="text-[10px] text-blue-200">{lastUpdate ? formatTime(lastUpdate) : ''}</span>
+              )}
               <span className="text-xs text-blue-200">{t('bcu.source') || 'BCU'}</span>
             </div>
           </div>
@@ -166,9 +164,7 @@ const ExchangeRatePanel = () => {
                 <ChartIcon className="w-4 h-4 mr-2 text-white" />
                 {t('bcu.title') || 'Cotizaciones BCU'}
               </span>
-              <button onClick={handleManualRefresh} disabled={isLoading} className="p-2 text-white/80 hover:text-white disabled:opacity-50">
-                {isLoading ? <LoadingIcon className="w-4 h-4" /> : <RefreshIcon className="w-4 h-4" />}
-              </button>
+              {isLoading ? <LoadingIcon className="w-4 h-4 animate-spin" /> : <span className="text-xs text-blue-200">{lastUpdate ? formatTime(lastUpdate) : ''}</span>}
             </div>
             <div className="flex flex-wrap items-center gap-2 justify-center">
               {currentRates.slice(0, 4).map((rate) => {
@@ -201,9 +197,7 @@ const ExchangeRatePanel = () => {
                 <ChartIcon className="w-4 h-4 mr-2 text-white" />
                 {t('bcu.source') || 'BCU'}
               </span>
-              <button onClick={handleManualRefresh} disabled={isLoading} className="p-2 text-white/80 hover:text-white disabled:opacity-50">
-                {isLoading ? <LoadingIcon className="w-4 h-4" /> : <RefreshIcon className="w-4 h-4" />}
-              </button>
+              {isLoading ? <LoadingIcon className="w-4 h-4 animate-spin" /> : <span className="text-xs text-blue-200">{lastUpdate ? formatTime(lastUpdate) : ''}</span>}
             </div>
             <div className="flex flex-wrap items-center gap-2">
               {currentRates.slice(0, 4).map((rate) => {

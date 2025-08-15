@@ -1,10 +1,10 @@
 import React from 'react';
-import { CurrencyDollarIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
+import { CurrencyDollarIcon } from '@heroicons/react/24/outline';
 import LanguageSelector from './LanguageSelector';
 import { useI18n } from '../contexts/I18nContext';
 import ThemeToggle from './ui/ThemeToggle';
 
-const Header = ({ onRefresh, isRefreshing }) => {
+const Header = () => {
   const { t } = useI18n();
   
   return (
@@ -25,25 +25,9 @@ const Header = ({ onRefresh, isRefreshing }) => {
             </div>
           </div>
           
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-4">
             <ThemeToggle />
             <LanguageSelector />
-            <button
-              onClick={onRefresh}
-              disabled={isRefreshing}
-              className={`flex items-center space-x-2 px-4 py-2 rounded-lg font-medium transition-colors duration-200 shadow-sm ${
-                isRefreshing
-                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-gray-800/50 dark:text-gray-500'
-                  : 'bg-uruguay-blue text-white hover:bg-blue-700'
-              }`}
-            >
-              <ArrowPathIcon 
-                className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} 
-              />
-              <span>
-                {isRefreshing ? t('common.updating') || 'Actualizando...' : t('common.refresh_data') || 'Actualizar Datos'}
-              </span>
-            </button>
           </div>
         </div>
       </div>

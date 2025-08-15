@@ -1,4 +1,5 @@
 import pytest
+import importlib.util
 import tempfile
 import os
 from datetime import date
@@ -7,20 +8,24 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from main import app
+from constants import MSG_NO_UR_DATA
 from database import Base, get_db, URRecord
 from services import URService
 from models import URValue, URResponse
 from excel_processor import URExcelProcessor
 
+# Optional dependency (pandas) may not be available in some minimal environments (e.g. Python 3.13 wheels not yet published)
+PANDAS_AVAILABLE = importlib.util.find_spec("pandas") is not None
 
-# Configuración de base de datos de prueba
+
+# Test database configuration
 SQLALCHEMY_DATABASE_URL = "sqlite:///./test_ur.db"
 engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False})
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
 def override_get_db():
-    """Override de la dependencia de base de datos para tests"""
+    """Override the DB dependency for tests."""
     try:
         db = TestingSessionLocal()
         yield db
@@ -33,7 +38,7 @@ app.dependency_overrides[get_db] = override_get_db
 
 @pytest.fixture(scope="module", autouse=True)
 def setup_database():
-    """Configurar base de datos de prueba"""
+    """Create/drop test database metadata once for the module."""
     Base.metadata.create_all(bind=engine)
     yield
     Base.metadata.drop_all(bind=engine)
@@ -41,8 +46,8 @@ def setup_database():
 
 @pytest.fixture
 def db_session():
-    """Sesión de base de datos para tests"""
-    # Limpiar todas las tablas antes de cada test
+    """Yield a fresh DB session (clean tables each test)."""
+    # Drop & recreate all tables to ensure isolation
     Base.metadata.drop_all(bind=engine)
     Base.metadata.create_all(bind=engine)
     
@@ -55,13 +60,13 @@ def db_session():
 
 @pytest.fixture
 def client():
-    """Cliente de prueba para FastAPI"""
+    """FastAPI test client."""
     return TestClient(app)
 
 
 @pytest.fixture
 def sample_ur_data(db_session):
-    """Datos de muestra para UR"""
+    """Seed sample UR records for tests."""
     sample_records = [
         URRecord(año=2023, mes=1, valor=1501.26),
         URRecord(año=2023, mes=2, valor=1502.25),
@@ -80,10 +85,10 @@ def sample_ur_data(db_session):
 
 
 class TestURService:
-    """Tests para el servicio URService"""
+    """Tests for URService core logic."""
     
     def test_get_ur_by_year_month_exists(self, db_session, sample_ur_data):
-        """Test obtener UR por año y mes que existe"""
+        """Get UR by year/month that exists."""
         service = URService(db_session)
         result = service.get_ur_by_year_month(2023, 1)
         
@@ -93,14 +98,14 @@ class TestURService:
         assert result.valor == 1501.26
     
     def test_get_ur_by_year_month_not_exists(self, db_session, sample_ur_data):
-        """Test obtener UR por año y mes que no existe"""
+        """Get UR by year/month that does not exist."""
         service = URService(db_session)
         result = service.get_ur_by_year_month(2023, 12)
         
         assert result is None
     
     def test_get_ur_by_year(self, db_session, sample_ur_data):
-        """Test obtener todos los valores UR de un año"""
+        """Get all UR values for a given year."""
         service = URService(db_session)
         results = service.get_ur_by_year(2023)
         
@@ -111,14 +116,14 @@ class TestURService:
         assert results[2].mes == 3
     
     def test_get_ur_by_year_empty(self, db_session, sample_ur_data):
-        """Test obtener UR de un año sin datos"""
+        """Get UR values for a year with no data."""
         service = URService(db_session)
         results = service.get_ur_by_year(2022)
         
         assert len(results) == 0
     
     def test_get_ur_by_range_same_year(self, db_session, sample_ur_data):
-        """Test obtener UR por rango en el mismo año"""
+        """Get UR values for a range within the same year."""
         service = URService(db_session)
         results = service.get_ur_by_range(2023, 1, 2023, 3)
         
@@ -128,7 +133,7 @@ class TestURService:
         assert results[2].mes == 3
     
     def test_get_ur_by_range_multiple_years(self, db_session, sample_ur_data):
-        """Test obtener UR por rango de múltiples años"""
+        """Get UR values across a multi-year range."""
         service = URService(db_session)
         results = service.get_ur_by_range(2023, 2, 2024, 1)
         
@@ -138,7 +143,7 @@ class TestURService:
         assert results[2].año == 2024 and results[2].mes == 1
     
     def test_get_latest_ur(self, db_session, sample_ur_data):
-        """Test obtener el valor más reciente de UR"""
+        """Get most recent UR value."""
         service = URService(db_session)
         result = service.get_latest_ur()
         
@@ -148,14 +153,14 @@ class TestURService:
         assert result.valor == 1827.25
     
     def test_get_total_records(self, db_session, sample_ur_data):
-        """Test contar total de registros UR"""
+        """Count total UR records."""
         service = URService(db_session)
         total = service.get_total_records()
         
         assert total == 7
     
     def test_get_year_range_available(self, db_session, sample_ur_data):
-        """Test obtener rango de años disponibles"""
+        """Get min/max year available."""
         service = URService(db_session)
         min_year, max_year = service.get_year_range_available()
         
@@ -163,7 +168,7 @@ class TestURService:
         assert max_year == 2025
     
     def test_get_available_years(self, db_session, sample_ur_data):
-        """Test obtener años disponibles"""
+        """Get available years (descending)."""
         service = URService(db_session)
         years = service.get_available_years()
         
@@ -171,10 +176,10 @@ class TestURService:
 
 
 class TestURAPI:
-    """Tests para los endpoints de la API de UR"""
+    """API endpoint tests for UR."""
     
     def test_get_latest_ur_success(self, client, sample_ur_data):
-        """Test endpoint obtener último valor UR"""
+        """Endpoint: latest UR value."""
         response = client.get("/api/ur/latest")
         
         assert response.status_code == 200
@@ -185,7 +190,7 @@ class TestURAPI:
         assert data["data"]["valor"] == 1827.25
     
     def test_get_ur_by_year_month_success(self, client, sample_ur_data):
-        """Test endpoint obtener UR por año y mes"""
+        """Endpoint: UR by year/month success."""
         response = client.get("/api/ur/year-month/2023/1")
         
         assert response.status_code == 200
@@ -196,25 +201,25 @@ class TestURAPI:
         assert data["data"]["valor"] == 1501.26
     
     def test_get_ur_by_year_month_not_found(self, client, sample_ur_data):
-        """Test endpoint UR por año y mes no encontrado"""
+        """Endpoint: UR by year/month not found."""
         response = client.get("/api/ur/year-month/2023/12")
         
         assert response.status_code == 200
         data = response.json()
         assert data["success"] is False
-        assert "No hay datos de UR disponibles" in data["message"]
+        assert "No UR data available for 2023-12" in data["message"]
     
     def test_get_ur_by_year_month_invalid_month(self, client, sample_ur_data):
-        """Test endpoint UR con mes inválido"""
+        """Endpoint: invalid month parameter."""
         response = client.get("/api/ur/year-month/2023/13")
         
         assert response.status_code == 200
         data = response.json()
         assert data["success"] is False
-        assert "El mes debe estar entre 1 y 12" in data["message"]
+        assert "Month must be between 1 and 12" in data["message"]
     
     def test_get_ur_by_year_success(self, client, sample_ur_data):
-        """Test endpoint obtener UR por año"""
+        """Endpoint: UR by year success."""
         response = client.get("/api/ur/year/2023")
         
         assert response.status_code == 200
@@ -224,16 +229,17 @@ class TestURAPI:
         assert all(item["año"] == 2023 for item in data["data"])
     
     def test_get_ur_by_year_empty(self, client, sample_ur_data):
-        """Test endpoint UR por año sin datos"""
+        """Endpoint: UR by year - no data."""
         response = client.get("/api/ur/year/2022")
         
         assert response.status_code == 200
         data = response.json()
         assert data["success"] is False
-        assert "No hay datos de UR disponibles" in data["message"]
+        assert data["message"].startswith(MSG_NO_UR_DATA)
+        assert "2022" in data["message"]
     
     def test_get_ur_by_range_success(self, client, sample_ur_data):
-        """Test endpoint obtener UR por rango"""
+        """Endpoint: UR by explicit range success."""
         response = client.get("/api/ur/range/2023/1/2023/3")
         
         assert response.status_code == 200
@@ -242,25 +248,26 @@ class TestURAPI:
         assert len(data["data"]) == 3
     
     def test_get_ur_by_range_invalid_months(self, client, sample_ur_data):
-        """Test endpoint UR por rango con meses inválidos"""
+        """Endpoint: range with invalid months."""
         response = client.get("/api/ur/range/2023/0/2023/13")
-        
+
         assert response.status_code == 200
         data = response.json()
         assert data["success"] is False
-        assert "Los meses deben estar entre 1 y 12" in data["message"]
+        # Accept standardized constant message (singular 'Month')
+        assert "Month must be between 1 and 12" in data["message"]
     
     def test_get_ur_by_range_invalid_range(self, client, sample_ur_data):
-        """Test endpoint UR por rango inválido"""
+        """Endpoint: invalid chronological range."""
         response = client.get("/api/ur/range/2024/6/2024/3")
         
         assert response.status_code == 200
         data = response.json()
         assert data["success"] is False
-        assert "El período de inicio debe ser anterior" in data["message"]
+        assert "Start period must be before or equal to end period" in data["message"]
     
     def test_get_ur_by_range_post(self, client, sample_ur_data):
-        """Test endpoint POST para obtener UR por rango"""
+        """Endpoint: POST range (accepts legacy Spanish keys)."""
         payload = {
             "año_inicio": 2023,
             "mes_inicio": 1,
@@ -275,7 +282,7 @@ class TestURAPI:
         assert len(data["data"]) == 2
     
     def test_get_ur_info(self, client, sample_ur_data):
-        """Test endpoint información general de UR"""
+        """Endpoint: general UR info stats."""
         response = client.get("/api/ur/info")
         
         assert response.status_code == 200
@@ -287,11 +294,12 @@ class TestURAPI:
         assert len(data["data"]["available_years"]) == 3
 
 
+@pytest.mark.skipif(not PANDAS_AVAILABLE, reason="pandas not installed")
 class TestURExcelProcessor:
-    """Tests para el procesador de Excel de UR"""
+    """Excel processor tests for UR."""
     
     def test_parse_excel_data_empty(self):
-        """Test parsear datos vacíos"""
+        """Parse empty DataFrame returns empty list."""
         import pandas as pd
         processor = URExcelProcessor()
         
@@ -301,11 +309,10 @@ class TestURExcelProcessor:
         assert result == []
     
     def test_parse_excel_data_sample(self):
-        """Test parsear datos de muestra"""
+        """Parse sample DataFrame with header row."""
         import pandas as pd
         processor = URExcelProcessor()
-        
-        # Crear datos de muestra que simulan el formato del BHU
+        # Create sample data simulating BHU format
         data = {
             'AÑO': [2023, 2024],
             'ENERO': [1501.26, 1650.00],
@@ -313,18 +320,17 @@ class TestURExcelProcessor:
             'MARZO': [1579.57, None]
         }
         df = pd.DataFrame(data)
-        
-        # Simular que la primera fila contiene los encabezados
-        # Insertamos una fila de encabezados
+
+        # Simulate first row contains headers by inserting a header row
         header_row = pd.DataFrame([['AÑO', 'ENERO', 'FEBRERO', 'MARZO']], columns=df.columns)
         df_with_header = pd.concat([header_row, df], ignore_index=True)
-        
+
         result = processor.parse_excel_data(df_with_header)
-        
-        # Verificar que se parsearon correctamente
-        assert len(result) >= 4  # Al menos 4 registros válidos
-        
-        # Verificar algunos valores específicos
+
+        # Basic sanity
+        assert len(result) >= 4  # At least 4 valid records
+
+        # Specific values
         records_dict = {(r[0], r[1]): r[2] for r in result}
         assert records_dict.get((2023, 1)) == 1501.26
         assert records_dict.get((2023, 2)) == 1502.25
@@ -332,10 +338,10 @@ class TestURExcelProcessor:
 
 
 class TestURModels:
-    """Tests para los modelos de UR"""
+    """UR models tests."""
     
     def test_ur_value_creation(self):
-        """Test creación de URValue"""
+        """Create URValue instance."""
         ur_value = URValue(año=2023, mes=6, valor=1500.50)
         
         assert ur_value.año == 2023
@@ -343,39 +349,39 @@ class TestURModels:
         assert ur_value.valor == 1500.50
     
     def test_ur_value_validation(self):
-        """Test validación de URValue"""
-        # Test con datos válidos
+        """Validate URValue and serialization (bilingual keys)."""
+    # Valid data
         ur_value = URValue(año=2023, mes=12, valor=1500.50)
         assert ur_value.mes == 12
         
-        # Test serialización
+    # Serialization (returns both Spanish & English keys)
         data = ur_value.dict()
         assert data["año"] == 2023
         assert data["mes"] == 12
         assert data["valor"] == 1500.50
     
     def test_ur_response_success(self):
-        """Test URResponse exitoso"""
+        """URResponse with single value success."""
         ur_value = URValue(año=2023, mes=6, valor=1500.50)
         response = URResponse(
             success=True,
-            message="Test exitoso",
+            message="Test successful",
             data=ur_value
         )
         
         assert response.success is True
-        assert response.message == "Test exitoso"
+        assert response.message == "Test successful"
         assert response.data.año == 2023
     
     def test_ur_response_list(self):
-        """Test URResponse con lista de datos"""
+        """URResponse with list of values."""
         ur_values = [
             URValue(año=2023, mes=1, valor=1500.50),
             URValue(año=2023, mes=2, valor=1510.75)
         ]
         response = URResponse(
             success=True,
-            message="Lista de valores",
+            message="List of values",
             data=ur_values
         )
         
@@ -385,13 +391,13 @@ class TestURModels:
         assert response.data[1].mes == 2
 
 
-# Tests de integración
+# Integration tests
 class TestURIntegration:
-    """Tests de integración para UR"""
+    """Integration tests covering basic workflow."""
     
     def test_full_workflow(self, client, db_session):
-        """Test del flujo completo: cargar datos, consultar API"""
-        # 1. Agregar datos de prueba directamente
+        """Full workflow: insert records then query endpoints."""
+        # 1. Add sample records directly
         sample_records = [
             URRecord(año=2023, mes=6, valor=1500.00),
             URRecord(año=2023, mes=7, valor=1510.00),
@@ -401,20 +407,20 @@ class TestURIntegration:
             db_session.add(record)
         db_session.commit()
         
-        # 2. Probar endpoint latest
+    # 2. Test latest endpoint
         response = client.get("/api/ur/latest")
         assert response.status_code == 200
         data = response.json()
         assert data["success"] is True
         
-        # 3. Probar endpoint específico
+    # 3. Test specific year-month endpoint
         response = client.get("/api/ur/year-month/2023/6")
         assert response.status_code == 200
         data = response.json()
         assert data["success"] is True
         assert data["data"]["valor"] == 1500.00
         
-        # 4. Probar endpoint de año
+    # 4. Test year endpoint
         response = client.get("/api/ur/year/2023")
         assert response.status_code == 200
         data = response.json()
@@ -423,5 +429,5 @@ class TestURIntegration:
 
 
 if __name__ == "__main__":
-    # Ejecutar tests específicos para debugging
-    pytest.main([__file__, "-v", "--tb=short"]) 
+    # Allow running this file directly for quick debugging
+    pytest.main([__file__, "-v", "--tb=short"])
