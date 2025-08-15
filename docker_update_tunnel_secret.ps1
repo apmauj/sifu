@@ -24,6 +24,19 @@ function Err($m){ Write-Host "[ERROR] $m" -ForegroundColor Red }
 
 if(-not (Get-Command gh -ErrorAction SilentlyContinue)){ Err 'gh CLI no encontrado'; exit 1 }
 
+# Verificar autenticación gh antes de continuar (para evitar fallo tardío)
+gh auth status 1>$null 2>$null
+if($LASTEXITCODE -ne 0){
+  Err 'gh no está autenticado. Ejecuta: gh auth login'
+  Write-Host "Pasos sugeridos:" -ForegroundColor Yellow
+  Write-Host "  1) gh auth login" -ForegroundColor DarkYellow
+  Write-Host "     - GitHub.com -> HTTPS -> Y (git) -> Login via browser" -ForegroundColor DarkYellow
+  Write-Host "  2) Scope mínimo PAT (si usas token manual): repo, workflow" -ForegroundColor DarkYellow
+  Write-Host "  3) Reintenta: ./docker_update_tunnel_secret.ps1 -TriggerDeploy" -ForegroundColor DarkYellow
+  Write-Host "Alternativa: exporta GH_TOKEN (PAT con scopes repo, workflow) y reintenta" -ForegroundColor DarkYellow
+  exit 1
+}
+
 # 1. Levantar/forzar recreación del túnel
 if(Test-Path './docker-compose.tunnel.yml'){
   Info 'Levantando túnel con docker-compose.tunnel.yml'
@@ -47,7 +60,7 @@ Info "URL túnel: $url"
 
 $apiUrl = "$url/api"
 Info "Actualizando secret VITE_PUBLIC_API_URL => $apiUrl"
-echo $apiUrl | gh secret set VITE_PUBLIC_API_URL -R $Repo | Out-Null
+Write-Output $apiUrl | gh secret set VITE_PUBLIC_API_URL -R $Repo | Out-Null
 if($LASTEXITCODE -ne 0){ Err 'Fallo actualizando secret'; exit 1 }
 Info 'Secret actualizado.'
 
