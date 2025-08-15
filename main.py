@@ -316,8 +316,27 @@ def _update_brou_cache():
             except Exception as e:  # noqa: BLE001
                 logger.error(f"[BROU Cache] Skipping rate due to error: {e}")
         if not formatted:
-            logger.warning("[BROU Cache] No valid rate entries after formatting")
-            return
+            logger.warning("[BROU Cache] No valid rate entries after formatting. Using sample fallback.")
+            try:
+                sample_rates = brou_processor._get_sample_rates()  # noqa: SLF001 (internal fallback)
+                for rate in sample_rates:
+                    currency = rate.get("currency")
+                    if not currency:
+                        continue
+                    formatted.append({
+                        "currency": currency,
+                        "buy_rate": rate.get("buy_rate"),
+                        "sell_rate": rate.get("sell_rate"),
+                        "average_rate": rate.get("average_rate"),
+                        "arbitrage_buy": rate.get("arbitrage_buy"),
+                        "arbitrage_sell": rate.get("arbitrage_sell"),
+                        "preferential": True if currency == "USD_EBROU" else None,
+                        "source": "BROU_SAMPLE",
+                        "timestamp": rate.get("timestamp") or datetime.utcnow().isoformat()
+                    })
+            except Exception as fe:  # noqa: BLE001
+                logger.error(f"[BROU Cache] Fallback sample failed: {fe}")
+                return
         with _cache_lock:
             brou_cache = {"data": formatted, "updated_at": datetime.utcnow()}
         logger.info(f"[BROU Cache] Updated ({len(formatted)} currencies)")
