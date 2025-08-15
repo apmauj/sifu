@@ -31,14 +31,16 @@ const BROUPanel = () => {
       setError(null);
       
       const data = await brouService.getCurrent();
-      if (data.success && data.data) {
-        setRates(data.data);
+      // Backend puede devolver lista directa (compat anterior) o objeto { success, data }
+      const list = Array.isArray(data) ? data : (Array.isArray(data?.data) ? data.data : []);
+      if (list.length > 0) {
+        setRates(list);
         setLastUpdate(new Date());
         if (rates.length) {
           showSuccess(t('brou.updated') || 'Cotizaciones BROU actualizadas');
         }
       } else {
-        const msg = data.message || t('brou.error_loading') || 'Error obteniendo cotizaciones BROU';
+        const msg = (data && data.message) || t('brou.error_loading') || 'Error obteniendo cotizaciones BROU';
         showError(msg);
         throw new Error(msg);
       }
