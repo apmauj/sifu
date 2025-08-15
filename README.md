@@ -1,6 +1,7 @@
 # SIFU - Sistema de Índices Financieros del Uruguay
 
-[![Deploy Frontend to GitHub Pages](https://github.com/apmauj/sifu/actions/workflows/deploy-frontend.yml/badge.svg)](https://github.com/apmauj/sifu/actions/workflows/deploy-frontend.yml)
+[![Deploy Frontend](https://github.com/apmauj/sifu/actions/workflows/deploy-frontend.yml/badge.svg)](https://github.com/apmauj/sifu/actions/workflows/deploy-frontend.yml)
+[![Backend CI](https://github.com/apmauj/sifu/actions/workflows/ci-backend.yml/badge.svg)](https://github.com/apmauj/sifu/actions/workflows/ci-backend.yml)
 
 Sistema web para consulta de índices financieros y tasas de cambio en Uruguay.
 
@@ -147,13 +148,20 @@ Los archivos de traducción se sirven desde `frontend/public/i18n` en producció
 
 ```bash
 # Backend tests
-cd backend
 pytest
 
 # Frontend tests
 cd frontend
 npm test
 ```
+
+## ✅ Calidad & CI
+
+- Workflow Backend CI: ejecuta pytest y `scripts/check_messages.py` en cada push/PR.
+- Workflow Deploy Frontend: build + deploy a GitHub Pages con API URL normalizada.
+- Mensajes y tags centralizados en `constants.py` para respuestas homogéneas.
+- Script de control de duplicados: `python scripts/check_messages.py` (añade exit code 1 si encuentra repeticiones).
+
 
 ## 📊 Monitoreo
 

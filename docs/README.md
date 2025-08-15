@@ -148,6 +148,7 @@ open http://localhost:8000/api/docs
 - [x] Centralización de mensajes y tags en constantes
 - [x] Script de verificación de mensajes repetidos
 - [x] Suite completa de pruebas verde (231 tests)
+- [x] CI Backend automatizado (pytest + verificación de mensajes)
 
 ### 🚧 **En Desarrollo**
 - [ ] Frontend React (próximo)
