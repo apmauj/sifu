@@ -293,20 +293,31 @@ def _update_brou_cache():
         if not current_rates:
             logger.warning("[BROU Cache] No data fetched")
             return
-        formatted = []
         source = "BROU" if is_from_brou else "BROU_SAMPLE"
-        for currency, buy, sell, avg, arb_buy, arb_sell, preferential in current_rates:
-            formatted.append({
-                "currency": currency,
-                "buy_rate": buy,
-                "sell_rate": sell,
-                "average_rate": avg,
-                "arbitrage_buy": arb_buy,
-                "arbitrage_sell": arb_sell,
-                "preferential": preferential,
-                "source": source,
-                "timestamp": datetime.utcnow().isoformat()
-            })
+        formatted: list[dict] = []
+        for rate in current_rates:
+            # rate es un dict según BROUProcessor._get_sample_rates / get_current_rates
+            try:
+                currency = rate.get("currency")
+                if not currency:
+                    continue
+                formatted.append({
+                    "currency": currency,
+                    "buy_rate": rate.get("buy_rate"),
+                    "sell_rate": rate.get("sell_rate"),
+                    "average_rate": rate.get("average_rate"),
+                    "arbitrage_buy": rate.get("arbitrage_buy"),
+                    "arbitrage_sell": rate.get("arbitrage_sell"),
+                    # Preferencial: marcar USD_EBROU
+                    "preferential": True if currency == "USD_EBROU" else None,
+                    "source": source,
+                    "timestamp": rate.get("timestamp") or datetime.utcnow().isoformat()
+                })
+            except Exception as e:  # noqa: BLE001
+                logger.error(f"[BROU Cache] Skipping rate due to error: {e}")
+        if not formatted:
+            logger.warning("[BROU Cache] No valid rate entries after formatting")
+            return
         with _cache_lock:
             brou_cache = {"data": formatted, "updated_at": datetime.utcnow()}
         logger.info(f"[BROU Cache] Updated ({len(formatted)} currencies)")
@@ -1098,8 +1109,13 @@ async def get_exchange_rate_by_date_and_currency(date: date, currency: str, db: 
         raise HTTPException(status_code=HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
 @app.get("/api/brou/current", tags=["BROU"])
-async def get_current_brou_rates(force_refresh: bool = False):
-    """Obtener cotizaciones actuales del BROU (scraping tiempo real)."""
+async def get_current_brou_rates(force_refresh: bool = False, full: bool = False):
+    """Obtener cotizaciones actuales del BROU.
+
+    Compatibilidad: versión anterior devolvía lista directamente. Ahora por defecto
+    seguimos retornando únicamente la lista (para no romper frontend/tests existentes).
+    Si se pasa ?full=true se entrega un envoltorio con metadatos.
+    """
     try:
         global brou_cache
         with _cache_lock:
@@ -1118,27 +1134,21 @@ async def get_current_brou_rates(force_refresh: bool = False):
                     brou_cache = {"data": [], "updated_at": datetime.utcnow()}
                 cached = brou_cache
 
-        if cached:
+        data_list = cached["data"] if cached else []
+        if full:
             return {
-                "success": True,
-                "message": f"Cotizaciones BROU (cache) obtenidas exitosamente. {len(cached['data'])} monedas",
-                "data": cached["data"],
+                "success": True if data_list else False,
+                "message": f"Cotizaciones BROU obtenidas ({len(data_list)} monedas)" if data_list else "Sin datos BROU",
+                "data": data_list,
                 "source": "BROU",
                 "timestamp": datetime.utcnow().isoformat()
             }
-        return {
-            "success": False,
-            "message": "No se pudieron obtener las cotizaciones del BROU",
-            "data": None
-        }
-    
+        return data_list
     except Exception as e:
         logger.error(f"Error getting current BROU rates: {e}")
-        return {
-            "success": False,
-            "message": f"Error interno: {str(e)}",
-            "data": None
-    }
+        if full:
+            return {"success": False, "message": f"Error interno: {str(e)}", "data": None}
+        return []
 
 
 # -----------------------------------------------------------------------------

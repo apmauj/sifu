@@ -79,3 +79,22 @@ def test_brou_current_force_refresh(mock_update):
     resp = client.get('/api/brou/current?force_refresh=true')
     assert resp.status_code == 200
     mock_update.assert_called_once()
+
+def test_brou_current_structure_and_preferential_flag():
+    """Integration-style check without patching to ensure formatting logic works.
+
+    We call the endpoint (which will populate cache via real _update_brou_cache) and
+    assert the response schema matches expected keys and that USD_EBROU (if present)
+    is marked preferential.
+    """
+    resp = client.get('/api/brou/current?force_refresh=true')
+    assert resp.status_code == 200
+    data = resp.json()
+    assert isinstance(data, list)
+    assert len(data) > 0
+    required_keys = {"currency","buy_rate","sell_rate","average_rate","arbitrage_buy","arbitrage_sell","preferential","source","timestamp"}
+    for entry in data:
+        assert required_keys.issubset(entry.keys())
+    usd_ebrou = [e for e in data if e.get("currency") == "USD_EBROU"]
+    if usd_ebrou:
+        assert usd_ebrou[0]["preferential"] is True
