@@ -38,7 +38,10 @@ jobs:
           tags: |
             type=raw,value=latest
             type=sha
-            type=raw,value={{date}}-{{date "2006-01-02"}}
+            # Fecha ISO (YYYY-MM-DD) usando comillas simples internas para evitar error de parseo
+            type=raw,value={{date '2006-01-02'}}
+            # Variante compacta YYYYMMDD
+            type=raw,value={{date '20060102'}}
 
       - name: Build and push
         uses: docker/build-push-action@v5
