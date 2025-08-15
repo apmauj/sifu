@@ -164,6 +164,20 @@ npm test
 - Mensajes y tags centralizados en `constants.py` para respuestas homogéneas.
 - Script de control de duplicados: `python scripts/check_messages.py` (añade exit code 1 si encuentra repeticiones).
 
+### Automatización de túnel temporal (Pages → Backend local)
+
+Para regenerar una URL pública y actualizar el secret `VITE_PUBLIC_API_URL`:
+
+```powershell
+# Método completo (levanta backend local + túnel ngrok/cloudflared)
+./run_tunnel_backend.ps1 -TunnelProvider cloudflared -UpdateSecret -TriggerDeploy
+
+# Solo recrear túnel cloudflared con docker-compose.tunnel.yml y actualizar secret + redeploy
+./docker_update_tunnel_secret.ps1 -TriggerDeploy
+```
+
+Tras unos ~60s el frontend en Pages se redeploya y comienza a usar la nueva URL.
+
 
 ## 📊 Monitoreo
 
