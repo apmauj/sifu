@@ -10,8 +10,8 @@ RUN apt-get update && apt-get install -y \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Copiar archivos de dependencias
-COPY requirements.txt .
+# Copiar todos los archivos de dependencias (requirements.txt incluye -r requirements-core.txt y -r requirements-excel.txt)
+COPY requirements*.txt ./
 
 # Instalar dependencias de Python
 RUN pip install --no-cache-dir -r requirements.txt
