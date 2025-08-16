@@ -1,6 +1,6 @@
 import React from 'react';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { ExclamationTriangleIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
+import { ExclamationTriangleIcon, MagnifyingGlassIcon } from '../icons';
 import { useI18n } from '../contexts/I18nContext';
 
 const URResultsDisplay = ({ results, searchType, isLoading, error }) => {
@@ -193,7 +193,7 @@ const URResultsDisplay = ({ results, searchType, isLoading, error }) => {
                 </div>
                 <div className="text-center">
           <div className="text-sm text-gray-600 dark:text-gray-300">{t('ur.total_variation') || 'Variación total'}</div>
-          <div className={`text-lg font-semibold ${stats.totalVariation >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+              <div className={`text-lg font-semibold ${stats.totalVariation >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                     {formatPercentage(stats.totalVariation)}
                   </div>
                 </div>

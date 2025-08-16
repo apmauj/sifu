@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useForm, Controller } from 'react-hook-form';
-import { MagnifyingGlassIcon, CalendarIcon } from '@heroicons/react/24/outline';
+import { MagnifyingGlassIcon, CalendarIcon } from '../icons';
 import { format, addDays, subDays, parseISO, isValid } from 'date-fns';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';

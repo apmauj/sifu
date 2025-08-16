@@ -6,7 +6,7 @@ import {
   ArrowDownIcon,
   ArrowUpIcon,
   MinusIcon
-} from '@heroicons/react/24/outline';
+} from '../icons';
 import { format, parseISO } from 'date-fns';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { useI18n } from '../contexts/I18nContext';

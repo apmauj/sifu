@@ -5,7 +5,11 @@ let EXCHANGE_RATE_PANEL_INIT = false;
 import exchangeService from '../services/exchangeService';
 import { useI18n } from '../contexts/I18nContext';
 import { useHourlySyncedUpdate } from '../hooks/useHourlySyncedUpdate';
+<<<<<<< HEAD
 import { ChartIcon, LoadingIcon } from './icons';
+=======
+import { ChartIcon, RefreshIcon, LoadingIcon } from '../icons';
+>>>>>>> 5ab59f5 (wip(frontend): local UI adjustments before syncing with origin/master)
 import { useToast } from '../contexts/ToastContext';
 
 const ExchangeRatePanel = () => {

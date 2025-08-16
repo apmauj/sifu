@@ -1,5 +1,9 @@
 import React from 'react';
+<<<<<<< HEAD
 import { CurrencyDollarIcon } from '@heroicons/react/24/outline';
+=======
+import { CurrencyDollarIcon, ArrowPathIcon } from '../icons';
+>>>>>>> 5ab59f5 (wip(frontend): local UI adjustments before syncing with origin/master)
 import LanguageSelector from './LanguageSelector';
 import { useI18n } from '../contexts/I18nContext';
 import ThemeToggle from './ui/ThemeToggle';

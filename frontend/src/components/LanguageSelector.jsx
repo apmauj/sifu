@@ -1,5 +1,5 @@
 import React from 'react';
-import { GlobeAltIcon } from '@heroicons/react/24/outline';
+import { GlobeAltIcon } from '../icons';
 import { useI18n } from '../contexts/I18nContext';
 
 const LanguageSelector = () => {

@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useI18n } from '../contexts/I18nContext';
-import { ExclamationTriangleIcon } from '@heroicons/react/24/outline';
+import { ExclamationTriangleIcon } from '../icons';
 import { getTodayLocal, getDaysAgoLocal } from '../utils/dateUtils';
-import { ExchangeIcon, ChartIcon, TrendingUpIcon, TodayIcon, WeekIcon, SearchIcon } from './icons';
+import { ExchangeIcon, ChartIcon, TrendingUpIcon, TodayIcon, WeekIcon, SearchIcon } from '../icons';
 
 const ExchangeSearchForm = ({ onSearch, isLoading }) => {
   const { t } = useI18n();
