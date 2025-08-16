@@ -18,7 +18,7 @@ import {
   APP_TITLE,
   OFFICIAL_URLS
 } from './constants';
-import { CalculatorIcon, ChartIcon, ExchangeIcon, BankIcon, SummaryIcon } from './components/icons';
+import { CalculatorIcon, ChartIcon, ExchangeIcon, BankIcon, SummaryIcon } from './icons';
 import Card, { CardBody } from './components/ui/Card';
 import { Tabs, Tab } from './components/ui/Tabs';
 import { useHourlySyncedUpdate } from './hooks/useHourlySyncedUpdate';

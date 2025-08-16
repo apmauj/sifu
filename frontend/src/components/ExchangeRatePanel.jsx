@@ -5,7 +5,8 @@ let EXCHANGE_RATE_PANEL_INIT = false;
 import exchangeService from '../services/exchangeService';
 import { useI18n } from '../contexts/I18nContext';
 import { useHourlySyncedUpdate } from '../hooks/useHourlySyncedUpdate';
-import { ChartIcon, LoadingIcon } from './icons';
+// Centralized icons (RefreshIcon not used after removing manual refresh)
+import { ChartIcon, LoadingIcon } from '../icons';
 import { useToast } from '../contexts/ToastContext';
 
 const ExchangeRatePanel = () => {

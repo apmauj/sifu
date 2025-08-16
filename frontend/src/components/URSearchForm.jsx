@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useForm, Controller } from 'react-hook-form';
-import { MagnifyingGlassIcon, CalendarIcon } from '@heroicons/react/24/outline';
+import { MagnifyingGlassIcon, CalendarIcon } from '../icons';
 import urService from '../services/urService';
 import QuickSelectors from './QuickSelectors';
 import { useI18n } from '../contexts/I18nContext';

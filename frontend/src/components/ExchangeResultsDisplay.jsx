@@ -3,7 +3,7 @@ import { getCurrencyInfo, formatExchangeRate } from '../services/exchangeService
 import { useI18n } from '../contexts/I18nContext';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { format, parseISO } from 'date-fns';
-import { FlagIcon, ExchangeIcon, ChartIcon, SummaryIcon } from './icons';
+import { LegacyFlagIcon as FlagIcon, ExchangeIcon, ChartIcon, SummaryIcon } from '../icons';
 
 const ExchangeResultsDisplay = ({ results, searchType, isLoading, error }) => {
   const { t, translateBackendMessage } = useI18n();

@@ -1,5 +1,5 @@
 import React from 'react';
-import { MoonIcon, SunIcon } from '@heroicons/react/24/outline';
+import { MoonIcon, SunIcon } from '../../icons';
 
 const ThemeToggle = () => {
   const [isDark, setIsDark] = React.useState(false);

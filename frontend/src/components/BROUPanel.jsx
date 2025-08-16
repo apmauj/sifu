@@ -4,7 +4,7 @@ let BROU_PANEL_INIT = false; // mantenido para compatibilidad pero ya no se usa 
 import { useI18n } from '../contexts/I18nContext';
 import { useHourlySyncedUpdate } from '../hooks/useHourlySyncedUpdate';
 import brouService from '../services/brouService';
-import { BankIcon, RefreshIcon, LoadingIcon, RetryIcon } from './icons';
+import { BankIcon, RefreshIcon, LoadingIcon, RetryIcon } from '../icons';
 import { useToast } from '../contexts/ToastContext';
 
 const BROUPanel = () => {
@@ -90,7 +90,7 @@ const BROUPanel = () => {
     return `${baseLight} ${baseDark}`;
   };
 
-  if (loading && rates.length === 0) {
+  if (loading && Array.isArray(rates) && rates.length === 0) {
     return (
               <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-md p-6">
           <div className="flex items-center justify-between mb-6">
@@ -131,6 +131,8 @@ const BROUPanel = () => {
     );
   }
 
+  const safeRates = Array.isArray(rates) ? rates : [];
+
   return (
     <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-md p-6">
       {/* Header */}
@@ -170,7 +172,7 @@ const BROUPanel = () => {
               </tr>
             </thead>
             <tbody>
-              {rates.map((rate) => {
+              {safeRates.map((rate) => {
                 const display = currencyInfo[rate.currency];
                 if (!display) return null;
 
@@ -222,7 +224,7 @@ const BROUPanel = () => {
 
       {/* Mobile View */}
   <div className="md:hidden space-y-4">
-        {rates.map((rate) => {
+        {safeRates.map((rate) => {
           const display = currencyInfo[rate.currency];
           if (!display) return null;
 

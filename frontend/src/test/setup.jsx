@@ -392,7 +392,10 @@ vi.mock('@heroicons/react/24/outline', () => ({
   BanknotesIcon: (props) => React.createElement('svg', { 'data-testid': 'banknotes-icon', ...props }),
   ArrowUpIcon: (props) => React.createElement('svg', { 'data-testid': 'arrow-up-icon', ...props }),
   ArrowDownIcon: (props) => React.createElement('svg', { 'data-testid': 'arrow-down-icon', ...props }),
-  GlobeAltIcon: (props) => React.createElement('svg', { 'data-testid': 'globe-alt-icon', ...props })
+  GlobeAltIcon: (props) => React.createElement('svg', { 'data-testid': 'globe-alt-icon', ...props }),
+  MoonIcon: (props) => React.createElement('svg', { 'data-testid': 'moon-icon', ...props }),
+  SunIcon: (props) => React.createElement('svg', { 'data-testid': 'sun-icon', ...props }),
+  MinusIcon: (props) => React.createElement('svg', { 'data-testid': 'minus-icon', ...props })
 }))
 
 // Mock global de react-hook-form (usado en formularios)
