@@ -1,4 +1,3 @@
-import pytest
 from unittest.mock import Mock
 from datetime import date
 from services import UIService, URService, ExchangeRateService

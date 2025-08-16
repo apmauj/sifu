@@ -1,7 +1,6 @@
 """
 Tests para modelos de datos
 """
-import pytest
 from datetime import date
 from models import UIValue, UIResponse, UIRangeRequest, RefreshResponse, URValue, URResponse, URRangeRequest
 

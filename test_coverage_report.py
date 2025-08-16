@@ -3,7 +3,6 @@
 Script para mostrar resumen del coverage de tests de UI Calculator
 """
 import subprocess
-import sys
 import os
 from datetime import datetime
 

@@ -1,15 +1,14 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-from fastapi import FastAPI, HTTPException, Depends, BackgroundTasks, Response
+from fastapi import FastAPI, HTTPException, Depends, BackgroundTasks
 from contextlib import asynccontextmanager
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
 from datetime import date, datetime
 import asyncio
-from typing import List, Optional
+from typing import Optional
 import logging
 import uuid
 import time
@@ -18,7 +17,7 @@ from threading import Lock as ThreadLock
 from bootstrap import perform_bootstrap
 
 from database import get_db
-from models import UIResponse, RefreshResponse, UIValue, UIRangeRequest, URResponse, URRangeRequest, ExchangeRateResponse
+from models import UIResponse, RefreshResponse, URResponse, ExchangeRateResponse
 from services import UIService, URService, ExchangeRateService
 from excel_processor import ExcelProcessor, URExcelProcessor, ExchangeRateExcelProcessor, ExchangeRateBCUProcessor
 from brou_processor import BROUProcessor

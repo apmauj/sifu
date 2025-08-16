@@ -1,11 +1,9 @@
 """
 Tests para servicios de negocio
 """
-import pytest
 from unittest.mock import Mock
 from datetime import date
 from services import UIService
-from models import UIValue
 
 
 class TestUIService:

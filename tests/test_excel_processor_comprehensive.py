@@ -5,11 +5,9 @@ Incluye tests para URExcelProcessor y casos edge faltantes de ExcelProcessor
 import pytest
 import pandas as pd
 import requests
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import Mock, patch
 from datetime import date, datetime
-import io
 from excel_processor import ExcelProcessor, URExcelProcessor
-from database import UIRecord, URRecord
 
 
 class TestExcelProcessorComprehensive:

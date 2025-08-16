@@ -1,11 +1,8 @@
 """
 Tests para servicios de UR
 """
-import pytest
-from unittest.mock import Mock, MagicMock
-from datetime import date
+from unittest.mock import Mock
 from services import URService
-from models import URValue
 
 
 class TestURService:

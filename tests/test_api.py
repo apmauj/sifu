@@ -6,8 +6,7 @@ from fastapi.testclient import TestClient
 from unittest.mock import Mock, patch
 from datetime import date
 from main import app
-from models import UIValue, URValue, UIResponse, RefreshResponse
-from services import UIService
+from models import UIValue
 
 
 @pytest.fixture

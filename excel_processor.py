@@ -5,14 +5,13 @@ except Exception:  # pragma: no cover
     import warnings
     warnings.warn("pandas no disponible; operaciones de Excel serán omitidas en este entorno")
 import requests
-from datetime import datetime, date, timedelta
+from datetime import datetime, date
 from typing import List, Tuple, Optional
 import logging
 from sqlalchemy.orm import Session
 from database import UIRecord, URRecord, ExchangeRateRecord
 import io
 from constants import *
-import re
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)

@@ -2,11 +2,11 @@
 Tests simplificados para endpoints de la API
 """
 import pytest
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 from fastapi.testclient import TestClient
 from datetime import date
 from main import app
-from models import UIValue, UIResponse
+from models import UIValue
 
 
 class TestAPISimple:

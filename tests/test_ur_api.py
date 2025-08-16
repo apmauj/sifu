@@ -2,12 +2,10 @@
 Tests para endpoints de UR en la API
 """
 import pytest
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 from fastapi.testclient import TestClient
-from datetime import date
 from main import app
-from models import URValue, URResponse
-from services import URService
+from models import URValue
 
 
 class TestUREndpoints:

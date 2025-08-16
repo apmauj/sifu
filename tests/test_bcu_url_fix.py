@@ -1,7 +1,4 @@
-import pytest
-from unittest.mock import Mock, patch, MagicMock
-import requests
-from datetime import date
+from unittest.mock import patch
 from excel_processor import ExchangeRateBCUProcessor
 from constants import URL_BCU_EXCHANGE_RATES
 
@@ -34,7 +31,7 @@ class TestBCUURLFix:
             result, is_from_bcu = processor.get_current_rates()
             assert isinstance(result, list)
             assert len(result) > 0
-            assert is_from_bcu == False  # Should be fallback data
+            assert is_from_bcu  # Should be fallback data
     
     def test_bcu_processor_historical_data_fallback(self):
         """Test BCU processor returns historical data when BCU webservice is unavailable"""
@@ -48,7 +45,7 @@ class TestBCUURLFix:
             # Verify historical data structure
             assert isinstance(result, list)
             assert len(result) > 0
-            assert is_from_bcu == False  # Should be historical data
+            assert is_from_bcu  # Should be historical data
             
             # Check historical data has expected structure (tuple format)
             historical_rate = result[0]
@@ -74,7 +71,7 @@ class TestBCUURLFix:
             result, is_from_bcu = processor.get_current_rates_from_webservice()
             assert isinstance(result, list)
             assert len(result) > 0
-            assert is_from_bcu == True  # Should be real BCU data
+            assert is_from_bcu  # Should be real BCU data
     
     def test_minimal_sample_rates_structure(self):
         """Test that minimal sample rates have correct structure"""
@@ -119,7 +116,7 @@ class TestBCUURLFix:
             # Verify webservice data structure
             assert isinstance(result, list)
             assert len(result) == 4  # All 4 currencies
-            assert is_from_bcu == True  # Should be real BCU data
+            assert is_from_bcu  # Should be real BCU data
             
             # Check first currency (USD)
             usd_rate = result[0]
