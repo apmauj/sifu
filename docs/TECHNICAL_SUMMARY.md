@@ -364,3 +364,24 @@ Error Handling         Alta           Múltiples puntos de falla
 ---
 
 **El sistema está técnicamente listo para la implementación del frontend, con una base sólida y escalable que permitirá crear una experiencia de usuario excepcional.** 
+
+---
+
+## 📌 Actualización Reciente (2025-08-15)
+
+- Refactor proceso de actualización de caché BROU (manejo robusto de estructuras, logging mejorado).
+- Añadido flag `preferential` para `USD_EBROU` en respuesta `/api/brou/current`.
+- Nuevo parámetro `?full=true` devuelve `{ data, message, timestamp }` manteniendo compatibilidad (lista simple por defecto).
+- Fallback automático a datos de muestra si scraping produce 0 resultados (evita panel vacío y mejora resiliencia UX).
+- Test específico agregado para validar estructura y flag.
+- Pipeline de publicación de imagen backend estabilizado (tags: latest, fecha, SHA) y compose productivo actualizado a imagen inmutable (sin bind mount de código).
+
+## 🗓️ Próxima Sesión – Objetivos Propuestos
+
+1. Automatizar pull + recreate del servicio backend antes de refrescar secret del túnel (script o paso reutilizable en PowerShell).
+2. Añadir workflow programado (cron) que llame `/api/brou/current?full=true` y falle si `data.length == 0` o si la antigüedad excede X minutos.
+3. Extender panel BROU frontend para usar variante `full` y mostrar timestamp + badge de preferencial.
+4. Agregar métricas de frescura de caché al endpoint `/health` (p.ej. `brou_cache_age_seconds`).
+5. Revisión de documentación de endpoints exchange/BROU para unificación de términos y ejemplos.
+
+Se actualizará esta lista según decisiones al inicio de la próxima sesión.

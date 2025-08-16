@@ -41,53 +41,61 @@ docker-compose up -d
 ### Desarrollo Local (Windows)
 
 ```powershell
-# Backend
-cd backend
-python -m venv venv
-.\venv\Scripts\Activate.ps1
+# Backend (raíz del repo)
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
 uvicorn main:app --reload --host 0.0.0.0 --port 8000
 
-# Frontend (en otra terminal)
+# Frontend (otra terminal)
 cd frontend
 npm install
 npm run dev
+```
 
 ### Probar el build de Pages en local
 
 Para reproducir GitHub Pages (base "/sifu/") en local:
 
 ```powershell
-# Construir
 npm --prefix frontend run build
-
-# Servir dist con base /sifu (usa un servidor simple)
 npm --prefix frontend exec npx serve -s dist -l 5174
-# Luego abre http://localhost:5174/sifu/
+# Abrir: http://localhost:5174/sifu/
 ```
 
 ## 📁 Estructura del Proyecto
 
 ```text
-sifu/
-├── backend/                 # FastAPI backend
-│   ├── main.py             # Punto de entrada
-│   ├── requirements.txt    # Dependencias Python
-│   └── ...
-├── frontend/               # React frontend
-│   ├── src/
-│   ├── package.json
-│   └── ...
-├── docker-compose.yml      # Configuración Docker
-├── nginx.conf             # Configuración Nginx
-└── README.md
+.
+├── main.py              # FastAPI app (endpoints + lifespan)
+├── services.py          # Lógica de negocio UI/UR/Exchange/BROU
+├── models.py            # Pydantic / ORM models
+├── brou_processor.py    # Scraper/processor BROU (cambios recientes)
+├── excel_processor.py   # Procesamiento Excel (UI/UR)
+├── database.py          # Conexión y helpers DB
+├── constants.py         # Mensajes y tags centralizados
+├── requirements.txt     # Dependencias
+├── docker-compose.yml   # Stack principal
+├── frontend/            # React (Vite)
+└── docs/                # Documentación adicional
 ```
 
-## 🌐 Endpoints API
+## 🌐 Endpoints API (Resumen)
 
-- `GET /api/exchange-rates` - Tasas de cambio
-- `GET /api/brou-rates` - Tasas BROU
-- `GET /api/ur-rates` - Tasas UR
+Ver documentación interactiva en `/docs`.
+
+Principales:
+- `GET /api/ui/latest` – Última UI
+- `GET /api/ur/latest` – Última UR
+- `GET /api/brou/current` – Cotizaciones actuales BROU (lista simple por defecto). `?full=true` añade `{ message, timestamp }`.
+- `GET /api/exchange-rate/current` – Panel tiempo real BCU/INE
+- `GET /api/exchange-rate/history` – Históricos por moneda/rango
+- `POST /api/refresh/*` – Forzar actualización (UI, UR, exchange)
+
+Notas BROU:
+- Siempre retorna lista si no se pide `full` (retro‑compatible).
+- Campo `preferential` marca `USD_EBROU` cuando existe.
+- Fallback automático con datos de muestra si la fuente real falla (evita lista vacía).
 
 ## 🔧 Scripts Útiles
 
@@ -163,6 +171,15 @@ npm test
 - Workflow Publish Backend Image: construye y publica imagen Docker (tags latest, fecha y SHA) en Docker Hub.
 - Mensajes y tags centralizados en `constants.py` para respuestas homogéneas.
 - Script de control de duplicados: `python scripts/check_messages.py` (añade exit code 1 si encuentra repeticiones).
+
+### Cambios Recientes (2025-08-15)
+- Refactor caché BROU: soporte dict seguro + flag `preferential`.
+- Fallback a muestra cuando 0 monedas tras scraping.
+- Nuevo parámetro `?full=true` en `/api/brou/current` (metadatos + mensaje).
+- Test de estructura y flag preferencial agregado.
+- Workflow publicación backend estabilizado (tags: latest, fecha, SHA).
+- `docker-compose.yml` productivo ahora usa imagen publicada (removido bind mount de código que ocultaba cambios).
+- README alineado con layout real (sin subcarpeta backend/).
 
 ### Automatización de túnel temporal (Pages → Backend local)
 
@@ -288,4 +305,14 @@ Notas:
 - Alternativa ngrok: descomentá el servicio `ngrok` en `docker-compose.tunnel.yml`, definí `NGROK_AUTHTOKEN` en un `.env` y comentá el servicio `tunnel` de cloudflared.
 - Para producción real preferí un dominio propio + reverse proxy (ver `docker-compose.gateway.yml`).
 - Podés ajustar CORS cambiando `ALLOW_ORIGINS` en el servicio `backend`.
+
+## 🗓️ Próxima Sesión (Plan Tentativo)
+
+1. Automatizar (script/workflow) `docker pull` + recreación backend antes de actualizar secret del túnel.
+2. Workflow programado que verifique `/api/brou/current?full=true` y alerte si `data.length == 0`.
+3. Frontend: usar `?full=true` para mostrar timestamp y mensaje en panel BROU.
+4. Extender healthcheck para incluir frescura de caché BROU.
+5. Revisar documentación de exchange para unificar terminología.
+
+Registrar decisiones nuevas aquí para continuidad.
 
