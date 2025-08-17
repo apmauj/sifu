@@ -20,7 +20,7 @@ const UIPanel = ({ refreshKey }) => {
     if (value === null || value === undefined) return t('common.not_available') || 'N/D';
     return new Intl.NumberFormat('es-UY', {
       style: 'currency',
-      currency: 'USD',
+      currency: '$',
       minimumFractionDigits: 4,
       maximumFractionDigits: 4
     }).format(value);

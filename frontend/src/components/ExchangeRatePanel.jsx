@@ -20,9 +20,9 @@ const ExchangeRatePanel = () => {
   const manualRefreshRef = useRef(false); // retained for minimal change though manual trigger removed
 
   const currencyInfo = {
-    USD: { symbol: '$', flag: '🇺🇸', name: t('exchange.currencies.USD') || 'Dólar USA' },
+    USD: { symbol: 'US$', flag: '🇺🇸', name: t('exchange.currencies.USD') || 'Dólar USA' },
     EUR: { symbol: '€', flag: '🇪🇺', name: t('exchange.currencies.EUR') || 'Euro' },
-    ARS: { symbol: '$', flag: '🇦🇷', name: t('exchange.currencies.ARS') || 'Peso Arg.' },
+    ARS: { symbol: 'AR$', flag: '🇦🇷', name: t('exchange.currencies.ARS') || 'Peso Arg.' },
     BRL: { symbol: 'R$', flag: '🇧🇷', name: t('exchange.currencies.BRL') || 'Real' }
   };
 

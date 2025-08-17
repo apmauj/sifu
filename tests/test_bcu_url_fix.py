@@ -31,7 +31,7 @@ class TestBCUURLFix:
             result, is_from_bcu = processor.get_current_rates()
             assert isinstance(result, list)
             assert len(result) > 0
-            assert is_from_bcu  # Should be fallback data
+            assert not is_from_bcu  # Should be fallback data
     
     def test_bcu_processor_historical_data_fallback(self):
         """Test BCU processor returns historical data when BCU webservice is unavailable"""
@@ -45,7 +45,7 @@ class TestBCUURLFix:
             # Verify historical data structure
             assert isinstance(result, list)
             assert len(result) > 0
-            assert is_from_bcu  # Should be historical data
+            assert not is_from_bcu  # Should be historical data
             
             # Check historical data has expected structure (tuple format)
             historical_rate = result[0]
