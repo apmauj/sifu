@@ -19,9 +19,11 @@ const UIPanel = ({ refreshKey }) => {
 
   const formatUIValue = (value) => {
     if (value === null || value === undefined) return t('common.not_available') || 'N/D';
+    // Fallback defensivo: si por alguna razón CURRENCY quedó configurado en '$', usar 'UYU'
+    const isoCurrency = CURRENCY === '$' ? 'UYU' : CURRENCY;
     const formatted = new Intl.NumberFormat(CURRENCY_LOCALE, {
       style: 'currency',
-      currency: CURRENCY, // Código ISO válido (UYU)
+      currency: isoCurrency, // Código ISO válido (UYU)
       minimumFractionDigits: 4,
       maximumFractionDigits: 4
     }).format(value);

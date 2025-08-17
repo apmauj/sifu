@@ -19,9 +19,10 @@ const URPanel = ({ refreshKey }) => {
 
   const formatURValue = (value) => {
     if (value === null || value === undefined) return t('common.not_available') || 'N/D';
+    const isoCurrency = CURRENCY === '$' ? 'UYU' : CURRENCY;
     const formatted = new Intl.NumberFormat(CURRENCY_LOCALE, {
       style: 'currency',
-      currency: CURRENCY,
+      currency: isoCurrency,
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
     }).format(value);
