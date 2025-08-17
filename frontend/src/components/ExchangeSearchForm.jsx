@@ -194,11 +194,14 @@ const ExchangeSearchForm = ({ onSearch, isLoading }) => {
           onChange={handleCurrencyChange}
           className="w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500"
         >
-          {getSupportedCurrencies().map(currency => (
-            <option key={currency.code} value={currency.code}>
-              {currency.code} - {currency.name}
-            </option>
-          ))}
+          {getSupportedCurrencies().map(currency => {
+            const label = `${currency.code} - ${currency.name}`; // preserve original substring for tests
+            return (
+              <option key={currency.code} value={currency.code}>
+                {currency.flag} {label}
+              </option>
+            );
+          })}
         </select>
       </div>
 

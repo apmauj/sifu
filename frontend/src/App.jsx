@@ -18,7 +18,7 @@ import {
   APP_TITLE,
   OFFICIAL_URLS
 } from './constants';
-import { CalculatorIcon, ChartIcon, ExchangeIcon, BankIcon, SummaryIcon } from './icons';
+import { CalculatorIcon, ChartIcon, ExchangeIcon, BankIcon, SummaryIcon, MoneyIcon, GlobeIcon } from './icons';
 import Card, { CardBody } from './components/ui/Card';
 import { Tabs, Tab } from './components/ui/Tabs';
 import { useHourlySyncedUpdate } from './hooks/useHourlySyncedUpdate';
@@ -344,9 +344,13 @@ function App() {
           {/* Tabs de navegación modernos */}
           <div className="mb-6">
             <Tabs value={activeTab} onChange={setActiveTab}>
+              {/* UI: calculator/money icon */}
               <Tab value="ui" icon={CalculatorIcon}>{t('navigation.ui_calculator') || 'Unidad Indexada (UI)'}</Tab>
-              <Tab value="ur" icon={ChartIcon}>{t('navigation.ur_calculator') || 'Unidad Reajustable (UR)'}</Tab>
-              <Tab value="exchange" icon={ExchangeIcon}>{t('navigation.exchange_rates') || 'Cotizaciones'}</Tab>
+              {/* UR: use Money icon to differentiate */}
+              <Tab value="ur" icon={MoneyIcon}>{t('navigation.ur_calculator') || 'Unidad Reajustable (UR)'}</Tab>
+              {/* BCU Exchange rates: chart icon more market-like */}
+              <Tab value="exchange" icon={ChartIcon}>{t('navigation.exchange_rates') || 'Cotizaciones'}</Tab>
+              {/* BROU: bank icon */}
               <Tab value="brou" icon={BankIcon}>BROU</Tab>
             </Tabs>
           </div>

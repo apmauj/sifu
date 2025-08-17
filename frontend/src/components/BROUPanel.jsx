@@ -5,6 +5,7 @@ import { useI18n } from '../contexts/I18nContext';
 import { useHourlySyncedUpdate } from '../hooks/useHourlySyncedUpdate';
 import brouService from '../services/brouService';
 import { BankIcon, RefreshIcon, LoadingIcon, RetryIcon } from '../icons';
+import { Flag } from '../icons/flags';
 import { useToast } from '../contexts/ToastContext';
 
 const BROUPanel = () => {
@@ -17,11 +18,11 @@ const BROUPanel = () => {
 
   // Currency display configuration with official Unicode emojis
   const currencyInfo = {
-    USD: { symbol: '$', flag: '🇺🇸', name: t('brou.currencies.USD') || 'Dólar USA' },
-    USD_EBROU: { symbol: '$', flag: '🇺🇸', name: t('brou.currencies.USD_EBROU') || 'Dólar eBROU', special: true },
-    EUR: { symbol: '€', flag: '🇪🇺', name: t('brou.currencies.EUR') || 'Euro' },
-    ARS: { symbol: '$', flag: '🇦🇷', name: t('brou.currencies.ARS') || 'Peso Arg.' },
-    BRL: { symbol: 'R$', flag: '🇧🇷', name: t('brou.currencies.BRL') || 'Real' }
+  USD: { symbol: '$', flag: 'USD', name: t('brou.currencies.USD') || 'Dólar USA' },
+  USD_EBROU: { symbol: '$', flag: 'USD', name: t('brou.currencies.USD_EBROU') || 'Dólar eBROU', special: true },
+  EUR: { symbol: '€', flag: 'EUR', name: t('brou.currencies.EUR') || 'Euro' },
+  ARS: { symbol: '$', flag: 'ARS', name: t('brou.currencies.ARS') || 'Peso Arg.' },
+  BRL: { symbol: 'R$', flag: 'BRL', name: t('brou.currencies.BRL') || 'Real' }
   };
 
   const didInitRef = useRef(false);
@@ -169,7 +170,7 @@ const BROUPanel = () => {
                   <tr key={rate.currency} className={getCurrencyRowClass(rate.currency)}>
         <td className="py-3 px-2">
                       <div className="flex items-center">
-                        <span className="text-lg mr-2">{display.flag}</span>
+                        <Flag code={display.flag} className="w-6 h-4 mr-2" />
                         <div>
           <div className="font-medium text-gray-900 dark:text-gray-100 flex items-center">
                             {display.name}
