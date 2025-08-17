@@ -7,6 +7,7 @@ import { useI18n } from '../contexts/I18nContext';
 import { useHourlySyncedUpdate } from '../hooks/useHourlySyncedUpdate';
 // Centralized icons (RefreshIcon not used after removing manual refresh)
 import { ChartIcon, LoadingIcon } from '../icons';
+import { Flag } from '../icons/flags';
 import { useToast } from '../contexts/ToastContext';
 
 const ExchangeRatePanel = () => {
@@ -132,7 +133,7 @@ const ExchangeRatePanel = () => {
                   if (!display) return null;
                   return (
                     <div key={rate.currency} className="flex items-center gap-1 bg-blue-600/50 px-2 py-1 rounded text-xs pointer-events-auto">
-                      <span className="text-sm">{display.flag}</span>
+                      <Flag code={rate.currency} className="w-5 h-4" />
                       <span className="font-medium">{rate.currency}</span>
                       <span className="text-blue-200">|</span>
                       {rate.buy_rate === rate.sell_rate ? (
@@ -170,7 +171,7 @@ const ExchangeRatePanel = () => {
                 if (!display) return null;
                 return (
                   <div key={rate.currency} className="flex items-center gap-1 bg-blue-600/50 px-2 py-1 rounded text-xs">
-                    <span className="text-sm">{display.flag}</span>
+                    <Flag code={rate.currency} className="w-5 h-4" />
                     <span className="font-medium">{rate.currency}</span>
                     <span className="text-blue-200">|</span>
                     {rate.buy_rate === rate.sell_rate ? (
@@ -203,7 +204,7 @@ const ExchangeRatePanel = () => {
                 if (!display) return null;
                 return (
                   <div key={rate.currency} className="flex items-center gap-1 bg-blue-600/50 px-2 py-1 rounded text-xs">
-                    <span className="text-sm">{display.flag}</span>
+                    <Flag code={rate.currency} className="w-5 h-4" />
                     <span className="font-medium">{rate.currency}</span>
                     <span className="text-blue-200">|</span>
                     {rate.buy_rate === rate.sell_rate ? (
