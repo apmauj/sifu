@@ -13,6 +13,7 @@ import logging
 import uuid
 import time
 import os
+from threading import Lock
 from threading import Lock as ThreadLock
 from bootstrap import perform_bootstrap
 
@@ -21,7 +22,65 @@ from models import UIResponse, RefreshResponse, URResponse, ExchangeRateResponse
 from services import UIService, URService, ExchangeRateService
 from excel_processor import ExcelProcessor, URExcelProcessor, ExchangeRateExcelProcessor, ExchangeRateBCUProcessor
 from brou_processor import BROUProcessor
-from constants import *
+from constants import (
+    HTTP_400_BAD_REQUEST,
+    HTTP_404_NOT_FOUND,
+    HTTP_500_INTERNAL_SERVER_ERROR,
+    VALID_CURRENCY_CODES,
+    FIELD_TIMESTAMP,
+    CORS_ALLOW_HEADERS,
+    CORS_ALLOW_METHODS,
+    CORS_ALLOW_ORIGINS,
+    CORS_ALLOW_CREDENTIALS,
+    API_DOCS_URL,
+    API_REDOC_URL,
+    API_DESCRIPTION,
+    API_VERSION,
+    API_TITLE,
+    CRON_UR_REFRESH,
+    CRON_EXCHANGE_REFRESH,
+    CRON_UI_REFRESH,
+    SCHEDULER_ENABLED,
+    SCHEDULER_TIMEZONE,
+    ENDPOINT_HEALTH,
+    FIELD_STATUS,
+    STATIC_DIRECTORY,
+    STATIC_MOUNT_PATH,
+    STATIC_NAME,
+    MSG_HEALTH_OK,
+    TAG_EXCHANGE,
+    TAG_UR,
+    TAG_UI,
+    MSG_EXCHANGE_RATE_DATE_SUCCESS,
+    MSG_EXCHANGE_RATE_CURRENCY_SUCCESS,
+    MSG_LATEST_EXCHANGE_RATE_SUCCESS,
+    MSG_NO_EXCHANGE_RATE_DATE_DATA,
+    MSG_NO_UR_RANGE_DATA,
+    MSG_UR_RANGE_SUCCESS,
+    MSG_INVALID_MONTH,
+    MSG_INVALID_PERIOD_RANGE,
+    MSG_UI_RANGE_SUCCESS,
+    MSG_LATEST_UI_SUCCESS,
+    MSG_NO_UI_DATA,
+    MSG_UI_DATE_SUCCESS,
+    MSG_NO_UR_YEAR_DATA,
+    MSG_NO_UR_DATA,
+    MSG_LATEST_UR_SUCCESS,
+    MSG_UR_YEAR_SUCCESS,
+    MSG_UR_YEAR_MONTH_SUCCESS,
+    MSG_NO_EXCHANGE_RATE_CURRENCY_DATA,
+    MSG_NO_EXCHANGE_RATE_DATA,
+    MSG_NO_UR_YEAR_MONTH_DATA,
+    MSG_EXCHANGE_RATE_RANGE_SUCCESS,
+    ENDPOINT_EXCHANGE_RATE_BY_DATE_CURRENCY,
+    ENDPOINT_EXCHANGE_RATE_BY_DATE,
+    ENDPOINT_EXCHANGE_RATE_REFRESH,
+    ENDPOINT_EXCHANGE_RATE_BY_CURRENCY,
+    ENDPOINT_EXCHANGE_RATE_INFO,
+    ENDPOINT_EXCHANGE_RATE_LATEST,
+    MSG_INVALID_DATE_RANGE,
+    ENDPOINT_EXCHANGE_RATE_RANGE
+)
 
 # APScheduler (background jobs)
 from typing import TYPE_CHECKING, Any
@@ -345,7 +404,6 @@ def _update_brou_cache():
 # =============================================================================
 # Simple in-memory job manager for long-running tasks (exchange historical refresh)
 # =============================================================================
-from threading import Lock
 
 class JobStatus:
     PENDING = "pending"
@@ -575,8 +633,6 @@ async def refresh_data(background_tasks: BackgroundTasks, db: Session = Depends(
             total_records=0
         )
 
-    lifespan=app_lifespan,
-
 @app.get("/api/ur/latest", tags=[TAG_UR])
 async def get_latest_ur(db: Session = Depends(get_db)):
     """Obtener ultimo valor de UR (Unidad Reajustable)."""
@@ -745,7 +801,6 @@ async def refresh_ur_data(db: Session = Depends(get_db)):
         # Get additional information
         ur_service = URService(db)
         total_records = ur_service.get_total_records()
-        latest_ur = ur_service.get_latest_ur()
         
         return RefreshResponse(
             success=success,

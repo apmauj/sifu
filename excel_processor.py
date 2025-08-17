@@ -11,7 +11,28 @@ import logging
 from sqlalchemy.orm import Session
 from database import UIRecord, URRecord, ExchangeRateRecord
 import io
-from constants import *
+from constants import (
+    UR_MONTH_NAMES,
+    URL_BCU_EXCHANGE_RATES,
+    SUPPORTED_CURRENCIES,
+    HTTP_USER_AGENT,
+    HTTP_TIMEOUT,
+    URL_INE_EXCHANGE_RATES,
+    MAX_VALID_YEAR,
+    MIN_VALID_YEAR,
+    LOG_EXCEL_UR_DOWNLOADED,
+    EXCEL_ENGINE_XLS,
+    LOG_DOWNLOADING_EXCEL_INE,
+    LOG_DOWNLOADING_EXCEL_BHU,
+    URL_BHU_UR,
+    URL_INE_UI,
+    LOG_RECORDS_SAVED,
+    LOG_RECORDS_PARSED,
+    DATE_FORMATS,
+    LOG_EXCEL_DOWNLOADED
+)
+
+
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
