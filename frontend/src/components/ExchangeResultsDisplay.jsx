@@ -3,7 +3,7 @@ import { getCurrencyInfo, formatExchangeRate } from '../services/exchangeService
 import { useI18n } from '../contexts/I18nContext';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { format, parseISO } from 'date-fns';
-import { LegacyFlagIcon as FlagIcon, ExchangeIcon, ChartIcon, SummaryIcon } from '../icons';
+import { Flag } from '../icons/flags';
 
 const ExchangeResultsDisplay = ({ results, searchType, isLoading, error }) => {
   const { t, translateBackendMessage } = useI18n();
@@ -155,7 +155,7 @@ const ExchangeResultsDisplay = ({ results, searchType, isLoading, error }) => {
       <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center">
-            <span className="text-2xl mr-2">{currencyInfo?.flag || '💱'}</span>
+            <span className="text-2xl mr-2"><Flag code={rate.currency} className="w-6 h-4 inline-block align-middle" /></span>
             <div>
               <h3 className="font-bold text-gray-900">{rate.currency}</h3>
               <p className="text-xs text-gray-600">{currencyInfo?.name || rate.currency}</p>
@@ -235,7 +235,7 @@ const ExchangeResultsDisplay = ({ results, searchType, isLoading, error }) => {
                   </td>
                   <td className="px-3 py-3">
                     <div className="flex items-center space-x-2">
-                      <span className="text-lg">{currencyInfo?.flag || '💱'}</span>
+                      <span className="text-lg"><Flag code={rate.currency} className="w-5 h-4 inline-block align-middle" /></span>
                       <div className="flex flex-col">
                         <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">{rate.currency}</span>
                         <span className="text-xs text-gray-500 dark:text-gray-400 truncate" style={{maxWidth: '80px'}}>
@@ -276,7 +276,7 @@ const ExchangeResultsDisplay = ({ results, searchType, isLoading, error }) => {
     <div key={`${rate.date}-${rate.currency}-${index}`} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 shadow-sm">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center space-x-2">
-                  <span className="text-xl">{currencyInfo?.flag || '💱'}</span>
+                  <span className="text-xl"><Flag code={rate.currency} className="w-6 h-4 inline-block align-middle" /></span>
                   <div>
         <div className="text-sm font-semibold text-gray-900 dark:text-gray-100">{rate.currency}</div>
         <div className="text-xs text-gray-500 dark:text-gray-400">{currencyInfo?.name}</div>
@@ -341,11 +341,11 @@ const ExchangeResultsDisplay = ({ results, searchType, isLoading, error }) => {
             return (
               <div key={currency} className="card fade-in">
                 <h4 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
-                  {getCurrencyInfo(currency)?.flag || '💱'} {currency} - {t('exchange.rates_evolution') || 'Evolución de Cotizaciones'}
+                  <Flag code={currency} className="w-6 h-4 inline-block align-middle mr-1" /> {currency} - {t('exchange.rates_evolution') || 'Evolución de Cotizaciones'}
                 </h4>
                 <div className="h-64">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={currencyData} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
+                  <ResponsiveContainer data-testid="responsive-container" width="100%" height="100%">
+                    <LineChart data-testid="line-chart" data={currencyData} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis 
                         dataKey="date" 
@@ -401,11 +401,11 @@ const ExchangeResultsDisplay = ({ results, searchType, isLoading, error }) => {
     return (
       <div className="card fade-in">
         <h4 className="text-lg font-semibold text-gray-900 mb-4">
-          📈 {getCurrencyInfo(currency)?.flag || '💱'} {currency} - {t('exchange.rates_evolution') || 'Evolución de Cotizaciones'}
+          📈 <Flag code={currency} className="w-6 h-4 inline-block align-middle mr-1" /> {currency} - {t('exchange.rates_evolution') || 'Evolución de Cotizaciones'}
         </h4>
         <div className="h-64">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
+          <ResponsiveContainer data-testid="responsive-container" width="100%" height="100%">
+            <LineChart data-testid="line-chart" data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis 
                 dataKey="date" 
@@ -491,7 +491,7 @@ const ExchangeResultsDisplay = ({ results, searchType, isLoading, error }) => {
             <div key={`${rate.date}-${rate.currency}-${index}`} className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-700 border border-blue-200 dark:border-gray-600/70 rounded-lg p-6 shadow-sm dark:shadow-[0_0_0_1px_rgba(255,255,255,0.04)]">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center">
-                  <span className="text-3xl mr-3">{getCurrencyInfo(rate.currency)?.flag || '💱'}</span>
+                  <span className="text-3xl mr-3"><Flag code={rate.currency} className="w-8 h-6 inline-block align-middle" /></span>
                   <div>
                     <h3 className="text-xl font-bold text-gray-900 dark:text-gray-50">{rate.currency}</h3>
                     <p className="text-sm text-gray-600 dark:text-gray-300">{getCurrencyInfo(rate.currency)?.name || rate.currency}</p>

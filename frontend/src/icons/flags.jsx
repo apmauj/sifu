@@ -1,16 +1,17 @@
 import React from 'react';
 
-const baseProps = {
+const baseProps = (label) => ({
 	role: 'img',
 	focusable: 'false',
-	'aria-hidden': 'true',
+	'aria-hidden': label ? undefined : 'true',
+	'aria-label': label || undefined,
 	width: 24,
 	height: 18,
 	viewBox: '0 0 24 18'
-};
+});
 
 export const USFlag = (props) => (
-	<svg {...baseProps} {...props}>
+	<svg {...baseProps('US')} {...props}>
 		<rect width="24" height="18" fill="#b22234" />
 		{[...Array(6)].map((_, i) => (
 			<rect key={i} y={i * 3 + 1.5} width="24" height="1" fill="#fff" />
@@ -23,7 +24,7 @@ export const USFlag = (props) => (
 );
 
 export const ARFlag = (props) => (
-	<svg {...baseProps} {...props}>
+	<svg {...baseProps('AR')} {...props}>
 		<rect width="24" height="18" fill="#74acdf" />
 		<rect y={6} width="24" height="6" fill="#fff" />
 		<circle cx={12} cy={9} r={2} fill="#f6b40e" />
@@ -31,7 +32,7 @@ export const ARFlag = (props) => (
 );
 
 export const BRFlag = (props) => (
-	<svg {...baseProps} {...props}>
+	<svg {...baseProps('BR')} {...props}>
 		<rect width="24" height="18" fill="#009b3a" />
 		<polygon points="12,3 21,9 12,15 3,9" fill="#ffdf00" />
 		<circle cx={12} cy={9} r={3.5} fill="#002776" />
@@ -39,7 +40,7 @@ export const BRFlag = (props) => (
 );
 
 export const UYFlag = (props) => (
-	<svg {...baseProps} {...props}>
+	<svg {...baseProps('UY')} {...props}>
 		<rect width="24" height="18" fill="#fff" />
 		{[...Array(4)].map((_, i) => (
 			<rect key={i} y={(i * 2 + 1) * 2} width="24" height="2" fill="#0038a8" />
@@ -50,7 +51,7 @@ export const UYFlag = (props) => (
 );
 
 export const EUFlag = (props) => (
-	<svg {...baseProps} {...props}>
+	<svg {...baseProps('EU')} {...props}>
 		<rect width="24" height="18" fill="#003399" />
 		{[...Array(12)].map((_, i) => (
 			<circle key={i} cx={12 + Math.cos((i * 30) * Math.PI/180) * 5} cy={9 + Math.sin((i * 30) * Math.PI/180) * 5} r={0.9} fill="#ffcc00" />

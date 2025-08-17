@@ -1,14 +1,14 @@
 import React from 'react';
-// Removed GlobeAltIcon for a cleaner, consistent style
 import { useI18n } from '../contexts/I18nContext';
+import { Flag } from '../icons/flags';
 
 const LanguageSelector = () => {
   const { currentLanguage, supportedLanguages, setLanguage, t } = useI18n();
 
   const languageNames = {
-    es: { name: 'Español', flag: '🇺🇾' },
-    en: { name: 'English', flag: '🇺🇸' }, 
-    pt: { name: 'Português', flag: '🇧🇷' }
+    es: { name: 'Español', flag: 'UY' },
+    en: { name: 'English', flag: 'US' }, 
+    pt: { name: 'Português', flag: 'BR' }
   };
 
   const handleLanguageChange = async (event) => {
@@ -31,10 +31,15 @@ const LanguageSelector = () => {
       >
         {supportedLanguages.map(lang => (
           <option key={lang} value={lang}>
-            {languageNames[lang].flag} {languageNames[lang].name}
+            {languageNames[lang].name}
           </option>
         ))}
       </select>
+      {/* Visual flag outside select for current language (consistent size) */}
+      <div className="ml-1">
+        <Flag code={languageNames[currentLanguage].flag} className="w-6 h-4" />
+        <span className="sr-only">{languageNames[currentLanguage].name}</span>
+      </div>
     </div>
   );
 };

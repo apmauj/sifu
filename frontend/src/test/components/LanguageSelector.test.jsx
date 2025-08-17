@@ -73,9 +73,9 @@ describe('LanguageSelector Component', () => {
     it('should render all supported language options', () => {
       render(<LanguageSelector />);
 
-      expect(screen.getByRole('option', { name: '🇺🇾 Español' })).toBeInTheDocument();
-      expect(screen.getByRole('option', { name: '🇺🇸 English' })).toBeInTheDocument();
-      expect(screen.getByRole('option', { name: '🇧🇷 Português' })).toBeInTheDocument();
+  expect(screen.getByRole('option', { name: 'Español' })).toBeInTheDocument();
+  expect(screen.getByRole('option', { name: 'English' })).toBeInTheDocument();
+  expect(screen.getByRole('option', { name: 'Português' })).toBeInTheDocument();
     });
 
     it('should have correct CSS classes', () => {
@@ -260,9 +260,9 @@ describe('LanguageSelector Component', () => {
     it('should display correct language names with flags', () => {
       render(<LanguageSelector />);
 
-      expect(screen.getByText('🇺🇾 Español')).toBeInTheDocument();
-      expect(screen.getByText('🇺🇸 English')).toBeInTheDocument();
-      expect(screen.getByText('🇧🇷 Português')).toBeInTheDocument();
+  expect(screen.getByText('Español')).toBeInTheDocument();
+  expect(screen.getByText('English')).toBeInTheDocument();
+  expect(screen.getByText('Português')).toBeInTheDocument();
     });
 
     it('should have unique values for each option', () => {
@@ -279,9 +279,9 @@ describe('LanguageSelector Component', () => {
     it('should have correct option structure', () => {
       render(<LanguageSelector />);
 
-      const esOption = screen.getByRole('option', { name: '🇺🇾 Español' });
-      const enOption = screen.getByRole('option', { name: '🇺🇸 English' });
-      const ptOption = screen.getByRole('option', { name: '🇧🇷 Português' });
+  const esOption = screen.getByRole('option', { name: 'Español' });
+  const enOption = screen.getByRole('option', { name: 'English' });
+  const ptOption = screen.getByRole('option', { name: 'Português' });
 
       expect(esOption).toHaveValue('es');
       expect(enOption).toHaveValue('en');
@@ -292,9 +292,9 @@ describe('LanguageSelector Component', () => {
       render(<LanguageSelector />);
 
       // Verify the mapping from the component's languageNames object
-      expect(screen.getByRole('option', { name: '🇺🇾 Español' })).toHaveValue('es');
-      expect(screen.getByRole('option', { name: '🇺🇸 English' })).toHaveValue('en');
-      expect(screen.getByRole('option', { name: '🇧🇷 Português' })).toHaveValue('pt');
+  expect(screen.getByRole('option', { name: 'Español' })).toHaveValue('es');
+  expect(screen.getByRole('option', { name: 'English' })).toHaveValue('en');
+  expect(screen.getByRole('option', { name: 'Português' })).toHaveValue('pt');
     });
   });
 
