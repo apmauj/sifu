@@ -181,7 +181,6 @@ const BROUPanel = () => {
                               </span>
                             )}
                           </div>
-          <div className="text-sm text-gray-500 dark:text-gray-400">{rate.currency}</div>
                         </div>
                       </div>
                     </td>
@@ -237,7 +236,6 @@ const BROUPanel = () => {
                       </span>
                       )}
                     </div>
-                    <div className="text-sm text-gray-500 dark:text-gray-400">{rate.currency}</div>
                   </div>
                 </div>
               </div>
