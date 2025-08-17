@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useI18n } from '../contexts/I18nContext';
 import { ExclamationTriangleIcon } from '../icons';
+import { OpenMojiIcon } from '../icons/openmoji/index.jsx';
 import { getTodayLocal, getDaysAgoLocal } from '../utils/dateUtils';
 // Removed decorative icons to simplify UI per request
 
@@ -171,7 +172,8 @@ const ExchangeSearchForm = ({ onSearch, isLoading }) => {
 
   return (
   <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-md p-6">
-      <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6">
+      <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6 flex items-center">
+        <OpenMojiIcon name="chartUp" size={32} className="mr-3" />
         {t('exchange.search_title') || 'Consultar Cotizaciones'}
       </h2>
 

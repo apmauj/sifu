@@ -1,6 +1,7 @@
 import React from 'react';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { ExclamationTriangleIcon, MagnifyingGlassIcon, CurrencyDollarIcon, CalendarIcon, ArrowUpIcon, ArrowDownIcon, MinusIcon } from '../icons';
+import { ExclamationTriangleIcon, MagnifyingGlassIcon, CalendarIcon, ArrowUpIcon, ArrowDownIcon, MinusIcon } from '../icons';
+import { OpenMojiIcon } from '../icons/openmoji/index.jsx';
 import { useI18n } from '../contexts/I18nContext';
 
 const URResultsDisplay = ({ results, searchType, isLoading, error }) => {
@@ -203,7 +204,7 @@ const URResultsDisplay = ({ results, searchType, isLoading, error }) => {
           <div className="text-center">
             <div className="flex justify-center mb-4">
               <div className="flex items-center justify-center w-16 h-16 bg-uruguay-blue rounded-full">
-                <CurrencyDollarIcon className="w-8 h-8 text-white" />
+                <OpenMojiIcon name="exchange" size={32} />
               </div>
             </div>
             <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">

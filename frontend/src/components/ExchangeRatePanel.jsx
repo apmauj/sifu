@@ -6,7 +6,8 @@ import exchangeService from '../services/exchangeService';
 import { useI18n } from '../contexts/I18nContext';
 import { useHourlySyncedUpdate } from '../hooks/useHourlySyncedUpdate';
 // Centralized icons (RefreshIcon not used after removing manual refresh)
-import { ChartIcon, LoadingIcon } from '../icons';
+import { LoadingIcon } from '../icons';
+import { OpenMojiIcon } from '../icons/openmoji/index.jsx';
 import { Flag } from '../icons/flags';
 import { useToast } from '../contexts/ToastContext';
 
@@ -121,7 +122,7 @@ const ExchangeRatePanel = () => {
             {/* Title fixed at left (new UX without emoji or manual refresh) */}
             <div className="absolute left-0 top-1/2 -translate-y-1/2 flex items-center pr-4">
               <span className="text-sm font-medium flex items-center">
-                <ChartIcon className="w-4 h-4 mr-2 text-white" />
+                <OpenMojiIcon name="chartUp" size={16} className="mr-2" />
                 {t('bcu.title') || 'Cotizaciones BCU'}
               </span>
             </div>
@@ -160,7 +161,7 @@ const ExchangeRatePanel = () => {
           <div className="hidden md:block lg:hidden">
             <div className="flex items-center justify-between mb-4">
               <span className="text-sm font-medium flex items-center">
-                <ChartIcon className="w-4 h-4 mr-2 text-white" />
+                <OpenMojiIcon name="chartUp" size={16} className="mr-2" />
                 {t('bcu.title') || 'Cotizaciones BCU'}
               </span>
               {/* Time indicator removed */}
@@ -194,7 +195,7 @@ const ExchangeRatePanel = () => {
           <div className="md:hidden">
             <div className="flex items-center justify-between mb-4">
               <span className="text-sm font-medium flex items-center">
-                <ChartIcon className="w-4 h-4 mr-2 text-white" />
+                <OpenMojiIcon name="chartUp" size={16} className="mr-2" />
                 {t('bcu.title') || 'Cotizaciones BCU'}
               </span>
               {/* Time indicator removed */}

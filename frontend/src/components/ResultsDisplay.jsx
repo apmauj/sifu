@@ -1,12 +1,12 @@
 import React from 'react';
 import { 
-  CurrencyDollarIcon, 
   CalendarIcon, 
   ChartBarIcon,
   ArrowDownIcon,
   ArrowUpIcon,
   MinusIcon
 } from '../icons';
+import { OpenMojiIcon } from '../icons/openmoji/index.jsx';
 import { format, parseISO } from 'date-fns';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { useI18n } from '../contexts/I18nContext';
@@ -96,7 +96,7 @@ const ResultsDisplay = ({ results, searchType }) => {
         <div className="text-center">
           <div className="flex justify-center mb-4">
             <div className="flex items-center justify-center w-16 h-16 bg-uruguay-blue rounded-full">
-              <CurrencyDollarIcon className="w-8 h-8 text-white" />
+              <OpenMojiIcon name="calculator" size={32} />
             </div>
           </div>
           

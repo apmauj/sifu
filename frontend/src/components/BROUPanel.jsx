@@ -4,7 +4,8 @@ let BROU_PANEL_INIT = false; // mantenido para compatibilidad pero ya no se usa 
 import { useI18n } from '../contexts/I18nContext';
 import { useHourlySyncedUpdate } from '../hooks/useHourlySyncedUpdate';
 import brouService from '../services/brouService';
-import { BankIcon, RefreshIcon, LoadingIcon, RetryIcon } from '../icons';
+import { RefreshIcon, LoadingIcon, RetryIcon } from '../icons';
+import { OpenMojiIcon } from '../icons/openmoji/index.jsx';
 import { Flag } from '../icons/flags';
 import { useToast } from '../contexts/ToastContext';
 
@@ -96,7 +97,7 @@ const BROUPanel = () => {
               <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-md p-6">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center">
-              <BankIcon className="w-8 h-8 mr-3 text-blue-600 dark:text-blue-500" />
+              <OpenMojiIcon name="bank" size={32} className="mr-3" />
               {t('brou.title') || 'BROU'}
             </h2>
           </div>
@@ -113,7 +114,7 @@ const BROUPanel = () => {
               <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-md p-6">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center">
-              <BankIcon className="w-8 h-8 mr-3 text-blue-600 dark:text-blue-500" />
+              <OpenMojiIcon name="bank" size={32} className="mr-3" />
               {t('brou.title') || 'BROU'}
             </h2>
             <button
@@ -139,7 +140,7 @@ const BROUPanel = () => {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center">
-          <BankIcon className="w-8 h-8 mr-3 text-blue-600 dark:text-blue-500" />
+          <OpenMojiIcon name="bank" size={32} className="mr-3" />
           {t('brou.title') || 'BROU'}
           <span className="ml-2 text-sm font-normal text-gray-500">
             {t('brou.bank_name') || 'Banco República'}
