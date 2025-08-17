@@ -1,6 +1,6 @@
 import React from 'react';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { ExclamationTriangleIcon, MagnifyingGlassIcon } from '../icons';
+import { ExclamationTriangleIcon, MagnifyingGlassIcon, CurrencyDollarIcon, CalendarIcon, ArrowUpIcon, ArrowDownIcon, MinusIcon } from '../icons';
 import { useI18n } from '../contexts/I18nContext';
 
 const URResultsDisplay = ({ results, searchType, isLoading, error }) => {
@@ -127,6 +127,25 @@ const URResultsDisplay = ({ results, searchType, isLoading, error }) => {
     return base.slice(start, start + PAGE_SIZE);
   }, [data, dataWithVariations, page, searchType]);
   const totalPages = React.useMemo(() => {
+  // Helper similar to UI component for variation trend
+  const getVariationInfo = React.useMemo(() => {
+    if (!stats || stats.initialValue == null || stats.finalValue == null || stats.initialValue === 0) return null;
+    const absolute = stats.finalValue - stats.initialValue;
+    const percentage = (absolute / stats.initialValue) * 100;
+    const trend = absolute > 0 ? 'up' : absolute < 0 ? 'down' : 'stable';
+    return { absolute, percentage, trend };
+  }, [stats]);
+
+  const renderTrendIcon = (trend) => {
+    switch (trend) {
+      case 'up':
+        return <ArrowUpIcon className="w-4 h-4 text-green-600" />;
+      case 'down':
+        return <ArrowDownIcon className="w-4 h-4 text-red-600" />;
+      default:
+        return <MinusIcon className="w-4 h-4 text-gray-400" />;
+    }
+  };
     if (searchType === 'single') return 1;
     const baseLength = (dataWithVariations.length > 1 ? dataWithVariations : data).length;
     return Math.ceil(baseLength / PAGE_SIZE) || 1;
@@ -177,55 +196,68 @@ const URResultsDisplay = ({ results, searchType, isLoading, error }) => {
   return (
     <div className="space-y-6">
       {/* Summary Card */}
-      <div className="card">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-            {searchType === 'single' ? 
-              (t('ur.ur_value') || 'Valor UR') : 
-              (t('ur.ur_values') || 'Valores UR')
-            }
-          </h3>
-          <div className="text-sm text-gray-500 dark:text-gray-400">
-            {data.length} {data.length === 1 ? (t('common.record') || 'registro') : (t('common.records') || 'registros')}
+      {searchType === 'single' && data.length === 1 ? (
+        // Single value view styled like UI panel
+        <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6 fade-in">
+          <div className="text-center">
+            <div className="flex justify-center mb-4">
+              <div className="flex items-center justify-center w-16 h-16 bg-uruguay-blue rounded-full">
+                <CurrencyDollarIcon className="w-8 h-8 text-white" />
+              </div>
+            </div>
+            <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">
+              {t('ur.ur_value') || 'Valor UR'}
+            </h3>
+            <div className="bg-gray-50 dark:bg-gray-700/60 rounded-lg p-6 mb-4">
+              <div className="text-3xl font-bold text-uruguay-blue dark:text-blue-300 mb-2">
+                {formatURValue(data[0].value)}
+              </div>
+              <div className="flex items-center justify-center text-gray-600 dark:text-gray-300">
+                <CalendarIcon className="w-4 h-4 mr-2" />
+                {formatPeriod(data[0].year, data[0].month)}
+              </div>
+            </div>
+            <div className="text-sm text-gray-500 dark:text-gray-400">
+              {t('ur.data_source') || 'Fuente: Banco Hipotecario del Uruguay (BHU)'}
+            </div>
           </div>
         </div>
-
-        {searchType === 'single' && data.length === 1 ? (
-          // Single value display
-          <div className="text-center py-6">
-            <div className="text-4xl font-bold text-uruguay-blue dark:text-blue-400 mb-2">
-              {formatURValue(data[0].value)}
-            </div>
-            <div className="text-lg text-gray-600 dark:text-gray-300">
-              {formatPeriod(data[0].year, data[0].month)}
+      ) : (
+        <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6 fade-in">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">
+              {t('ur.period_summary') || t('ui.period_summary') || 'Resumen del Período'}
+            </h3>
+            <div className="text-sm text-gray-500 dark:text-gray-400">
+              {data.length} {data.length === 1 ? (t('common.record') || 'registro') : (t('common.records') || 'registros')}
             </div>
           </div>
-        ) : (
-          // Multiple values or range display
-          <div className="space-y-4">
-            {stats && data.length > 1 && (
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-gray-50 dark:bg-gray-700/60 rounded-lg">
-                <div className="text-center">
-                  <div className="text-sm text-gray-600 dark:text-gray-300">{t('ur.initial_value') || 'Valor inicial'}</div>
-                  <div className="text-lg font-semibold text-gray-900 dark:text-gray-100">{formatURValue(stats.initialValue)}</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-sm text-gray-600 dark:text-gray-300">{t('ur.final_value') || 'Valor final'}</div>
-                  <div className="text-lg font-semibold text-gray-900 dark:text-gray-100">{formatURValue(stats.finalValue)}</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-sm text-gray-600 dark:text-gray-300">{t('common.average') || 'Promedio'}</div>
-                  <div className="text-lg font-semibold text-gray-900 dark:text-gray-100">{formatURValue(stats.avg)}</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-sm text-gray-600 dark:text-gray-300">{t('ur.total_variation') || 'Variación total'}</div>
-                  <div className={`text-lg font-semibold ${stats.totalVariation >= 0 ? 'text-green-600' : 'text-red-600'}`}>{formatPercentage(stats.totalVariation)}</div>
-                </div>
+          {stats && data.length > 1 && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="bg-gray-50 dark:bg-gray-700/60 rounded-lg p-4">
+                <div className="text-sm text-gray-600 dark:text-gray-300 mb-1">{t('ur.initial_value') || 'Valor inicial'}</div>
+                <div className="text-lg font-semibold text-gray-900 dark:text-gray-100">{formatURValue(stats.initialValue)}</div>
               </div>
-            )}
-          </div>
-        )}
-      </div>
+              <div className="bg-gray-50 dark:bg-gray-700/60 rounded-lg p-4">
+                <div className="text-sm text-gray-600 dark:text-gray-300 mb-1">{t('ur.final_value') || 'Valor final'}</div>
+                <div className="text-lg font-semibold text-gray-900 dark:text-gray-100">{formatURValue(stats.finalValue)}</div>
+              </div>
+              {getVariationInfo && (
+                <div className="bg-gray-50 dark:bg-gray-700/60 rounded-lg p-4">
+                  <div className="text-sm text-gray-600 dark:text-gray-300 mb-1">{t('common.variation') || 'Variación'}</div>
+                  <div className={`text-lg font-semibold flex items-center ${
+                    getVariationInfo.trend === 'up' ? 'text-green-600' : getVariationInfo.trend === 'down' ? 'text-red-600' : 'text-gray-900 dark:text-gray-100'
+                  }`}>
+                    {renderTrendIcon(getVariationInfo.trend)}
+                    <span className="ml-1">{getVariationInfo.percentage.toFixed(2)}%</span>
+                  </div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400">{formatURValue(Math.abs(getVariationInfo.absolute))}</div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Charts only for range (more than one value) */}
       {data.length > 1 && (
@@ -342,10 +374,12 @@ const URResultsDisplay = ({ results, searchType, isLoading, error }) => {
         </div>
       )}
 
-      {/* Data Source */}
-      <div className="mt-2 text-center text-sm text-gray-500 dark:text-gray-400">
-        {t('ur.data_source') || 'Fuente: Banco Hipotecario del Uruguay (BHU)'}
-      </div>
+      {/* Data Source (range view only) */}
+      {!(searchType === 'single' && data.length === 1) && (
+        <div className="mt-2 text-center text-sm text-gray-500 dark:text-gray-400">
+          {t('ur.data_source') || 'Fuente: Banco Hipotecario del Uruguay (BHU)'}
+        </div>
+      )}
     </div>
   );
 };

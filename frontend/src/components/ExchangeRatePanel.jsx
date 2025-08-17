@@ -116,38 +116,41 @@ const ExchangeRatePanel = () => {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div className="bg-gradient-to-r from-blue-700 to-blue-800 text-white py-2 px-4 shadow-lg rounded-xl ring-1 ring-blue-900/20">
           {/* Desktop */}
-          <div className="hidden lg:flex items-center justify-between gap-4">
-            <div className="flex items-center gap-2 flex-shrink-0">
+          <div className="hidden lg:block relative">
+            {/* Title fixed at left */}
+            <div className="absolute left-0 top-1/2 -translate-y-1/2 flex items-center gap-2 pr-4">
               <span className="text-sm font-medium flex items-center">
                 <ChartIcon className="w-4 h-4 mr-2 text-white" />
                 {t('bcu.title') || 'Cotizaciones BCU'}
               </span>
             </div>
-
-            <div className="flex items-center gap-3 flex-1 justify-center">
-              {currentRates.slice(0, 4).map((rate) => {
-                const display = currencyInfo[rate.currency];
-                if (!display) return null;
-                return (
-                  <div key={rate.currency} className="flex items-center gap-1 bg-blue-600/50 px-2 py-1 rounded text-xs">
-                    <span className="text-sm">{display.flag}</span>
-                    <span className="font-medium">{rate.currency}</span>
-                    <span className="text-blue-200">|</span>
-                    {rate.buy_rate === rate.sell_rate ? (
-                      <span className="text-yellow-300 font-medium">{display.symbol}{formatRate(rate.average_rate)}</span>
-                    ) : (
-                      <>
-                        <span className="text-green-300">{display.symbol}{formatRate(rate.buy_rate)}</span>
-                        <span className="text-blue-200">-</span>
-                        <span className="text-red-300">{display.symbol}{formatRate(rate.sell_rate)}</span>
-                      </>
-                    )}
-                  </div>
-                );
-              })}
+            {/* Centered rates independent of title width */}
+            <div className="pointer-events-none flex items-center justify-center">
+              <div className="flex items-center gap-3 justify-center mx-auto">
+                {currentRates.slice(0, 4).map((rate) => {
+                  const display = currencyInfo[rate.currency];
+                  if (!display) return null;
+                  return (
+                    <div key={rate.currency} className="flex items-center gap-1 bg-blue-600/50 px-2 py-1 rounded text-xs pointer-events-auto">
+                      <span className="text-sm">{display.flag}</span>
+                      <span className="font-medium">{rate.currency}</span>
+                      <span className="text-blue-200">|</span>
+                      {rate.buy_rate === rate.sell_rate ? (
+                        <span className="text-yellow-300 font-medium">{display.symbol}{formatRate(rate.average_rate)}</span>
+                      ) : (
+                        <>
+                          <span className="text-green-300">{display.symbol}{formatRate(rate.buy_rate)}</span>
+                          <span className="text-blue-200">-</span>
+                          <span className="text-red-300">{display.symbol}{formatRate(rate.sell_rate)}</span>
+                        </>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
             </div>
-
-            <div className="flex items-center gap-2 flex-shrink-0">
+            {/* Loader at right */}
+            <div className="absolute right-0 top-1/2 -translate-y-1/2 flex items-center gap-2">
               {isLoading && <LoadingIcon className="w-4 h-4 animate-spin" />}
             </div>
           </div>
