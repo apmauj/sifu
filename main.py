@@ -13,6 +13,7 @@ import logging
 import uuid
 import time
 import os
+
 from threading import Lock
 from threading import Lock as ThreadLock
 from bootstrap import perform_bootstrap
@@ -102,35 +103,58 @@ else:
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Flag para omitir bootstrap y refresh en startup (usado en tests / CI)
+SKIP_BOOTSTRAP = os.getenv("SIFU_SKIP_BOOTSTRAP") == "1"
+
 # Lifespan context replacing deprecated on_event startup/shutdown
 async def _execute_startup():
     """Reusable startup logic; safe to call multiple times in tests."""
-    logger.info("Starting SIFU (bootstrap + cache warmup)...")
+    logger.info("Starting SIFU (bootstrap + cache warmup)... skip=%s", SKIP_BOOTSTRAP)
     global scheduler
-    # Legacy quick UI bootstrap
+
+    # Minimal phase: siempre instanciamos servicio y consultamos total para que los tests
+    # puedan verificar la llamada (incluso cuando SKIP_BOOTSTRAP=1)
+    db = None
     try:
-        db = None
-        from database import SessionLocal as _SL  # local import for timing
+        from database import SessionLocal as _SL  # local import para evitar costos al importar tests
         db = _SL()
         service = UIService(db)
-        if service.get_total_records() == 0:
-            try:
-                excel_processor.refresh_data(db)
-            except Exception as e:  # noqa: BLE001
-                logger.error(f"[LegacyBootstrap] UI refresh failed: {e}")
+        total = service.get_total_records()  # <- los tests esperan que se llame
+        if total == 0:
+            if os.getenv("SIFU_SKIP_STARTUP_REFRESH") == "1":
+                logger.info("[Startup] Refresh suprimido (SIFU_SKIP_STARTUP_REFRESH=1)")
+            else:
+                try:
+                    excel_processor.refresh_data(db)
+                except Exception as e:  # noqa: BLE001
+                    logger.error(f"[LegacyBootstrap] UI refresh failed: {e}")
+        else:
+            logger.info(f"[Startup] UI data present ({total} records)")
     except Exception as e:  # noqa: BLE001
         logger.error(f"[LegacyBootstrap] skipped due to error: {e}")
     finally:
         if db:
-            db.close()
+            try:
+                db.close()
+            except Exception:  # noqa: BLE001
+                pass
 
-    summary = perform_bootstrap(
-        force=False,
-        excel_processor=excel_processor,
-        ur_excel_processor=ur_excel_processor,
-        exchange_rate_excel_processor=exchange_rate_excel_processor,
-    )
-    logger.info(f"[Bootstrap] summary={summary}")
+    # Si skip activado, no continuamos con bootstrap pesado / caches / scheduler
+    if SKIP_BOOTSTRAP:
+        logger.info("[Startup] Bootstrap pesado omitido (skip flag)")
+        return
+
+    # Full bootstrap (solo si no skip)
+    try:
+        summary = perform_bootstrap(
+            force=False,
+            excel_processor=excel_processor,
+            ur_excel_processor=ur_excel_processor,
+            exchange_rate_excel_processor=exchange_rate_excel_processor,
+        )
+        logger.info(f"[Bootstrap] summary={summary}")
+    except Exception as e:  # noqa: BLE001
+        logger.error(f"[Bootstrap] failed: {e}")
 
     # Warm caches
     try:
