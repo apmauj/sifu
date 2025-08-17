@@ -4,6 +4,7 @@ import ResultsDisplay from './ResultsDisplay';
 import uiService from '../services/api';
 import { useI18n } from '../contexts/I18nContext';
 import Card, { CardBody } from './ui/Card';
+import { CURRENCY, CURRENCY_LOCALE } from '../constants';
 
 const UIPanel = ({ refreshKey }) => {
   const { t, currentLanguage } = useI18n();
@@ -18,12 +19,14 @@ const UIPanel = ({ refreshKey }) => {
 
   const formatUIValue = (value) => {
     if (value === null || value === undefined) return t('common.not_available') || 'N/D';
-    return new Intl.NumberFormat('es-UY', {
+    const formatted = new Intl.NumberFormat(CURRENCY_LOCALE, {
       style: 'currency',
-      currency: '$',
+      currency: CURRENCY, // Código ISO válido (UYU)
       minimumFractionDigits: 4,
       maximumFractionDigits: 4
     }).format(value);
+    // Opcional: normalizar a símbolo $ únicamente (evitar mostrar UYU si el locale lo antepone)
+    return formatted.replace(/UYU\s*/i, '$');
   };
 
   const hasRequestedInfoRef = React.useRef(false);

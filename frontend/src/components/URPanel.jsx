@@ -4,6 +4,7 @@ import URResultsDisplay from './URResultsDisplay';
 import urService from '../services/urService';
 import { useI18n } from '../contexts/I18nContext';
 import Card, { CardBody } from './ui/Card';
+import { CURRENCY, CURRENCY_LOCALE } from '../constants';
 
 const URPanel = ({ refreshKey }) => {
   const { t, currentLanguage } = useI18n();
@@ -18,12 +19,13 @@ const URPanel = ({ refreshKey }) => {
 
   const formatURValue = (value) => {
     if (value === null || value === undefined) return t('common.not_available') || 'N/D';
-    return new Intl.NumberFormat('es-UY', {
+    const formatted = new Intl.NumberFormat(CURRENCY_LOCALE, {
       style: 'currency',
-      currency: '$',
+      currency: CURRENCY,
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
     }).format(value);
+    return formatted.replace(/UYU\s*/i, '$');
   };
   
   const formatPeriod = (year, month) => {
