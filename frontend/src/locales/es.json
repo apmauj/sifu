@@ -39,7 +39,10 @@
     "reload": "Recargar",
     "refresh_success": "Datos actualizados correctamente",
     "ur_refresh_success": "Datos de UR actualizados correctamente",
-    "exchange_refresh_success": "Cotizaciones actualizadas correctamente"
+  "exchange_refresh_success": "Cotizaciones actualizadas correctamente",
+  "previous": "Anterior",
+  "next": "Siguiente",
+  "page": "Página"
   },
   "header": {
     "sifu_title": "SIFU",

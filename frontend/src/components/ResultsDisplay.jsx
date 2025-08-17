@@ -137,11 +137,13 @@ const ResultsDisplay = ({ results, searchType }) => {
       <div className="space-y-6">
         {/* Resumen */}
         <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6 fade-in">
-          <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4">
-            {t('ui.period_summary') || 'Resumen del Período'}
-          </h3>
-          <div className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-            {sortedData.length} {sortedData.length === 1 ? (t('common.record') || 'registro') : (t('common.records') || 'registros')}
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">
+              {t('ui.period_summary') || 'Resumen del Período'}
+            </h3>
+            <div className="text-sm text-gray-500 dark:text-gray-400">
+              {sortedData.length} {sortedData.length === 1 ? (t('common.record') || 'registro') : (t('common.records') || 'registros')}
+            </div>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

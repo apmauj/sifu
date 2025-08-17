@@ -72,11 +72,18 @@ const URResultsDisplay = ({ results, searchType, isLoading, error }) => {
       if (index === 0) {
         return { ...item, variation: null };
       }
-      
       const prevItem = sortedData[index - 1];
-      const variation = prevItem.value && item.value ? 
-        ((item.value - prevItem.value) / prevItem.value) * 100 : null;
-      
+      if (prevItem.value === null || prevItem.value === undefined || item.value === null || item.value === undefined) {
+        return { ...item, variation: null };
+      }
+      if (prevItem.value === 0) {
+        // Avoid division by zero; show 0% if same, else null (undefined baseline)
+        if (item.value === 0) {
+          return { ...item, variation: 0 };
+        }
+        return { ...item, variation: null };
+      }
+      const variation = ((item.value - prevItem.value) / prevItem.value) * 100;
       return { ...item, variation };
     });
   };

@@ -122,7 +122,7 @@ const ExchangeRatePanel = () => {
                 <ChartIcon className="w-4 h-4 mr-2 text-white" />
                 {t('bcu.title') || 'Cotizaciones BCU'}
               </span>
-              {lastUpdate && <span className="text-xs text-blue-200">{formatTime(lastUpdate)}</span>}
+              {/* Removed time display per request */}
             </div>
 
             <div className="flex items-center gap-3 flex-1 justify-center">
@@ -149,11 +149,7 @@ const ExchangeRatePanel = () => {
             </div>
 
             <div className="flex items-center gap-2 flex-shrink-0">
-              {isLoading ? (
-                <LoadingIcon className="w-4 h-4 animate-spin" />
-              ) : (
-                <span className="text-[10px] text-blue-200">{lastUpdate ? formatTime(lastUpdate) : ''}</span>
-              )}
+              {isLoading && <LoadingIcon className="w-4 h-4 animate-spin" />}
               <span className="text-xs text-blue-200">{t('bcu.source') || 'BCU'}</span>
             </div>
           </div>
@@ -165,7 +161,7 @@ const ExchangeRatePanel = () => {
                 <ChartIcon className="w-4 h-4 mr-2 text-white" />
                 {t('bcu.title') || 'Cotizaciones BCU'}
               </span>
-              {isLoading ? <LoadingIcon className="w-4 h-4 animate-spin" /> : <span className="text-xs text-blue-200">{lastUpdate ? formatTime(lastUpdate) : ''}</span>}
+              {isLoading && <LoadingIcon className="w-4 h-4 animate-spin" />}
             </div>
             <div className="flex flex-wrap items-center gap-2 justify-center">
               {currentRates.slice(0, 4).map((rate) => {
@@ -198,7 +194,7 @@ const ExchangeRatePanel = () => {
                 <ChartIcon className="w-4 h-4 mr-2 text-white" />
                 {t('bcu.source') || 'BCU'}
               </span>
-              {isLoading ? <LoadingIcon className="w-4 h-4 animate-spin" /> : <span className="text-xs text-blue-200">{lastUpdate ? formatTime(lastUpdate) : ''}</span>}
+              {isLoading && <LoadingIcon className="w-4 h-4 animate-spin" />}
             </div>
             <div className="flex flex-wrap items-center gap-2">
               {currentRates.slice(0, 4).map((rate) => {
