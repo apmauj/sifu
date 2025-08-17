@@ -19,6 +19,7 @@ import {
   OFFICIAL_URLS
 } from './constants';
 import { CalculatorIcon, ChartIcon, ExchangeIcon, BankIcon, SummaryIcon, MoneyIcon, GlobeIcon } from './icons';
+import { OpenMojiIcon } from './icons/openmoji/index.jsx';
 import Card, { CardBody } from './components/ui/Card';
 import { Tabs, Tab } from './components/ui/Tabs';
 import { useHourlySyncedUpdate } from './hooks/useHourlySyncedUpdate';
@@ -345,13 +346,13 @@ function App() {
           <div className="mb-6">
             <Tabs value={activeTab} onChange={setActiveTab}>
               {/* UI: calculator/money icon */}
-              <Tab value="ui" icon={CalculatorIcon}>{t('navigation.ui_calculator') || 'Unidad Indexada (UI)'}</Tab>
+              <Tab value="ui" icon={(props) => <OpenMojiIcon name="calculator" {...props} />}>{t('navigation.ui_calculator') || 'Unidad Indexada (UI)'}</Tab>
               {/* UR: use Money icon to differentiate */}
-              <Tab value="ur" icon={MoneyIcon}>{t('navigation.ur_calculator') || 'Unidad Reajustable (UR)'}</Tab>
+              <Tab value="ur" icon={(props) => <OpenMojiIcon name="exchange" {...props} />}>{t('navigation.ur_calculator') || 'Unidad Reajustable (UR)'}</Tab>
               {/* BCU Exchange rates: chart icon more market-like */}
-              <Tab value="exchange" icon={ChartIcon}>{t('navigation.exchange_rates') || 'Cotizaciones'}</Tab>
+              <Tab value="exchange" icon={(props) => <OpenMojiIcon name="chartUp" {...props} />}>{t('navigation.exchange_rates') || 'Cotizaciones'}</Tab>
               {/* BROU: bank icon */}
-              <Tab value="brou" icon={BankIcon}>BROU</Tab>
+              <Tab value="brou" icon={(props) => <OpenMojiIcon name="bank" {...props} />}>BROU</Tab>
             </Tabs>
           </div>
 
