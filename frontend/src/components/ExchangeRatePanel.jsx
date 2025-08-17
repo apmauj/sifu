@@ -45,7 +45,7 @@ const ExchangeRatePanel = () => {
       }
     } catch (e) {
       console.error('Error fetching current rates:', e);
-      const msg = t('bcu.error') || 'Error de conexión';
+      const msg = t('errors.exchange_load_failed') || 'Error de conexión';
       setError(msg);
       if (manualRefreshRef.current) showError(msg);
     } finally {
@@ -122,7 +122,6 @@ const ExchangeRatePanel = () => {
                 <ChartIcon className="w-4 h-4 mr-2 text-white" />
                 {t('bcu.title') || 'Cotizaciones BCU'}
               </span>
-              {/* Removed time display per request */}
             </div>
 
             <div className="flex items-center gap-3 flex-1 justify-center">
@@ -150,7 +149,6 @@ const ExchangeRatePanel = () => {
 
             <div className="flex items-center gap-2 flex-shrink-0">
               {isLoading && <LoadingIcon className="w-4 h-4 animate-spin" />}
-              <span className="text-xs text-blue-200">{t('bcu.source') || 'BCU'}</span>
             </div>
           </div>
 
@@ -192,7 +190,7 @@ const ExchangeRatePanel = () => {
             <div className="flex items-center justify-between mb-4">
               <span className="text-sm font-medium flex items-center">
                 <ChartIcon className="w-4 h-4 mr-2 text-white" />
-                {t('bcu.source') || 'BCU'}
+                {t('bcu.title') || 'Cotizaciones BCU'}
               </span>
               {isLoading && <LoadingIcon className="w-4 h-4 animate-spin" />}
             </div>

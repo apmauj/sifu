@@ -15,6 +15,8 @@ const ExchangeSearchForm = ({ onSearch, isLoading }) => {
   const [historyLimit, setHistoryLimit] = useState(10);
   const [selectedCurrency, setSelectedCurrency] = useState('ALL');
   const [error, setError] = useState('');
+  const [latestDataDate, setLatestDataDate] = useState(null); // fecha retornada por 'latest'
+  const [latestHintNeeded, setLatestHintNeeded] = useState(false);
 
   // Referencias para los elementos del formulario
   const currencyRef = useRef();
@@ -102,24 +104,30 @@ const ExchangeSearchForm = ({ onSearch, isLoading }) => {
     onSearch(searchParams);
   };
 
+  const isWeekend = (dateStr) => {
+    const d = new Date(dateStr);
+    const day = d.getDay();
+    return day === 0 || day === 6;
+  };
+
   const handleQuickAction = (action) => {
     const currency = currencyRef.current?.value;
     const finalCurrency = currency === 'ALL' ? null : currency;
 
     switch (action) {
-      case 'today': {
-        setSearchType('date');
-        const today = getTodayLocal();
-        setSearchDate(today);
-        onSearch({ type: 'date', date: today, currency: finalCurrency });
-        break;
-      }
       case 'latest':
         setSearchType('latest');
-        onSearch({
-          type: 'latest',
-          currency: finalCurrency,
-        });
+        // Ejecuta búsqueda 'latest'; se espera que el contenedor procese y devuelva datos.
+        onSearch({ type: 'latest', currency: finalCurrency })
+          ?.then((resp) => {
+            const today = getTodayLocal();
+            const latestDate = resp?.meta?.latest_date || resp?.data?.[0]?.date || resp?.data?.[0]?.fecha;
+            if (latestDate) {
+              setLatestDataDate(latestDate);
+              setLatestHintNeeded(latestDate !== today && !searchDate && (isWeekend(today) || today > latestDate));
+            }
+          })
+          .catch(() => {});
         break;
       case 'week':
         const weekAgo = getDaysAgoLocal(7);
@@ -134,6 +142,15 @@ const ExchangeSearchForm = ({ onSearch, isLoading }) => {
           currency: finalCurrency,
         });
         break;
+      case 'month': {
+        const monthAgo = getDaysAgoLocal(30);
+        const todayMonth = getTodayLocal();
+        setSearchType('range');
+        setStartDate(monthAgo);
+        setEndDate(todayMonth);
+        onSearch({ type: 'range', startDate: monthAgo, endDate: todayMonth, currency: finalCurrency });
+        break;
+      }
       default:
         break;
     }
@@ -197,15 +214,7 @@ const ExchangeSearchForm = ({ onSearch, isLoading }) => {
             disabled={isLoading}
     className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium transition-colors"
           >
-            {t('exchange.latest_rates') || 'Últimas cotizaciones'}
-          </button>
-          <button
-            type="button"
-            onClick={() => handleQuickAction('today')}
-            disabled={isLoading}
-    className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium transition-colors"
-          >
-            {t('common.today') || 'Hoy'}
+            {t('exchange.latest_data') || 'Últimos datos'}
           </button>
           <button
             type="button"
@@ -215,7 +224,20 @@ const ExchangeSearchForm = ({ onSearch, isLoading }) => {
           >
             {t('common.last_week') || 'Última semana'}
           </button>
+          <button
+            type="button"
+            onClick={() => handleQuickAction('month')}
+            disabled={isLoading}
+            className="px-4 py-2 bg-blue-300 text-white rounded-md hover:bg-blue-400 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium transition-colors"
+          >
+            {t('common.last_month') || 'Último mes'}
+          </button>
         </div>
+        {latestHintNeeded && (
+          <div className="mt-3 text-xs text-yellow-600 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-800 rounded-md px-3 py-2">
+            {t('exchange.latest_hint') || 'No hay datos publicados para hoy todavía; se muestran los últimos disponibles.'}
+          </div>
+        )}
       </div>
 
       {/* Selector de tipo de búsqueda (mismo estilo que acciones rápidas) */}
@@ -248,16 +270,7 @@ const ExchangeSearchForm = ({ onSearch, isLoading }) => {
 
       {/* Formulario específico según el tipo */}
       <form onSubmit={handleSubmit} className="space-y-4">
-        {searchType === 'latest' && (
-          <div className="p-4 bg-gray-50 rounded-lg">
-            <p className="text-sm text-gray-600">
-              {t('exchange.latest_description') || 'Se mostrarán las últimas cotizaciones disponibles.'}
-              {selectedCurrency && selectedCurrency !== 'ALL' && (
-                <span className="font-medium"> {t('common.filtered_by') || 'Filtrado por'}: {selectedCurrency}</span>
-              )}
-            </p>
-          </div>
-        )}
+  {/* Descripción para 'latest' removida por redundancia */}
 
         {searchType === 'date' && (
           <div className="mb-4">
