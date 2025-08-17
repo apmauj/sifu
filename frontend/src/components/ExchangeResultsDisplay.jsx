@@ -340,7 +340,7 @@ const ExchangeResultsDisplay = ({ results, searchType, isLoading, error }) => {
 
             return (
               <div key={currency} className="card fade-in">
-                <h4 className="text-lg font-semibold text-gray-900 mb-4">
+                <h4 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
                   {getCurrencyInfo(currency)?.flag || '💱'} {currency} - {t('exchange.rates_evolution') || 'Evolución de Cotizaciones'}
                 </h4>
                 <div className="h-64">
@@ -580,41 +580,9 @@ const ExchangeResultsDisplay = ({ results, searchType, isLoading, error }) => {
         </div>
       )}
 
-      {/* Resumen estadístico para múltiples resultados */}
-      {filteredData.length > 1 && (
-        <div className="mt-6 p-4 bg-gray-50 dark:bg-gray-700/60 rounded-lg">
-          <div className="flex items-center mb-4">
-            <SummaryIcon className="w-6 h-6 mr-3 text-blue-600" />
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
-              {t('exchange.summary') || 'Resumen'}
-            </h2>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-            <div>
-              <p className="text-gray-600 dark:text-gray-300">{t('exchange.currencies_included') || 'Monedas incluidas'}:</p>
-              <p className="font-medium text-gray-900 dark:text-gray-100">
-                {[...new Set(filteredData.map(rate => rate.currency))].join(', ')}
-              </p>
-            </div>
-            <div>
-              <p className="text-gray-600 dark:text-gray-300">{t('exchange.date_range') || 'Rango de fechas'}:</p>
-              <p className="font-medium text-gray-900 dark:text-gray-100">
-                {filteredData.length > 1 
-                  ? `${filteredData[filteredData.length - 1]?.date} - ${filteredData[0]?.date}`
-                  : filteredData[0]?.date
-                }
-              </p>
-            </div>
-            {filteredData.length > 1 && (
-              <div>
-                <p className="text-gray-600 dark:text-gray-300">{t('exchange.total_records') || 'Total de registros'}:</p>
-                <p className="font-medium text-gray-900 dark:text-gray-100">{filteredData.length}</p>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-      {/* Panel informativo eliminado por redundancia */}
+      <div className="mt-6 text-right text-xs text-gray-500 dark:text-gray-400">
+        {t('exchange.source_note') || 'Fuente: Banco Central del Uruguay (BCU)'}
+      </div>
     </div>
   );
 };

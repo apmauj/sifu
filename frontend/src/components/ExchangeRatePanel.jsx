@@ -216,11 +216,7 @@ const ExchangeRatePanel = () => {
                 );
               })}
             </div>
-        </div>
-        {/* Fuente colocada fuera del panel azul para consistencia con UI */}
-        <div className="mt-1 text-right text-xs text-gray-500 dark:text-gray-400">
-          {t('exchange.source_note') || 'Fuente: Banco Central del Uruguay (BCU)'}
-        </div>
+  </div>
       </div>
     </div>
   );
