@@ -29,6 +29,7 @@
     "start_date": "Data início",
     "end_date": "Data fim",
     "last_week": "Última semana",
+  "last_month": "Mês anterior",
     "refresh_data": "Atualizar Dados",
     "refresh": "Atualizar",
     "updating": "Atualizando...",

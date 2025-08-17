@@ -113,8 +113,8 @@ const ExchangeRatePanel = () => {
   }
 
   return (
-  <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-    <div className="bg-gradient-to-r from-blue-700 to-blue-800 text-white py-2 px-4 shadow-lg rounded-xl ring-1 ring-blue-900/20">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="bg-gradient-to-r from-blue-700 to-blue-800 text-white py-2 px-4 shadow-lg rounded-xl ring-1 ring-blue-900/20">
           {/* Desktop */}
           <div className="hidden lg:flex items-center justify-between gap-4">
             <div className="flex items-center gap-2 flex-shrink-0">
@@ -216,8 +216,12 @@ const ExchangeRatePanel = () => {
                 );
               })}
             </div>
-          </div>
-  </div>
+        </div>
+        {/* Fuente colocada fuera del panel azul para consistencia con UI */}
+        <div className="mt-1 text-right text-xs text-gray-500 dark:text-gray-400">
+          {t('exchange.source_note') || 'Fuente: Banco Central del Uruguay (BCU)'}
+        </div>
+      </div>
     </div>
   );
 };

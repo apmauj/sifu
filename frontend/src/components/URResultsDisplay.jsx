@@ -343,7 +343,7 @@ const URResultsDisplay = ({ results, searchType, isLoading, error }) => {
       )}
 
       {/* Data Source */}
-      <div className="text-center text-sm text-gray-500 dark:text-gray-400">
+      <div className="mt-2 text-center text-sm text-gray-500 dark:text-gray-400">
         {t('ur.data_source') || 'Fuente: Banco Hipotecario del Uruguay (BHU)'}
       </div>
     </div>

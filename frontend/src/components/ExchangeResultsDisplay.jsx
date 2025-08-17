@@ -202,33 +202,33 @@ const ExchangeResultsDisplay = ({ results, searchType, isLoading, error }) => {
   const HistoryTable = ({ rates }) => (
     <>
       {/* Vista de tabla para pantallas medianas y grandes */}
-      <div className="hidden md:block overflow-x-auto rounded-lg border border-gray-200">
-        <table className="w-full divide-y divide-gray-200 text-sm">
-          <thead className="bg-gray-50">
+      <div className="hidden md:block overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
+        <table className="w-full divide-y divide-gray-200 dark:divide-gray-700 text-sm">
+          <thead className="bg-gray-50 dark:bg-gray-700/60">
             <tr>
-              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24">
+              <th className="px-3 py-2 text-left text-xs font-medium text-gray-600 dark:text-gray-200 uppercase tracking-wider w-24">
                 {t('common.date') || 'Fecha'}
               </th>
-              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-20">
+              <th className="px-3 py-2 text-left text-xs font-medium text-gray-600 dark:text-gray-200 uppercase tracking-wider w-20">
                 {t('exchange.currency') || 'Moneda'}
               </th>
-              <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-20">
+              <th className="px-3 py-2 text-center text-xs font-medium text-gray-600 dark:text-gray-200 uppercase tracking-wider w-20">
                 {t('exchange.buy_rate') || 'Compra'}
               </th>
-              <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-20">
+              <th className="px-3 py-2 text-center text-xs font-medium text-gray-600 dark:text-gray-200 uppercase tracking-wider w-20">
                 {t('exchange.sell_rate') || 'Venta'}
               </th>
-              <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-20">
+              <th className="px-3 py-2 text-center text-xs font-medium text-gray-600 dark:text-gray-200 uppercase tracking-wider w-20">
                 {t('exchange.average_rate') || 'Promedio'}
               </th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
+          <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
             {rates.map((rate, index) => {
               const currencyInfo = getCurrencyInfo(rate.currency);
               return (
-                <tr key={`${rate.date}-${rate.currency}-${index}`} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-3 py-3 text-xs text-gray-900 font-mono">
+                <tr key={`${rate.date}-${rate.currency}-${index}`} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                  <td className="px-3 py-3 text-xs text-gray-900 dark:text-gray-100 font-mono">
                     <div className="whitespace-nowrap">
                       {rate.date}
                     </div>
@@ -237,8 +237,8 @@ const ExchangeResultsDisplay = ({ results, searchType, isLoading, error }) => {
                     <div className="flex items-center space-x-2">
                       <span className="text-lg">{currencyInfo?.flag || '💱'}</span>
                       <div className="flex flex-col">
-                        <span className="text-sm font-semibold text-gray-900">{rate.currency}</span>
-                        <span className="text-xs text-gray-500 truncate" style={{maxWidth: '80px'}}>
+                        <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">{rate.currency}</span>
+                        <span className="text-xs text-gray-500 dark:text-gray-400 truncate" style={{maxWidth: '80px'}}>
                           {currencyInfo?.name}
                         </span>
                       </div>
@@ -257,7 +257,7 @@ const ExchangeResultsDisplay = ({ results, searchType, isLoading, error }) => {
                   <td className="px-3 py-3 text-center">
                     <div className="text-sm font-semibold text-blue-600">
                       {rate.average_rate ? `$${formatExchangeRate(rate.average_rate)}` : (
-                        <span className="text-gray-400">{t('common.not_available') || 'N/A'}</span>
+                        <span className="text-gray-400 dark:text-gray-500">{t('common.not_available') || 'N/A'}</span>
                       )}
                     </div>
                   </td>
@@ -269,39 +269,39 @@ const ExchangeResultsDisplay = ({ results, searchType, isLoading, error }) => {
       </div>
 
       {/* Vista de tarjetas para móviles */}
-      <div className="md:hidden space-y-3">
+  <div className="md:hidden space-y-3">
         {rates.map((rate, index) => {
           const currencyInfo = getCurrencyInfo(rate.currency);
           return (
-            <div key={`${rate.date}-${rate.currency}-${index}`} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+    <div key={`${rate.date}-${rate.currency}-${index}`} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 shadow-sm">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center space-x-2">
                   <span className="text-xl">{currencyInfo?.flag || '💱'}</span>
                   <div>
-                    <div className="text-sm font-semibold text-gray-900">{rate.currency}</div>
-                    <div className="text-xs text-gray-500">{currencyInfo?.name}</div>
+        <div className="text-sm font-semibold text-gray-900 dark:text-gray-100">{rate.currency}</div>
+        <div className="text-xs text-gray-500 dark:text-gray-400">{currencyInfo?.name}</div>
                   </div>
                 </div>
-                <div className="text-xs text-gray-500 font-mono">
+        <div className="text-xs text-gray-500 dark:text-gray-400 font-mono">
                   {rate.date}
                 </div>
               </div>
               
               <div className="grid grid-cols-3 gap-3 text-center">
                 <div>
-                  <div className="text-xs text-gray-600 mb-1">{t('exchange.buy_rate') || 'Compra'}</div>
+                  <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">{t('exchange.buy_rate') || 'Compra'}</div>
                   <div className="text-sm font-semibold text-green-600">
                     ${formatExchangeRate(rate.buy_rate)}
                   </div>
                 </div>
                 <div>
-                  <div className="text-xs text-gray-600 mb-1">{t('exchange.sell_rate') || 'Venta'}</div>
+                  <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">{t('exchange.sell_rate') || 'Venta'}</div>
                   <div className="text-sm font-semibold text-red-600">
                     ${formatExchangeRate(rate.sell_rate)}
                   </div>
                 </div>
                 <div>
-                  <div className="text-xs text-gray-600 mb-1">{t('exchange.average_rate') || 'Promedio'}</div>
+                  <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">{t('exchange.average_rate') || 'Promedio'}</div>
                   <div className="text-sm font-semibold text-blue-600">
                     {rate.average_rate ? `$${formatExchangeRate(rate.average_rate)}` : (
                       <span className="text-gray-400">{t('common.not_available') || 'N/A'}</span>
@@ -462,6 +462,15 @@ const ExchangeResultsDisplay = ({ results, searchType, isLoading, error }) => {
     );
   };
 
+  // Paginación para tabla / listado
+  const PAGE_SIZE = 20;
+  const [page, setPage] = React.useState(0);
+  const totalPages = Math.ceil(filteredData.length / PAGE_SIZE) || 1;
+  const paginatedData = React.useMemo(() => {
+    const start = page * PAGE_SIZE;
+    return filteredData.slice(start, start + PAGE_SIZE);
+  }, [filteredData, page]);
+
   return (
     <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-md p-6">
       <div className="text-center mb-8">
@@ -526,9 +535,11 @@ const ExchangeResultsDisplay = ({ results, searchType, isLoading, error }) => {
         <div className="space-y-6">
           <div className="mb-4 flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-600 dark:text-gray-300">
-                {t('exchange.total_records') || 'Total de registros'}: <strong className="text-gray-900 dark:text-gray-100">{filteredData.length}</strong>
-              </span>
+              {filteredData.length > 1 && (
+                <span className="text-sm text-gray-600 dark:text-gray-300">
+                  {t('exchange.total_records') || 'Total de registros'}: <strong className="text-gray-900 dark:text-gray-100">{filteredData.length}</strong>
+                </span>
+              )}
               {filteredData.length > 0 && (
                 <span className="text-sm text-gray-600 dark:text-gray-300">
                   {t('common.period') || 'Período'}: <strong className="text-gray-900 dark:text-gray-100">{filteredData[filteredData.length - 1]?.date} - {filteredData[0]?.date}</strong>
@@ -543,7 +554,28 @@ const ExchangeResultsDisplay = ({ results, searchType, isLoading, error }) => {
           )}
 
           <div className="card">
-            <HistoryTable rates={filteredData} />
+            <HistoryTable rates={paginatedData} />
+            {filteredData.length > PAGE_SIZE && (
+              <div className="flex items-center justify-between mt-4 text-sm">
+                <button
+                  onClick={() => setPage(p => Math.max(0, p - 1))}
+                  disabled={page === 0}
+                  className={`px-3 py-1 rounded ${page === 0 ? 'bg-gray-200 text-gray-400 dark:bg-gray-700 dark:text-gray-500 cursor-not-allowed' : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600'}`}
+                >
+                  {t('common.previous') || 'Anterior'}
+                </button>
+                <div className="text-gray-600 dark:text-gray-300">
+                  {t('common.page') || 'Página'} {page + 1} / {totalPages}
+                </div>
+                <button
+                  onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
+                  disabled={page >= totalPages - 1}
+                  className={`px-3 py-1 rounded ${page >= totalPages - 1 ? 'bg-gray-200 text-gray-400 dark:bg-gray-700 dark:text-gray-500 cursor-not-allowed' : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600'}`}
+                >
+                  {t('common.next') || 'Siguiente'}
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -573,26 +605,16 @@ const ExchangeResultsDisplay = ({ results, searchType, isLoading, error }) => {
                 }
               </p>
             </div>
-            <div>
-              <p className="text-gray-600 dark:text-gray-300">{t('exchange.total_records') || 'Total de registros'}:</p>
-              <p className="font-medium text-gray-900 dark:text-gray-100">{filteredData.length}</p>
-            </div>
+            {filteredData.length > 1 && (
+              <div>
+                <p className="text-gray-600 dark:text-gray-300">{t('exchange.total_records') || 'Total de registros'}:</p>
+                <p className="font-medium text-gray-900 dark:text-gray-100">{filteredData.length}</p>
+              </div>
+            )}
           </div>
         </div>
       )}
-
-      {/* Información adicional */}
-      <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-lg">
-        <h4 className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-2">
-          ℹ️ {t('exchange.rates_info') || 'Información sobre las cotizaciones'}
-        </h4>
-        <ul className="text-xs text-blue-700 dark:text-blue-200 space-y-1">
-          <li>• <strong>{t('exchange.buy_rate') || 'Compra'}:</strong> {t('exchange.buy_description') || 'Precio al que el banco compra la moneda extranjera'}</li>
-          <li>• <strong>{t('exchange.sell_rate') || 'Venta'}:</strong> {t('exchange.sell_description') || 'Precio al que el banco vende la moneda extranjera'}</li>
-          <li>• <strong>{t('exchange.average_rate') || 'Promedio'}:</strong> {t('exchange.average_description') || 'Promedio entre compra y venta (cuando está disponible)'}</li>
-          <li>• {t('exchange.source_note') || 'Fuente: Banco Central del Uruguay (BCU)'}</li>
-        </ul>
-      </div>
+      {/* Panel informativo eliminado por redundancia */}
     </div>
   );
 };
