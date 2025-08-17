@@ -165,12 +165,13 @@ describe('URResultsDisplay Component', () => {
       }
     };
 
-    it('should display single UR value correctly', () => {
-      render(<URResultsDisplay results={singleValueResult} searchType="single" />);
-      
-      expect(screen.getAllByText('Valor UR')).toHaveLength(2); // Appears in title and table header
-      expect(screen.getAllByText('1.234,56')).toHaveLength(2); // Appears in display and table
-      expect(screen.getAllByText('Enero 2024')).toHaveLength(2); // Appears in display and table
+      it('should display single UR value without charts/table', () => {
+        render(<URResultsDisplay results={singleValueResult} searchType="single" />);
+        expect(screen.getByText('Valor UR')).toBeInTheDocument();
+        expect(screen.getByText('1.234,56')).toBeInTheDocument();
+        expect(screen.getByText('Enero 2024')).toBeInTheDocument();
+        expect(screen.queryByText('Información del Período')).not.toBeInTheDocument();
+        expect(screen.queryByText('Evolución de la UR')).not.toBeInTheDocument();
     });
 
     it('should display formatted value correctly', () => {
@@ -181,7 +182,7 @@ describe('URResultsDisplay Component', () => {
       
       render(<URResultsDisplay results={result} searchType="single" />);
       
-      expect(screen.getAllByText('1.000,10')).toHaveLength(2); // Appears in display and table
+        expect(screen.getByText('1.000,10')).toBeInTheDocument();
     });
 
     it('should handle null value gracefully', () => {
@@ -196,6 +197,8 @@ describe('URResultsDisplay Component', () => {
       const notAvailableText = screen.queryAllByText('N/D');
       const literalText = screen.queryAllByText('common.not_available');
       expect(notAvailableText.length + literalText.length).toBeGreaterThanOrEqual(2); // Appears in display and table
+  // Should show at least one N/D (no table in single mode now)
+  expect(screen.getAllByText('N/D').length).toBeGreaterThanOrEqual(1);
     });
 
     it('should display period without month when month is not provided', () => {
@@ -207,6 +210,7 @@ describe('URResultsDisplay Component', () => {
       render(<URResultsDisplay results={result} searchType="single" />);
       
       expect(screen.getAllByText('2024')).toHaveLength(2); // Appears in display and table
+  expect(screen.getByText('2024')).toBeInTheDocument();
     });
   });
 
@@ -406,6 +410,7 @@ describe('URResultsDisplay Component', () => {
       render(<URResultsDisplay results={result} searchType="single" />);
       
       expect(screen.getAllByText('1.234.567,89')).toHaveLength(2); // Appears in display and table
+  expect(screen.getByText('1.234.567,89')).toBeInTheDocument();
     });
 
     it('should format percentage with proper sign and decimals', () => {
@@ -432,6 +437,7 @@ describe('URResultsDisplay Component', () => {
       render(<URResultsDisplay results={result} searchType="single" />);
       
       expect(screen.getAllByText('Diciembre 2024')[0]).toBeInTheDocument();
+  expect(screen.getByText('Diciembre 2024')).toBeInTheDocument();
     });
 
     it('should handle edge case months correctly', () => {
@@ -443,6 +449,7 @@ describe('URResultsDisplay Component', () => {
       render(<URResultsDisplay results={result} searchType="single" />);
       
       expect(screen.getAllByText('Junio 2024')[0]).toBeInTheDocument();
+  expect(screen.getByText('Junio 2024')).toBeInTheDocument();
     });
   });
 
@@ -457,6 +464,7 @@ describe('URResultsDisplay Component', () => {
       render(<URResultsDisplay results={result} searchType="single" />);
       
       expect(screen.getByText('Fuente: Banco Hipotecario del Uruguay (BHU)')).toBeInTheDocument();
+  expect(screen.getByText('Fuente: Banco Hipotecario del Uruguay (BHU)')).toBeInTheDocument();
     });
   });
 
@@ -499,6 +507,7 @@ describe('URResultsDisplay Component', () => {
       render(<URResultsDisplay results={result} searchType="single" />);
       
       expect(screen.getAllByText('0,00')[0]).toBeInTheDocument();
+  expect(screen.getByText('0,00')).toBeInTheDocument();
     });
 
     it('should handle data with negative values', () => {
@@ -510,6 +519,7 @@ describe('URResultsDisplay Component', () => {
       render(<URResultsDisplay results={result} searchType="single" />);
       
       expect(screen.getAllByText('-1.000,00')[0]).toBeInTheDocument();
+  expect(screen.getByText('-1.000,00')).toBeInTheDocument();
     });
 
     it('should handle very large numbers', () => {
@@ -521,6 +531,7 @@ describe('URResultsDisplay Component', () => {
       render(<URResultsDisplay results={result} searchType="single" />);
       
       expect(screen.getAllByText('999.999.999,99')[0]).toBeInTheDocument();
+  expect(screen.getByText('999.999.999,99')).toBeInTheDocument();
     });
 
     it('should handle data with undefined year or month', () => {

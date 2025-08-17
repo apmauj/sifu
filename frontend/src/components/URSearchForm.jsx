@@ -571,16 +571,7 @@ const URSearchForm = ({ onSearch, isLoading }) => {
 
       </form>
 
-      {urInfo && (
-  <div className="text-sm text-gray-600 dark:text-gray-300 text-center pt-2">
-          {t('ur.data_available') || 'Datos disponibles:'} {urInfo.total_records || 0} {t('ur.records') || 'registros'}
-          {urInfo.date_range && urInfo.date_range.min_year && urInfo.date_range.max_year && (
-            <span>
-              {' '}({t('ur.from') || 'de'} {urInfo.date_range.min_year}/{urInfo.date_range.min_month || 1} {t('ur.to') || 'hasta'} {urInfo.date_range.max_year}/{urInfo.date_range.max_month || 12})
-            </span>
-          )}
-        </div>
-      )}
+  {/* Removed legacy availability line for consistency with UI panel */}
     </div>
   );
 };

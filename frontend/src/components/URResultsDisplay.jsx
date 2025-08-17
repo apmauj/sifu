@@ -9,10 +9,14 @@ const URResultsDisplay = ({ results, searchType, isLoading, error }) => {
   // Function to format monetary values (UR with 2 decimals)
   const formatURValue = (value) => {
     if (value === null || value === undefined) return t('common.not_available') || 'N/D';
-    return new Intl.NumberFormat('es-UY', {
+    // Use ISO currency then replace symbol to ensure consistent formatting
+    const formatted = new Intl.NumberFormat('es-UY', {
+      style: 'currency',
+      currency: 'UYU',
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
     }).format(value);
+    return formatted.replace('UYU', '$').replace('UY', '$');
   };
 
   // Function to format period
@@ -146,6 +150,21 @@ const URResultsDisplay = ({ results, searchType, isLoading, error }) => {
     );
   }
 
+  // Pagination state (only for range queries)
+  const PAGE_SIZE = 20;
+  const [page, setPage] = React.useState(0);
+  const paginatedData = React.useMemo(() => {
+    if (searchType === 'single') return data;
+    const base = dataWithVariations.length > 1 ? dataWithVariations : data;
+    const start = page * PAGE_SIZE;
+    return base.slice(start, start + PAGE_SIZE);
+  }, [data, dataWithVariations, page, searchType]);
+  const totalPages = React.useMemo(() => {
+    if (searchType === 'single') return 1;
+    const baseLength = (dataWithVariations.length > 1 ? dataWithVariations : data).length;
+    return Math.ceil(baseLength / PAGE_SIZE) || 1;
+  }, [data, dataWithVariations, searchType]);
+
   // Render principal (sin URInfoSummary)
   return (
     <div className="space-y-6">
@@ -172,170 +191,151 @@ const URResultsDisplay = ({ results, searchType, isLoading, error }) => {
             <div className="text-lg text-gray-600 dark:text-gray-300">
               {formatPeriod(data[0].year, data[0].month)}
             </div>
-            {/* El mensaje del backend ahora se muestra como notificación toast */}
           </div>
         ) : (
           // Multiple values or range display
           <div className="space-y-4">
-            {stats && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-gray-50 dark:bg-gray-700/60 rounded-lg">
+            {stats && data.length > 1 && (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-gray-50 dark:bg-gray-700/60 rounded-lg">
                 <div className="text-center">
-          <div className="text-sm text-gray-600 dark:text-gray-300">{t('ur.initial_value') || 'Valor inicial'}</div>
-          <div className="text-lg font-semibold text-gray-900 dark:text-gray-100">{formatURValue(stats.initialValue)}</div>
+                  <div className="text-sm text-gray-600 dark:text-gray-300">{t('ur.initial_value') || 'Valor inicial'}</div>
+                  <div className="text-lg font-semibold text-gray-900 dark:text-gray-100">{formatURValue(stats.initialValue)}</div>
                 </div>
                 <div className="text-center">
-          <div className="text-sm text-gray-600 dark:text-gray-300">{t('ur.final_value') || 'Valor final'}</div>
-          <div className="text-lg font-semibold text-gray-900 dark:text-gray-100">{formatURValue(stats.finalValue)}</div>
+                  <div className="text-sm text-gray-600 dark:text-gray-300">{t('ur.final_value') || 'Valor final'}</div>
+                  <div className="text-lg font-semibold text-gray-900 dark:text-gray-100">{formatURValue(stats.finalValue)}</div>
                 </div>
                 <div className="text-center">
-          <div className="text-sm text-gray-600 dark:text-gray-300">{t('common.average') || 'Promedio'}</div>
-          <div className="text-lg font-semibold text-gray-900 dark:text-gray-100">{formatURValue(stats.avg)}</div>
+                  <div className="text-sm text-gray-600 dark:text-gray-300">{t('common.average') || 'Promedio'}</div>
+                  <div className="text-lg font-semibold text-gray-900 dark:text-gray-100">{formatURValue(stats.avg)}</div>
                 </div>
                 <div className="text-center">
-          <div className="text-sm text-gray-600 dark:text-gray-300">{t('ur.total_variation') || 'Variación total'}</div>
-              <div className={`text-lg font-semibold ${stats.totalVariation >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {formatPercentage(stats.totalVariation)}
-                  </div>
+                  <div className="text-sm text-gray-600 dark:text-gray-300">{t('ur.total_variation') || 'Variación total'}</div>
+                  <div className={`text-lg font-semibold ${stats.totalVariation >= 0 ? 'text-green-600' : 'text-red-600'}`}>{formatPercentage(stats.totalVariation)}</div>
                 </div>
               </div>
             )}
-
-            {/* El mensaje del backend ahora se muestra como notificación toast */}
           </div>
         )}
       </div>
 
-      {/* Chart */}
+      {/* Charts only for range (more than one value) */}
+      {data.length > 1 && (
+        <>
+          <div className="card">
+            <h4 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
+              {t('ur.ur_evolution') || 'Evolución de la UR'}
+            </h4>
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                  <XAxis dataKey="name" angle={-45} textAnchor="end" height={80} fontSize={12} tick={{ fill: '#d1d5db' }} />
+                  <YAxis domain={['dataMin - 10', 'dataMax + 10']} tickFormatter={formatURValue} width={85} fontSize={10} tick={{ fill: '#d1d5db' }} />
+                  <Tooltip formatter={(value) => [formatURValue(value), t('ur.ur_value') || 'Valor UR']} labelStyle={{ color: '#374151' }} />
+                  <Line type="monotone" dataKey="value" stroke="#2563eb" strokeWidth={2} dot={{ fill: '#2563eb', strokeWidth: 2, r: 4 }} activeDot={{ r: 6, stroke: '#2563eb', strokeWidth: 2 }} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+          {dataWithVariations.length > 1 && (
+            <div className="card">
+              <h4 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
+                {t('ur.monthly_percentage_variation') || 'Variación Porcentual Mensual'}
+              </h4>
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={variationChartData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                    <XAxis dataKey="name" angle={-45} textAnchor="end" height={80} fontSize={12} tick={{ fill: '#d1d5db' }} />
+                    <YAxis tickFormatter={(value) => `${value}%`} tick={{ fill: '#d1d5db' }} />
+                    <Tooltip formatter={(value) => [formatPercentage(value), t('ur.variation_percentage') || 'Variación %']} labelStyle={{ color: '#374151' }} />
+                    <Bar dataKey="variation" fill="#fbbf24" name={t('ur.variation_percentage') || 'Variación %'} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+              <p className="text-sm text-gray-600 dark:text-gray-300 mt-2">
+                {t('ur.variation_note') || 'Muestra el cambio porcentual respecto al mes anterior'}
+              </p>
+            </div>
+          )}
+        </>
+      )}
+
+      {/* Data Table only when more than one result */}
       {data.length > 1 && (
         <div className="card">
           <h4 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
-            {t('ur.ur_evolution') || 'Evolución de la UR'}
+            {t('ur.period_information') || 'Información del Período'}
           </h4>
-          <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                <XAxis 
-                  dataKey="name" 
-                  angle={-45}
-                  textAnchor="end"
-                  height={80}
-                  fontSize={12}
-                  tick={{ fill: '#d1d5db' }}
-                />
-                <YAxis 
-                  domain={['dataMin - 10', 'dataMax + 10']}
-                  tickFormatter={formatURValue}
-                  width={85}
-                  fontSize={10}
-                  tick={{ fill: '#d1d5db' }}
-                />
-                <Tooltip 
-                  formatter={(value) => [formatURValue(value), t('ur.ur_value') || 'Valor UR']}
-                  labelStyle={{ color: '#374151' }}
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="value" 
-                  stroke="#2563eb" 
-                  strokeWidth={2}
-                  dot={{ fill: '#2563eb', strokeWidth: 2, r: 4 }}
-                  activeDot={{ r: 6, stroke: '#2563eb', strokeWidth: 2 }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-      )}
-
-      {/* Monthly Variations Chart */}
-      {dataWithVariations.length > 1 && (
-        <div className="card">
-          <h4 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
-            {t('ur.monthly_percentage_variation') || 'Variación Porcentual Mensual'}
-          </h4>
-          <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={variationChartData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                <XAxis 
-                  dataKey="name"
-                  angle={-45}
-                  textAnchor="end"
-                  height={80}
-                  fontSize={12}
-                  tick={{ fill: '#d1d5db' }}
-                />
-                <YAxis tickFormatter={(value) => `${value}%`} tick={{ fill: '#d1d5db' }} />
-                <Tooltip 
-                  formatter={(value) => [formatPercentage(value), t('ur.variation_percentage') || 'Variación %']}
-                  labelStyle={{ color: '#374151' }}
-                />
-                <Bar 
-                  dataKey="variation" 
-                  fill="#fbbf24"
-                  name={t('ur.variation_percentage') || 'Variación %'}
-                />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-          <p className="text-sm text-gray-600 dark:text-gray-300 mt-2">
-            {t('ur.variation_note') || 'Muestra el cambio porcentual respecto al mes anterior'}
-          </p>
-        </div>
-      )}
-
-      {/* Data Table */}
-      <div className="card">
-        <h4 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
-          {t('ur.period_information') || 'Información del Período'}
-        </h4>
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-600">
-            <thead className="bg-gray-50 dark:bg-gray-700/60">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                  {t('common.period') || 'Período'}
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                  {t('ur.ur_value') || 'Valor UR'}
-                </th>
-                {dataWithVariations.length > 1 && (
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-600">
+              <thead className="bg-gray-50 dark:bg-gray-700/60">
+                <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                    {t('ur.variation_percentage') || 'Variación %'}
+                    {t('common.period') || 'Período'}
                   </th>
-                )}
-              </tr>
-            </thead>
-            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-              {(dataWithVariations.length > 1 ? dataWithVariations : data).map((item, index) => (
-                <tr key={`${item.year}-${item.month}`} className={index % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50 dark:bg-gray-700/40'}>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">
-                    {formatPeriod(item.year, item.month)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                    {formatURValue(item.value)}
-                  </td>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    {t('ur.ur_value') || 'Valor UR'}
+                  </th>
                   {dataWithVariations.length > 1 && (
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      {item.variation !== null ? (
-                        <span className={item.variation >= 0 ? 'text-green-500' : 'text-red-500'}>
-                          {formatPercentage(item.variation)}
-                        </span>
-                      ) : (
-                        <span className="text-gray-400 dark:text-gray-500">-</span>
-                      )}
-                    </td>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      {t('ur.variation_percentage') || 'Variación %'}
+                    </th>
                   )}
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                {(dataWithVariations.length > 1 ? paginatedData : paginatedData).map((item, index) => (
+                  <tr key={`${item.year}-${item.month}`} className={index % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50 dark:bg-gray-700/40'}>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">
+                      {formatPeriod(item.year, item.month)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                      {formatURValue(item.value)}
+                    </td>
+                    {dataWithVariations.length > 1 && (
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        {item.variation !== null ? (
+                          <span className={item.variation >= 0 ? 'text-green-500' : 'text-red-500'}>
+                            {formatPercentage(item.variation)}
+                          </span>
+                        ) : (
+                          <span className="text-gray-400 dark:text-gray-500">-</span>
+                        )}
+                      </td>
+                    )}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between mt-4 text-sm">
+              <button
+                onClick={() => setPage(p => Math.max(0, p - 1))}
+                disabled={page === 0}
+                className={`px-3 py-1 rounded ${page === 0 ? 'bg-gray-200 text-gray-400 dark:bg-gray-700 dark:text-gray-500 cursor-not-allowed' : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600'}`}
+              >
+                {t('common.previous') || 'Anterior'}
+              </button>
+              <div className="text-gray-600 dark:text-gray-300">
+                {t('common.page') || 'Página'} {page + 1} / {totalPages}
+              </div>
+              <button
+                onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
+                disabled={page >= totalPages - 1}
+                className={`px-3 py-1 rounded ${page >= totalPages - 1 ? 'bg-gray-200 text-gray-400 dark:bg-gray-700 dark:text-gray-500 cursor-not-allowed' : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600'}`}
+              >
+                {t('common.next') || 'Siguiente'}
+              </button>
+            </div>
+          )}
         </div>
-      </div>
+      )}
 
       {/* Data Source */}
-  <div className="text-center text-sm text-gray-500 dark:text-gray-400">
+      <div className="text-center text-sm text-gray-500 dark:text-gray-400">
         {t('ur.data_source') || 'Fuente: Banco Hipotecario del Uruguay (BHU)'}
       </div>
     </div>

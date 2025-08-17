@@ -420,20 +420,12 @@ describe('URSearchForm Component', () => {
 
   // ===== UR INFO DISPLAY TESTS =====
   describe('UR Info Display', () => {
-    it('should display UR info when available', async () => {
+    it('should fetch UR info silently without availability line', async () => {
       render(<URSearchForm onSearch={mockOnSearch} />);
-      
       await waitFor(() => {
-        expect(screen.getByText('Datos disponibles: 1500 registros')).toBeInTheDocument();
+        expect(screen.getByText('Consultar Valor de UR')).toBeInTheDocument();
       });
-    });
-
-    it('should display date range when available', async () => {
-      render(<URSearchForm onSearch={mockOnSearch} />);
-      
-      await waitFor(() => {
-        expect(screen.getByText(/\(de 2010\/1 hasta 2024\/12\)/)).toBeInTheDocument();
-      });
+      expect(screen.queryByText(/Datos disponibles:/)).not.toBeInTheDocument();
     });
 
     it('should handle UR info loading errors gracefully', async () => {
@@ -466,7 +458,7 @@ describe('URSearchForm Component', () => {
       });
     });
 
-    it('should handle UR info without success flag', async () => {
+  it('should handle UR info without success flag (no line)', async () => {
       const urService = await import('../../services/urService');
       vi.mocked(urService.default.getInfo).mockResolvedValueOnce({
         data: {
@@ -481,8 +473,9 @@ describe('URSearchForm Component', () => {
       render(<URSearchForm onSearch={mockOnSearch} />);
       
       await waitFor(() => {
-        expect(screen.getByText('Datos disponibles: 500 registros')).toBeInTheDocument();
+        expect(screen.getByText('Consultar Valor de UR')).toBeInTheDocument();
       });
+      expect(screen.queryByText(/Datos disponibles:/)).not.toBeInTheDocument();
     });
 
     it('should generate fallback year options when no date range', async () => {
@@ -638,7 +631,7 @@ describe('URSearchForm Component', () => {
       consoleSpy.mockRestore();
     });
 
-    it('should handle UR info with missing total_records', async () => {
+  it('should handle UR info with missing total_records (no line)', async () => {
       const urService = await import('../../services/urService');
       vi.mocked(urService.default.getInfo).mockResolvedValueOnce({
         success: true,
@@ -654,11 +647,12 @@ describe('URSearchForm Component', () => {
       render(<URSearchForm onSearch={mockOnSearch} />);
       
       await waitFor(() => {
-        expect(screen.getByText('Datos disponibles: 0 registros')).toBeInTheDocument();
+        expect(screen.getByText('Consultar Valor de UR')).toBeInTheDocument();
       });
+      expect(screen.queryByText(/Datos disponibles:/)).not.toBeInTheDocument();
     });
 
-    it('should handle UR info with missing date_range months', async () => {
+  it('should handle UR info with missing date_range months (internal only)', async () => {
       const urService = await import('../../services/urService');
       vi.mocked(urService.default.getInfo).mockResolvedValueOnce({
         success: true,
@@ -675,13 +669,13 @@ describe('URSearchForm Component', () => {
       render(<URSearchForm onSearch={mockOnSearch} />);
       
       await waitFor(() => {
-        expect(screen.getByText(/\(de 2020\/1 hasta 2024\/12\)/)).toBeInTheDocument();
+        expect(screen.getByText('Consultar Valor de UR')).toBeInTheDocument();
       });
     });
   });
 
   describe('Conditional Rendering - Advanced', () => {
-    it('should conditionally show date range info only when all required fields exist', async () => {
+  it('should not render availability line even with full date_range', async () => {
       const urService = await import('../../services/urService');
       vi.mocked(urService.default.getInfo).mockResolvedValueOnce({
         success: true,
@@ -699,9 +693,9 @@ describe('URSearchForm Component', () => {
       render(<URSearchForm onSearch={mockOnSearch} />);
       
       await waitFor(() => {
-        // Should still show the range info with default month
-        expect(screen.getByText(/\(de 2020\/1 hasta 2024\/12\)/)).toBeInTheDocument();
+        expect(screen.getByText('Consultar Valor de UR')).toBeInTheDocument();
       });
+      expect(screen.queryByText(/Datos disponibles:/)).not.toBeInTheDocument();
     });
 
     it('should handle missing urInfo gracefully in display section', async () => {

@@ -140,6 +140,9 @@ const ResultsDisplay = ({ results, searchType }) => {
           <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4">
             {t('ui.period_summary') || 'Resumen del Período'}
           </h3>
+          <div className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+            {sortedData.length} {sortedData.length === 1 ? (t('common.record') || 'registro') : (t('common.records') || 'registros')}
+          </div>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="bg-gray-50 dark:bg-gray-700/60 rounded-lg p-4">
