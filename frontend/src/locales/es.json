@@ -210,7 +210,7 @@
     "buy_description": "Precio al que el banco compra la moneda extranjera",
     "sell_description": "Precio al que el banco vende la moneda extranjera",
     "average_description": "Promedio entre compra y venta (cuando está disponible)",
-    "source_note": "Fuente: Banco Central del Uruguay (BCU)",
+  "source_note": "Fuente: INE (histórico, último día hábil publicado)",
     "specific_date": "Fecha específica",
     "date": "Fecha",
     "start_date": "Fecha inicio",

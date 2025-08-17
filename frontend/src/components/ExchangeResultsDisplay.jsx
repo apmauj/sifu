@@ -105,13 +105,13 @@ const ExchangeResultsDisplay = ({ results, searchType, isLoading, error }) => {
   // No hay resultados
   if (!results || !results.success || !results.data) {
     return (
-  <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-md p-6">
+      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-md p-6">
         <div className="text-center py-12">
           <span className="text-6xl mb-4 block">💱</span>
- 	  <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-3">
             {t('exchange.no_results') || 'Sin resultados'}
-          </h3>
- 	  <p className="text-gray-600 dark:text-gray-300">
+          </h1>
+          <p className="text-gray-600 dark:text-gray-300 max-w-md mx-auto">
             {t('exchange.no_results_description') || 'Realiza una consulta para ver las cotizaciones.'}
           </p>
         </div>
@@ -471,15 +471,21 @@ const ExchangeResultsDisplay = ({ results, searchType, isLoading, error }) => {
     return filteredData.slice(start, start + PAGE_SIZE);
   }, [filteredData, page]);
 
+  // Calcular fecha única para encabezado (si corresponde)
+  const uniqueDates = [...new Set(filteredData.map(r => r.date))];
+  const singleDate = uniqueDates.length === 1 ? uniqueDates[0] : null;
+
   return (
     <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-md p-6">
       <div className="text-center mb-8">
-        {/* Eliminamos ícono azul grande para reducir ruido visual y mejor contraste en dark */}
         <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">
           {t('exchange.results_title') || 'Resultados de Cotizaciones'}
         </h1>
-	<p className="text-gray-600 dark:text-gray-400">
-          {t('exchange.results_subtitle') || 'Consulta realizada exitosamente'}
+        <p className="text-gray-600 dark:text-gray-400">
+          {(t('exchange.results_subtitle') || 'Cotizaciones encontradas')}
+          {singleDate && (
+            <span className="ml-2 text-gray-500 dark:text-gray-400 font-mono">• {singleDate}</span>
+          )}
         </p>
       </div>
 
@@ -487,23 +493,33 @@ const ExchangeResultsDisplay = ({ results, searchType, isLoading, error }) => {
       {(searchType === 'latest' || searchType === 'date') && filteredData.length <= 6 ? (
         // Vista de tarjetas en una sola columna
         <div className="space-y-4">
-          {filteredData.map((rate, index) => (
-            <div key={`${rate.date}-${rate.currency}-${index}`} className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-700 border border-blue-200 dark:border-gray-600/70 rounded-lg p-6 shadow-sm dark:shadow-[0_0_0_1px_rgba(255,255,255,0.04)]">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center">
-                  <span className="text-3xl mr-3"><Flag code={rate.currency} className="w-8 h-6 inline-block align-middle" /></span>
-                  <div>
-                    <h3 className="text-xl font-bold text-gray-900 dark:text-gray-50">{rate.currency}</h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-300">{getCurrencyInfo(rate.currency)?.name || rate.currency}</p>
+          {filteredData.map((rate, index) => {
+            const currencyInfo = getCurrencyInfo(rate.currency);
+            const showSubtitle = currencyInfo?.name && currencyInfo.name !== rate.currency;
+            const uniqueDates = [...new Set(filteredData.map(r => r.date))];
+            const singleDate = uniqueDates.length === 1;
+            return (
+              <div key={`${rate.date}-${rate.currency}-${index}`} className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-700 border border-blue-200 dark:border-gray-600/70 rounded-lg p-6 shadow-sm dark:shadow-[0_0_0_1px_rgba(255,255,255,0.04)]">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center">
+                    <span className="text-3xl mr-3"><Flag code={rate.currency} className="w-8 h-6 inline-block align-middle" /></span>
+                    <div>
+                      <h3 className="text-xl font-bold text-gray-900 dark:text-gray-50">{rate.currency}</h3>
+                      {showSubtitle && (
+                        <p className="text-sm text-gray-600 dark:text-gray-300">{currencyInfo.name}</p>
+                      )}
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    {/* Mostrar fecha en la tarjeta solo si NO está en encabezado o si hay múltiples fechas */}
+                    {!singleDate || filteredData.length === 1 ? (
+                      <p className="text-sm text-gray-500 dark:text-gray-400">{rate.date}</p>
+                    ) : null}
+                    {rate.arbitrage && rate.arbitrage !== 'INE' && (
+                      <p className="text-sm text-blue-600 dark:text-blue-400 font-medium">{rate.arbitrage}</p>
+                    )}
                   </div>
                 </div>
-                <div className="text-right">
-                  <p className="text-sm text-gray-500 dark:text-gray-400">{rate.date}</p>
-                  {rate.arbitrage && (
-                    <p className="text-sm text-blue-600 dark:text-blue-400 font-medium">{rate.arbitrage}</p>
-                  )}
-                </div>
-              </div>
               
               <div className="grid grid-cols-3 gap-4">
                 <div className="text-center p-3 bg-white dark:bg-gray-900/40 rounded-lg shadow-sm">
@@ -528,7 +544,8 @@ const ExchangeResultsDisplay = ({ results, searchType, isLoading, error }) => {
                 )}
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       ) : (
         // Vista de tabla para muchas cotizaciones o historial
@@ -581,7 +598,7 @@ const ExchangeResultsDisplay = ({ results, searchType, isLoading, error }) => {
       )}
 
       <div className="mt-6 text-right text-xs text-gray-500 dark:text-gray-400">
-        {t('exchange.source_note') || 'Fuente: Banco Central del Uruguay (BCU)'}
+  {t('exchange.source_note') || 'Fuente: INE (histórico, último día hábil publicado)'}
       </div>
     </div>
   );
