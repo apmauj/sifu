@@ -377,7 +377,4 @@ class TestStartupEvent:
         mock_session_local.assert_called_once()
 
 
-
-
-
  
