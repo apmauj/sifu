@@ -7,6 +7,7 @@ import URPanel from './components/URPanel';
 import ExchangeRatePanel from './components/ExchangeRatePanel';
 import ExchangeSearchForm from './components/ExchangeSearchForm';
 import ExchangeResultsDisplay from './components/ExchangeResultsDisplay';
+import ExchangeDataStatusPanel from './components/ExchangeDataStatusPanel';
 import BROUPanel from './components/BROUPanel';
 import exchangeService from './services/exchangeService';
 import uiService from './services/api';
@@ -373,6 +374,8 @@ function App() {
           {/* Contenido de Exchange Rates */}
           {activeTab === 'exchange' && (
             <>
+                        {/* Panel azul de estado de datos históricos de cotizaciones (INE) */}
+                        <ExchangeDataStatusPanel />
               {exchangeError && (
                 <Card className="mb-6 border-red-200/70 bg-red-50">
                   <CardBody>

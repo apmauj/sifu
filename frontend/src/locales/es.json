@@ -211,6 +211,13 @@
     "sell_description": "Precio al que el banco vende la moneda extranjera",
     "average_description": "Promedio entre compra y venta (cuando está disponible)",
   "source_note": "Fuente: INE (histórico, último día hábil publicado)",
+  "data_status_title": "Estado de los datos de Cotizaciones",
+  "available": "disponibles",
+  "currencies_label": "Monedas",
+  "latest_day": "Último día disponible",
+  "status_error": "Error al cargar estado de cotizaciones",
+  "source_note_fallback": "Fuente: INE (histórico, último día hábil publicado)"
+  ,
     "specific_date": "Fecha específica",
     "date": "Fecha",
     "start_date": "Fecha inicio",
