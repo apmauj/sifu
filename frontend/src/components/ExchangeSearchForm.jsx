@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useI18n } from '../contexts/I18nContext';
 import { ExclamationTriangleIcon } from '../icons';
 import { getTodayLocal, getDaysAgoLocal } from '../utils/dateUtils';
-import { ExchangeIcon, ChartIcon, TrendingUpIcon, TodayIcon, WeekIcon, SearchIcon } from '../icons';
+// Removed decorative icons to simplify UI per request
 
 const ExchangeSearchForm = ({ onSearch, isLoading }) => {
   const { t } = useI18n();
@@ -154,8 +154,7 @@ const ExchangeSearchForm = ({ onSearch, isLoading }) => {
 
   return (
   <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-md p-6">
-      <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6 flex items-center">
-        <ExchangeIcon className="w-8 h-8 mr-3 text-blue-600" />
+      <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6">
         {t('exchange.search_title') || 'Consultar Cotizaciones'}
       </h2>
 
@@ -186,7 +185,7 @@ const ExchangeSearchForm = ({ onSearch, isLoading }) => {
         </select>
       </div>
 
-      {/* Botones de acción rápida */}
+  {/* Botones de acción rápida */}
       <div className="mb-6">
         <h3 className="text-sm font-medium text-gray-800 dark:text-gray-200 mb-3">
           {t('common.quick_actions') || 'Acciones rápidas'}
@@ -196,82 +195,54 @@ const ExchangeSearchForm = ({ onSearch, isLoading }) => {
             type="button"
             onClick={() => handleQuickAction('latest')}
             disabled={isLoading}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm flex items-center justify-center"
+    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium transition-colors"
           >
-            <ChartIcon className="w-4 h-4 mr-2" />
             {t('exchange.latest_rates') || 'Últimas cotizaciones'}
           </button>
           <button
             type="button"
             onClick={() => handleQuickAction('today')}
             disabled={isLoading}
-            className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed text-sm flex items-center justify-center"
+    className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium transition-colors"
           >
-            <TodayIcon className="w-4 h-4 mr-2" />
             {t('common.today') || 'Hoy'}
           </button>
           <button
             type="button"
             onClick={() => handleQuickAction('week')}
             disabled={isLoading}
-            className="px-4 py-2 bg-blue-400 text-white rounded-md hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-sm flex items-center justify-center"
+    className="px-4 py-2 bg-blue-400 text-white rounded-md hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium transition-colors"
           >
-            <WeekIcon className="w-4 h-4 mr-2" />
             {t('common.last_week') || 'Última semana'}
           </button>
         </div>
       </div>
 
-      {/* Selector de tipo de búsqueda */}
+      {/* Selector de tipo de búsqueda (mismo estilo que acciones rápidas) */}
       <div className="mb-6">
-  <h3 className="text-sm font-medium text-gray-800 dark:text-gray-200 mb-3">
+        <h3 className="text-sm font-medium text-gray-800 dark:text-gray-200 mb-3">
           {t('exchange.search_type') || 'Tipo de consulta'}
         </h3>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
-          <button
-            type="button"
-            onClick={() => setSearchType('latest')}
-            className={`px-3 py-2 rounded-md text-sm font-medium ${
-              searchType === 'latest'
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-200 text-gray-800 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600'
-            }`}
-          >
-            {t('exchange.latest') || 'Últimas'}
-          </button>
-          <button
-            type="button"
-            onClick={() => setSearchType('date')}
-            className={`px-3 py-2 rounded-md text-sm font-medium ${
-              searchType === 'date'
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-200 text-gray-800 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600'
-            }`}
-          >
-            {t('exchange.by_date') || 'Por fecha'}
-          </button>
-          <button
-            type="button"
-            onClick={() => setSearchType('range')}
-            className={`px-3 py-2 rounded-md text-sm font-medium ${
-              searchType === 'range'
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-200 text-gray-800 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600'
-            }`}
-          >
-            {t('exchange.by_range') || 'Por rango'}
-          </button>
-          <button
-            type="button"
-            onClick={() => setSearchType('history')}
-            className={`px-3 py-2 rounded-md text-sm font-medium ${
-              searchType === 'history'
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-200 text-gray-800 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600'
-            }`}
-          >
-            {t('exchange.history') || 'Historial'}
-          </button>
+          {[
+            { key: 'latest', label: t('exchange.latest') || 'Últimas' },
+            { key: 'date', label: t('exchange.by_date') || 'Por fecha' },
+            { key: 'range', label: t('exchange.by_range') || 'Por rango' },
+            { key: 'history', label: t('exchange.history') || 'Historial' }
+          ].map(btn => (
+            <button
+              key={btn.key}
+              type="button"
+              onClick={() => setSearchType(btn.key)}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                searchType === btn.key
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-200 text-gray-800 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600'
+              }`}
+            >
+              {btn.label}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -306,36 +277,34 @@ const ExchangeSearchForm = ({ onSearch, isLoading }) => {
         )}
 
         {searchType === 'range' && (
-          <>
-            <div className="mb-4">
-              <label htmlFor="startDate" className="block text-sm font-medium text-gray-700 mb-1">
-                {t('exchange.start_date') || 'Fecha de inicio'}
-              </label>
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              {t('exchange.date_range') || 'Rango de fechas'}
+            </label>
+            <div className="flex items-center gap-2">
               <input
                 type="date"
                 id="startDate"
+                aria-label={t('exchange.start_date') || 'Fecha de inicio'}
                 ref={startDateRef}
-                className="w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                className="flex-1 rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
                 max={getTodayLocal()}
               />
-            </div>
-            <div className="mb-4">
-              <label htmlFor="endDate" className="block text-sm font-medium text-gray-700 mb-1">
-                {t('exchange.end_date') || 'Fecha de fin'}
-              </label>
+              <span className="text-gray-500 dark:text-gray-400">→</span>
               <input
                 type="date"
                 id="endDate"
+                aria-label={t('exchange.end_date') || 'Fecha de fin'}
                 ref={endDateRef}
-                className="w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                className="flex-1 rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
                 max={getTodayLocal()}
               />
             </div>
-          </>
+          </div>
         )}
 
         {searchType === 'history' && (
@@ -362,34 +331,23 @@ const ExchangeSearchForm = ({ onSearch, isLoading }) => {
         <button
           type="submit"
           disabled={isLoading || (searchType === 'history' && !selectedCurrency)}
-          className="w-full bg-blue-600 text-white py-3 px-4 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+          className="w-full bg-blue-600 text-white py-3 px-4 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium flex items-center justify-center"
         >
-          <SearchIcon className="w-5 h-5 mr-2" />
           {isLoading ? (
             <span className="flex items-center justify-center">
-              <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <svg className="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
               </svg>
               {t('common.searching') || 'Consultando...'}
             </span>
           ) : (
-            `🔍 ${t('common.search') || 'Consultar'}`
+            t('common.search') || 'Consultar'
           )}
         </button>
       </form>
 
-      {/* Información adicional */}
-      <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-        <h4 className="text-sm font-medium text-yellow-800 mb-2">
-          ℹ️ {t('exchange.info_title') || 'Información sobre cotizaciones'}
-        </h4>
-        <ul className="text-xs text-yellow-700 space-y-1">
-          <li>• {t('exchange.info_source') || 'Datos obtenidos del Banco Central del Uruguay (BCU)'}</li>
-          <li>• {t('exchange.info_frequency') || 'Las cotizaciones se actualizan en días hábiles'}</li>
-          <li>• {t('exchange.info_rates') || 'Se muestran tasas de compra, venta y promedio cuando están disponibles'}</li>
-        </ul>
-      </div>
+  {/* Panel informativo removido por simplificación de interfaz */}
     </div>
   );
 };
