@@ -128,16 +128,4 @@ export const RangeIcon = ({ className = "w-5 h-5", ...props }) => (
   </svg>
 );
 
-// Componente FlagIcon para usar emojis Unicode (mantiene las banderas que funcionan bien)
-export const FlagIcon = ({ country, className = "w-4 h-4", ...props }) => {
-  const flags = {
-    US: '🇺🇸',
-    EU: '🇪🇺',
-    AR: '🇦🇷',
-    BR: '🇧🇷',
-    UY: '🇺🇾',
-    WORLD: '🌍'
-  };
-
-  return <span className={className} {...props}>{flags[country] || flags.WORLD}</span>;
-}; 
+// FlagIcon legacy removido tras migración a SVG flags (usar componente Flag de icons/flags.jsx)

@@ -260,7 +260,8 @@ describe('LanguageSelector Component', () => {
     it('should display correct language names with flags', () => {
       render(<LanguageSelector />);
 
-  expect(screen.getByText('Español')).toBeInTheDocument();
+  // 'Español' aparece en opción y en sr-only para accesibilidad
+  expect(screen.getAllByText('Español').length).toBeGreaterThanOrEqual(1);
   expect(screen.getByText('English')).toBeInTheDocument();
   expect(screen.getByText('Português')).toBeInTheDocument();
     });

@@ -19,7 +19,7 @@ export {
   WeekIcon,
   DateIcon,
   RangeIcon,
-  FlagIcon as LegacyFlagIcon
+  // LegacyFlagIcon eliminado tras migración a nuevo sistema de banderas SVG
 } from '../components/icons/IconSet';
 
 
