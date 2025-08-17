@@ -1,12 +1,7 @@
 import React from 'react';
-import { 
-  CalendarIcon, 
-  ChartBarIcon,
-  ArrowDownIcon,
-  ArrowUpIcon,
-  MinusIcon
-} from '../icons';
+import { CalendarIcon, ChartBarIcon, ArrowDownIcon, ArrowUpIcon, MinusIcon } from '../icons';
 import { OpenMojiIcon } from '../icons/openmoji/index.jsx';
+import IconCircle from './ui/IconCircle.jsx';
 import { format, parseISO } from 'date-fns';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { useI18n } from '../contexts/I18nContext';
@@ -94,11 +89,7 @@ const ResultsDisplay = ({ results, searchType }) => {
     return (
       <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6 fade-in">
         <div className="text-center">
-          <div className="flex justify-center mb-4">
-            <div className="flex items-center justify-center w-16 h-16 bg-uruguay-blue rounded-full">
-              <OpenMojiIcon name="calculator" size={32} />
-            </div>
-          </div>
+          <div className="flex justify-center mb-4"><IconCircle><OpenMojiIcon name="calculator" size={32} /></IconCircle></div>
           
           <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">
             {t('ui.ui_value') || 'Valor de la UI'}

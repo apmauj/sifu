@@ -18,7 +18,7 @@ import {
   APP_TITLE,
   OFFICIAL_URLS
 } from './constants';
-import { CalculatorIcon, ChartIcon, ExchangeIcon, BankIcon, SummaryIcon, MoneyIcon, GlobeIcon } from './icons';
+// Legacy icon imports removed (migrated to OpenMojiIcon)
 import { OpenMojiIcon } from './icons/openmoji/index.jsx';
 import Card, { CardBody } from './components/ui/Card';
 import { Tabs, Tab } from './components/ui/Tabs';

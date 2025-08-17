@@ -21,11 +21,12 @@ const ExchangeRatePanel = () => {
   const didInitRef = useRef(false);
   const manualRefreshRef = useRef(false); // retained for minimal change though manual trigger removed
 
+  // Centralizamos flags por código (sin emojis en UI para consistencia visual SVG)
   const currencyInfo = {
-    USD: { symbol: 'US$', flag: '🇺🇸', name: t('exchange.currencies.USD') || 'Dólar USA' },
-    EUR: { symbol: '€', flag: '🇪🇺', name: t('exchange.currencies.EUR') || 'Euro' },
-    ARS: { symbol: 'AR$', flag: '🇦🇷', name: t('exchange.currencies.ARS') || 'Peso Arg.' },
-    BRL: { symbol: 'R$', flag: '🇧🇷', name: t('exchange.currencies.BRL') || 'Real' }
+    USD: { symbol: 'US$', flag: 'USD', name: t('exchange.currencies.USD') || 'Dólar USA' },
+    EUR: { symbol: '€', flag: 'EUR', name: t('exchange.currencies.EUR') || 'Euro' },
+    ARS: { symbol: 'AR$', flag: 'ARS', name: t('exchange.currencies.ARS') || 'Peso Arg.' },
+    BRL: { symbol: 'R$', flag: 'BRL', name: t('exchange.currencies.BRL') || 'Real' }
   };
 
   const fetchCurrentRates = useCallback(async () => {
@@ -134,8 +135,7 @@ const ExchangeRatePanel = () => {
                   if (!display) return null;
                   return (
                     <div key={rate.currency} className="flex items-center gap-1 bg-blue-600/50 px-2 py-1 rounded text-xs pointer-events-auto">
-                      {/* Provide both SVG and hidden emoji (tests expect emoji) */}
-                      <Flag code={rate.currency} className="w-5 h-4" />
+                      <Flag code={display.flag} className="w-5 h-4" />
                       <span className="sr-only">{display.flag}</span>
                       <span className="font-medium">{rate.currency}</span>
                       <span className="text-blue-200">|</span>
@@ -172,7 +172,7 @@ const ExchangeRatePanel = () => {
                 if (!display) return null;
                 return (
                   <div key={rate.currency} className="flex items-center gap-1 bg-blue-600/50 px-2 py-1 rounded text-xs">
-                    <Flag code={rate.currency} className="w-5 h-4" />
+                    <Flag code={display.flag} className="w-5 h-4" />
                     <span className="sr-only">{display.flag}</span>
                     <span className="font-medium">{rate.currency}</span>
                     <span className="text-blue-200">|</span>
@@ -206,7 +206,7 @@ const ExchangeRatePanel = () => {
                 if (!display) return null;
                 return (
                   <div key={rate.currency} className="flex items-center gap-1 bg-blue-600/50 px-2 py-1 rounded text-xs">
-                    <Flag code={rate.currency} className="w-5 h-4" />
+                    <Flag code={display.flag} className="w-5 h-4" />
                     <span className="sr-only">{display.flag}</span>
                     <span className="font-medium">{rate.currency}</span>
                     <span className="text-blue-200">|</span>

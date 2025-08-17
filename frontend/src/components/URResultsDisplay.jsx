@@ -2,6 +2,7 @@ import React from 'react';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { ExclamationTriangleIcon, MagnifyingGlassIcon, CalendarIcon, ArrowUpIcon, ArrowDownIcon, MinusIcon } from '../icons';
 import { OpenMojiIcon } from '../icons/openmoji/index.jsx';
+import IconCircle from './ui/IconCircle.jsx';
 import { useI18n } from '../contexts/I18nContext';
 
 const URResultsDisplay = ({ results, searchType, isLoading, error }) => {
@@ -202,11 +203,7 @@ const URResultsDisplay = ({ results, searchType, isLoading, error }) => {
         // Single value view styled like UI panel
         <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6 fade-in">
           <div className="text-center">
-            <div className="flex justify-center mb-4">
-              <div className="flex items-center justify-center w-16 h-16 bg-uruguay-blue rounded-full">
-                <OpenMojiIcon name="exchange" size={32} />
-              </div>
-            </div>
+            <div className="flex justify-center mb-4"><IconCircle><OpenMojiIcon name="exchange" size={32} /></IconCircle></div>
             <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">
               {t('ur.ur_value') || 'Valor UR'}
             </h3>
