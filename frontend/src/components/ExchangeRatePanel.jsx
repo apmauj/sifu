@@ -153,15 +153,7 @@ const ExchangeRatePanel = () => {
               </div>
             </div>
             {/* Loader at right */}
-             <div className="absolute right-0 top-1/2 -translate-y-1/2 flex items-center gap-2 pr-1">
-               {lastUpdate && (
-                 <span
-                   title={formatTime(lastUpdate)}
-                   aria-label={formatTime(lastUpdate)}
-                   className="inline-block w-2 h-2 rounded-full bg-emerald-300 animate-pulse"
-                 ></span>
-               )}
-             </div>
+             {/* Removed time/dot indicator per UX simplification */}
           </div>
 
           {/* Tablet */}
@@ -171,13 +163,7 @@ const ExchangeRatePanel = () => {
                 <ChartIcon className="w-4 h-4 mr-2 text-white" />
                 {t('bcu.title') || 'Cotizaciones BCU'}
               </span>
-              {lastUpdate && (
-                <span
-                  title={formatTime(lastUpdate)}
-                  aria-label={formatTime(lastUpdate)}
-                  className="inline-block w-2 h-2 rounded-full bg-emerald-300 animate-pulse"
-                ></span>
-              )}
+              {/* Time indicator removed */}
             </div>
             <div className="flex flex-wrap items-center gap-2 justify-center">
               {currentRates.slice(0, 4).map((rate) => {
@@ -211,13 +197,7 @@ const ExchangeRatePanel = () => {
                 <ChartIcon className="w-4 h-4 mr-2 text-white" />
                 {t('bcu.title') || 'Cotizaciones BCU'}
               </span>
-              {lastUpdate && (
-                <span
-                  title={formatTime(lastUpdate)}
-                  aria-label={formatTime(lastUpdate)}
-                  className="inline-block w-2 h-2 rounded-full bg-emerald-300 animate-pulse"
-                ></span>
-              )}
+              {/* Time indicator removed */}
             </div>
             <div className="flex flex-wrap items-center gap-2">
               {currentRates.slice(0, 4).map((rate) => {

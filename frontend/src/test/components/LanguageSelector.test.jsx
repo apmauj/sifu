@@ -50,10 +50,9 @@ describe('LanguageSelector Component', () => {
   });
 
   describe('Basic rendering', () => {
-    it('should render globe icon', () => {
+    it('should render without globe icon (simplified UX)', () => {
       render(<LanguageSelector />);
-
-      expect(screen.getByTestId('globe-icon')).toBeInTheDocument();
+      expect(screen.queryByTestId('globe-icon')).not.toBeInTheDocument();
     });
 
     it('should render language select dropdown', () => {
@@ -81,10 +80,6 @@ describe('LanguageSelector Component', () => {
 
     it('should have correct CSS classes', () => {
       render(<LanguageSelector />);
-
-      const container = screen.getByTestId('globe-icon').parentElement;
-      expect(container).toHaveClass('flex', 'items-center', 'space-x-2');
-
       const select = screen.getByRole('combobox');
       expect(select).toHaveClass('text-sm', 'border-gray-300', 'rounded-md');
     });
@@ -378,13 +373,9 @@ describe('LanguageSelector Component', () => {
       });
     });
 
-    it('should maintain correct DOM structure', () => {
+    it('should maintain minimal DOM structure (container + select)', () => {
       render(<LanguageSelector />);
-
-      // Should have the expected structure
-      const container = screen.getByTestId('globe-icon').parentElement;
-      expect(container).toContainElement(screen.getByTestId('globe-icon'));
-      expect(container).toContainElement(screen.getByRole('combobox'));
+      expect(screen.getByRole('combobox')).toBeInTheDocument();
     });
 
     it('should handle focus and blur events', async () => {

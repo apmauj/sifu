@@ -130,16 +130,16 @@ describe('ExchangeSearchForm Component', () => {
       expect(screen.getByRole('button', { name: /Consultar/i })).toBeInTheDocument();
     });
 
-    it('should render currency selector with all options (without emojis)', () => {
+    it('should render currency selector with all options (names only, codes removed)', () => {
       render(<ExchangeSearchForm {...defaultProps} />);
       const select = screen.getByLabelText('Moneda');
       expect(select).toBeInTheDocument();
-      // Use role option queries to avoid brittle text (emojis removed in new UX)
-      expect(screen.getByRole('option', { name: /ALL - Todas las monedas/ })).toHaveValue('ALL');
-      expect(screen.getByRole('option', { name: /USD - Dólar estadounidense/ })).toHaveValue('USD');
-      expect(screen.getByRole('option', { name: /EUR - Euro/ })).toHaveValue('EUR');
-      expect(screen.getByRole('option', { name: /ARS - Peso argentino/ })).toHaveValue('ARS');
-      expect(screen.getByRole('option', { name: /BRL - Real brasileño/ })).toHaveValue('BRL');
+      // Match by language names only (flags optional)
+      expect(screen.getByRole('option', { name: /Todas las monedas/ })).toHaveValue('ALL');
+      expect(screen.getByRole('option', { name: /Dólar estadounidense/ })).toHaveValue('USD');
+  expect(screen.getByRole('option', { name: /Euro/ })).toHaveValue('EUR');
+      expect(screen.getByRole('option', { name: /Peso argentino/ })).toHaveValue('ARS');
+      expect(screen.getByRole('option', { name: /Real brasileño/ })).toHaveValue('BRL');
     });
 
     it('should render quick action buttons', () => {

@@ -1,5 +1,5 @@
 import React from 'react';
-import { GlobeAltIcon } from '../icons';
+// Removed GlobeAltIcon for a cleaner, consistent style
 import { useI18n } from '../contexts/I18nContext';
 
 const LanguageSelector = () => {
@@ -22,8 +22,7 @@ const LanguageSelector = () => {
   };
 
   return (
-    <div className="flex items-center space-x-2">
-      <GlobeAltIcon className="w-4 h-4 text-gray-500 dark:text-gray-300" />
+  <div className="flex items-center space-x-2">
       <select
         value={currentLanguage}
         onChange={handleLanguageChange}
