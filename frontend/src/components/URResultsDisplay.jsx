@@ -110,6 +110,21 @@ const URResultsDisplay = ({ results, searchType, isLoading, error }) => {
     }));
   }, [dataWithVariations, currentLanguage]);
 
+  // Pagination state MUST be declared before any early returns to keep hook order stable.
+  const PAGE_SIZE = 20;
+  const [page, setPage] = React.useState(0);
+  const paginatedData = React.useMemo(() => {
+    if (searchType === 'single') return data;
+    const base = dataWithVariations.length > 1 ? dataWithVariations : data;
+    const start = page * PAGE_SIZE;
+    return base.slice(start, start + PAGE_SIZE);
+  }, [data, dataWithVariations, page, searchType]);
+  const totalPages = React.useMemo(() => {
+    if (searchType === 'single') return 1;
+    const baseLength = (dataWithVariations.length > 1 ? dataWithVariations : data).length;
+    return Math.ceil(baseLength / PAGE_SIZE) || 1;
+  }, [data, dataWithVariations, searchType]);
+
   // Render condicional SOLO aquí, después de todos los hooks
   if (isLoading) {
     return (
@@ -150,20 +165,6 @@ const URResultsDisplay = ({ results, searchType, isLoading, error }) => {
     );
   }
 
-  // Pagination state (only for range queries)
-  const PAGE_SIZE = 20;
-  const [page, setPage] = React.useState(0);
-  const paginatedData = React.useMemo(() => {
-    if (searchType === 'single') return data;
-    const base = dataWithVariations.length > 1 ? dataWithVariations : data;
-    const start = page * PAGE_SIZE;
-    return base.slice(start, start + PAGE_SIZE);
-  }, [data, dataWithVariations, page, searchType]);
-  const totalPages = React.useMemo(() => {
-    if (searchType === 'single') return 1;
-    const baseLength = (dataWithVariations.length > 1 ? dataWithVariations : data).length;
-    return Math.ceil(baseLength / PAGE_SIZE) || 1;
-  }, [data, dataWithVariations, searchType]);
 
   // Render principal (sin URInfoSummary)
   return (
