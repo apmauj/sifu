@@ -127,7 +127,12 @@ const URResultsDisplay = ({ results, searchType, isLoading, error }) => {
     return base.slice(start, start + PAGE_SIZE);
   }, [data, dataWithVariations, page, searchType]);
   const totalPages = React.useMemo(() => {
-  // Helper similar to UI component for variation trend
+    if (searchType === 'single') return 1;
+    const baseLength = (dataWithVariations.length > 1 ? dataWithVariations : data).length;
+    return Math.ceil(baseLength / PAGE_SIZE) || 1;
+  }, [data, dataWithVariations, searchType]);
+
+  // Helper similar to UI component for variation trend (must be top-level, not nested inside another hook)
   const getVariationInfo = React.useMemo(() => {
     if (!stats || stats.initialValue == null || stats.finalValue == null || stats.initialValue === 0) return null;
     const absolute = stats.finalValue - stats.initialValue;
@@ -146,10 +151,6 @@ const URResultsDisplay = ({ results, searchType, isLoading, error }) => {
         return <MinusIcon className="w-4 h-4 text-gray-400" />;
     }
   };
-    if (searchType === 'single') return 1;
-    const baseLength = (dataWithVariations.length > 1 ? dataWithVariations : data).length;
-    return Math.ceil(baseLength / PAGE_SIZE) || 1;
-  }, [data, dataWithVariations, searchType]);
 
   // Render condicional SOLO aquí, después de todos los hooks
   if (isLoading) {
