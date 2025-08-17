@@ -144,18 +144,7 @@ const BROUPanel = () => {
             {t('brou.bank_name') || 'Banco República'}
           </span>
         </h2>
-        <button
-          onClick={fetchBROURates}
-          disabled={loading}
-          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
-        >
-          {loading ? (
-            <LoadingIcon className="w-4 h-4 mr-2" />
-          ) : (
-            <RefreshIcon className="w-4 h-4 mr-2" />
-          )}
-          {loading ? t('common.loading') || 'Cargando...' : t('common.refresh') || t('common.refresh_data') || 'Actualizar Datos'}
-        </button>
+        {/* Manual refresh button removed (auto hourly updates + retry only on error) */}
       </div>
 
       {/* Desktop View */}

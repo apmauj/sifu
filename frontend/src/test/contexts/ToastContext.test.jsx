@@ -96,19 +96,19 @@ describe('ToastContext', () => {
         </ToastProvider>
       );
 
-      // El contenedor de toasts debería estar presente
-      const container = document.querySelector('.fixed.bottom-4.left-4.z-50');
-      expect(container).toBeInTheDocument();
+      expect(screen.getByTestId('toast-container')).toBeInTheDocument();
     });
 
-    it('should not render any toasts initially', () => {
+    it('should render container but no individual toasts initially', () => {
       render(
         <ToastProvider>
           <div>Test</div>
         </ToastProvider>
       );
-
-      expect(screen.queryByTestId(/^toast-/)).not.toBeInTheDocument();
+      expect(screen.getByTestId('toast-container')).toBeInTheDocument();
+      // No elementos cuyo testid comience con toast- (individual notifications)
+      const anyToast = screen.queryAllByTestId(/toast-/i).filter(el => el.getAttribute('data-testid') !== 'toast-container');
+      expect(anyToast.length).toBe(0);
     });
   });
 

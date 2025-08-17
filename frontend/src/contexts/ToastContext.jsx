@@ -66,7 +66,7 @@ export const ToastProvider = ({ children }) => {
       {children}
       
   {/* Renderizar todas las notificaciones */}
-  <div className="fixed bottom-4 left-4 z-[9999] space-y-3 space-y-reverse pointer-events-none">
+  <div data-testid="toast-container" className="fixed bottom-4 left-4 z-[9999] space-y-3 space-y-reverse pointer-events-none">
         {toasts.slice().reverse().map((toast) => (
           <div key={toast.id} className="pointer-events-auto">
             <ToastNotification

@@ -223,14 +223,14 @@ export const I18nProvider = ({ children }) => {
         params: (match) => ({ currency: match[1] })
       },
       {
-        pattern: /^Exchange rates for (.+) retrieved successfully\. (\d+) records found$/,
-        key: 'backend_messages.exchange_date_retrieved',
-        params: (match) => ({ date: match[1], count: match[2] })
-      },
-      {
         pattern: /^Exchange rates for (.+) retrieved successfully$/,
         key: 'backend_messages.exchange_date_retrieved_no_count',
         params: (match) => ({ date: match[1] })
+      },
+      {
+        pattern: /^Exchange rates for (.+) retrieved successfully\. (\d+) records found$/,
+        key: 'backend_messages.exchange_date_retrieved',
+        params: (match) => ({ date: match[1], count: match[2] })
       },
       {
         pattern: /^([A-Z]{3}) exchange rate for (.+) retrieved successfully$/,

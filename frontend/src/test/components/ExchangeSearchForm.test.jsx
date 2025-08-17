@@ -8,6 +8,7 @@ import * as dateUtils from '../../utils/dateUtils';
 const mockT = vi.fn((key, params) => {
   const translations = {
     'exchange.search_title': 'Consultar Cotizaciones',
+  'exchange.latest_data': 'Últimos datos',
     'exchange.currency': 'Moneda',
     'exchange.all_currencies': 'Todas las monedas',
     'exchange.currencies.USD': 'Dólar estadounidense',
@@ -15,8 +16,8 @@ const mockT = vi.fn((key, params) => {
     'exchange.currencies.ARS': 'Peso argentino',
     'exchange.currencies.BRL': 'Real brasileño',
     'common.quick_actions': 'Acciones rápidas',
-    'exchange.latest_rates': 'Últimas cotizaciones',
-    'common.today': 'Hoy',
+  'common.last_week': 'Última semana',
+  'common.last_month': 'Último mes',
     'common.last_week': 'Última semana',
     'exchange.search_type': 'Tipo de consulta',
     'exchange.latest': 'Últimas',
@@ -71,9 +72,26 @@ vi.mock('../../utils/dateUtils', () => ({
   })
 }));
 
-// Mock de Heroicons
+// Mock de Heroicons (incluye íconos base requeridos por system_icons)
 vi.mock('@heroicons/react/24/outline', () => ({
-  ExclamationTriangleIcon: () => <div data-testid="exclamation-triangle-icon" />
+  ArrowPathIcon: () => <div data-testid="arrow-path-icon" />,
+  ArrowDownIcon: () => <div data-testid="arrow-down-icon" />,
+  ArrowUpIcon: () => <div data-testid="arrow-up-icon" />,
+  MinusIcon: () => <div data-testid="minus-icon" />,
+  MagnifyingGlassIcon: () => <div data-testid="magnifying-glass-icon" />,
+  XMarkIcon: () => <div data-testid="x-mark-icon" />,
+  CheckCircleIcon: () => <div data-testid="check-circle-icon" />,
+  ExclamationCircleIcon: () => <div data-testid="exclamation-circle-icon" />,
+  InformationCircleIcon: () => <div data-testid="information-circle-icon" />,
+  ExclamationTriangleIcon: () => <div data-testid="exclamation-triangle-icon" />,
+  ChartBarIcon: () => <div data-testid="chart-bar-icon" />,
+  CalendarIcon: () => <div data-testid="calendar-icon" />,
+  ClockIcon: () => <div data-testid="clock-icon" />,
+  BanknotesIcon: () => <div data-testid="banknotes-icon" />,
+  CurrencyDollarIcon: () => <div data-testid="currency-dollar-icon" />,
+  GlobeAltIcon: () => <div data-testid="globe-alt-icon" />,
+  MoonIcon: () => <div data-testid="moon-icon" />,
+  SunIcon: () => <div data-testid="sun-icon" />
 }));
 
 describe('ExchangeSearchForm Component', () => {
@@ -104,33 +122,32 @@ describe('ExchangeSearchForm Component', () => {
     it('should render correctly with all basic elements', () => {
       render(<ExchangeSearchForm {...defaultProps} />);
       
-      expect(screen.getByText('💱 Consultar Cotizaciones')).toBeInTheDocument();
+  // Heading without relying on emoji (robust to icon changes)
+  expect(screen.getByRole('heading', { name: /Consultar Cotizaciones/ })).toBeInTheDocument();
       expect(screen.getByLabelText('Moneda')).toBeInTheDocument();
       expect(screen.getByText('Acciones rápidas')).toBeInTheDocument();
       expect(screen.getByText('Tipo de consulta')).toBeInTheDocument();
       expect(screen.getByRole('button', { name: /Consultar/i })).toBeInTheDocument();
     });
 
-    it('should render currency selector with all options', () => {
+    it('should render currency selector with all options (without emojis)', () => {
       render(<ExchangeSearchForm {...defaultProps} />);
-      
-      const currencySelect = screen.getByLabelText('Moneda');
-      expect(currencySelect).toBeInTheDocument();
-      
-      // Check currency options
-      expect(screen.getByText('🌍 ALL - Todas las monedas')).toBeInTheDocument();
-      expect(screen.getByText('🇺🇸 USD - Dólar estadounidense')).toBeInTheDocument();
-      expect(screen.getByText('🇪🇺 EUR - Euro')).toBeInTheDocument();
-      expect(screen.getByText('🇦🇷 ARS - Peso argentino')).toBeInTheDocument();
-      expect(screen.getByText('🇧🇷 BRL - Real brasileño')).toBeInTheDocument();
+      const select = screen.getByLabelText('Moneda');
+      expect(select).toBeInTheDocument();
+      // Use role option queries to avoid brittle text (emojis removed in new UX)
+      expect(screen.getByRole('option', { name: /ALL - Todas las monedas/ })).toHaveValue('ALL');
+      expect(screen.getByRole('option', { name: /USD - Dólar estadounidense/ })).toHaveValue('USD');
+      expect(screen.getByRole('option', { name: /EUR - Euro/ })).toHaveValue('EUR');
+      expect(screen.getByRole('option', { name: /ARS - Peso argentino/ })).toHaveValue('ARS');
+      expect(screen.getByRole('option', { name: /BRL - Real brasileño/ })).toHaveValue('BRL');
     });
 
     it('should render quick action buttons', () => {
       render(<ExchangeSearchForm {...defaultProps} />);
-      
-      expect(screen.getByText('📊 Últimas cotizaciones')).toBeInTheDocument();
-      expect(screen.getByText('📅 Hoy')).toBeInTheDocument();
-      expect(screen.getByText('📈 Última semana')).toBeInTheDocument();
+      // Updated quick actions: Últimos datos, Última semana, Último mes
+      expect(screen.getByRole('button', { name: /Últimos datos|exchange.latest_data/ })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /Última semana/ })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /Último mes|common.last_month/ })).toBeInTheDocument();
     });
 
     it('should render search type buttons', () => {
@@ -142,24 +159,16 @@ describe('ExchangeSearchForm Component', () => {
       expect(screen.getByText('Historial')).toBeInTheDocument();
     });
 
-    it('should render information section', () => {
-      render(<ExchangeSearchForm {...defaultProps} />);
-      
-      expect(screen.getByText('ℹ️ Información sobre cotizaciones')).toBeInTheDocument();
-      expect(screen.getByText('• Datos obtenidos del Banco Central del Uruguay (BCU)')).toBeInTheDocument();
-      expect(screen.getByText('• Las cotizaciones se actualizan en días hábiles')).toBeInTheDocument();
-      expect(screen.getByText('• Se muestran tasas de compra, venta y promedio cuando están disponibles')).toBeInTheDocument();
-    });
+  // Información secundaria removida del nuevo UX; test eliminado para evitar dependencia de emojis/viñetas
   });
 
   describe('Search Type Selection', () => {
-    it('should start with "latest" search type selected', () => {
+    it('should start with "latest" search type selected (no description text)', () => {
       render(<ExchangeSearchForm {...defaultProps} />);
-      
       const latestButton = screen.getByText('Últimas');
       expect(latestButton).toHaveClass('bg-blue-600', 'text-white');
-      
-      expect(screen.getByText('Se mostrarán las últimas cotizaciones disponibles.')).toBeInTheDocument();
+      // Description was removed in new UX; ensure it is not present
+      expect(screen.queryByText(/Se mostrarán las últimas cotizaciones disponibles/)).not.toBeInTheDocument();
     });
 
     it('should change to date search type and show date input', () => {
@@ -206,21 +215,19 @@ describe('ExchangeSearchForm Component', () => {
       expect(currencySelect.value).toBe('USD');
     });
 
-    it('should show filtered message when currency is selected in latest mode', () => {
+    // Removed filtered message in latest mode; confirm it no longer appears
+    it('should NOT show filtered message when currency is selected in latest mode', () => {
       render(<ExchangeSearchForm {...defaultProps} />);
-      
       const currencySelect = screen.getByLabelText('Moneda');
       fireEvent.change(currencySelect, { target: { value: 'USD' } });
-      
-      expect(screen.getByText('Filtrado por: USD')).toBeInTheDocument();
+      expect(screen.queryByText(/Filtrado por:/)).not.toBeInTheDocument();
     });
   });
 
   describe('Quick Actions', () => {
     it('should handle latest quick action', () => {
       render(<ExchangeSearchForm {...defaultProps} />);
-      
-      const latestButton = screen.getByText('📊 Últimas cotizaciones');
+      const latestButton = screen.getByRole('button', { name: /Últimos datos|exchange.latest_data/ });
       fireEvent.click(latestButton);
       
       expect(mockOnSearch).toHaveBeenCalledWith({
@@ -229,23 +236,11 @@ describe('ExchangeSearchForm Component', () => {
       });
     });
 
-    it('should handle today quick action', () => {
-      render(<ExchangeSearchForm {...defaultProps} />);
-      
-      const todayButton = screen.getByText('📅 Hoy');
-      fireEvent.click(todayButton);
-      
-      expect(mockOnSearch).toHaveBeenCalledWith({
-        type: 'date',
-        date: '2025-01-15',
-        currency: null
-      });
-    });
+  // Removed 'Hoy' quick action test as UI no longer provides it
 
     it('should handle week quick action', () => {
       render(<ExchangeSearchForm {...defaultProps} />);
-      
-      const weekButton = screen.getByText('📈 Última semana');
+      const weekButton = screen.getByRole('button', { name: /Última semana/ });
       fireEvent.click(weekButton);
       
       expect(mockOnSearch).toHaveBeenCalledWith({
@@ -261,8 +256,7 @@ describe('ExchangeSearchForm Component', () => {
       
       const currencySelect = screen.getByLabelText('Moneda');
       fireEvent.change(currencySelect, { target: { value: 'EUR' } });
-      
-      const latestButton = screen.getByText('📊 Últimas cotizaciones');
+      const latestButton = screen.getByRole('button', { name: /Últimos datos|exchange.latest_data/ });
       fireEvent.click(latestButton);
       
       expect(mockOnSearch).toHaveBeenCalledWith({
@@ -273,14 +267,12 @@ describe('ExchangeSearchForm Component', () => {
 
     it('should disable quick action buttons when loading', () => {
       render(<ExchangeSearchForm {...defaultProps} isLoading={true} />);
-      
-      const latestButton = screen.getByText('📊 Últimas cotizaciones');
-      const todayButton = screen.getByText('📅 Hoy');
-      const weekButton = screen.getByText('📈 Última semana');
-      
+      const latestButton = screen.getByRole('button', { name: /Últimos datos|exchange.latest_data/ });
+      const weekButton = screen.getByRole('button', { name: /Última semana/ });
+      const monthButton = screen.getByRole('button', { name: /Último mes|common.last_month/ });
       expect(latestButton).toBeDisabled();
-      expect(todayButton).toBeDisabled();
       expect(weekButton).toBeDisabled();
+      expect(monthButton).toBeDisabled();
     });
   });
 

@@ -3,9 +3,26 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import LanguageSelector from '../../components/LanguageSelector.jsx';
 
-// Mock de heroicons
+// Mock de heroicons (incluye íconos usados indirectamente)
 vi.mock('@heroicons/react/24/outline', () => ({
-  GlobeAltIcon: (props) => <div data-testid="globe-icon" {...props}>🌍</div>
+  ArrowPathIcon: (props) => <div data-testid="arrow-path-icon" {...props}></div>,
+  ArrowDownIcon: (props) => <div data-testid="arrow-down-icon" {...props}></div>,
+  ArrowUpIcon: (props) => <div data-testid="arrow-up-icon" {...props}></div>,
+  MinusIcon: (props) => <div data-testid="minus-icon" {...props}></div>,
+  MagnifyingGlassIcon: (props) => <div data-testid="magnifying-glass-icon" {...props}></div>,
+  XMarkIcon: (props) => <div data-testid="x-mark-icon" {...props}></div>,
+  CheckCircleIcon: (props) => <div data-testid="check-circle-icon" {...props}></div>,
+  ExclamationCircleIcon: (props) => <div data-testid="exclamation-circle-icon" {...props}></div>,
+  InformationCircleIcon: (props) => <div data-testid="information-circle-icon" {...props}></div>,
+  ExclamationTriangleIcon: (props) => <div data-testid="exclamation-triangle-icon" {...props}></div>,
+  ChartBarIcon: (props) => <div data-testid="chart-bar-icon" {...props}></div>,
+  CalendarIcon: (props) => <div data-testid="calendar-icon" {...props}></div>,
+  ClockIcon: (props) => <div data-testid="clock-icon" {...props}></div>,
+  BanknotesIcon: (props) => <div data-testid="banknotes-icon" {...props}></div>,
+  CurrencyDollarIcon: (props) => <div data-testid="currency-dollar-icon" {...props}></div>,
+  GlobeAltIcon: (props) => <div data-testid="globe-icon" {...props}>🌍</div>,
+  MoonIcon: (props) => <div data-testid="moon-icon" {...props}></div>,
+  SunIcon: (props) => <div data-testid="sun-icon" {...props}></div>
 }));
 
 // Mock del contexto I18n

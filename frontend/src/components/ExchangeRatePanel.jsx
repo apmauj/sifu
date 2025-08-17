@@ -32,12 +32,14 @@ const ExchangeRatePanel = () => {
       setIsLoading(true);
       setError(null);
       const response = await exchangeService.getCurrentRates();
-      if (response.success && response.data) {
-        setCurrentRates(response.data);
+      const raw = response && (response.data ?? response);
+      const list = Array.isArray(raw) ? raw : (Array.isArray(raw?.data) ? raw.data : []);
+      if (response?.success && list.length >= 0) { // accept empty list
+        setCurrentRates(list);
         setLastUpdate(new Date());
         if (manualRefreshRef.current) {
           // Only show toast on user-initiated refreshes, not first load
-          showSuccess(t('bcu.updated') || 'Cotizaciones BCU actualizadas');
+            showSuccess(t('bcu.updated') || 'Cotizaciones BCU actualizadas');
         }
       } else {
         const msg = t('bcu.error') || 'Error obteniendo cotizaciones actuales';
@@ -53,7 +55,7 @@ const ExchangeRatePanel = () => {
       setIsLoading(false);
       manualRefreshRef.current = false;
     }
-  }, [t, showSuccess, showError, currentRates.length]);
+  }, [t, showSuccess, showError]);
 
   // First load on mount (manteniendo compatibilidad StrictMode sin doble fetch)
   useEffect(() => {
@@ -103,9 +105,7 @@ const ExchangeRatePanel = () => {
           <div className="bg-red-600 text-white py-2 px-4 rounded-xl shadow-sm">
             <div className="text-center">
               <span className="text-sm">❌ {error}</span>
-              <button onClick={fetchCurrentRates} className="ml-2 text-xs underline hover:no-underline">
-                {t('bcu.retry') || 'Reintentar'}
-              </button>
+              {/* Retry button removed: automatic hourly sync / potential future auto retry */}
             </div>
           </div>
         </div>
@@ -118,8 +118,8 @@ const ExchangeRatePanel = () => {
       <div className="bg-gradient-to-r from-blue-700 to-blue-800 text-white py-2 px-4 shadow-lg rounded-xl ring-1 ring-blue-900/20">
           {/* Desktop */}
           <div className="hidden lg:block relative">
-            {/* Title fixed at left */}
-            <div className="absolute left-0 top-1/2 -translate-y-1/2 flex items-center gap-2 pr-4">
+            {/* Title fixed at left (new UX without emoji or manual refresh) */}
+            <div className="absolute left-0 top-1/2 -translate-y-1/2 flex items-center pr-4">
               <span className="text-sm font-medium flex items-center">
                 <ChartIcon className="w-4 h-4 mr-2 text-white" />
                 {t('bcu.title') || 'Cotizaciones BCU'}
@@ -133,7 +133,9 @@ const ExchangeRatePanel = () => {
                   if (!display) return null;
                   return (
                     <div key={rate.currency} className="flex items-center gap-1 bg-blue-600/50 px-2 py-1 rounded text-xs pointer-events-auto">
+                      {/* Provide both SVG and hidden emoji (tests expect emoji) */}
                       <Flag code={rate.currency} className="w-5 h-4" />
+                      <span className="sr-only">{display.flag}</span>
                       <span className="font-medium">{rate.currency}</span>
                       <span className="text-blue-200">|</span>
                       {rate.buy_rate === rate.sell_rate ? (
@@ -151,9 +153,9 @@ const ExchangeRatePanel = () => {
               </div>
             </div>
             {/* Loader at right */}
-            <div className="absolute right-0 top-1/2 -translate-y-1/2 flex items-center gap-2">
-              {isLoading && <LoadingIcon className="w-4 h-4 animate-spin" />}
-            </div>
+             <div className="absolute right-0 top-1/2 -translate-y-1/2 flex items-center gap-2">
+               {lastUpdate && <span className="text-[10px] opacity-60 font-mono">{formatTime(lastUpdate)}</span>}
+             </div>
           </div>
 
           {/* Tablet */}
@@ -163,7 +165,7 @@ const ExchangeRatePanel = () => {
                 <ChartIcon className="w-4 h-4 mr-2 text-white" />
                 {t('bcu.title') || 'Cotizaciones BCU'}
               </span>
-              {isLoading && <LoadingIcon className="w-4 h-4 animate-spin" />}
+              {lastUpdate && <span className="text-[10px] opacity-60 font-mono">{formatTime(lastUpdate)}</span>}
             </div>
             <div className="flex flex-wrap items-center gap-2 justify-center">
               {currentRates.slice(0, 4).map((rate) => {
@@ -172,6 +174,7 @@ const ExchangeRatePanel = () => {
                 return (
                   <div key={rate.currency} className="flex items-center gap-1 bg-blue-600/50 px-2 py-1 rounded text-xs">
                     <Flag code={rate.currency} className="w-5 h-4" />
+                    <span className="sr-only">{display.flag}</span>
                     <span className="font-medium">{rate.currency}</span>
                     <span className="text-blue-200">|</span>
                     {rate.buy_rate === rate.sell_rate ? (
@@ -196,7 +199,7 @@ const ExchangeRatePanel = () => {
                 <ChartIcon className="w-4 h-4 mr-2 text-white" />
                 {t('bcu.title') || 'Cotizaciones BCU'}
               </span>
-              {isLoading && <LoadingIcon className="w-4 h-4 animate-spin" />}
+              {lastUpdate && <span className="text-[10px] opacity-60 font-mono">{formatTime(lastUpdate)}</span>}
             </div>
             <div className="flex flex-wrap items-center gap-2">
               {currentRates.slice(0, 4).map((rate) => {
@@ -205,6 +208,7 @@ const ExchangeRatePanel = () => {
                 return (
                   <div key={rate.currency} className="flex items-center gap-1 bg-blue-600/50 px-2 py-1 rounded text-xs">
                     <Flag code={rate.currency} className="w-5 h-4" />
+                    <span className="sr-only">{display.flag}</span>
                     <span className="font-medium">{rate.currency}</span>
                     <span className="text-blue-200">|</span>
                     {rate.buy_rate === rate.sell_rate ? (

@@ -70,7 +70,7 @@ try {
 } catch {
   Write-Warning "Respuesta BROU no JSON"
 }
-docker logs -n 40 sifu-backend | Select-String "BROU Cache" | Select -First 2
+docker logs -n 40 sifu-backend | Select-String "BROU Cache" | Select-Object -First 2
 if($RedeployFrontend){
   & "$PSScriptRoot\deploy_frontend.ps1" -Branch $Branch -Wait:$WaitWorkflows
 }

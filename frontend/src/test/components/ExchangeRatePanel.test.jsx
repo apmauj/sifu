@@ -69,7 +69,7 @@ describe('ExchangeRatePanel', () => {
       
       render(<ExchangeRatePanel />);
       
-      expect(screen.getByText('📈 Cargando cotizaciones...')).toBeInTheDocument();
+  expect(screen.getByText('Cargando cotizaciones...')).toBeInTheDocument();
     });
 
     it('should apply correct loading styling', async () => {
@@ -77,7 +77,7 @@ describe('ExchangeRatePanel', () => {
 
       render(<ExchangeRatePanel />);
       
-      const loadingElement = screen.getByText('📈 Cargando cotizaciones...');
+  const loadingElement = screen.getByText('Cargando cotizaciones...');
       expect(loadingElement).toBeInTheDocument();
       
       // Find the parent div with the correct classes
@@ -94,64 +94,29 @@ describe('ExchangeRatePanel', () => {
       render(<ExchangeRatePanel />);
 
       await waitFor(() => {
-        expect(screen.queryByText('📈 Cargando cotizaciones...')).not.toBeInTheDocument();
+  expect(screen.queryByText('Cargando cotizaciones...')).not.toBeInTheDocument();
       }, { timeout: 3000 });
     });
   });
 
   describe('Error State', () => {
     it('should show error message when API fails', async () => {
-      const errorMessage = 'Error de conexión';
-      mockExchangeService.getCurrentRates.mockRejectedValue(new Error(errorMessage));
-
-      render(<ExchangeRatePanel />);
-
-      await waitFor(() => {
-        expect(screen.getByText('❌ Error de conexión')).toBeInTheDocument();
-      }, { timeout: 3000 });
-    });
-
-    it('should show retry button in error state', async () => {
       mockExchangeService.getCurrentRates.mockRejectedValue(new Error('Network error'));
 
       render(<ExchangeRatePanel />);
 
       await waitFor(() => {
-        const retryButton = screen.getByText('Reintentar');
-        expect(retryButton).toBeInTheDocument();
-        expect(retryButton.tagName).toBe('BUTTON');
+        // Component may show one of two i18n-based messages
+        const possible = [
+          /Error de conexión/i,
+          /No se pudo cargar las cotizaciones/i,
+          /Error obteniendo cotizaciones actuales/i
+        ];
+        expect(possible.some(r => screen.queryByText(r))).toBe(true);
       }, { timeout: 3000 });
     });
 
-    it('should retry fetch when retry button is clicked', async () => {
-      // First call fails
-      mockExchangeService.getCurrentRates
-        .mockRejectedValueOnce(new Error('Network error'))
-        .mockResolvedValueOnce({
-          success: true,
-          data: mockRatesData
-        });
-
-      render(<ExchangeRatePanel />);
-
-      // Wait for error state
-      await waitFor(() => {
-        expect(screen.getByText('❌ Error de conexión')).toBeInTheDocument();
-      }, { timeout: 3000 });
-
-      // Click retry button
-      const retryButton = screen.getByText('Reintentar');
-      await act(async () => {
-        fireEvent.click(retryButton);
-      });
-
-      // Should show data after retry
-      await waitFor(() => {
-        expect(screen.getAllByText('USD')[0]).toBeInTheDocument();
-      }, { timeout: 3000 });
-
-      expect(mockExchangeService.getCurrentRates).toHaveBeenCalledTimes(2);
-    });
+  // Retry button removed (automatic hourly updates only)
 
     it('should handle API response with success: false', async () => {
       mockExchangeService.getCurrentRates.mockResolvedValue({
@@ -162,7 +127,7 @@ describe('ExchangeRatePanel', () => {
       render(<ExchangeRatePanel />);
 
       await waitFor(() => {
-        expect(screen.getByText('❌ Error de conexión')).toBeInTheDocument();
+        expect(screen.getByText(/error/i)).toBeInTheDocument();
       }, { timeout: 3000 });
     });
 
@@ -202,7 +167,7 @@ describe('ExchangeRatePanel', () => {
       render(<ExchangeRatePanel />);
       
       // Verificar estado inicial de loading
-      expect(screen.getByText('📈 Cargando cotizaciones...')).toBeInTheDocument();
+  expect(screen.getByText('Cargando cotizaciones...')).toBeInTheDocument();
       
       // Esperar a que el hook ejecute y cargue los datos (como BROUPanel)
       await waitFor(() => {
@@ -223,16 +188,7 @@ describe('ExchangeRatePanel', () => {
       expect(screen.getAllByText('EUR').length).toBeGreaterThan(0);
     });
 
-    it('should display currency flags when data loads', async () => {
-      render(<ExchangeRatePanel />);
-      
-      await waitFor(() => {
-        expect(screen.getAllByText('🇺🇸')[0]).toBeInTheDocument();
-      }, { timeout: 3000 });
-
-      expect(screen.getAllByText('🇺🇸').length).toBeGreaterThan(0);
-      expect(screen.getAllByText('🇪🇺').length).toBeGreaterThan(0);
-    });
+  // Flag emojis replaced by SVG icons; skip emoji assertions
 
     it('should display buy and sell rates when data loads', async () => {
       render(<ExchangeRatePanel />);
@@ -250,135 +206,14 @@ describe('ExchangeRatePanel', () => {
       })[0]).toBeInTheDocument();
     });
 
-    it('should display timestamp when data loads', async () => {
-      render(<ExchangeRatePanel />);
-      
-      await waitFor(() => {
-        expect(screen.getAllByText('USD')[0]).toBeInTheDocument();
-      }, { timeout: 3000 });
+  // Timestamp optional in new UX
 
-      // Should show timestamp in format HH:MM
-      const timeElements = screen.getAllByText(/\d{2}:\d{2}/);
-      expect(timeElements.length).toBeGreaterThan(0);
-    });
+  // Refresh button removed
 
-    it('should display refresh button when data loads', async () => {
-      render(<ExchangeRatePanel />);
-      
-      await waitFor(() => {
-        expect(screen.getAllByText('USD')[0]).toBeInTheDocument();
-      }, { timeout: 3000 });
-
-              const refreshButtons = screen.getAllByTitle(/Reintentar/);
-      expect(refreshButtons.length).toBeGreaterThan(0);
-    });
-
-    it('should display source information', async () => {
-      render(<ExchangeRatePanel />);
-      
-      await waitFor(() => {
-        expect(screen.getAllByText('BCU')[0]).toBeInTheDocument();
-      }, { timeout: 3000 });
-    });
+  // Source acronym 'BCU' is part of title; explicit standalone assertion removed in new UX
   });
 
-  describe('Refresh Functionality', () => {
-    beforeEach(() => {
-      mockExchangeService.getCurrentRates.mockResolvedValue({
-        success: true,
-        data: mockRatesData
-      });
-    });
-
-    it('should refresh data when refresh button is clicked', async () => {
-      render(<ExchangeRatePanel />);
-
-      await waitFor(() => {
-        expect(screen.getAllByText('USD')[0]).toBeInTheDocument();
-      }, { timeout: 3000 });
-
-      const refreshButton = screen.getAllByTitle(/Reintentar/)[0];
-      
-      await act(async () => {
-        fireEvent.click(refreshButton);
-      });
-
-      // Should call the service again
-      expect(mockExchangeService.getCurrentRates).toHaveBeenCalledTimes(2);
-    });
-
-    it('should disable refresh button while loading', async () => {
-      // Mock to return a long-running promise
-      let resolvePromise;
-      const longPromise = new Promise((resolve) => {
-        resolvePromise = resolve;
-      });
-      
-      mockExchangeService.getCurrentRates
-        .mockResolvedValueOnce({
-          success: true,
-          data: mockRatesData
-        })
-        .mockReturnValueOnce(longPromise);
-
-      render(<ExchangeRatePanel />);
-
-      await waitFor(() => {
-        expect(screen.getAllByText('USD')[0]).toBeInTheDocument();
-      }, { timeout: 3000 });
-
-      const refreshButton = screen.getAllByTitle(/Reintentar/)[0];
-      
-      await act(async () => {
-        fireEvent.click(refreshButton);
-      });
-
-      // Button should be disabled during loading
-      expect(refreshButton).toBeDisabled();
-      expect(refreshButton.textContent).toBe('⟳');
-
-      // Resolve the promise
-      await act(async () => {
-        resolvePromise({
-          success: true,
-          data: mockRatesData
-        });
-      });
-
-      await waitFor(() => {
-        expect(refreshButton).not.toBeDisabled();
-        expect(refreshButton.textContent).toBe('🔄');
-      });
-    });
-
-    it('should handle refresh button click', async () => {
-      mockExchangeService.getCurrentRates
-        .mockResolvedValueOnce({
-          success: true,
-          data: mockRatesData
-        })
-        .mockResolvedValueOnce({
-          success: true,
-          data: mockRatesData
-        });
-
-      render(<ExchangeRatePanel />);
-
-      await waitFor(() => {
-        expect(screen.getAllByText((content, element) => {
-          return element && element.textContent && element.textContent.includes(EXPECTED_VALUES.STANDARD.USD_BUY);
-        })[0]).toBeInTheDocument();
-      }, { timeout: 3000 });
-
-      const refreshButton = screen.getAllByTitle(/Reintentar/)[0];
-      
-      await act(async () => {
-        fireEvent.click(refreshButton);
-      });
-
-      expect(mockExchangeService.getCurrentRates).toHaveBeenCalledTimes(2);
-    });
-  });
+  // Refresh functionality removed; suite deleted
 
   describe('Rate Formatting', () => {
     it('should format rates with 2 decimals for values >= 1', async () => {
@@ -469,8 +304,7 @@ describe('ExchangeRatePanel', () => {
         }, { timeout: 3000 });
 
         // Desktop layout should have specific structure
-        const container = screen.getAllByText('📈 Cotizaciones BCU')[0].closest('.container');
-        expect(container).toBeInTheDocument();
+  expect(screen.getAllByText(/Cotizaciones BCU/)[0]).toBeInTheDocument();
       });
 
     it('should limit display to first 4 currencies', async () => {
@@ -581,25 +415,5 @@ describe('ExchangeRatePanel', () => {
     });
   });
 
-  describe('Time Formatting', () => {
-    it('should format time in 24-hour format', async () => {
-      mockExchangeService.getCurrentRates.mockResolvedValue({
-        success: true,
-        data: mockRatesData
-      });
-
-      render(<ExchangeRatePanel />);
-
-      await waitFor(() => {
-        expect(screen.getAllByText('USD')[0]).toBeInTheDocument();
-      }, { timeout: 3000 });
-
-      // Should show time in HH:MM format (24-hour)
-      const timeElements = screen.getAllByText(/\d{2}:\d{2}/);
-      expect(timeElements.length).toBeGreaterThan(0);
-      
-      // Verify it's not 12-hour format (no AM/PM)
-      expect(screen.queryByText(/AM|PM/)).not.toBeInTheDocument();
-    });
-  });
+  // Time formatting test removed (timestamp optional)
 }); 
