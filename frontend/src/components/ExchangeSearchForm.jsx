@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useI18n } from '../contexts/I18nContext';
 import { ExclamationTriangleIcon } from '../icons';
 import { OpenMojiIcon } from '../icons/openmoji/index.jsx';
+import { Flag } from '../icons/flags';
 import { getTodayLocal, getDaysAgoLocal } from '../utils/dateUtils';
 // Removed decorative icons to simplify UI per request
 
@@ -161,13 +162,13 @@ const ExchangeSearchForm = ({ onSearch, isLoading }) => {
     setSelectedCurrency(e.target.value);
   };
 
-  // Función para obtener las monedas soportadas con traducciones y emojis Unicode
+  // Monedas soportadas (sin emojis dentro de <option> para evitar glitches en algunos navegadores)
   const getSupportedCurrencies = () => [
-    { code: 'ALL', name: t('exchange.all_currencies') || 'Todas las monedas', flag: '🌍' },
-    { code: 'USD', name: t('exchange.currencies.USD') || 'Dólar estadounidense', flag: '🇺🇸' },
-    { code: 'EUR', name: t('exchange.currencies.EUR') || 'Euro', flag: '🇪🇺' },
-    { code: 'ARS', name: t('exchange.currencies.ARS') || 'Peso argentino', flag: '🇦🇷' },
-    { code: 'BRL', name: t('exchange.currencies.BRL') || 'Real brasileño', flag: '🇧🇷' },
+    { code: 'ALL', name: t('exchange.all_currencies') || 'Todas las monedas' },
+    { code: 'USD', name: t('exchange.currencies.USD') || 'Dólar estadounidense' },
+    { code: 'EUR', name: t('exchange.currencies.EUR') || 'Euro' },
+    { code: 'ARS', name: t('exchange.currencies.ARS') || 'Peso argentino' },
+    { code: 'BRL', name: t('exchange.currencies.BRL') || 'Real brasileño' },
   ];
 
   return (
@@ -184,24 +185,29 @@ const ExchangeSearchForm = ({ onSearch, isLoading }) => {
         </div>
       )}
 
-      {/* Selector de moneda */}
+      {/* Selector de moneda (bandera/ícono afuera para consistencia visual) */}
       <div className="mb-4">
         <label htmlFor="currency" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
           {t('exchange.currency') || 'Moneda'}
         </label>
-        <select
-          id="currency"
-          ref={currencyRef}
-          value={selectedCurrency}
-          onChange={handleCurrencyChange}
-          className="w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-        >
-          {getSupportedCurrencies().map(currency => (
-            <option key={currency.code} value={currency.code}>
-              {currency.flag} {currency.name}
-            </option>
-          ))}
-        </select>
+        <div className="flex items-center space-x-2">
+          {selectedCurrency === 'ALL' ? (
+            <span aria-hidden="true" className="text-xl">🌍</span>
+          ) : (
+            <Flag code={selectedCurrency} className="w-6 h-4" />
+          )}
+          <select
+            id="currency"
+            ref={currencyRef}
+            value={selectedCurrency}
+            onChange={handleCurrencyChange}
+            className="flex-1 rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+          >
+            {getSupportedCurrencies().map(currency => (
+              <option key={currency.code} value={currency.code}>{currency.name}</option>
+            ))}
+          </select>
+        </div>
       </div>
 
   {/* Botones de acción rápida */}
