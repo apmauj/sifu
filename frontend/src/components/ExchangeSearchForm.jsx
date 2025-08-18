@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useI18n } from '../contexts/I18nContext';
 import { ExclamationTriangleIcon } from '../icons';
 import { OpenMojiIcon } from '../icons/openmoji/index.jsx';
@@ -15,16 +15,15 @@ const ExchangeSearchForm = ({ onSearch, isLoading }) => {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [historyLimit, setHistoryLimit] = useState(10);
-  const [selectedCurrency, setSelectedCurrency] = useState('ALL');
+  const [selectedCurrency, setSelectedCurrency] = useState('ALL'); // 'ALL' o código singular
   const [error, setError] = useState('');
   const [latestDataDate, setLatestDataDate] = useState(null); // fecha retornada por 'latest'
   const [latestHintNeeded, setLatestHintNeeded] = useState(false);
 
-  // Referencias para los elementos del formulario
-  const currencyRef = useRef();
-  const dateRef = useRef();
-  const startDateRef = useRef();
-  const endDateRef = useRef();
+  // Referencias eliminadas para currency (usamos toggles). Conservamos lógica de fechas por estado.
+  const dateRef = React.useRef();
+  const startDateRef = React.useRef();
+  const endDateRef = React.useRef();
 
   // Inicializar fecha de hoy
   useEffect(() => {
@@ -55,9 +54,7 @@ const ExchangeSearchForm = ({ onSearch, isLoading }) => {
   const handleSubmit = (e) => {
     e.preventDefault();
     setError('');
-
-    const currency = currencyRef.current?.value;
-    const finalCurrency = currency === 'ALL' ? null : currency;
+    const finalCurrency = selectedCurrency === 'ALL' ? null : selectedCurrency;
 
     const searchParams = {
       type: searchType,
@@ -113,8 +110,7 @@ const ExchangeSearchForm = ({ onSearch, isLoading }) => {
   };
 
   const handleQuickAction = (action) => {
-    const currency = currencyRef.current?.value;
-    const finalCurrency = currency === 'ALL' ? null : currency;
+    const finalCurrency = selectedCurrency === 'ALL' ? null : selectedCurrency;
 
     switch (action) {
       case 'latest':
@@ -158,17 +154,16 @@ const ExchangeSearchForm = ({ onSearch, isLoading }) => {
     }
   };
 
-  const handleCurrencyChange = (e) => {
-    setSelectedCurrency(e.target.value);
+  const toggleCurrency = (code) => {
+    setSelectedCurrency(prev => (prev === code ? 'ALL' : code));
   };
+  const setAllCurrencies = () => setSelectedCurrency('ALL');
 
-  // Monedas soportadas (sin emojis dentro de <option> para evitar glitches en algunos navegadores)
-  const getSupportedCurrencies = () => [
-    { code: 'ALL', name: t('exchange.all_currencies') || 'Todas las monedas' },
-    { code: 'USD', name: t('exchange.currencies.USD') || 'Dólar estadounidense' },
-    { code: 'EUR', name: t('exchange.currencies.EUR') || 'Euro' },
-    { code: 'ARS', name: t('exchange.currencies.ARS') || 'Peso argentino' },
-    { code: 'BRL', name: t('exchange.currencies.BRL') || 'Real brasileño' },
+  const currencyButtons = [
+    { code: 'USD', label: t('exchange.currencies.USD') || 'USD' },
+    { code: 'EUR', label: t('exchange.currencies.EUR') || 'EUR' },
+    { code: 'ARS', label: t('exchange.currencies.ARS') || 'ARS' },
+    { code: 'BRL', label: t('exchange.currencies.BRL') || 'BRL' },
   ];
 
   return (
@@ -185,28 +180,35 @@ const ExchangeSearchForm = ({ onSearch, isLoading }) => {
         </div>
       )}
 
-      {/* Selector de moneda (bandera/ícono afuera para consistencia visual) */}
+      {/* Filtro de monedas: botón mundo (ALL) + toggles de banderas (single-select por ahora) */}
       <div className="mb-4">
-        <label htmlFor="currency" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+        <span className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
           {t('exchange.currency') || 'Moneda'}
-        </label>
-        <div className="flex items-center space-x-2">
-          {selectedCurrency === 'ALL' ? (
-            <span aria-hidden="true" className="text-xl">🌍</span>
-          ) : (
-            <Flag code={selectedCurrency} className="w-6 h-4" />
-          )}
-          <select
-            id="currency"
-            ref={currencyRef}
-            value={selectedCurrency}
-            onChange={handleCurrencyChange}
-            className="flex-1 rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+        </span>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={setAllCurrencies}
+            aria-pressed={selectedCurrency === 'ALL'}
+            aria-label={(t('exchange.all_currencies') || 'Todas las monedas') + (selectedCurrency === 'ALL' ? ' (activo)' : '')}
+            className={`px-2 py-1 rounded-md text-sm flex items-center gap-1 border transition-colors ${selectedCurrency === 'ALL' ? 'bg-blue-600 text-white border-blue-600' : 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 border-gray-300 dark:border-gray-600 hover:bg-gray-300 dark:hover:bg-gray-600'}`}
           >
-            {getSupportedCurrencies().map(currency => (
-              <option key={currency.code} value={currency.code}>{currency.name}</option>
-            ))}
-          </select>
+            <span role="img" aria-hidden="true">🌍</span>
+            {t('exchange.all_currencies') || 'Todas'}
+          </button>
+          {currencyButtons.map(c => (
+            <button
+              key={c.code}
+              type="button"
+              onClick={() => toggleCurrency(c.code)}
+              aria-pressed={selectedCurrency === c.code}
+              aria-label={`${c.label} ${selectedCurrency === c.code ? '(activo)' : ''}`}
+              className={`px-2 py-1 rounded-md text-sm flex items-center gap-1 border transition-colors ${selectedCurrency === c.code ? 'bg-blue-600 text-white border-blue-600' : 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 border-gray-300 dark:border-gray-600 hover:bg-gray-300 dark:hover:bg-gray-600'}`}
+            >
+              <Flag code={c.code} className="w-5 h-4" />
+              <span>{c.code}</span>
+            </button>
+          ))}
         </div>
       </div>
 
@@ -351,7 +353,7 @@ const ExchangeSearchForm = ({ onSearch, isLoading }) => {
         {/* Botón de búsqueda */}
         <button
           type="submit"
-          disabled={isLoading || (searchType === 'history' && !selectedCurrency)}
+          disabled={isLoading || (searchType === 'history' && (selectedCurrency === 'ALL'))}
           className="w-full bg-blue-600 text-white py-3 px-4 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium flex items-center justify-center"
         >
           {isLoading ? (
