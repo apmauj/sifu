@@ -1,7 +1,8 @@
 import React from 'react';
-import { render, screen, waitFor, act, fireEvent } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import ExchangeRatePanel from '../../components/ExchangeRatePanel';
 import { vi } from 'vitest';
+import { renderAsync, actFlush } from '../utils/renderAsync';
 
 // Mock global fetch
 global.fetch = vi.fn();
@@ -59,43 +60,32 @@ describe('ExchangeRatePanel', () => {
   
   beforeEach(async () => {
     vi.clearAllMocks();
-    resetMock(); // Reset del mock del hook
+    resetMock();
     mockExchangeService = (await import('../../services/exchangeService')).default;
   });
 
   describe('Loading State', () => {
     it('should show loading message initially', async () => {
-      mockExchangeService.getCurrentRates.mockImplementation(() => new Promise(() => {})); // Never resolves
-      
-      render(<ExchangeRatePanel />);
-      
-  expect(screen.getByText('Cargando cotizaciones...')).toBeInTheDocument();
+      mockExchangeService.getCurrentRates.mockImplementation(() => new Promise(() => {}));
+      await renderAsync(<ExchangeRatePanel />);
+      expect(screen.getByText('Cargando cotizaciones...')).toBeInTheDocument();
     });
 
     it('should apply correct loading styling', async () => {
-      mockExchangeService.getCurrentRates.mockImplementation(() => new Promise(() => {})); // Never resolves
-
-      render(<ExchangeRatePanel />);
-      
-  const loadingElement = screen.getByText('Cargando cotizaciones...');
+      mockExchangeService.getCurrentRates.mockImplementation(() => new Promise(() => {}));
+      await renderAsync(<ExchangeRatePanel />);
+      const loadingElement = screen.getByText('Cargando cotizaciones...');
       expect(loadingElement).toBeInTheDocument();
-      
-      // Find the parent div with the correct classes
       const parentDiv = loadingElement.closest('.bg-gray-800');
       expect(parentDiv).toHaveClass('bg-gray-800', 'text-white');
     });
 
     it('should not show loading when data is already present', async () => {
-      mockExchangeService.getCurrentRates.mockResolvedValue({
-        success: true,
-        data: mockRatesData
-      });
-
-      render(<ExchangeRatePanel />);
-
+      mockExchangeService.getCurrentRates.mockResolvedValue({ success: true, data: mockRatesData });
+      await renderAsync(<ExchangeRatePanel />);
       await waitFor(() => {
-  expect(screen.queryByText('Cargando cotizaciones...')).not.toBeInTheDocument();
-      }, { timeout: 3000 });
+        expect(screen.queryByText('Cargando cotizaciones...')).not.toBeInTheDocument();
+      });
     });
   });
 
@@ -416,4 +406,4 @@ describe('ExchangeRatePanel', () => {
   });
 
   // Time formatting test removed (timestamp optional)
-}); 
+});
