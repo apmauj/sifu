@@ -1,9 +1,11 @@
-fastapi==0.104.1
+## SECURITY: Do not downgrade without audit justification
+fastapi==0.116.1
+starlette==0.47.2
 uvicorn[standard]==0.24.0
 sqlalchemy==2.0.23
-pydantic==2.5.0
+pydantic==2.11.7
 python-dateutil==2.8.2
-requests==2.31.0
+requests==2.32.4
 httpx==0.25.2
 beautifulsoup4==4.13.4
 py-bcu==1.0.5
