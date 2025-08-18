@@ -1,5 +1,4 @@
 name: Security Audit
-
 on:
   push:
     branches: [ master ]
@@ -24,33 +23,33 @@ concurrency:
 
 jobs:
   backend-pip-audit:
-    name: Backend (pip-audit)
     runs-on: ubuntu-latest
-    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
           cache: pip
-      - name: Install dependencies
+      - name: Install deps
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt || true
-          if [ -f requirements-dev.txt ]; then pip install -r requirements-dev.txt; fi
+          [ -f requirements-dev.txt ] && pip install -r requirements-dev.txt
           pip install --upgrade pip-audit
       - name: pip-audit (requirements)
         id: audit_files
-        continue-on-error: true
         run: |
-          pip-audit -r requirements-core.txt -r requirements-dev.txt -r requirements.txt -f json > pip_audit_requirements.json || exit_code=$? || true
-          echo "exit_code=${exit_code:-0}" >> $GITHUB_OUTPUT
+          set +e
+          exit_code=0
+          pip-audit -r requirements-core.txt -r requirements-dev.txt -r requirements.txt -f json > pip_audit_requirements.json || exit_code=$?
+          echo "exit_code=$exit_code" >> $GITHUB_OUTPUT
       - name: pip-audit (installed)
         id: audit_installed
-        continue-on-error: true
         run: |
-          pip-audit -l -f json > pip_audit_installed.json || exit_code=$? || true
-          echo "exit_code=${exit_code:-0}" >> $GITHUB_OUTPUT
+          set +e
+          exit_code=0
+          pip-audit -l -f json > pip_audit_installed.json || exit_code=$?
+          echo "exit_code=$exit_code" >> $GITHUB_OUTPUT
       - name: Decide failure
         run: |
           if [ "${{ steps.audit_files.outputs.exit_code }}" != "0" ] || [ "${{ steps.audit_installed.outputs.exit_code }}" != "0" ]; then
@@ -67,9 +66,7 @@ jobs:
             pip_audit_installed.json
 
   frontend-npm-audit:
-    name: Frontend (npm audit)
     runs-on: ubuntu-latest
-    timeout-minutes: 15
     defaults:
       run:
         working-directory: frontend
@@ -83,30 +80,22 @@ jobs:
       - run: npm ci
       - name: npm audit (prod)
         id: audit
-        continue-on-error: true
         run: |
-          npm audit --omit=dev --json > audit.prod.json || exit_code=$? || true
-          echo "exit_code=${exit_code:-0}" >> $GITHUB_OUTPUT
+          set +e
+          exit_code=0
+          npm audit --omit=dev --json > audit.prod.json || exit_code=$?
+          echo "exit_code=$exit_code" >> $GITHUB_OUTPUT
           npm audit --json > audit.all.json || true
       - name: Fail on High/Critical
         run: |
-          node <<'NODE'
-          const fs=require('fs');
-            if(!fs.existsSync('audit.prod.json')) process.exit(0);
-            const data=JSON.parse(fs.readFileSync('audit.prod.json','utf8'));
-            let high=0,critical=0;
-            for(const v of Object.values(data.vulnerabilities||{})){
-            if(v.severity==='high') high++; else if(v.severity==='critical') critical++;
-            }
-            console.log('High:',high,'Critical:',critical);
-            if(high+critical>0){ process.exit(1); }
-            NODE
-                    echo "Frontend: PASS (sin High/Critical)" >> $GITHUB_STEP_SUMMARY
-                - uses: actions/upload-artifact@v4
-                    if: always()
-                    with:
-                    name: frontend-npm-audit-json
-                    path: frontend/audit*.json
+          node -e "const fs=require('fs');if(!fs.existsSync('audit.prod.json'))process.exit(0);const d=JSON.parse(fs.readFileSync('audit.prod.json','utf8'));const vulns=Object.values(d.vulnerabilities||{});const hc=vulns.filter(v=>['high','critical'].includes(v.severity));if(hc.length){console.error('FAIL '+hc.length+' High/Critical');process.exit(1);}console.log('Frontend PASS sin High/Critical');"
+          echo "Frontend: PASS (sin High/Critical)" >> $GITHUB_STEP_SUMMARY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: frontend-npm-audit-json
+          path: frontend/audit*.json
+          if-no-files-found: ignore
 
   summary:
     runs-on: ubuntu-latest
@@ -119,3 +108,5 @@ jobs:
           if [ "${{ needs.backend-pip-audit.result }}" != "success" ] || [ "${{ needs.frontend-npm-audit.result }}" != "success" ]; then
             exit 1
           fi
+          echo "Todo OK" >> $GITHUB_STEP_SUMMARY
+          
