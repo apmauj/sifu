@@ -6,7 +6,7 @@ import { useI18n } from '../contexts/I18nContext';
  * Panel azul de estado (similar a UI / UR) para cotizaciones históricas.
  * Muestra: total de registros, período disponible, monedas soportadas y fecha del último día.
  */
-const ExchangeDataStatusPanel = ({ refreshKey }) => {
+const ExchangeDataStatusPanel = ({ refreshKey, showSource = false }) => {
   const { t } = useI18n();
   const [info, setInfo] = React.useState(null);
   const [loading, setLoading] = React.useState(true);
@@ -68,7 +68,11 @@ const ExchangeDataStatusPanel = ({ refreshKey }) => {
           <div className="text-right">
             <div className="text-sm text-blue-700 dark:text-blue-100">{t('exchange.latest_day') || 'Último día disponible'}:</div>
             <div className="text-lg font-semibold text-blue-900 dark:text-white">{lastDate}</div>
-            <div className="text-xs text-blue-700 dark:text-blue-200 mt-1">{t('exchange.source_note') || t('exchange.source_note_fallback') || 'Fuente: INE (histórico, último día hábil publicado)'}</div>
+            {showSource && (
+              <div className="text-xs text-blue-700 dark:text-blue-200 mt-1">
+                {t('exchange.source_note') || t('exchange.source_note_fallback') || 'Fuente: INE (histórico, último día hábil publicado)'}
+              </div>
+            )}
           </div>
         </div>
       )}

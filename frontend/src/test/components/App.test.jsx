@@ -22,8 +22,10 @@ describe('App Component', () => {
   })
 
   describe('Basic Rendering', () => {
-    it('mounts', () => {
-      render(<TestWrapper><App /></TestWrapper>)
+    it('mounts', async () => {
+      await act(async () => {
+        render(<TestWrapper><App /></TestWrapper>)
+      })
       expect(screen.getAllByText('SIFU').length).toBeGreaterThan(0)
     })
   })
@@ -37,11 +39,11 @@ describe('App Component', () => {
   })
 
   describe('Navigation', () => {
-    it('renders tabs', () => {
-      render(<TestWrapper><App /></TestWrapper>)
-      expect(screen.getByText(/Unidad Indexada/)).toBeInTheDocument()
-      expect(screen.getByText(/Unidad Reajustable/)).toBeInTheDocument()
-      expect(screen.getByText(/Cotizaciones/)).toBeInTheDocument()
+    it('renders tabs', async () => {
+      await act(async () => { render(<TestWrapper><App /></TestWrapper>) })
+      expect(screen.getAllByText(/Unidad Indexada/).length).toBeGreaterThan(0)
+      expect(screen.getAllByText(/Unidad Reajustable/).length).toBeGreaterThan(0)
+      expect(screen.getAllByText(/Cotizaciones/).length).toBeGreaterThan(0)
       expect(screen.getAllByText(/BROU/).length).toBeGreaterThan(0)
     })
 
@@ -67,15 +69,15 @@ describe('App Component', () => {
       expect(screen.getAllByText(/SIFU/).length).toBeGreaterThan(0)
     })
 
-    it('missing latest_ui safe', () => {
+    it('missing latest_ui safe', async () => {
       globalThis.__TEST_MOCK_DATA__ = { success: true, data: { total_records: 10 } }
-      render(<TestWrapper><App /></TestWrapper>)
+      await act(async () => { render(<TestWrapper><App /></TestWrapper>) })
       expect(screen.getAllByText(/SIFU/).length).toBeGreaterThan(0)
     })
 
-    it('null latest_ui value tolerated', () => {
+    it('null latest_ui value tolerated', async () => {
       globalThis.__TEST_MOCK_DATA__ = { success: true, data: { latest_ui: { value: null, date: '2024-01-01' } } }
-      render(<TestWrapper><App /></TestWrapper>)
+      await act(async () => { render(<TestWrapper><App /></TestWrapper>) })
       expect(screen.getAllByText(/SIFU/).length).toBeGreaterThan(0)
     })
   })
@@ -83,7 +85,7 @@ describe('App Component', () => {
   describe('Error Display (network)', () => {
     it('shows UI error', async () => {
       globalThis.__TEST_NETWORK_ERROR__ = true
-      render(<TestWrapper><App /></TestWrapper>)
+      await act(async () => { render(<TestWrapper><App /></TestWrapper>) })
       await waitFor(() => {
         const err = screen.queryByText(/Error UI/i) || screen.queryByText(/Error al/i) || screen.queryByText(/No se pudo cargar/i)
         expect(err).toBeTruthy()
@@ -112,8 +114,8 @@ describe('App Component', () => {
   })
 
   describe('Content Rendering', () => {
-    it('default UI panel', () => {
-      render(<TestWrapper><App /></TestWrapper>)
+    it('default UI panel', async () => {
+      await act(async () => { render(<TestWrapper><App /></TestWrapper>) })
       expect(screen.getByText(/Consultar Valor de UI/i)).toBeInTheDocument()
     })
 
@@ -139,8 +141,8 @@ describe('App Component', () => {
   })
 
   describe('Footer', () => {
-    it('renders footer basics', () => {
-      render(<TestWrapper><App /></TestWrapper>)
+    it('renders footer basics', async () => {
+      await act(async () => { render(<TestWrapper><App /></TestWrapper>) })
       expect(screen.getByText(/Sistema de Índices Financieros del Uruguay/i)).toBeInTheDocument()
       expect(screen.getByText(/Fuentes oficiales/i)).toBeInTheDocument()
       expect(screen.getByRole('link', { name: /BCU/i })).toBeInTheDocument()

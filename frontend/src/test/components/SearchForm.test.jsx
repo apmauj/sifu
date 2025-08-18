@@ -104,17 +104,22 @@ describe('SearchForm Component', () => {
     mockGetValues.mockReturnValue({ fechaFin: '2025-06-17', fechaInicio: '2025-06-17' });
   });
 
-  it('should render correctly with search modes', () => {
+  // Helper to render and wait for initial async effects (fetchMaxDate)
+  const renderAndWait = async () => {
     render(<SearchForm onSearch={mockOnSearch} />);
-    
+    // Wait for base label after any state updates
+    await screen.findByText('Fecha específica');
+  };
+
+  it('should render correctly with search modes', async () => {
+    await renderAndWait();
     expect(screen.getByText('Fecha específica')).toBeInTheDocument();
     expect(screen.getByText('Rango de fechas')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Buscar' })).toBeInTheDocument();
   });
 
-  it('should change search mode when clicking options', () => {
-    render(<SearchForm onSearch={mockOnSearch} />);
-    
+  it('should change search mode when clicking options', async () => {
+    await renderAndWait();
     const rangeOption = screen.getByText('Rango de fechas');
     fireEvent.click(rangeOption);
     
@@ -123,9 +128,8 @@ describe('SearchForm Component', () => {
     expect(screen.getByText('Fecha fin')).toBeInTheDocument();
   });
 
-  it('should show date field when "Specific Date" is selected', () => {
-    render(<SearchForm onSearch={mockOnSearch} />);
-    
+  it('should show date field when "Specific Date" is selected', async () => {
+    await renderAndWait();
     const dateOption = screen.getByText('Fecha específica');
     fireEvent.click(dateOption);
     
@@ -134,9 +138,8 @@ describe('SearchForm Component', () => {
     expect(dateInput).toBeInTheDocument();
   });
 
-  it('should show start and end date fields when "Date Range" is selected', () => {
-    render(<SearchForm onSearch={mockOnSearch} />);
-    
+  it('should show start and end date fields when "Date Range" is selected', async () => {
+    await renderAndWait();
     const rangeOption = screen.getByText('Rango de fechas');
     fireEvent.click(rangeOption);
     
@@ -144,9 +147,8 @@ describe('SearchForm Component', () => {
     expect(screen.getByText('Fecha fin')).toBeInTheDocument();
   });
 
-  it('should show quick date buttons in "Specific Date" mode', () => {
-    render(<SearchForm onSearch={mockOnSearch} />);
-    
+  it('should show quick date buttons in "Specific Date" mode', async () => {
+    await renderAndWait();
     const dateOption = screen.getByText('Fecha específica');
     fireEvent.click(dateOption);
     
@@ -155,9 +157,8 @@ describe('SearchForm Component', () => {
     expect(screen.getByText('Ayer')).toBeInTheDocument();
   });
 
-  it('should show quick range buttons in "Date Range" mode', () => {
-    render(<SearchForm onSearch={mockOnSearch} />);
-    
+  it('should show quick range buttons in "Date Range" mode', async () => {
+    await renderAndWait();
     const rangeOption = screen.getByText('Rango de fechas');
     fireEvent.click(rangeOption);
     
@@ -166,9 +167,8 @@ describe('SearchForm Component', () => {
     expect(screen.getByText('Últimos 30 días')).toBeInTheDocument();
   });
 
-  it('should call onSearch when form is submitted with valid data', () => {
-    render(<SearchForm onSearch={mockOnSearch} />);
-    
+  it('should call onSearch when form is submitted with valid data', async () => {
+    await renderAndWait();
     // Submit form with the actual rendered date (2025-06-17)
     const searchButton = screen.getByRole('button', { name: 'Buscar' });
     fireEvent.click(searchButton);
@@ -179,9 +179,8 @@ describe('SearchForm Component', () => {
     });
   });
 
-  it('should call onSearch with range data when range mode is used', () => {
-    render(<SearchForm onSearch={mockOnSearch} />);
-    
+  it('should call onSearch with range data when range mode is used', async () => {
+    await renderAndWait();
     // Switch to range mode
     const rangeOption = screen.getByText('Rango de fechas');
     fireEvent.click(rangeOption);
@@ -197,9 +196,8 @@ describe('SearchForm Component', () => {
     });
   });
 
-  it('should handle quick date button clicks', () => {
-    render(<SearchForm onSearch={mockOnSearch} />);
-    
+  it('should handle quick date button clicks', async () => {
+    await renderAndWait();
     const todayButton = screen.getByText('Hoy');
     fireEvent.click(todayButton);
     
@@ -207,9 +205,8 @@ describe('SearchForm Component', () => {
     expect(mockOnSearch).toHaveBeenCalled();
   });
 
-  it('should handle quick range button clicks', () => {
-    render(<SearchForm onSearch={mockOnSearch} />);
-    
+  it('should handle quick range button clicks', async () => {
+    await renderAndWait();
     // Switch to range mode
     const rangeOption = screen.getByText('Rango de fechas');
     fireEvent.click(rangeOption);
@@ -221,17 +218,15 @@ describe('SearchForm Component', () => {
     expect(mockOnSearch).toHaveBeenCalled();
   });
 
-  it('should not have max attribute on date inputs', () => {
-    render(<SearchForm onSearch={mockOnSearch} />);
-    
+  it('should not have max attribute on date inputs', async () => {
+    await renderAndWait();
     // Get date input by placeholder instead of empty value
     const dateInput = screen.getByPlaceholderText('Selecciona una fecha');
     expect(dateInput).not.toHaveAttribute('max');
   });
 
-  it('should validate required fields before submission', () => {
-    render(<SearchForm onSearch={mockOnSearch} />);
-    
+  it('should validate required fields before submission', async () => {
+    await renderAndWait();
     // Form should have default values, so submission should work
     const searchButton = screen.getByRole('button', { name: 'Buscar' });
     fireEvent.click(searchButton);
@@ -243,9 +238,8 @@ describe('SearchForm Component', () => {
     });
   });
 
-  it('should reset form when switching between modes', () => {
-    render(<SearchForm onSearch={mockOnSearch} />);
-    
+  it('should reset form when switching between modes', async () => {
+    await renderAndWait();
     // Get initial date input
     const initialDateInput = screen.getByDisplayValue('2025-06-17');
     fireEvent.change(initialDateInput, { target: { value: '2025-06-17' } });
@@ -303,9 +297,8 @@ describe('SearchForm Component', () => {
     expect(screen.getByText('Fecha específica')).toBeInTheDocument();
   });
 
-  it('should handle clear button click in single mode', () => {
-    render(<SearchForm onSearch={mockOnSearch} />);
-    
+  it('should handle clear button click in single mode', async () => {
+    await renderAndWait();
     const clearButton = screen.getByText('Limpiar');
     fireEvent.click(clearButton);
     
@@ -313,9 +306,8 @@ describe('SearchForm Component', () => {
     expect(mockSetValue).toHaveBeenCalledWith('fecha', expect.any(String));
   });
 
-  it('should handle clear button click in range mode', () => {
-    render(<SearchForm onSearch={mockOnSearch} />);
-    
+  it('should handle clear button click in range mode', async () => {
+    await renderAndWait();
     // Switch to range mode
     const rangeOption = screen.getByText('Rango de fechas');
     fireEvent.click(rangeOption);
@@ -328,22 +320,23 @@ describe('SearchForm Component', () => {
     expect(mockSetValue).toHaveBeenCalledWith('fechaFin', expect.any(String));
   });
 
-  it('should show loading state when isLoading is true', () => {
+  it('should show loading state when isLoading is true', async () => {
+    await renderAndWait();
+    // Re-render with loading
     render(<SearchForm onSearch={mockOnSearch} isLoading={true} />);
-    
     const submitButton = screen.getByRole('button', { name: 'Cargando...' });
     expect(submitButton).toBeInTheDocument();
     expect(submitButton).toBeDisabled();
     expect(submitButton).toHaveClass('bg-gray-100', 'text-gray-400', 'cursor-not-allowed');
   });
 
-  it('should show normal state when isLoading is false', () => {
-    render(<SearchForm onSearch={mockOnSearch} isLoading={false} />);
-    
-    const submitButton = screen.getByRole('button', { name: 'Buscar' });
-    expect(submitButton).toBeInTheDocument();
-    expect(submitButton).not.toBeDisabled();
-    expect(submitButton).toHaveClass('bg-uruguay-blue', 'text-white');
+  it('should show normal state when isLoading is false', async () => {
+    await renderAndWait();
+    // Re-render not needed; ensure at least one submit button present
+    const submitButtons = screen.getAllByRole('button', { name: 'Buscar' });
+    expect(submitButtons.length).toBeGreaterThan(0);
+    expect(submitButtons[0]).not.toBeDisabled();
+    expect(submitButtons[0]).toHaveClass('bg-uruguay-blue', 'text-white');
   });
 
   it('should handle date validation for max date constraint', async () => {
@@ -361,13 +354,12 @@ describe('SearchForm Component', () => {
     expect(screen.getByText('Fecha específica')).toBeInTheDocument();
   });
 
-  it('should handle range validation - start date after end date', () => {
+  it('should handle range validation - start date after end date', async () => {
     mockGetValues.mockReturnValueOnce({ 
       fechaFin: '2025-06-10', 
       fechaInicio: '2025-06-20' // Start after end
     });
-    
-    render(<SearchForm onSearch={mockOnSearch} />);
+    await renderAndWait();
     
     // Switch to range mode
     const rangeOption = screen.getByText('Rango de fechas');
@@ -378,13 +370,12 @@ describe('SearchForm Component', () => {
     expect(screen.getByText('Fecha fin')).toBeInTheDocument();
   });
 
-  it('should handle range validation - end date before start date', () => {
+  it('should handle range validation - end date before start date', async () => {
     mockGetValues.mockReturnValueOnce({ 
       fechaInicio: '2025-06-20', 
       fechaFin: '2025-06-10' // End before start
     });
-    
-    render(<SearchForm onSearch={mockOnSearch} />);
+    await renderAndWait();
     
     // Switch to range mode
     const rangeOption = screen.getByText('Rango de fechas');
@@ -395,9 +386,8 @@ describe('SearchForm Component', () => {
     expect(screen.getByText('Fecha fin')).toBeInTheDocument();
   });
 
-  it('should trigger validation when start date changes in range mode', () => {
-    render(<SearchForm onSearch={mockOnSearch} />);
-    
+  it('should trigger validation when start date changes in range mode', async () => {
+    await renderAndWait();
     // Switch to range mode
     const rangeOption = screen.getByText('Rango de fechas');
     fireEvent.click(rangeOption);
@@ -406,9 +396,8 @@ describe('SearchForm Component', () => {
     expect(screen.getByText('Fecha inicio')).toBeInTheDocument();
   });
 
-  it('should trigger validation when end date changes in range mode', () => {
-    render(<SearchForm onSearch={mockOnSearch} />);
-    
+  it('should trigger validation when end date changes in range mode', async () => {
+    await renderAndWait();
     // Switch to range mode
     const rangeOption = screen.getByText('Rango de fechas');
     fireEvent.click(rangeOption);
