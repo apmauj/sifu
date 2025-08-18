@@ -109,8 +109,14 @@ describe('ExchangeSearchForm Component', () => {
     it('renders currency toggle buttons with correct initial states', () => {
       render(<ExchangeSearchForm {...defaultProps} />);
       expect(screen.getByRole('button', { name: /Todas las monedas/ })).toHaveAttribute('aria-pressed', 'true');
-      ['Dólar estadounidense', 'Euro', 'Peso argentino', 'Real brasileño'].forEach(name => {
+      // Buttons still have aria-label with original singular names, but visible text changed to plural
+      ;['Dólar estadounidense', 'Euro', 'Peso argentino', 'Real brasileño'].forEach(name => {
         expect(screen.getByRole('button', { name: new RegExp(name) })).toHaveAttribute('aria-pressed', 'false');
+      });
+      // Visible plural texts present
+      // Buttons now show currency codes (USD, EUR, ARS, BRL) not plural names
+      ['USD','EUR','ARS','BRL'].forEach(code => {
+        expect(screen.getByText(code)).toBeInTheDocument();
       });
     });
 
@@ -161,6 +167,8 @@ describe('ExchangeSearchForm Component', () => {
       const usdBtn = screen.getByRole('button', { name: /Dólar estadounidense/ });
       fireEvent.click(usdBtn);
       expect(usdBtn).toHaveAttribute('aria-pressed', 'true');
+  // Card results (not buttons) show plural; buttons show code
+  expect(screen.getByText('USD')).toBeInTheDocument();
       expect(screen.getByRole('button', { name: /Todas las monedas/ })).toHaveAttribute('aria-pressed', 'false');
     });
 
@@ -249,6 +257,7 @@ describe('ExchangeSearchForm Component', () => {
   describe('Validation', () => {
     it('errors on missing date', () => {
       render(<ExchangeSearchForm {...defaultProps} />);
+      mockOnSearch.mockClear();
       fireEvent.click(screen.getByText('Por fecha'));
       const dateInput = screen.getByLabelText('Fecha');
       fireEvent.change(dateInput, { target: { value: '' } });
@@ -259,6 +268,7 @@ describe('ExchangeSearchForm Component', () => {
 
     it('errors on missing range dates', () => {
       render(<ExchangeSearchForm {...defaultProps} />);
+      mockOnSearch.mockClear();
       fireEvent.click(screen.getByText('Por rango'));
       const startDate = screen.getByLabelText('Fecha de inicio');
       fireEvent.change(startDate, { target: { value: '' } });
@@ -269,6 +279,7 @@ describe('ExchangeSearchForm Component', () => {
 
     it('errors on invalid date range', () => {
       render(<ExchangeSearchForm {...defaultProps} />);
+      mockOnSearch.mockClear();
       fireEvent.click(screen.getByText('Por rango'));
       fireEvent.change(screen.getByLabelText('Fecha de inicio'), { target: { value: '2025-01-15' } });
       fireEvent.change(screen.getByLabelText('Fecha de fin'), { target: { value: '2025-01-10' } });
@@ -279,6 +290,7 @@ describe('ExchangeSearchForm Component', () => {
 
     it('keeps history disabled with ALL currency', () => {
       render(<ExchangeSearchForm {...defaultProps} />);
+      mockOnSearch.mockClear();
       fireEvent.click(screen.getByText('Historial'));
       const submitButton = screen.getByRole('button', { name: /Consultar/i });
       expect(submitButton).toBeDisabled();

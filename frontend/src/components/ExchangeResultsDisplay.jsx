@@ -504,7 +504,18 @@ const ExchangeResultsDisplay = ({ results, searchType, isLoading, error }) => {
                   <div className="flex items-center">
                     <span className="text-3xl mr-3"><Flag code={rate.currency} className="w-8 h-6 inline-block align-middle" /></span>
                     <div>
-                      <h3 className="text-xl font-bold text-gray-900 dark:text-gray-50">{rate.currency}</h3>
+                      <h3 className="text-xl font-bold text-gray-900 dark:text-gray-50">
+                        {(() => {
+                          const pluralMap = {
+                            USD: t('exchange.currencies_plural.USD') || 'Dólares',
+                            EUR: t('exchange.currencies_plural.EUR') || 'Euros',
+                            ARS: t('exchange.currencies_plural.ARS') || 'Pesos Argentinos',
+                            BRL: t('exchange.currencies_plural.BRL') || 'Reales',
+                          };
+                          const label = pluralMap[rate.currency];
+                          return label || rate.currency;
+                        })()}
+                      </h3>
                       {showSubtitle && (
                         <p className="text-sm text-gray-600 dark:text-gray-300">{currencyInfo.name}</p>
                       )}

@@ -30,10 +30,11 @@ const ExchangeSearchForm = ({ onSearch, isLoading }) => {
     const today = getTodayLocal();
     setSearchDate(today);
     setEndDate(today);
-    
     const thirtyDaysAgo = getDaysAgoLocal(30);
     setStartDate(thirtyDaysAgo);
-  }, []);
+    // Auto-carga inicial de últimos datos (todas las monedas)
+    onSearch?.({ type: 'latest', currency: null });
+  }, [onSearch]);
 
   const validateDates = (start, end) => {
     const today = getTodayLocal();
@@ -154,10 +155,24 @@ const ExchangeSearchForm = ({ onSearch, isLoading }) => {
     }
   };
 
-  const toggleCurrency = (code) => {
-    setSelectedCurrency(prev => (prev === code ? 'ALL' : code));
+  const performLatestForCurrency = (currencyCodeOrAll) => {
+    const finalCurrency = currencyCodeOrAll === 'ALL' ? null : currencyCodeOrAll;
+    // For UX we reset to latest each time a moneda se selecciona automáticamente
+    setSearchType('latest');
+    onSearch?.({ type: 'latest', currency: finalCurrency });
   };
-  const setAllCurrencies = () => setSelectedCurrency('ALL');
+
+  const toggleCurrency = (code) => {
+    setSelectedCurrency(prev => {
+      const next = prev === code ? 'ALL' : code;
+      performLatestForCurrency(next);
+      return next;
+    });
+  };
+  const setAllCurrencies = () => {
+    setSelectedCurrency('ALL');
+    performLatestForCurrency('ALL');
+  };
 
   const currencyButtons = [
     { code: 'USD', label: t('exchange.currencies.USD') || 'USD' },
@@ -165,6 +180,7 @@ const ExchangeSearchForm = ({ onSearch, isLoading }) => {
     { code: 'ARS', label: t('exchange.currencies.ARS') || 'ARS' },
     { code: 'BRL', label: t('exchange.currencies.BRL') || 'BRL' },
   ];
+
 
   return (
   <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-md p-6">

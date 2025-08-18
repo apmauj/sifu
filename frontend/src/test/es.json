@@ -221,6 +221,12 @@
       "EUR": "Euro",
       "ARS": "Peso Arg.",
       "BRL": "Real"
+    },
+    "currencies_plural": {
+      "USD": "Dólares",
+      "EUR": "Euros",
+      "ARS": "Pesos Argentinos",
+      "BRL": "Reales"
     }
   },
   "brou": {
@@ -229,8 +235,8 @@
     "loading": "Cargando cotizaciones...",
     "error_loading": "Error al cargar cotizaciones",
     "retry": "Reintentar",
-    "currency": "Moneda",
-    "buy": "Compra",
+  "currency": "Moneda",
+  "buy": "Compra",
     "sell": "Venta",
     "arbitrage_buy": "Arbitraje Compra",
     "arbitrage_sell": "Arbitraje Venta",
