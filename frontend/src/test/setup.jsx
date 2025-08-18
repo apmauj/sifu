@@ -310,13 +310,14 @@ vi.mock('recharts', () => ({
     });
   },
   YAxis: (props) => {
-    const { domain, type, tick, fontSize, width, ...validProps } = props;
-    return React.createElement('div', { 
-      'data-testid': 'y-axis', 
+    // Filtramos tickFormatter para que no llegue al DOM y evitar el warning
+    const { domain, type, tick, fontSize, width, tickFormatter, ...validProps } = props;
+    return React.createElement('div', {
+      'data-testid': 'y-axis',
       'data-domain': domain,
       'data-type': type,
       'data-width': width,
-      ...validProps 
+      ...validProps
     });
   },
   CartesianGrid: (props) => {

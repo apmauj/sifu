@@ -26,15 +26,19 @@ const ExchangeSearchForm = ({ onSearch, isLoading }) => {
   const endDateRef = React.useRef();
 
   // Inicializar fecha de hoy
+  // Efecto de auto-inicialización: se ejecuta sólo una vez al montar.
+  // Antes dependía de `onSearch` y como el contenedor recreaba la función en cada render
+  // (sin useCallback), provocaba re-ejecuciones infinitas y múltiples toasts.
+  // Con arreglo vacío garantizamos una sola consulta inicial.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     const today = getTodayLocal();
     setSearchDate(today);
     setEndDate(today);
     const thirtyDaysAgo = getDaysAgoLocal(30);
     setStartDate(thirtyDaysAgo);
-    // Auto-carga inicial de últimos datos (todas las monedas)
     onSearch?.({ type: 'latest', currency: null });
-  }, [onSearch]);
+  }, []);
 
   const validateDates = (start, end) => {
     const today = getTodayLocal();

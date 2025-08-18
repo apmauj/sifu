@@ -114,7 +114,8 @@ function App() {
   }, [i18nLoading]);
 
   // Exchange functions
-  const handleExchangeSearch = async (searchParams) => {
+  // useCallback para proveer referencia estable al formulario y evitar re-render inútil / efectos extra
+  const handleExchangeSearch = useCallback(async (searchParams) => {
     try {
       setIsExchangeLoading(true);
       setExchangeError(null);
@@ -131,15 +132,15 @@ function App() {
           break;
         case 'range':
           response = await exchangeService.getByDateRange(
-            searchParams.startDate, 
-            searchParams.endDate, 
+            searchParams.startDate,
+            searchParams.endDate,
             searchParams.currency
           );
-          setExchangeSearchType('range');
+            setExchangeSearchType('range');
           break;
         case 'history':
           response = await exchangeService.getCurrencyHistory(
-            searchParams.currency, 
+            searchParams.currency,
             searchParams.limit
           );
           setExchangeSearchType('history');
@@ -149,8 +150,7 @@ function App() {
       }
 
       setExchangeResults(response);
-      
-      // Mostrar notificación toast con el mensaje del backend
+
       if (response && response.success && response.message) {
         const translatedMessage = translateBackendMessage(response.message);
         showSuccess(translatedMessage);
@@ -167,7 +167,7 @@ function App() {
     } finally {
       setIsExchangeLoading(false);
     }
-  };
+  }, [t, translateBackendMessage, showSuccess, showError]);
 
   const loadLatestExchange = async (options = {}) => {
     const { skipAutoInit = false } = options;
