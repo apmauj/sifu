@@ -40,7 +40,14 @@
     "reload": "Reload",
     "refresh_success": "Data updated successfully",
     "ur_refresh_success": "UR data updated successfully",
-    "exchange_refresh_success": "Exchange rates updated successfully"
+    "exchange_refresh_success": "Exchange rates updated successfully",
+    "previous": "Previous",
+    "next": "Next",
+    "page": "Page"
+  },
+  "header": {
+    "sifu_title": "SIFU",
+    "sifu_subtitle": "Financial Index System - Uruguay 🇺🇾"
   },
   "navigation": {
     "ui_calculator": "Indexed Units (UI)",
@@ -159,7 +166,12 @@
     "ur_values": "UR Values",
     "variation_percentage": "Variation %",
     "period_information": "Period Information",
-    "ur_title": "Readjustable Unit (UR)"
+  "ur_title": "Readjustable Unit (UR)",
+  "data_status": "UR data status",
+  "records_available": "records available",
+  "period": "Period",
+  "latest_available": "Latest available value",
+  "loading_info": "Loading information..."
   },
   "exchange": {
     "title": "Foreign Currency Exchange Rates",
@@ -226,6 +238,12 @@
       "EUR": "Euro",
       "ARS": "Argentine Peso",
       "BRL": "Brazilian Real"
+    },
+    "currencies_plural": {
+      "USD": "US Dollars",
+      "EUR": "Euros",
+      "ARS": "Argentine Pesos",
+      "BRL": "Brazilian Reais"
     }
   },
   "brou": {
@@ -287,10 +305,6 @@
     "developed_with_love": "Developed with ❤️ using React, FastAPI and Python",
     "sifu_title": "SIFU",
     "sifu_description": "Financial Index System of Uruguay 🇺🇾"
-  },
-  "header": {
-    "sifu_title": "SIFU",
-    "sifu_subtitle": "Financial Index System - Uruguay 🇺🇾"
   },
   "errors": {
     "app_initialization": "Error initializing application",

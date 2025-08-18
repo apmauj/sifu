@@ -40,7 +40,10 @@
     "reload": "Recarregar",
     "refresh_success": "Dados atualizados com sucesso",
     "ur_refresh_success": "Dados de UR atualizados com sucesso",
-    "exchange_refresh_success": "Cotações atualizadas com sucesso"
+  "exchange_refresh_success": "Cotações atualizadas com sucesso",
+  "previous": "Anterior",
+  "next": "Próxima",
+  "page": "Página"
   },
   "navigation": {
     "ui_calculator": "Unidade Indexada (UI)",
@@ -159,7 +162,12 @@
     "ur_values": "Valores UR",
     "variation_percentage": "Variação %",
     "period_information": "Informações do Período",
-    "ur_title": "Unidade Reajustável (UR)"
+  "ur_title": "Unidade Reajustável (UR)",
+  "data_status": "Status dos dados UR",
+  "records_available": "registros disponíveis",
+  "period": "Período",
+  "latest_available": "Último valor disponível",
+  "loading_info": "Carregando informações..."
   },
   "exchange": {
     "title": "Cotações de Moedas Estrangeiras",
@@ -226,6 +234,12 @@
       "EUR": "Euro",
       "ARS": "Peso Argentino",
       "BRL": "Real"
+    },
+    "currencies_plural": {
+      "USD": "Dólares",
+      "EUR": "Euros",
+      "ARS": "Pesos Argentinos",
+      "BRL": "Reais"
     }
   },
   "brou": {
