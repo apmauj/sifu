@@ -23,7 +23,7 @@ export const ExclamationTriangleIcon = Outline.ExclamationTriangleIcon || makeFa
 export const ChartBarIcon = Outline.ChartBarIcon || makeFallback('chart-bar-icon');
 // OpenMoji custom icons with larger (24px) default size; caller can override via Tailwind className
 export const CalendarIcon = ({ className = 'w-6 h-6', ...props }) => React.createElement(CalendarOpenMoji, { className, ...props });
-export const UruguayFlagIcon = ({ className = 'w-6 h-6', alt = 'Uruguay', ...props }) =>
+export const UruguayFlagIcon = ({ className = 'flag-icon', alt = 'Uruguay', ...props }) =>
 	React.createElement('img', {
 		src: flagUruguayPng,
 		alt: `${alt} flag`,

@@ -225,7 +225,7 @@ const ExchangeSearchForm = ({ onSearch, isLoading }) => {
               aria-label={`${c.label} ${selectedCurrency === c.code ? '(activo)' : ''}`}
               className={`px-2 py-1 rounded-md text-sm flex items-center gap-1 border transition-colors ${selectedCurrency === c.code ? 'bg-blue-600 text-white border-blue-600' : 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 border-gray-300 dark:border-gray-600 hover:bg-gray-300 dark:hover:bg-gray-600'}`}
             >
-              <Flag code={c.code} className="w-5 h-4" />
+              <Flag code={c.code} className="flag-icon" />
               <span>{c.code}</span>
             </button>
           ))}

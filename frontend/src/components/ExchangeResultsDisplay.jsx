@@ -155,7 +155,7 @@ const ExchangeResultsDisplay = ({ results, searchType, isLoading, error }) => {
       <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center">
-            <span className="text-2xl mr-2"><Flag code={rate.currency} className="w-6 h-4 inline-block align-middle" /></span>
+            <span className="text-2xl mr-2"><Flag code={rate.currency} className="flag-icon" /></span>
             <div>
               <h3 className="font-bold text-gray-900">{rate.currency}</h3>
               <p className="text-xs text-gray-600">{currencyInfo?.name || rate.currency}</p>
@@ -235,7 +235,7 @@ const ExchangeResultsDisplay = ({ results, searchType, isLoading, error }) => {
                   </td>
                   <td className="px-3 py-3">
                     <div className="flex items-center space-x-2">
-                      <span className="text-lg"><Flag code={rate.currency} className="w-5 h-4 inline-block align-middle" /></span>
+                      <span className="text-lg"><Flag code={rate.currency} className="flag-icon" /></span>
                       <div className="flex flex-col">
                         <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">{rate.currency}</span>
                         <span className="text-xs text-gray-500 dark:text-gray-400 truncate" style={{maxWidth: '80px'}}>
@@ -276,7 +276,7 @@ const ExchangeResultsDisplay = ({ results, searchType, isLoading, error }) => {
     <div key={`${rate.date}-${rate.currency}-${index}`} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 shadow-sm">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center space-x-2">
-                  <span className="text-xl"><Flag code={rate.currency} className="w-6 h-4 inline-block align-middle" /></span>
+                  <span className="text-xl"><Flag code={rate.currency} className="flag-icon" /></span>
                   <div>
         <div className="text-sm font-semibold text-gray-900 dark:text-gray-100">{rate.currency}</div>
         <div className="text-xs text-gray-500 dark:text-gray-400">{currencyInfo?.name}</div>
@@ -341,7 +341,7 @@ const ExchangeResultsDisplay = ({ results, searchType, isLoading, error }) => {
             return (
               <div key={currency} className="card fade-in">
                 <h4 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
-                  <Flag code={currency} className="w-6 h-4 inline-block align-middle mr-1" /> {currency} - {t('exchange.rates_evolution') || 'Evolución de Cotizaciones'}
+                  <Flag code={currency} className="flag-icon mr-1" /> {currency} - {t('exchange.rates_evolution') || 'Evolución de Cotizaciones'}
                 </h4>
                 <div className="h-64">
                   <ResponsiveContainer data-testid="responsive-container" width="100%" height="100%">
@@ -401,7 +401,7 @@ const ExchangeResultsDisplay = ({ results, searchType, isLoading, error }) => {
     return (
       <div className="card fade-in">
         <h4 className="text-lg font-semibold text-gray-900 mb-4">
-          📈 <Flag code={currency} className="w-6 h-4 inline-block align-middle mr-1" /> {currency} - {t('exchange.rates_evolution') || 'Evolución de Cotizaciones'}
+          📈 <Flag code={currency} className="flag-icon mr-1" /> {currency} - {t('exchange.rates_evolution') || 'Evolución de Cotizaciones'}
         </h4>
         <div className="h-64">
           <ResponsiveContainer data-testid="responsive-container" width="100%" height="100%">

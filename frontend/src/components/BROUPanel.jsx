@@ -171,7 +171,7 @@ const BROUPanel = () => {
                   <tr key={rate.currency} className={getCurrencyRowClass(rate.currency)}>
         <td className="py-3 px-2">
                       <div className="flex items-center">
-                        <Flag code={display.flag} className="w-6 h-4 mr-2" />
+                        <Flag code={display.flag} className="flag-icon mr-2" />
                         <div>
           <div className="font-medium text-gray-900 dark:text-gray-100 flex items-center">
                             {display.name}
@@ -226,7 +226,7 @@ const BROUPanel = () => {
             }`}>
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center">
-                  <Flag code={display.flag} className="w-6 h-4 mr-2" />
+                  <Flag code={display.flag} className="flag-icon mr-2" />
                   <div>
                     <div className="font-medium text-gray-900 dark:text-gray-100 flex items-center">
                       {display.name}
