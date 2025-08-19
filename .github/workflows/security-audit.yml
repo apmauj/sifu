@@ -52,11 +52,16 @@ jobs:
           echo "exit_code=$exit_code" >> $GITHUB_OUTPUT
       - name: Decide failure
         run: |
-          if [ "${{ steps.audit_files.outputs.exit_code }}" != "0" ] || [ "${{ steps.audit_installed.outputs.exit_code }}" != "0" ]; then
-            echo "Backend: FAIL" >> $GITHUB_STEP_SUMMARY
+          files_code='${{ steps.audit_files.outputs.exit_code }}'
+          installed_code='${{ steps.audit_installed.outputs.exit_code }}'
+          [ -z "$files_code" ] && files_code=0
+          [ -z "$installed_code" ] && installed_code=0
+          echo "files_code=$files_code installed_code=$installed_code"
+          if [ "$files_code" != "0" ] || [ "$installed_code" != "0" ]; then
+            echo "Backend: FAIL (vulnerabilidades detectadas)" >> $GITHUB_STEP_SUMMARY
             exit 1
           fi
-          echo "Backend: PASS" >> $GITHUB_STEP_SUMMARY
+            echo "Backend: PASS (sin vulnerabilidades)" >> $GITHUB_STEP_SUMMARY
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -109,4 +114,3 @@ jobs:
             exit 1
           fi
           echo "Todo OK" >> $GITHUB_STEP_SUMMARY
-          
