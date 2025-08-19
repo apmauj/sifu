@@ -1,5 +1,6 @@
 import React from 'react';
 import { CurrencyDollarIcon } from '@heroicons/react/24/outline';
+import { UruguayFlagIcon } from '../icons/system_icons';
 import LanguageSelector from './LanguageSelector';
 import { useI18n } from '../contexts/I18nContext';
 import ThemeToggle from './ui/ThemeToggle';
@@ -19,8 +20,9 @@ const Header = () => {
               <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                 {t('header.sifu_title') || 'SIFU'}
               </h1>
-              <p className="text-sm text-gray-600 dark:text-gray-300">
-                {t('header.sifu_subtitle') || 'Sistema de Índices Financieros - Uruguay 🇺🇾'}
+              <p className="flex items-center gap-1 text-sm text-gray-600 dark:text-gray-300">
+                <span>{t('header.sifu_subtitle') || 'Sistema de Índices Financieros - Uruguay'}</span>
+                <UruguayFlagIcon className="w-5 h-5 inline-block" aria-label="Uruguay" />
               </p>
             </div>
           </div>
