@@ -18,54 +18,37 @@ export const ExclamationCircleIcon = Outline.ExclamationCircleIcon || makeFallba
 export const InformationCircleIcon = Outline.InformationCircleIcon || makeFallback('information-circle-icon');
 export const ExclamationTriangleIcon = Outline.ExclamationTriangleIcon || makeFallback('exclamation-triangle-icon');
 export const ChartBarIcon = Outline.ChartBarIcon || makeFallback('chart-bar-icon');
-// Calendario: reemplazamos el de Heroicons por una versión OpenMoji simplificada inline
-// Fuente base: OpenMoji calendar (licencia CC BY-SA 4.0) adaptado y minimizado
-export const CalendarIcon = (props) => (
-	<svg
-		data-testid="calendar-icon"
-		viewBox="0 0 72 72"
-		fill="none"
-		xmlns="http://www.w3.org/2000/svg"
-		{...props}
-	>
-		<rect x="8" y="14" width="56" height="50" rx="4" fill="currentColor" opacity="0.08" />
-		<rect x="8" y="20" width="56" height="44" rx="4" stroke="currentColor" strokeWidth="4" fill="none" />
-		<line x1="20" y1="10" x2="20" y2="24" stroke="currentColor" strokeWidth="4" strokeLinecap="round" />
-		<line x1="52" y1="10" x2="52" y2="24" stroke="currentColor" strokeWidth="4" strokeLinecap="round" />
-		<rect x="22" y="32" width="8" height="8" rx="2" fill="currentColor" />
-		<rect x="34" y="32" width="8" height="8" rx="2" fill="currentColor" />
-		<rect x="46" y="32" width="8" height="8" rx="2" fill="currentColor" />
-		<rect x="22" y="44" width="8" height="8" rx="2" fill="currentColor" />
-		<rect x="34" y="44" width="8" height="8" rx="2" fill="currentColor" />
-		<rect x="46" y="44" width="8" height="8" rx="2" fill="currentColor" />
-	</svg>
+// Calendario (OpenMoji simplificado) sin JSX para evitar parse errors en .js
+export const CalendarIcon = (props) => React.createElement(
+	'svg',
+	{ 'data-testid': 'calendar-icon', viewBox: '0 0 72 72', fill: 'none', xmlns: 'http://www.w3.org/2000/svg', ...props },
+	[
+		React.createElement('rect', { key: 'r1', x: 8, y: 14, width: 56, height: 50, rx: 4, fill: 'currentColor', opacity: 0.08 }),
+		React.createElement('rect', { key: 'r2', x: 8, y: 20, width: 56, height: 44, rx: 4, stroke: 'currentColor', strokeWidth: 4, fill: 'none' }),
+		React.createElement('line', { key: 'l1', x1: 20, y1: 10, x2: 20, y2: 24, stroke: 'currentColor', strokeWidth: 4, strokeLinecap: 'round' }),
+		React.createElement('line', { key: 'l2', x1: 52, y1: 10, x2: 52, y2: 24, stroke: 'currentColor', strokeWidth: 4, strokeLinecap: 'round' }),
+		...[22,34,46].map((x,i) => React.createElement('rect', { key: 'c1'+i, x, y:32, width:8, height:8, rx:2, fill:'currentColor'})),
+		...[22,34,46].map((x,i) => React.createElement('rect', { key: 'c2'+i, x, y:44, width:8, height:8, rx:2, fill:'currentColor'})),
+	]
 );
 
-// Bandera de Uruguay (simplificada). Usamos un SVG estilizado para evitar depender del emoji en algunos sistemas.
-export const UruguayFlagIcon = (props) => (
-	<svg
-		data-testid="uruguay-flag-icon"
-		viewBox="0 0 640 480"
-		xmlns="http://www.w3.org/2000/svg"
-		{...props}
-	>
-		<rect width="640" height="480" fill="#fff" />
-		<g fill="#0038a8">
-			<rect y="60" width="640" height="60" />
-			<rect y="180" width="640" height="60" />
-			<rect y="300" width="640" height="60" />
-			<rect y="420" width="640" height="60" />
-		</g>
-		<g transform="translate(100 100) scale(40)">
-			<circle r="1" fill="#fcd116" />
-			<g stroke="#fcd116" strokeWidth="0.15">
-				<line y1="-1.3" y2="1.3" />
-				<line x1="-1.3" x2="1.3" />
-				<line x1="-0.92" y1="-0.92" x2="0.92" y2="0.92" />
-				<line x1="-0.92" y1="0.92" x2="0.92" y2="-0.92" />
-			</g>
-		</g>
-	</svg>
+// Bandera de Uruguay (simplificada) sin JSX
+export const UruguayFlagIcon = (props) => React.createElement(
+	'svg',
+	{ 'data-testid': 'uruguay-flag-icon', viewBox: '0 0 640 480', xmlns: 'http://www.w3.org/2000/svg', ...props },
+	[
+		React.createElement('rect', { key: 'bg', width: 640, height: 480, fill: '#fff' }),
+		React.createElement('g', { key: 'stripes', fill: '#0038a8' }, [60,180,300,420].map((y,i) => React.createElement('rect', { key: 's'+i, y, width:640, height:60 }))),
+		React.createElement('g', { key: 'sunGroup', transform: 'translate(100 100) scale(40)' }, [
+			React.createElement('circle', { key: 'sun', r: 1, fill: '#fcd116' }),
+			React.createElement('g', { key: 'rays', stroke: '#fcd116', strokeWidth: 0.15 }, [
+				React.createElement('line', { key: 'ry1', y1: -1.3, y2: 1.3 }),
+				React.createElement('line', { key: 'ry2', x1: -1.3, x2: 1.3 }),
+				React.createElement('line', { key: 'ry3', x1: -0.92, y1: -0.92, x2: 0.92, y2: 0.92 }),
+				React.createElement('line', { key: 'ry4', x1: -0.92, y1: 0.92, x2: 0.92, y2: -0.92 }),
+			])
+		])
+	]
 );
 export const ClockIcon = Outline.ClockIcon || makeFallback('clock-icon');
 export const BanknotesIcon = Outline.BanknotesIcon || makeFallback('banknotes-icon');
