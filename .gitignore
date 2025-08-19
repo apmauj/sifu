@@ -107,8 +107,14 @@ jspm_packages/
 dist
 
 # Gatsby files
+# (Adjusted) The generic 'public' ignore caused frontend/public assets (favicon, i18n) to be excluded
+# from git, so they never reached GitHub Pages. Scope the ignore to a (non‑existent) root /public/ only.
 .cache/
-public
+# Ignore only a top-level public directory if ever created, but allow frontend/public
+/public/
+# Explicitly allow frontend/public (not strictly needed after scoping, kept for clarity)
+!frontend/public
+!frontend/public/**
 
 # Storybook build outputs
 .out
