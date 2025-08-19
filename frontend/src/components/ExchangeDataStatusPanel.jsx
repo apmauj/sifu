@@ -12,8 +12,6 @@ const ExchangeDataStatusPanel = ({ refreshKey, showSource = false }) => {
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState(null);
 
-  const hasFetchedRef = React.useRef(false);
-
   React.useEffect(() => {
     const fetchInfo = async () => {
       setLoading(true);
@@ -34,8 +32,6 @@ const ExchangeDataStatusPanel = ({ refreshKey, showSource = false }) => {
         setLoading(false);
       }
     };
-    if (hasFetchedRef.current && refreshKey === undefined) return; // evita doble fetch StrictMode inicial
-    hasFetchedRef.current = true;
     fetchInfo();
   }, [t, refreshKey]);
 

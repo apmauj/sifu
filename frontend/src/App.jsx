@@ -89,6 +89,7 @@ function App() {
   // Keys to trigger child panels to refetch when refresh completes
   const [uiRefreshKey, setUiRefreshKey] = useState(0);
   const [urRefreshKey, setUrRefreshKey] = useState(0);
+  const [exchangeRefreshKey, setExchangeRefreshKey] = useState(0); // fuerza refetch panel cotizaciones
 
     // Load initial information when component mounts
   // Helper seguro de traducción que cae a fallback si todavía retorna la key
@@ -299,6 +300,8 @@ function App() {
         } else {
           showError(t('errors.exchange_refresh_failed') || 'No se pudo iniciar la actualización');
         }
+        // Después de solicitar refresh incrementar clave para forzar re-fetch del panel de estado
+        setExchangeRefreshKey(k => k + 1);
       }
       // UI refresh is now handled internally by UIPanel component
     } catch (error) {
@@ -375,7 +378,7 @@ function App() {
           {activeTab === 'exchange' && (
             <>
                         {/* Panel azul de estado de datos históricos de cotizaciones (INE) */}
-                        <ExchangeDataStatusPanel />
+                        <ExchangeDataStatusPanel refreshKey={exchangeRefreshKey} />
               {exchangeError && (
                 <Card className="mb-6 border-red-200/70 bg-red-50">
                   <CardBody>

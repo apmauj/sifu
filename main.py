@@ -80,7 +80,13 @@ from constants import (
     ENDPOINT_EXCHANGE_RATE_INFO,
     ENDPOINT_EXCHANGE_RATE_LATEST,
     MSG_INVALID_DATE_RANGE,
-    ENDPOINT_EXCHANGE_RATE_RANGE
+    ENDPOINT_EXCHANGE_RATE_RANGE,
+    SCHEDULER_BUSINESS_DAY_ONLY,
+    SCHEDULER_HOLIDAYS,
+    CRON_EXCHANGE_HOURLY_CHECK,
+    EXCHANGE_HOURLY_CHECK_ENABLED,
+    EXCHANGE_HOURLY_CHECK_START_HOUR,
+    EXCHANGE_HOURLY_CHECK_END_HOUR
 )
 
 # APScheduler (background jobs)
@@ -282,9 +288,23 @@ scheduler: Any = None
 def _add_jobs(_scheduler):
     tz = pytz.timezone(SCHEDULER_TIMEZONE) if pytz else None
 
+    def _is_business_day(today: datetime | None = None) -> bool:
+        """Return True if today is a business day (Mon-Fri and not in holidays)."""
+        today = today or datetime.utcnow()
+        if not SCHEDULER_BUSINESS_DAY_ONLY:
+            return True
+        iso = today.date().isoformat()
+        if iso in SCHEDULER_HOLIDAYS:
+            return False
+        # weekday(): Mon=0 .. Sun=6
+        return today.weekday() < 5
+
     # UI daily refresh
     def job_ui_refresh():
         try:
+            if not _is_business_day():
+                logger.info("[Scheduler][UI] Skipped (non-business day)")
+                return
             from database import SessionLocal
             db = SessionLocal()
             logger.info("[Scheduler] Running UI refresh job...")
@@ -297,6 +317,9 @@ def _add_jobs(_scheduler):
     # Exchange historical daily refresh
     def job_exchange_refresh():
         try:
+            if not _is_business_day():
+                logger.info("[Scheduler][EXCHANGE] Skipped (non-business day)")
+                return
             from database import SessionLocal
             db = SessionLocal()
             logger.info("[Scheduler] Running Exchange refresh job...")
@@ -306,9 +329,39 @@ def _add_jobs(_scheduler):
         except Exception as e:
             logger.error(f"[Scheduler][EXCHANGE] error: {e}")
 
+    # Hourly check (only within configured hour window). If latest date < today (weekday) attempt refresh.
+    def job_exchange_hourly_check():
+        if not EXCHANGE_HOURLY_CHECK_ENABLED:
+            return
+        now = datetime.now()
+        hour = now.hour
+        if hour < EXCHANGE_HOURLY_CHECK_START_HOUR or hour > EXCHANGE_HOURLY_CHECK_END_HOUR:
+            return
+        try:
+            if not _is_business_day(now):
+                return
+            from database import SessionLocal
+            db = SessionLocal()
+            service = ExchangeRateService(db)
+            _min, max_date = service.get_date_range_available()
+            if max_date is None:
+                logger.info("[Scheduler][EXCHANGE_CHECK] No data, triggering refresh")
+                exchange_rate_excel_processor.refresh_data(db)
+            else:
+                today = now.date()
+                if max_date < today:
+                    logger.info(f"[Scheduler][EXCHANGE_CHECK] Data stale (max={max_date}), attempting refresh")
+                    exchange_rate_excel_processor.refresh_data(db)
+                else:
+                    logger.debug(f"[Scheduler][EXCHANGE_CHECK] Data up-to-date (max={max_date})")
+            db.close()
+        except Exception as e:  # noqa: BLE001
+            logger.error(f"[Scheduler][EXCHANGE_CHECK] error: {e}")
+
     # UR monthly refresh
     def job_ur_refresh():
         try:
+            # UR es mensual; si cae fin de semana se ejecutará el primer día hábil siguiente (no aplicamos skip aquí)
             from database import SessionLocal
             db = SessionLocal()
             logger.info("[Scheduler] Running UR refresh job...")
@@ -330,7 +383,9 @@ def _add_jobs(_scheduler):
     _scheduler.add_job(job_ui_refresh, _cron(CRON_UI_REFRESH), id="ui_refresh", replace_existing=True)
     _scheduler.add_job(job_exchange_refresh, _cron(CRON_EXCHANGE_REFRESH), id="exchange_refresh", replace_existing=True)
     _scheduler.add_job(job_ur_refresh, _cron(CRON_UR_REFRESH), id="ur_refresh", replace_existing=True)
-    logger.info("[Scheduler] Jobs scheduled: ui_refresh, exchange_refresh, ur_refresh")
+    if EXCHANGE_HOURLY_CHECK_ENABLED:
+        _scheduler.add_job(job_exchange_hourly_check, _cron(CRON_EXCHANGE_HOURLY_CHECK), id="exchange_hourly_check", replace_existing=True)
+    logger.info("[Scheduler] Jobs scheduled: ui_refresh, exchange_refresh, ur_refresh" + (", exchange_hourly_check" if EXCHANGE_HOURLY_CHECK_ENABLED else ""))
 
 # Excel processor instance
 excel_processor = ExcelProcessor()

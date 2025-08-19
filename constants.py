@@ -74,6 +74,12 @@ CRON_EXCHANGE_REFRESH = os.getenv("CRON_EXCHANGE_REFRESH", "0 3 * * *")
 # Monthly UR refresh on day 1 at 04:00
 CRON_UR_REFRESH = os.getenv("CRON_UR_REFRESH", "0 4 1 * *")
 
+# Hourly health/check cron for Exchange (verifica y refresca si falta el día actual)
+CRON_EXCHANGE_HOURLY_CHECK = os.getenv("CRON_EXCHANGE_HOURLY_CHECK", "0 * * * *")  # top of every hour
+EXCHANGE_HOURLY_CHECK_ENABLED = os.getenv("EXCHANGE_HOURLY_CHECK_ENABLED", "true").lower() in ("1","true","yes","on")
+EXCHANGE_HOURLY_CHECK_START_HOUR = int(os.getenv("EXCHANGE_HOURLY_CHECK_START_HOUR", "9"))   # local tz hour to start attempts
+EXCHANGE_HOURLY_CHECK_END_HOUR = int(os.getenv("EXCHANGE_HOURLY_CHECK_END_HOUR", "18"))     # local tz hour to stop attempts
+
 # =============================================================================
 # API ENDPOINTS
 # =============================================================================
@@ -270,3 +276,9 @@ SCHEDULER_ENABLED = os.getenv("SCHEDULER_ENABLED", "true").lower() == "true"
 SCHEDULE_UI_REFRESH_CRON = os.getenv("SCHEDULE_UI_REFRESH_CRON", "0 2 * * *")  # daily 02:00
 SCHEDULE_EXCHANGE_REFRESH_CRON = os.getenv("SCHEDULE_EXCHANGE_REFRESH_CRON", "0 3 * * *")  # daily 03:00
 SCHEDULE_UR_REFRESH_CRON = os.getenv("SCHEDULE_UR_REFRESH_CRON", "0 4 1 * *")  # monthly day 1 at 04:00
+
+# Business day (weekday / optional holiday) filtering for scheduled refreshes
+SCHEDULER_BUSINESS_DAY_ONLY = os.getenv("SCHEDULER_BUSINESS_DAY_ONLY", "true").lower() == "true"
+# Comma-separated ISO dates (YYYY-MM-DD) of holidays where refresh should be skipped
+_holidays_env = os.getenv("SCHEDULER_HOLIDAYS", "").strip()
+SCHEDULER_HOLIDAYS = set([h for h in (x.strip() for x in _holidays_env.split(",")) if h])
