@@ -205,17 +205,19 @@ const ExchangeSearchForm = ({ onSearch, isLoading }) => {
         <span className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
           {t('exchange.currency') || 'Moneda'}
         </span>
-  <div className="flex items-center gap-3 overflow-x-auto whitespace-nowrap py-1" style={{minHeight: '40px'}}>
+        <div className="flex items-center justify-center mb-2">
           <button
             type="button"
             onClick={setAllCurrencies}
             aria-pressed={selectedCurrency === 'ALL'}
             aria-label={(t('exchange.all_currencies') || 'Todas las monedas') + (selectedCurrency === 'ALL' ? ' (activo)' : '')}
-            className={`px-2 py-1 rounded-md text-sm flex items-center gap-1 border transition-colors ${selectedCurrency === 'ALL' ? 'bg-blue-600 text-white border-blue-600' : 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 border-gray-300 dark:border-gray-600 hover:bg-gray-300 dark:hover:bg-gray-600'}`}
+            className={`px-4 py-2 rounded-md text-base flex items-center gap-2 border transition-colors font-semibold w-full max-w-xs ${selectedCurrency === 'ALL' ? 'bg-blue-600 text-white border-blue-600' : 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 border-gray-300 dark:border-gray-600 hover:bg-gray-300 dark:hover:bg-gray-600'}`}
           >
             <span role="img" aria-hidden="true">🌍</span>
-            {t('exchange.all_currencies') || 'Todas'}
+            {t('exchange.all_currencies') || 'Todas las monedas'}
           </button>
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {currencyButtons.map(c => (
             <button
               key={c.code}
@@ -223,8 +225,8 @@ const ExchangeSearchForm = ({ onSearch, isLoading }) => {
               onClick={() => toggleCurrency(c.code)}
               aria-pressed={selectedCurrency === c.code}
               aria-label={`${c.label} ${selectedCurrency === c.code ? '(activo)' : ''}`}
-              className={`px-2 py-1 rounded-md text-sm flex items-center gap-1 border transition-colors ${selectedCurrency === c.code ? 'bg-blue-600 text-white border-blue-600' : 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 border-gray-300 dark:border-gray-600 hover:bg-gray-300 dark:hover:bg-gray-600'}`}
-            style={{display: 'flex', alignItems: 'center', gap: '4px', minWidth: '60px', justifyContent: 'center'}}>
+              className={`px-4 py-2 rounded-md text-base flex items-center gap-2 border transition-colors font-semibold w-full ${selectedCurrency === c.code ? 'bg-blue-600 text-white border-blue-600' : 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 border-gray-300 dark:border-gray-600 hover:bg-gray-300 dark:hover:bg-gray-600'}`}
+              style={{minWidth: '120px', justifyContent: 'center'}}>
               <Flag code={c.code} className="flag-icon" style={{verticalAlign: 'middle'}} />
               <span style={{verticalAlign: 'middle'}}>{c.code}</span>
             </button>
