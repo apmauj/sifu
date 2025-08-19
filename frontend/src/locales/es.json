@@ -47,7 +47,7 @@
   },
   "header": {
     "sifu_title": "SIFU",
-    "sifu_subtitle": "Sistema de Índices Financieros - Uruguay 🇺🇾"
+    "sifu_subtitle": "Sistema de Índices Financieros - Uruguay"
   },
   "navigation": {
     "ui_calculator": "Unidad Indexada (UI)",
@@ -216,8 +216,7 @@
   "currencies_label": "Monedas",
   "latest_day": "Último día disponible",
   "status_error": "Error al cargar estado de cotizaciones",
-  "source_note_fallback": "Fuente: INE (histórico, último día hábil publicado)"
-  ,
+  "source_note_fallback": "Fuente: INE (histórico, último día hábil publicado)",
     "specific_date": "Fecha específica",
     "date": "Fecha",
     "start_date": "Fecha inicio",

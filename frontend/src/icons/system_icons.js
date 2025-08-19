@@ -21,14 +21,18 @@ export const ChartBarIcon = Outline.ChartBarIcon || makeFallback('chart-bar-icon
 // Calendario (OpenMoji simplificado) sin JSX para evitar parse errors en .js
 export const CalendarIcon = (props) => React.createElement(
 	'svg',
-	{ 'data-testid': 'calendar-icon', viewBox: '0 0 72 72', fill: 'none', xmlns: 'http://www.w3.org/2000/svg', ...props },
+	{ 'data-testid': 'calendar-icon', viewBox: '0 0 72 72', xmlns: 'http://www.w3.org/2000/svg', ...props },
 	[
-		React.createElement('rect', { key: 'r1', x: 8, y: 14, width: 56, height: 50, rx: 4, fill: 'currentColor', opacity: 0.08 }),
-		React.createElement('rect', { key: 'r2', x: 8, y: 20, width: 56, height: 44, rx: 4, stroke: 'currentColor', strokeWidth: 4, fill: 'none' }),
-		React.createElement('line', { key: 'l1', x1: 20, y1: 10, x2: 20, y2: 24, stroke: 'currentColor', strokeWidth: 4, strokeLinecap: 'round' }),
-		React.createElement('line', { key: 'l2', x1: 52, y1: 10, x2: 52, y2: 24, stroke: 'currentColor', strokeWidth: 4, strokeLinecap: 'round' }),
-		...[22,34,46].map((x,i) => React.createElement('rect', { key: 'c1'+i, x, y:32, width:8, height:8, rx:2, fill:'currentColor'})),
-		...[22,34,46].map((x,i) => React.createElement('rect', { key: 'c2'+i, x, y:44, width:8, height:8, rx:2, fill:'currentColor'})),
+		// Marco
+		React.createElement('rect', { key: 'frame', x: 8, y: 14, width: 56, height: 50, rx: 6, fill: '#FFFFFF', stroke: '#3B82F6', strokeWidth: 3 }),
+		// Barra superior (estilo OpenMoji color)
+		React.createElement('rect', { key: 'bar', x: 8, y: 14, width: 56, height: 14, rx: 6, fill: '#2563EB' }),
+		// Aros
+		React.createElement('rect', { key: 'ring1', x: 20-2, y: 10, width: 4, height: 10, rx: 2, fill: '#1E3A8A' }),
+		React.createElement('rect', { key: 'ring2', x: 52-2, y: 10, width: 4, height: 10, rx: 2, fill: '#1E3A8A' }),
+		// Celdas (dos filas x 3)
+		...[22,34,46].map((x,i) => React.createElement('rect', { key: 'top'+i, x, y:34, width:8, height:8, rx:2, fill:'#2563EB', opacity:0.25 })),
+		...[22,34,46].map((x,i) => React.createElement('rect', { key: 'bot'+i, x, y:46, width:8, height:8, rx:2, fill:'#2563EB', opacity:0.25 })),
 	]
 );
 
