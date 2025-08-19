@@ -59,9 +59,10 @@ jobs:
           echo "files_code=$files_code installed_code=$installed_code"
           if [ "$files_code" != "0" ] || [ "$installed_code" != "0" ]; then
             echo "Backend: FAIL (vulnerabilidades detectadas)" >> $GITHUB_STEP_SUMMARY
+            echo "Descarga artefacto backend-pip-audit-json para detalle" >> $GITHUB_STEP_SUMMARY
             exit 1
           fi
-            echo "Backend: PASS (sin vulnerabilidades)" >> $GITHUB_STEP_SUMMARY
+          echo "Backend: PASS (sin vulnerabilidades)" >> $GITHUB_STEP_SUMMARY
       - uses: actions/upload-artifact@v4
         if: always()
         with:
