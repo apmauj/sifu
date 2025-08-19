@@ -205,7 +205,7 @@ const ExchangeSearchForm = ({ onSearch, isLoading }) => {
         <span className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
           {t('exchange.currency') || 'Moneda'}
         </span>
-        <div className="flex flex-wrap items-center gap-2">
+  <div className="flex items-center gap-3 overflow-x-auto whitespace-nowrap py-1" style={{minHeight: '40px'}}>
           <button
             type="button"
             onClick={setAllCurrencies}
@@ -224,9 +224,9 @@ const ExchangeSearchForm = ({ onSearch, isLoading }) => {
               aria-pressed={selectedCurrency === c.code}
               aria-label={`${c.label} ${selectedCurrency === c.code ? '(activo)' : ''}`}
               className={`px-2 py-1 rounded-md text-sm flex items-center gap-1 border transition-colors ${selectedCurrency === c.code ? 'bg-blue-600 text-white border-blue-600' : 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 border-gray-300 dark:border-gray-600 hover:bg-gray-300 dark:hover:bg-gray-600'}`}
-            >
-              <Flag code={c.code} className="flag-icon" />
-              <span>{c.code}</span>
+            style={{display: 'flex', alignItems: 'center', gap: '4px', minWidth: '60px', justifyContent: 'center'}}>
+              <Flag code={c.code} className="flag-icon" style={{verticalAlign: 'middle'}} />
+              <span style={{verticalAlign: 'middle'}}>{c.code}</span>
             </button>
           ))}
         </div>
