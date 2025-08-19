@@ -166,8 +166,9 @@
     "search_title": "Query Exchange Rates",
     "currency_filter": "Filter by currency (optional)",
     "all_currencies": "All currencies",
-    "latest_rates": "Latest rates",
-    "search_type": "Query type",
+  "latest_rates": "Latest rates",
+  "latest_data": "Latest data",
+  "search_type": "Query type",
     "latest": "Latest",
     "by_date": "By date",
     "by_range": "By range",
@@ -195,8 +196,14 @@
     "rates_info": "Exchange rates information",
     "buy_description": "Price at which the bank buys foreign currency",
     "sell_description": "Price at which the bank sells foreign currency",
-    "average_description": "Average between buy and sell (when available)",
-    "source_note": "Source: Central Bank of Uruguay (BCU)",
+  "average_description": "Average between buy and sell (when available)",
+  "source_note": "Source: INE (historical, last published business day)",
+  "data_status_title": "Exchange Data Status",
+  "available": "available",
+  "currencies_label": "Currencies",
+  "latest_day": "Latest available day",
+  "status_error": "Error loading exchange data status",
+  "source_note_fallback": "Source: INE (historical, last published business day)",
     "specific_date": "Specific date",
     "date": "Date",
     "start_date": "Start date",
@@ -209,12 +216,21 @@
     "dashed_line": "dashed line",
     "no_supported_currencies": "No supported currencies",
     "no_supported_currencies_description": "The data contains currencies that are not in our supported currencies list.",
-    "supported_currencies_list": "Supported currencies",
+  "supported_currencies_list": "Supported currencies",
+  "latest_hint": "No data published for today yet; showing last available.",
+  "initial_bootstrap_loading": "Loading initial exchange rates (background job)...",
+  "refresh_started": "Exchange rates update started...",
     "currencies": {
       "USD": "US Dollar",
       "EUR": "Euro",
       "ARS": "Argentine Peso",
       "BRL": "Brazilian Real"
+    },
+    "currencies_plural": {
+      "USD": "US Dollars",
+      "EUR": "Euros",
+      "ARS": "Argentine Pesos",
+      "BRL": "Brazilian Reais"
     }
   },
   "brou": {
@@ -272,11 +288,11 @@
     "official_sources": "Official sources:",
     "developed_with_love": "Developed with ❤️ using React, FastAPI and Python",
     "sifu_title": "SIFU",
-    "sifu_description": "Financial Index System of Uruguay 🇺🇾"
+    "sifu_description": "Financial Index System of Uruguay"
   },
   "header": {
     "sifu_title": "SIFU",
-    "sifu_subtitle": "Financial Index System - Uruguay 🇺🇾"
+    "sifu_subtitle": "Financial Index System - Uruguay"
   },
   "errors": {
     "app_initialization": "Error initializing application",

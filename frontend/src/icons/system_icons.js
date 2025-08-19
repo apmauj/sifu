@@ -20,9 +20,9 @@ export const ExclamationCircleIcon = Outline.ExclamationCircleIcon || makeFallba
 export const InformationCircleIcon = Outline.InformationCircleIcon || makeFallback('information-circle-icon');
 export const ExclamationTriangleIcon = Outline.ExclamationTriangleIcon || makeFallback('exclamation-triangle-icon');
 export const ChartBarIcon = Outline.ChartBarIcon || makeFallback('chart-bar-icon');
-export const CalendarIcon = (props) => React.createElement(CalendarOpenMoji, { ...props });
-
-export const UruguayFlagIcon = (props) => React.createElement(FlagUruguayOpenMoji, { ...props });
+// OpenMoji custom icons with larger (24px) default size; caller can override via Tailwind className
+export const CalendarIcon = ({ className = 'w-6 h-6', ...props }) => React.createElement(CalendarOpenMoji, { className, ...props });
+export const UruguayFlagIcon = ({ className = 'w-6 h-6', ...props }) => React.createElement(FlagUruguayOpenMoji, { className, ...props });
 export const ClockIcon = Outline.ClockIcon || makeFallback('clock-icon');
 export const BanknotesIcon = Outline.BanknotesIcon || makeFallback('banknotes-icon');
 export const CurrencyDollarIcon = Outline.CurrencyDollarIcon || makeFallback('currency-dollar-icon');

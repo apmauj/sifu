@@ -304,7 +304,7 @@
     "official_sources": "Fuentes oficiales:",
     "developed_with_love": "Desarrollado con ❤️ usando React, FastAPI y Python",
     "sifu_title": "SIFU",
-    "sifu_description": "Sistema de Índices Financieros del Uruguay 🇺🇾"
+  "sifu_description": "Sistema de Índices Financieros del Uruguay"
   },
   "errors": {
     "app_initialization": "Error al inicializar la aplicación",

@@ -304,7 +304,7 @@
     "official_sources": "Official sources:",
     "developed_with_love": "Developed with ❤️ using React, FastAPI and Python",
     "sifu_title": "SIFU",
-    "sifu_description": "Financial Index System of Uruguay 🇺🇾"
+  "sifu_description": "Financial Index System of Uruguay"
   },
   "errors": {
     "app_initialization": "Error initializing application",

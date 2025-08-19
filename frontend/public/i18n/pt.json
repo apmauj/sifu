@@ -166,8 +166,9 @@
     "search_title": "Consultar Cotações",
     "currency_filter": "Filtrar por moeda (opcional)",
     "all_currencies": "Todas as moedas",
-    "latest_rates": "Últimas cotações",
-    "search_type": "Tipo de consulta",
+  "latest_rates": "Últimas cotações",
+  "latest_data": "Últimos dados",
+  "search_type": "Tipo de consulta",
     "latest": "Últimas",
     "by_date": "Por data",
     "by_range": "Por intervalo",
@@ -196,7 +197,13 @@
     "buy_description": "Preço pelo qual o banco compra a moeda estrangeira",
     "sell_description": "Preço pelo qual o banco vende a moeda estrangeira",
     "average_description": "Média entre compra e venda (quando disponível)",
-    "source_note": "Fonte: Banco Central do Uruguai (BCU)",
+  "source_note": "Fonte: INE (histórico, último dia útil publicado)",
+  "data_status_title": "Status dos dados de Cotações",
+  "available": "disponíveis",
+  "currencies_label": "Moedas",
+  "latest_day": "Último dia disponível",
+  "status_error": "Erro ao carregar status de cotações",
+  "source_note_fallback": "Fonte: INE (histórico, último dia útil publicado)",
     "specific_date": "Data específica",
     "date": "Data",
     "start_date": "Data início",
@@ -209,12 +216,21 @@
     "dashed_line": "linha tracejada",
     "no_supported_currencies": "Nenhuma moeda suportada",
     "no_supported_currencies_description": "Os dados contêm moedas que não estão em nossa lista de moedas suportadas.",
-    "supported_currencies_list": "Moedas suportadas",
+  "supported_currencies_list": "Moedas suportadas",
+  "latest_hint": "Ainda não há dados publicados hoje; mostrando os últimos disponíveis.",
+  "initial_bootstrap_loading": "Carregando cotações iniciais (processo em background)...",
+  "refresh_started": "Atualização de cotações iniciada...",
     "currencies": {
       "USD": "Dólar USA",
       "EUR": "Euro",
       "ARS": "Peso Argentino",
       "BRL": "Real"
+    },
+    "currencies_plural": {
+      "USD": "Dólares USA",
+      "EUR": "Euros",
+      "ARS": "Pesos Argentinos",
+      "BRL": "Reais"
     }
   },
   "brou": {
@@ -272,11 +288,11 @@
     "official_sources": "Fontes oficiais:",
     "developed_with_love": "Desenvolvido com ❤️ usando React, FastAPI e Python",
     "sifu_title": "SIFU",
-    "sifu_description": "Sistema de Índices Financeiros do Uruguai 🇺🇾"
+    "sifu_description": "Sistema de Índices Financeiros do Uruguai"
   },
   "header": {
     "sifu_title": "SIFU",
-    "sifu_subtitle": "Sistema de Índices Financeiros - Uruguai 🇺🇾"
+    "sifu_subtitle": "Sistema de Índices Financeiros - Uruguai"
   },
   "errors": {
     "app_initialization": "Erro ao inicializar aplicação",
