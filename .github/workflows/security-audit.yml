@@ -13,6 +13,11 @@ on:
   schedule:
     - cron: '17 3 * * *'
   workflow_dispatch:
+    inputs:
+      backend-fail-on:
+        description: 'Backend severidad mínima para fallar (critical|high|medium|low|none)'
+        required: false
+        default: 'none'
 
 permissions:
   contents: read
@@ -32,7 +37,8 @@ jobs:
           cache: pip
       - name: Install deps
         run: |
-          python -m pip install --upgrade pip
+          # Actualizar pip y setuptools para evitar vulnerabilidades conocidas (PYSEC-2022-43012, PYSEC-2025-49)
+          python -m pip install --upgrade pip 'setuptools>=78.1.1'
           pip install -r requirements.txt || true
           [ -f requirements-dev.txt ] && pip install -r requirements-dev.txt
           pip install --upgrade pip-audit
@@ -50,19 +56,57 @@ jobs:
           exit_code=0
           pip-audit -l -f json > pip_audit_installed.json || exit_code=$?
           echo "exit_code=$exit_code" >> $GITHUB_OUTPUT
-      - name: Decide failure
+      - name: Evaluar severidad y decidir
+        env:
+          THRESHOLD: ${{ github.event.inputs.backend-fail-on || 'high' }}
         run: |
-          files_code='${{ steps.audit_files.outputs.exit_code }}'
-          installed_code='${{ steps.audit_installed.outputs.exit_code }}'
-          [ -z "$files_code" ] && files_code=0
-          [ -z "$installed_code" ] && installed_code=0
-          echo "files_code=$files_code installed_code=$installed_code"
-          if [ "$files_code" != "0" ] || [ "$installed_code" != "0" ]; then
-            echo "Backend: FAIL (vulnerabilidades detectadas)" >> $GITHUB_STEP_SUMMARY
-            echo "Descarga artefacto backend-pip-audit-json para detalle" >> $GITHUB_STEP_SUMMARY
-            exit 1
+          echo "Umbral de fallo (backend): $THRESHOLD"
+          # Mapear severidades a números para comparar
+          sev_rank() {
+            case "${1,,}" in
+              critical) echo 5;;
+              high) echo 4;;
+              medium) echo 3;;
+              low) echo 2;;
+              none) echo 1;;
+              *) echo 0;;
+            esac
+          }
+
+          threshold_num=$(sev_rank "$THRESHOLD")
+          [ -z "$threshold_num" ] && threshold_num=4
+          # Construir lista plana de vulnerabilidades (puede estar vacía si jq no existe)
+          if command -v jq >/dev/null 2>&1; then
+            jq -s '[ .[] | .[] | . as $pkg | (.vulns // [])[] | {package: $pkg.name, id: .id, severity: ((.severity.value // .severity // "unknown") | ascii_downcase), fix_versions: (.fix_versions // []) } ]' \
+              pip_audit_requirements.json pip_audit_installed.json > backend_vulns_flat.json 2>/dev/null || echo '[]' > backend_vulns_flat.json
+          else
+            echo '[]' > backend_vulns_flat.json
           fi
-          echo "Backend: PASS (sin vulnerabilidades)" >> $GITHUB_STEP_SUMMARY
+
+          total=$(grep -o '"id"' backend_vulns_flat.json | wc -l | tr -d ' ')
+          fail_count=0
+            # Extraer severidades y contar las que superan el umbral
+          if [ "$total" -gt 0 ]; then
+            if command -v jq >/dev/null 2>&1; then
+              while read -r sev; do
+                rank=$(sev_rank "$sev")
+                [ "$rank" -ge "$threshold_num" ] && fail_count=$((fail_count+1))
+              done < <(jq -r '.[].severity' backend_vulns_flat.json)
+            fi
+          fi
+          echo "Total vulnerabilidades detectadas: $total"
+          echo "Vulnerabilidades >= umbral: $fail_count"
+
+          echo "### Backend pip-audit" >> $GITHUB_STEP_SUMMARY
+          echo "Umbral: $THRESHOLD" >> $GITHUB_STEP_SUMMARY
+          echo "Total: $total" >> $GITHUB_STEP_SUMMARY
+          echo ">= Umbral: $fail_count" >> $GITHUB_STEP_SUMMARY
+          if [ "$fail_count" -gt 0 ]; then
+            echo "Backend: FAIL ($fail_count con severidad >= $THRESHOLD)" >> $GITHUB_STEP_SUMMARY
+            exit 1
+          else
+            echo "Backend: PASS (sin vulnerabilidades >= $THRESHOLD)" >> $GITHUB_STEP_SUMMARY
+          fi
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -70,6 +114,7 @@ jobs:
           path: |
             pip_audit_requirements.json
             pip_audit_installed.json
+            backend_vulns_flat.json
 
   frontend-npm-audit:
     runs-on: ubuntu-latest

@@ -6,9 +6,10 @@
 #   pip install -r requirements-dev.txt         (herramientas dev/tests)
 # Este archivo se mantiene para compatibilidad: incluye core + excel.
 ###############################
+# Updated: 2025-08-18 (security audit)
 
 -r requirements-core.txt
 -r requirements-excel.txt
 
 # Dependencia adicional para uploads/multipart
-python-multipart==0.0.6
+python-multipart==0.0.18  # CVE-2024-24762, GHSA-59g5-xgcq-4qw3 (ReDoS / DoS) fixed >=0.0.7/0.0.18

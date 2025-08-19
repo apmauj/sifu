@@ -1,2 +1,3 @@
 # Extra para procesamiento de planillas grandes (opcional en tests rápidos)
+# Updated: 2025-08-18 (security audit)
 pandas==2.2.2
