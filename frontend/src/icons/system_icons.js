@@ -29,8 +29,11 @@ export const UruguayFlagIcon = ({ className = 'flag-icon', alt = 'Uruguay', ...p
 		alt: `${alt} flag`,
 		'data-testid': 'uruguay-flag-icon',
 		loading: 'lazy',
+		width: 32,
+		height: 24,
 		className,
 		style: { objectFit: 'cover' },
+		decoding: 'async',
 		...props
 	});
 export const ClockIcon = Outline.ClockIcon || makeFallback('clock-icon');
