@@ -135,19 +135,16 @@ const ExchangeRatePanel = () => {
               <span className="text-sm font-medium flex items-center">
                 <OpenMojiIcon name="chartUp" size={16} className="mr-2" />
                 {t('bcu.title') || 'Cotizaciones BCU'}
+              </span>
+              <span className="absolute right-0 top-1/2 -translate-y-1/2 flex items-center group">
                 <span
-                  className={`ml-2 relative group`}
-                  style={{ display: 'inline-flex', alignItems: 'center' }}
-                >
-                  <span
-                    className={`inline-block w-3 h-3 rounded-full bg-green-400 cursor-pointer ${dotActive && glow ? 'animate-glow' : ''}`}
-                    style={{ boxShadow: dotActive ? (glow ? '0 0 8px 4px #22c55e' : '0 0 2px 1px #22c55e') : '0 0 2px 1px #888', transition: 'box-shadow 0.3s' }}
-                    onClick={() => setDotActive(false)}
-                    title={lastUpdate ? `${t('bcu.last_update') || 'Actualizado'}: ${formatTime(lastUpdate)}` : t('bcu.no_update') || 'Sin actualización'}
-                  />
-                  <span className="absolute left-6 top-1/2 -translate-y-1/2 bg-gray-900 text-white text-xs rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10 shadow-lg border border-gray-700">
-                    {lastUpdate ? `${t('bcu.last_update') || 'Actualizado'}: ${formatTime(lastUpdate)}` : t('bcu.no_update') || 'Sin actualización'}
-                  </span>
+                  className={`inline-block w-3 h-3 rounded-full bg-green-400 cursor-pointer ${dotActive && glow ? 'animate-glow' : ''}`}
+                  style={{ boxShadow: dotActive ? (glow ? '0 0 8px 4px #22c55e' : '0 0 2px 1px #22c55e') : '0 0 2px 1px #888', transition: 'box-shadow 0.3s' }}
+                  onClick={() => setDotActive(false)}
+                  title={lastUpdate ? `${t('bcu.last_update') || 'Actualizado'}: ${formatTime(lastUpdate)}` : t('bcu.no_update') || 'Sin actualización'}
+                />
+                <span className="absolute right-6 top-1/2 -translate-y-1/2 bg-gray-900 text-white text-xs rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10 shadow-lg border border-gray-700">
+                  {lastUpdate ? `${t('bcu.last_update') || 'Actualizado'}: ${formatTime(lastUpdate)}` : t('bcu.no_update') || 'Sin actualización'}
                 </span>
               </span>
             </div>

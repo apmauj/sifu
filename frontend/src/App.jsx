@@ -475,10 +475,9 @@ function App() {
               <p className="text-xs">
                 {t('footer.developed_with_love') || 'Desarrollado con ❤️ usando React, FastAPI y Python'}
               </p>
-              <p className="text-xs">
-                {' '}
+              <div className="flex justify-center items-center my-2">
                 <UruguayFlagIcon className="flag-icon" aria-label="Uruguay" style={{verticalAlign: 'middle'}} />
-              </p>
+              </div>
             </div>
           </footer>
         </main>
