@@ -12,7 +12,10 @@ import { Flag } from '../icons/flags';
 import { useToast } from '../contexts/ToastContext';
 
 const ExchangeRatePanel = () => {
+  const [glow, setGlow] = useState(false);
+  const [dotActive, setDotActive] = useState(true);
   const [currentRates, setCurrentRates] = useState([]);
+  const lastDataHashRef = useRef(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [lastUpdate, setLastUpdate] = useState(null);
@@ -37,12 +40,21 @@ const ExchangeRatePanel = () => {
       const raw = response && (response.data ?? response);
       const list = Array.isArray(raw) ? raw : (Array.isArray(raw?.data) ? raw.data : []);
       if (response?.success && list.length >= 0) { // accept empty list
+        // Calculate a simple hash of the data for change detection
+        const dataHash = JSON.stringify(list);
+        const isUpdated = lastDataHashRef.current !== dataHash;
         setCurrentRates(list);
-        setLastUpdate(new Date());
-        if (manualRefreshRef.current) {
-          // Only show toast on user-initiated refreshes, not first load
-            showSuccess(t('bcu.updated') || 'Cotizaciones BCU actualizadas');
+        const now = new Date();
+        setLastUpdate(now);
+        if (isUpdated) {
+          setGlow(true);
+          setDotActive(true);
+          setTimeout(() => setGlow(false), 2000);
         }
+        if (manualRefreshRef.current && isUpdated) {
+          showSuccess(t('bcu.updated') || 'Cotizaciones BCU actualizadas');
+        }
+        lastDataHashRef.current = dataHash;
       } else {
         const msg = t('bcu.error') || 'Error obteniendo cotizaciones actuales';
         setError(msg);
@@ -125,6 +137,20 @@ const ExchangeRatePanel = () => {
               <span className="text-sm font-medium flex items-center">
                 <OpenMojiIcon name="chartUp" size={16} className="mr-2" />
                 {t('bcu.title') || 'Cotizaciones BCU'}
+                <span
+                  className={`ml-2 relative group`}
+                  style={{ display: 'inline-flex', alignItems: 'center' }}
+                >
+                  <span
+                    className={`inline-block w-3 h-3 rounded-full bg-green-400 cursor-pointer ${dotActive && glow ? 'animate-glow' : ''}`}
+                    style={{ boxShadow: dotActive ? (glow ? '0 0 8px 4px #22c55e' : '0 0 2px 1px #22c55e') : '0 0 2px 1px #888', transition: 'box-shadow 0.3s' }}
+                    onClick={() => setDotActive(false)}
+                    title={lastUpdate ? `${t('bcu.last_update') || 'Actualizado'}: ${formatTime(lastUpdate)}` : t('bcu.no_update') || 'Sin actualización'}
+                  />
+                  <span className="absolute left-6 top-1/2 -translate-y-1/2 bg-gray-900 text-white text-xs rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10 shadow-lg border border-gray-700">
+                    {lastUpdate ? `${t('bcu.last_update') || 'Actualizado'}: ${formatTime(lastUpdate)}` : t('bcu.no_update') || 'Sin actualización'}
+                  </span>
+                </span>
               </span>
             </div>
             {/* Centered rates independent of title width */}

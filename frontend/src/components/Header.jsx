@@ -22,7 +22,6 @@ const Header = () => {
               </h1>
               <p className="flex items-center gap-1 text-sm text-gray-600 dark:text-gray-300">
                 <span>{t('header.sifu_subtitle') || 'Sistema de Índices Financieros - Uruguay'}</span>
-                <UruguayFlagIcon className="flag-icon" aria-label="Uruguay" />
               </p>
             </div>
           </div>

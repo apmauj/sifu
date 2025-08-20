@@ -211,8 +211,8 @@ const ExchangeSearchForm = ({ onSearch, isLoading }) => {
             onClick={setAllCurrencies}
             aria-pressed={selectedCurrency === 'ALL'}
             aria-label={(t('exchange.all_currencies') || 'Todas las monedas') + (selectedCurrency === 'ALL' ? ' (activo)' : '')}
-            className={`px-4 py-2 rounded-md text-base flex items-center gap-2 border transition-colors font-semibold w-full max-w-xs ${selectedCurrency === 'ALL' ? 'bg-blue-600 text-white border-blue-600' : 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 border-gray-300 dark:border-gray-600 hover:bg-gray-300 dark:hover:bg-gray-600'}`}
-          >
+            className={`px-4 py-2 rounded-md text-base flex items-center justify-center gap-2 border transition-colors font-semibold w-full ${selectedCurrency === 'ALL' ? 'bg-blue-600 text-white border-blue-600' : 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 border-gray-300 dark:border-gray-600 hover:bg-gray-300 dark:hover:bg-gray-600'}`}
+            style={{width: '100%'}}>
             <span role="img" aria-hidden="true">🌍</span>
             {t('exchange.all_currencies') || 'Todas las monedas'}
           </button>
@@ -300,9 +300,7 @@ const ExchangeSearchForm = ({ onSearch, isLoading }) => {
         </div>
       </div>
 
-      {/* Formulario específico según el tipo */}
       <form onSubmit={handleSubmit} className="space-y-4">
-  {/* Descripción para 'latest' removida por redundancia */}
 
         {searchType === 'date' && (
           <div className="mb-4">
