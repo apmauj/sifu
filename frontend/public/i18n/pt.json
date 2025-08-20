@@ -261,6 +261,7 @@
     "loading": "Carregando cotações...",
     "error": "Erro de conexão",
     "retry": "Tentar novamente",
+    "last_update": "Última atualização",
     "source": "BCU"
   },
   "backend_messages": {

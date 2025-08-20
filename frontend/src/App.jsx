@@ -1,3 +1,4 @@
+import { UruguayFlagIcon } from './icons/system_icons';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 // Sentinel de módulo para evitar doble inicialización con React StrictMode
 let APP_INIT_DONE = false;
@@ -476,7 +477,7 @@ function App() {
               </p>
               <p className="text-xs">
                 {' '}
-                <UruguayFlagIcon className="flag-icon" aria-label="Uruguay" style={{verticalAlign: 'middle', marginLeft: '4px'}} />
+                <UruguayFlagIcon className="flag-icon" aria-label="Uruguay" style={{verticalAlign: 'middle'}} />
               </p>
             </div>
           </footer>

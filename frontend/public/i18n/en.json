@@ -260,6 +260,7 @@
     "title": "BCU Exchange Rates",
     "loading": "Loading exchange rates...",
     "error": "Connection error",
+    "last_update": "Last update",
     "retry": "Retry",
     "source": "BCU"
   },

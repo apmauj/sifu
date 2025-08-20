@@ -269,6 +269,7 @@
     "title": "Cotizaciones BCU",
     "loading": "Cargando cotizaciones...",
     "error": "Error de conexión",
+    "last_update": "Última actualización",
     "retry": "Reintentar",
     "source": "BCU"
   },
