@@ -474,6 +474,10 @@ function App() {
               <p className="text-xs">
                 {t('footer.developed_with_love') || 'Desarrollado con ❤️ usando React, FastAPI y Python'}
               </p>
+              <p className="text-xs">
+                {' '}
+                <UruguayFlagIcon className="flag-icon" aria-label="Uruguay" style={{verticalAlign: 'middle', marginLeft: '4px'}} />
+              </p>
             </div>
           </footer>
         </main>

@@ -51,9 +51,7 @@ const ExchangeRatePanel = () => {
           setDotActive(true);
           setTimeout(() => setGlow(false), 2000);
         }
-        if (manualRefreshRef.current && isUpdated) {
-          showSuccess(t('bcu.updated') || 'Cotizaciones BCU actualizadas');
-        }
+  // Success toast removed: no notification on update or currency change
         lastDataHashRef.current = dataHash;
       } else {
         const msg = t('bcu.error') || 'Error obteniendo cotizaciones actuales';
