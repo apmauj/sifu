@@ -136,17 +136,6 @@ const ExchangeRatePanel = () => {
                 <OpenMojiIcon name="chartUp" size={16} className="mr-2" />
                 {t('bcu.title') || 'Cotizaciones BCU'}
               </span>
-              <span className="absolute right-0 top-1/2 -translate-y-1/2 flex items-center group">
-                <span
-                  className={`inline-block w-3 h-3 rounded-full bg-green-400 cursor-pointer ${dotActive && glow ? 'animate-glow' : ''}`}
-                  style={{ boxShadow: dotActive ? (glow ? '0 0 8px 4px #22c55e' : '0 0 2px 1px #22c55e') : '0 0 2px 1px #888', transition: 'box-shadow 0.3s' }}
-                  onClick={() => setDotActive(false)}
-                  title={lastUpdate ? `${t('bcu.last_update') || 'Actualizado'}: ${formatTime(lastUpdate)}` : t('bcu.no_update') || 'Sin actualización'}
-                />
-                <span className="absolute right-6 top-1/2 -translate-y-1/2 bg-gray-900 text-white text-xs rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10 shadow-lg border border-gray-700">
-                  {lastUpdate ? `${t('bcu.last_update') || 'Actualizado'}: ${formatTime(lastUpdate)}` : t('bcu.no_update') || 'Sin actualización'}
-                </span>
-              </span>
             </div>
             {/* Centered rates independent of title width */}
             <div className="pointer-events-none flex items-center justify-center">
@@ -174,18 +163,39 @@ const ExchangeRatePanel = () => {
                 })}
               </div>
             </div>
-            {/* Loader at right */}
-             {/* Removed time/dot indicator per UX simplification */}
+            {/* Status dot at the far right for visual balance */}
+            <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center group">
+              <span
+                className={`inline-block w-3 h-3 rounded-full ${dotActive ? 'bg-green-400' : 'bg-gray-400'} cursor-pointer ${dotActive && glow ? 'animate-glow' : ''}`}
+                style={{ boxShadow: dotActive ? (glow ? '0 0 8px 4px #22c55e' : '0 0 2px 1px #22c55e') : '0 0 2px 1px #888', transition: 'box-shadow 0.3s' }}
+                onClick={() => setDotActive(false)}
+                title={lastUpdate ? `${t('bcu.last_update') || 'Actualizado'}: ${formatTime(lastUpdate)}` : t('bcu.no_update') || 'Sin actualización'}
+              />
+              <span className="absolute right-6 top-1/2 -translate-y-1/2 bg-gray-900 text-white text-xs rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10 shadow-lg border border-gray-700">
+                {lastUpdate ? `${t('bcu.last_update') || 'Actualizado'}: ${formatTime(lastUpdate)}` : t('bcu.no_update') || 'Sin actualización'}
+              </span>
+            </div>
           </div>
 
           {/* Tablet */}
           <div className="hidden md:block lg:hidden">
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-4 relative">
               <span className="text-sm font-medium flex items-center">
                 <OpenMojiIcon name="chartUp" size={16} className="mr-2" />
                 {t('bcu.title') || 'Cotizaciones BCU'}
               </span>
-              {/* Time indicator removed */}
+              {/* Status dot at right */}
+              <span className="flex items-center group">
+                <span
+                  className={`inline-block w-3 h-3 rounded-full ${dotActive ? 'bg-green-400' : 'bg-gray-400'} cursor-pointer ${dotActive && glow ? 'animate-glow' : ''}`}
+                  style={{ boxShadow: dotActive ? (glow ? '0 0 8px 4px #22c55e' : '0 0 2px 1px #22c55e') : '0 0 2px 1px #888', transition: 'box-shadow 0.3s' }}
+                  onClick={() => setDotActive(false)}
+                  title={lastUpdate ? `${t('bcu.last_update') || 'Actualizado'}: ${formatTime(lastUpdate)}` : t('bcu.no_update') || 'Sin actualización'}
+                />
+                <span className="ml-2 bg-gray-900 text-white text-xs rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10 shadow-lg border border-gray-700">
+                  {lastUpdate ? `${t('bcu.last_update') || 'Actualizado'}: ${formatTime(lastUpdate)}` : t('bcu.no_update') || 'Sin actualización'}
+                </span>
+              </span>
             </div>
             <div className="flex flex-wrap items-center gap-2 justify-center">
               {currentRates.slice(0, 4).map((rate) => {
@@ -219,7 +229,18 @@ const ExchangeRatePanel = () => {
                 <OpenMojiIcon name="chartUp" size={16} className="mr-2" />
                 {t('bcu.title') || 'Cotizaciones BCU'}
               </span>
-              {/* Time indicator removed */}
+              {/* Status dot at right */}
+              <span className="flex items-center group">
+                <span
+                  className={`inline-block w-3 h-3 rounded-full ${dotActive ? 'bg-green-400' : 'bg-gray-400'} cursor-pointer ${dotActive && glow ? 'animate-glow' : ''}`}
+                  style={{ boxShadow: dotActive ? (glow ? '0 0 8px 4px #22c55e' : '0 0 2px 1px #22c55e') : '0 0 2px 1px #888', transition: 'box-shadow 0.3s' }}
+                  onClick={() => setDotActive(false)}
+                  title={lastUpdate ? `${t('bcu.last_update') || 'Actualizado'}: ${formatTime(lastUpdate)}` : t('bcu.no_update') || 'Sin actualización'}
+                />
+                <span className="ml-2 bg-gray-900 text-white text-xs rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10 shadow-lg border border-gray-700">
+                  {lastUpdate ? `${t('bcu.last_update') || 'Actualizado'}: ${formatTime(lastUpdate)}` : t('bcu.no_update') || 'Sin actualización'}
+                </span>
+              </span>
             </div>
             <div className="flex flex-wrap items-center gap-2">
               {currentRates.slice(0, 4).map((rate) => {

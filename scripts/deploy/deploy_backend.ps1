@@ -2,7 +2,9 @@ param(
   [switch]$BuildImage,
   [string]$Branch="master",
   [switch]$WaitWorkflows,
-  [switch]$RedeployFrontend
+  [switch]$RedeployFrontend,
+  [ValidateSet('Default','Exchange','None')]
+  [string]$StartupProbe='Default'
 )
 $ErrorActionPreference="Stop"
 
@@ -63,14 +65,31 @@ if ($BuildImage) {
 docker pull apmauj/sifu-backend:latest | Out-Null
 docker compose up -d --force-recreate --no-deps backend
 try { Write-Host ("Health: "+ (curl.exe -s "http://localhost:8000/api/health")) } catch {}
-$brou = curl.exe -s "http://localhost:8000/api/brou/current?force_refresh=true&full=true"
-try {
-  $len=((($brou|ConvertFrom-Json).data).Count)
-  Write-Host "BROU items: $len"
-} catch {
-  Write-Warning "Respuesta BROU no JSON"
+
+# Probas de inicio según contexto
+switch ($StartupProbe) {
+  'Exchange' {
+    $ex = curl.exe -s "http://localhost:8000/api/exchange-rate/info"
+    try {
+      $info = ($ex | ConvertFrom-Json)
+      $max = $info.date_range.max_date
+      Write-Host "Exchange info: último día=$max"
+    } catch {
+      Write-Warning "Respuesta Exchange/info no JSON"
+    }
+  }
+  'Default' {
+    $brou = curl.exe -s "http://localhost:8000/api/brou/current?force_refresh=true&full=true"
+    try {
+      $len=((($brou|ConvertFrom-Json).data).Count)
+      Write-Host "BROU items: $len"
+    } catch {
+      Write-Warning "Respuesta BROU no JSON"
+    }
+    docker logs -n 40 sifu-backend | Select-String "BROU Cache" | Select-Object -First 2
+  }
+  'None' { }
 }
-docker logs -n 40 sifu-backend | Select-String "BROU Cache" | Select-Object -First 2
 if($RedeployFrontend){
   & "$PSScriptRoot\deploy_frontend.ps1" -Branch $Branch -Wait:$WaitWorkflows
 }
