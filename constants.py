@@ -44,13 +44,24 @@ API_DOCS_URL = "/api/docs"
 API_REDOC_URL = "/api/redoc"
 
 # CORS Configuration
-# Avoid wildcard origins together with credentials. Default to no credentials.
-# In production, set allowed origins explicitly via environment variable ALLOW_ORIGINS (comma-separated).
-_env_origins = os.getenv("ALLOW_ORIGINS")
-CORS_ALLOW_ORIGINS = [o.strip() for o in _env_origins.split(",") if o.strip()] if _env_origins else ["*"]
-CORS_ALLOW_METHODS = ["*"]
-CORS_ALLOW_HEADERS = ["*"]
-CORS_ALLOW_CREDENTIALS = False
+# Security improvement: Use restrictive defaults, require explicit configuration for production
+_env_origins = os.getenv("ALLOW_ORIGINS", "").strip()
+if _env_origins:
+    # Parse comma-separated origins and validate format
+    origins_list = [o.strip() for o in _env_origins.split(",") if o.strip()]
+    # Basic validation - only allow http/https origins
+    valid_origins = []
+    for origin in origins_list:
+        if origin.startswith(('http://', 'https://')) or origin == "*":
+            valid_origins.append(origin)
+    CORS_ALLOW_ORIGINS = valid_origins if valid_origins else []
+else:
+    # Default to empty list for security - no CORS in development without explicit config
+    CORS_ALLOW_ORIGINS = []
+
+CORS_ALLOW_METHODS = ["GET", "POST"]  # Restrict to only necessary methods
+CORS_ALLOW_HEADERS = ["Content-Type", "Authorization"]  # Restrict headers
+CORS_ALLOW_CREDENTIALS = False  # Disable credentials by default
 
 # Static files
 STATIC_DIRECTORY = "static"

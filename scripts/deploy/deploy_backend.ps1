@@ -3,10 +3,73 @@ param(
   [string]$Branch="master",
   [switch]$WaitWorkflows,
   [switch]$RedeployFrontend,
+  [switch]$SkipValidation,
+  [string]$EnvFile = ".env",
   [ValidateSet('Default','Exchange','None')]
   [string]$StartupProbe='Default'
 )
 $ErrorActionPreference="Stop"
+
+# Validación de seguridad antes del deploy
+if (-not $SkipValidation) {
+  Write-Host "[INFO] Ejecutando validaciones de seguridad..." -ForegroundColor Yellow
+
+  # Verificar que existe el archivo .env
+  if (-not (Test-Path $EnvFile)) {
+    throw "Archivo $EnvFile no encontrado. Crear desde .env.template"
+  }
+
+  # Verificar que existe el secret_manager
+  $secretManager = Join-Path $PSScriptRoot "..\..\secret_manager.py"
+  if (-not (Test-Path $secretManager)) {
+    throw "secret_manager.py no encontrado en la raíz del proyecto"
+  }
+
+  # Ejecutar validación de configuración
+  Write-Host "[INFO] Validando configuración..." -ForegroundColor DarkCyan
+  try {
+    python $secretManager --validate
+    Write-Host "[OK] Configuración validada correctamente" -ForegroundColor Green
+  } catch {
+    throw "Error en validación de configuración: $_"
+  }
+
+  # Verificar dependencias de seguridad
+  Write-Host "[INFO] Verificando dependencias de seguridad..." -ForegroundColor DarkCyan
+  
+  # Función para leer requirements recursivamente
+  function Get-RequirementsRecursive {
+    param([string]$FileName)
+    $requirements = @()
+    try {
+      $lines = Get-Content $FileName -ErrorAction SilentlyContinue
+      foreach ($line in $lines) {
+        $line = $line.Trim()
+        if ($line -match "^-r (.+)$") {
+          $refFile = $Matches[1]
+          $requirements += Get-RequirementsRecursive $refFile
+        } elseif ($line -and -not $line.StartsWith("#")) {
+          # Extraer nombre del paquete (antes de ==, >=, etc. o [extras])
+          $packageName = $line -split "[=<>!]" | Select-Object -First 1
+          $packageName = $packageName -split "\[" | Select-Object -First 1
+          $requirements += $packageName.Trim()
+        }
+      }
+    } catch {
+      Write-Warning "Error leyendo $FileName`: $($_.Exception.Message)"
+    }
+    return $requirements
+  }
+  
+  $allRequirements = Get-RequirementsRecursive "requirements.txt"
+  
+  if ($allRequirements -notcontains "cryptography") {
+    Write-Warning "cryptography no está en requirements - logging seguro limitado"
+  }
+  if ($allRequirements -notcontains "python-dotenv") {
+    throw "python-dotenv es requerido para gestión de secrets"
+  }
+}
 
 function WaitWF {
   param(

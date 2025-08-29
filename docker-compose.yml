@@ -8,21 +8,23 @@ services:
     #   dockerfile: Dockerfile
     container_name: sifu-backend
     ports:
-      - "8000:8000"
+      - "${BACKEND_PORT:-8000}:8000"
     volumes:
       # Volumen para persistir la base de datos
       - ./data:/app/data
       # (Comentado) Montar el código fuente anula la imagen. Mantener desactivado en prod.
       # - .:/app
+    env_file:
+      - .env
     environment:
       PYTHONPATH: /app
       PYTHONUNBUFFERED: "1"
       DATABASE_PATH: /app/data/ui_data.db
-      SCHEDULER_ENABLED: "true"
-      SCHEDULER_TIMEZONE: America/Montevideo
-      UI_REFRESH_CRON: "0 3 * * *"
-      EXCHANGE_REFRESH_CRON: "0 3 * * *"
-      UR_REFRESH_CRON: "0 4 1 * *"
+      SCHEDULER_ENABLED: "${SCHEDULER_ENABLED:-true}"
+      SCHEDULER_TIMEZONE: "${SCHEDULER_TIMEZONE:-America/Montevideo}"
+      UI_REFRESH_CRON: "${UI_REFRESH_CRON:-0 3 * * *}"
+      EXCHANGE_REFRESH_CRON: "${EXCHANGE_REFRESH_CRON:-0 3 * * *}"
+      UR_REFRESH_CRON: "${UR_REFRESH_CRON:-0 4 1 * *}"
     networks:
       - sifu-network
     restart: unless-stopped

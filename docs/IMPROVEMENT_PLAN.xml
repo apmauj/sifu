@@ -1,0 +1,217 @@
+<improvementPlan>
+  <descripcion>A continuación tienes un plan integral de auditoría para evaluar una aplicación con foco en seguridad, buenas prácticas de desarrollo, clean code, testing, UX, eliminación de código muerto, logging, DRY y patrones de arquitectura. Es aplicable a web, backend, APIs y apps móviles, y se puede adaptar según el stack.</descripcion>
+  <seccion id="1" nombre="Preparación y alcance">
+    <objetivo>Definir qué se audita, profundidad y éxito.</objetivo>
+    <entradas>
+      <item>Repositorios de código, historial de commits y PRs.</item>
+      <item>Pipelines CI/CD, infraestructura (IaC), configuraciones y secretos.</item>
+      <item>Artefactos de arquitectura (diagramas C4), endpoints/API, esquemas de datos.</item>
+      <item>Matriz de permisos/roles, políticas de retención de datos.</item>
+      <item>Matriz de dependencias/SBOM y licencias.</item>
+      <item>Catálogo de features, métricas de uso, analytics y logs.</item>
+    </entradas>
+    <entregables>Plan de trabajo, cronograma, personas clave y criterios de aceptación.</entregables>
+  </seccion>
+  <seccion id="2" nombre="Metodología general y criterios">
+    <criterios>
+      <item>Enfoque basado en riesgo: priorizar superficies críticas (autenticación, pagos, datos personales).</item>
+      <item>Evidencia reproducible: scripts, reportes de herramientas, capturas, commits de remediación.</item>
+      <item>Clasificación de hallazgos: severidad (Crítico/Alto/Medio/Bajo/Info), probabilidad/impacto y recomendaciones con esfuerzo estimado.</item>
+      <item>Umbrales de calidad sugeridos:
+        <subitem>Coverage unitario ≥ 70% módulos core, integración ≥ 50% rutas críticas.</subitem>
+        <subitem>Duplicación de código &lt; 3%.</subitem>
+        <subitem>Complejidad ciclomática por método ≤ 10 (excepciones justificadas).</subitem>
+        <subitem>Issues críticos de seguridad = 0 antes de release.</subitem>
+        <subitem>Linting sin errores bloqueantes.</subitem>
+      </item>
+    </criterios>
+  </seccion>
+  <seccion id="3" nombre="Auditoría de arquitectura y diseño">
+    <principios>
+      <item>Separación de responsabilidades, SOLID, DDD donde aplique, capas claras (presentación, dominio, datos), clean architecture/hexagonal.</item>
+      <item>Patrones: manejo de configuración 12-Factor, feature flags, idempotencia en APIs con reintentos, event-driven donde corresponda.</item>
+      <item>Escalabilidad y resiliencia: circuit breakers, timeouts, retry con backoff, bulkheads, rate limiting y quotas.</item>
+      <item>Compatibilidad: versionado de APIs (semver), políticas de deprecación, compatibilidad hacia atrás.</item>
+      <item>Seguridad por diseño: least privilege, defensa en profundidad, boundary de confianza, secretos fuera de código.</item>
+      <item>Revisión de dependencias externas y acoplamientos (evitar vendor lock-in injustificado).</item>
+    </principios>
+  </seccion>
+  <seccion id="4" nombre="Auditoría de código (clean code y buenas prácticas)">
+    <practicas>
+      <item>Estilo y consistencia: linters y formateadores configurados; convenciones de nombres, tamaño de funciones, comentarios útiles.</item>
+      <item>DRY/KISS/YAGNI: detección de duplicación, abstracciones necesarias sin sobre-diseño.</item>
+      <item>Complejidad: funciones/métodos demasiado largos, anidación excesiva, code smells comunes.</item>
+      <item>Gestión de errores: uso consistente de excepciones/monadas de resultado; no silenciar errores; mensajes útiles.</item>
+      <item>Inmutabilidad y concurrencia: condiciones de carrera, uso apropiado de locks/async, thread-safety.</item>
+      <item>Recursos: cierres adecuados de conexiones, streams; manejo de timeouts.</item>
+      <item>Código muerto: detección de símbolos/rutas no usados, flags obsoletos, endpoints no referenciados; plan de eliminación.</item>
+      <item>Comentarios y documentación: docstrings en públicos, ADRs para decisiones clave.</item>
+    </practicas>
+  </seccion>
+  <seccion id="5" nombre="Seguridad">
+    <seguridad>
+      <item>Gestión de secretos: fuera del repo, rotación, scopes mínimos (Vault/SM/KMS).</item>
+      <item>Autenticación y autorización:
+        <subitem>Protocolos: OAuth2/OIDC, JWT con expiración corta y rotación; sesión segura en web.</subitem>
+        <subitem>Control de acceso: RBAC/ABAC, pruebas de salto de autorización (IDOR).</subitem>
+      </item>
+      <item>Datos y privacidad:
+        <subitem>Minimización de PII, cifrado en tránsito (TLS 1.2+) y en reposo.</subitem>
+        <subitem>Política de retención/borrado, anonimización/pseudonimización.</subitem>
+        <subitem>Cumplimiento: GDPR/LOPD, consentimientos, DPIA si aplica.</subitem>
+      </item>
+      <item>OWASP Top 10/ASVS:
+        <subitem>Inyección (SQL/NoSQL), XSS, CSRF, SSRF, deserialización, RCE.</subitem>
+        <subitem>Validación y sanitización de entradas, allowlists, parámetros tipados.</subitem>
+      </item>
+      <item>Dependencias:
+        <subitem>SCA: vulnerabilidades y licencias, actualización y pinning de versiones, SBOM.</subitem>
+        <subitem>SAST/DAST e IAST: integrar en CI, triage de falsos positivos.</subitem>
+      </item>
+      <item>Infra/AppSec:
+        <subitem>Cabeceras de seguridad (CSP, HSTS, X-Frame-Options).</subitem>
+        <subitem>Contenedores: imágenes mínimas, rootless, escaneo, no latest; supply chain (Sigstore, Cosign).</subitem>
+        <subitem>IaC: revisión con tfsec/Checkov/OPA; redes privadas, WAF, SGs, egress control, IAM least privilege.</subitem>
+      </item>
+      <item>Móvil:
+        <subitem>Secure storage (Keychain/Keystore), no logs de PII, ofuscación (R8/ProGuard).</subitem>
+        <subitem>Cert pinning/Network Security Config, revisión de permisos, protección root/jailbreak básica.</subitem>
+      </item>
+    </seguridad>
+  </seccion>
+  <seccion id="6" nombre="Logging y observabilidad">
+    <observabilidad>
+      <item>Logs estructurados (JSON), niveles adecuados, sin PII/secretos; redacción/masking.</item>
+      <item>Correlación: correlation/trace IDs, contexto de usuario minimal.</item>
+      <item>Métricas: SLI/SLO definidos (latencia, error rate, saturación); alertas con umbrales y runbooks.</item>
+      <item>Trazas distribuidas en flujos críticos.</item>
+      <item>Auditoría: logs de seguridad y acceso con retención y cadena de custodia.</item>
+      <item>Buenas prácticas: deduplicación, rate limiting de logs, sampling.</item>
+    </observabilidad>
+  </seccion>
+  <seccion id="7" nombre="Testing">
+    <testing>
+      <item>Pirámide de pruebas: unitarias, integración, contract tests (p.ej. Pact), E2E críticos.</item>
+      <item>Calidad de tests: AAA, datos controlados, herméticas; evitar mocks excesivos.</item>
+      <item>Test no funcionales: carga/stress/soak, smoke tests, resiliencia/chaos, seguridad (SAST/DAST), accesibilidad.</item>
+      <item>Cobertura: líneas, ramas, mutación para módulos críticos.</item>
+      <item>Fixtures y test data management; entornos aislados; semillas reproducibles.</item>
+      <item>Mobile: UI tests en dispositivos reales/emuladores; matrices de dispositivos; performance/batería; cold start.</item>
+    </testing>
+  </seccion>
+  <seccion id="8" nombre="CI/CD y gestión del ciclo de vida">
+    <ciclovida>
+      <item>Pipelines como código: stages para lint, build, pruebas, análisis SAST/SCA, coverage gates, firma y publicación.</item>
+      <item>Políticas de calidad: branch protection, revisiones obligatorias, pre-merge checks, commit signing.</item>
+      <item>Estrategia de branch: trunk-based o GitFlow bien definido; versionado semántico, changelog automatizado.</item>
+      <item>Deploys: inmutables, blue/green o canary; feature flags; rollback automático.</item>
+      <item>Gestión de config por entorno; toggles con expiración; migraciones de DB seguras (backfill, online).</item>
+      <item>Artefactos: reproducibilidad, cache, supply chain (SBOM, firmas).</item>
+      <item>Backups y restauración probados.</item>
+    </ciclovida>
+  </seccion>
+  <seccion id="9" nombre="Rendimiento, resiliencia y costos">
+    <rendimiento>
+      <item>Perf budgets y SLOs; profiling y APM.</item>
+      <item>Caching: correcto (etags, TTL, invalidación), CDN.</item>
+      <item>Concurrencia y límites: pool sizing, rate limit, timeouts.</item>
+      <item>Cuellos de botella: N+1 queries, índices DB, locking, GC.</item>
+      <item>Cost observability: costos por feature/entorno; alertas de desvíos.</item>
+    </rendimiento>
+  </seccion>
+  <seccion id="10" nombre="UX y accesibilidad">
+    <ux>
+      <item>Descubrimiento: heurísticas de Nielsen, consistencia, feedback y estados vacíos.</item>
+      <item>Navegación y arquitectura de información; formularios robustos con validación clara.</item>
+      <item>Accesibilidad: WCAG 2.1 AA (roles ARIA, contraste, foco, teclado, lectores).</item>
+      <item>Rendimiento percibido: LCP, FID/INP, CLS; lazy loading; optimización de assets.</item>
+      <item>Internacionalización y localización; RTL si aplica.</item>
+      <item>Telemetría de UX: funnels, errores de UI; privacidad respetada.</item>
+    </ux>
+  </seccion>
+  <seccion id="11" nombre="Datos y persistencia">
+    <datos>
+      <item>Modelado y normalización/desnormalización justificada.</item>
+      <item>Integridad: constraints, transacciones, idempotencia, migraciones forward-only.</item>
+      <item>Políticas de borrado/retención; enmascarado en entornos no prod.</item>
+      <item>Plan de recuperación ante desastres; RPO/RTO.</item>
+    </datos>
+  </seccion>
+  <seccion id="12" nombre="Cumplimiento y licencias">
+    <cumplimiento>
+      <item>Revisión de licencias OSS (GPL, AGPL, etc.); obligaciones de atribución.</item>
+      <item>Políticas de cookies y privacidad; banners y registros de consentimiento.</item>
+      <item>Requisitos sectoriales (PCI-DSS, HIPAA) si corresponden.</item>
+    </cumplimiento>
+  </seccion>
+  <seccion id="13" nombre="Gobernanza y documentación">
+    <gobernanza>
+      <item>ADRs, guías de contribución, definición de listo/hecho, estándares de código.</item>
+      <item>Mapa de ownership por módulo; rotación del conocimiento.</item>
+      <item>Runbooks y playbooks; procedimientos de incident response y postmortems sin culpa.</item>
+      <item>Health checks y documentación de API (OpenAPI/GraphQL SDL), catálogos de servicios.</item>
+    </gobernanza>
+  </seccion>
+  <seccion id="14" nombre="Proceso de auditoría paso a paso">
+    <proceso>
+      <item>Semana 0: Kickoff, alcance, acceso a repos/entornos, alineación de métricas.</item>
+      <item>Semana 1: Recolección y análisis automatizado (SAST/SCA/lint/coverage); entrevistas breves.</item>
+      <item>Semana 2: Revisión manual de arquitectura y código en módulos críticos; pruebas exploratorias de seguridad y UX.</item>
+      <item>Semana 3: Validación de hallazgos, reproducciones, priorización con equipo; propuestas de remediación.</item>
+      <item>Semana 4: Informe final, roadmap de mejoras, sesión de traspaso; configuración de quality gates en CI.</item>
+    </proceso>
+  </seccion>
+  <seccion id="15" nombre="Herramientas sugeridas (ejemplos, ajustables)">
+    <herramientas>
+      <item>Código/Calidad: SonarQube, ESLint/TSLint, Prettier, Pylint/Flake8, detekt/ktlint, Checkstyle, SwiftLint.</item>
+      <item>Seguridad: Snyk/Dependabot, Trivy/Grype, Semgrep, OWASP ZAP/Burp (DAST), gitleaks/trufflehog.</item>
+      <item>Observabilidad: OpenTelemetry, Prometheus/Grafana, ELK/EFK, Jaeger/Zipkin, Sentry.</item>
+      <item>Testing: Jest/Mocha, JUnit/TestNG, pytest, Cypress/Playwright, Pact, k6/JMeter, mutation testing (PIT/stryker).</item>
+      <item>Infra: Terraform + tfsec/Checkov, OPA/Conftest, kube-bench/kube-hunter, Falco.</item>
+      <item>Mobile: Firebase Test Lab, Xcode Instruments, Android Profiler, Mobile Security Framework (MobSF).</item>
+    </herramientas>
+  </seccion>
+  <seccion id="16" nombre="Checklist resumido de verificación">
+    <checklist>
+      <categoria nombre="Seguridad">
+        <item>[ ] Secretos fuera del repo y rotables; least privilege IAM.</item>
+        <item>[ ] Validación/escape de entradas y salidas; cabeceras de seguridad.</item>
+        <item>[ ] Dependencias sin CVEs críticos; SBOM generado.</item>
+        <item>[ ] AuthN/AuthZ robustas; logs de auditoría.</item>
+      </categoria>
+      <categoria nombre="Código">
+        <item>[ ] Linters sin errores; estilos consistentes.</item>
+        <item>[ ] Complejidad y duplicación bajo umbral; sin código muerto.</item>
+        <item>[ ] Manejo de errores consistente; recursos cerrados.</item>
+      </categoria>
+      <categoria nombre="Testing">
+        <item>[ ] Cobertura adecuada; tests de contrato y E2E críticos.</item>
+        <item>[ ] Pruebas de performance y seguridad automatizadas en CI.</item>
+      </categoria>
+      <categoria nombre="CI/CD">
+        <item>[ ] Quality gates; branch protection; firmas de commits/artefactos.</item>
+        <item>[ ] Deploys canary/blue-green; rollback; feature flags.</item>
+      </categoria>
+      <categoria nombre="Observabilidad">
+        <item>[ ] Logs estructurados sin PII; trazas y métricas con SLOs.</item>
+        <item>[ ] Alertas accionables con runbooks.</item>
+      </categoria>
+      <categoria nombre="UX/a11y">
+        <item>[ ] WCAG 2.1 AA; rendimiento percibido ok; flujos clave medidos.</item>
+      </categoria>
+      <categoria nombre="Datos">
+        <item>[ ] Cifrado en tránsito/reposo; migraciones seguras; backups probados.</item>
+        <item>[ ] Retención/borrado de PII; datos en no prod anonimizados.</item>
+      </categoria>
+    </checklist>
+  </seccion>
+  <seccion id="17" nombre="Entregables de la auditoría">
+    <entregables>
+      <item>Informe ejecutivo: riesgos principales, impacto negocio, quick wins y roadmap 90 días.</item>
+      <item>Informe técnico: hallazgos detallados, evidencia, repro steps, referencias, esfuerzos.</item>
+      <item>Tablero de calidad: quality gates configurados, métricas base y objetivos.</item>
+      <item>PRs/commits de ejemplo: fixes representativos, plantillas de linter/CI, políticas.</item>
+      <item>Taller de cierre: priorización y plan de implementación.</item>
+    </entregables>
+  </seccion>
+</improvementPlan>

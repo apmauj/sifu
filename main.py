@@ -23,6 +23,15 @@ from models import UIResponse, RefreshResponse, URResponse, ExchangeRateResponse
 from services import UIService, URService, ExchangeRateService
 from excel_processor import ExcelProcessor, URExcelProcessor, ExchangeRateExcelProcessor, ExchangeRateBCUProcessor
 from brou_processor import BROUProcessor
+from security_utils import SecurityValidator, InputValidator, sanitize_request_data
+from pydantic_models import (
+    URRangeRequestModel, ExchangeRateRangeRequestModel,
+    APIResponse, PaginatedResponse
+)
+from rate_limit import RateLimitMiddleware, EndpointRateLimitMiddleware
+from secret_manager import secret_manager
+from secure_logging import init_security_logging, get_security_logger
+from config_validator import validate_configuration_on_startup
 from constants import (
     HTTP_400_BAD_REQUEST,
     HTTP_404_NOT_FOUND,
@@ -270,6 +279,10 @@ app.add_middleware(
     allow_methods=CORS_ALLOW_METHODS,
     allow_headers=CORS_ALLOW_HEADERS,
 )
+
+# Add security middlewares
+app.add_middleware(RateLimitMiddleware, requests_per_minute=100, burst_limit=20)
+app.add_middleware(EndpointRateLimitMiddleware)
 
 @app.get("/", tags=["Sistema"])
 async def root_index():
@@ -847,27 +860,33 @@ async def get_ur_by_range(start_year: int, start_month: int, end_year: int, end_
 @app.post("/api/ur/range", tags=[TAG_UR])
 async def get_ur_by_range_post(request: dict, db: Session = Depends(get_db)):
     """Obtener UR por rango (POST). Body igual al endpoint GET correspondiente."""
-    # Accept English or legacy Spanish keys
-    start_year = request.get('start_year') or request.get('año_inicio') or request.get('ano_inicio')
-    start_month = request.get('start_month') or request.get('mes_inicio') or 1
-    end_year = request.get('end_year') or request.get('año_fin') or request.get('ano_fin') or start_year
-    end_month = request.get('end_month') or request.get('mes_fin') or 12
-
-    # Basic validation (mirrors GET endpoint logic)
-    if None in (start_year, start_month, end_year, end_month):
-        return URResponse(success=False, message="Missing required parameters").dict()
     try:
-        start_year = int(start_year)
-        start_month = int(start_month)
-        end_year = int(end_year)
-        end_month = int(end_month)
-    except ValueError:
-        return URResponse(success=False, message="Parameters must be integers").dict()
-    if not (1 <= start_month <= 12 and 1 <= end_month <= 12):
-        return URResponse(success=False, message="Months must be between 1 and 12").dict()
-    if (end_year, end_month) < (start_year, start_month):
-        return URResponse(success=False, message="Start period must be before or equal to end period").dict()
-    return await get_ur_by_range(start_year, start_month, end_year, end_month, db)
+        # Sanitize input data
+        sanitized_data = sanitize_request_data(request)
+
+        # Validate with Pydantic model
+        ur_request = URRangeRequestModel(**sanitized_data)
+
+        # Additional security validation
+        is_valid, error_msg = InputValidator.validate_ur_range_params(
+            ur_request.start_year, ur_request.start_month,
+            ur_request.end_year, ur_request.end_month
+        )
+
+        if not is_valid:
+            return URResponse(success=False, message=error_msg).dict()
+
+        # Check for injection attempts
+        for key, value in sanitized_data.items():
+            if isinstance(value, str) and not SecurityValidator.validate_no_injection(value):
+                return URResponse(success=False, message="Invalid input detected").dict()
+
+        return await get_ur_by_range(ur_request.start_year, ur_request.start_month,
+                                   ur_request.end_year, ur_request.end_month, db)
+
+    except Exception as e:
+        logger.error(f"Error in get_ur_by_range_post: {e}")
+        return URResponse(success=False, message="Invalid request format").dict()
 
 @app.post("/api/ur/refresh", tags=[TAG_UR])
 async def refresh_ur_data(db: Session = Depends(get_db)):
@@ -1017,31 +1036,32 @@ async def get_exchange_rates_by_currency(currency: str, limit: int = 30, db: Ses
 async def get_exchange_rates_by_range(start_date: date, end_date: date, currency: Optional[str] = None, db: Session = Depends(get_db)):
     """Obtener cotizaciones por rango de fechas (opcional filtrar por moneda)."""
     try:
-        if start_date > end_date:
-            raise HTTPException(
-                status_code=HTTP_400_BAD_REQUEST,
-                detail=MSG_INVALID_DATE_RANGE
-            )
-        
-        if currency and currency.upper() not in VALID_CURRENCY_CODES:
-            raise HTTPException(
-                status_code=HTTP_400_BAD_REQUEST,
-                detail=f"Invalid currency code. Supported currencies: {', '.join(VALID_CURRENCY_CODES)}"
-            )
-        
+        # Validate date range
+        is_valid, error_msg = InputValidator.validate_range_params(
+            str(start_date), str(end_date)
+        )
+        if not is_valid:
+            raise HTTPException(status_code=HTTP_400_BAD_REQUEST, detail=error_msg)
+
+        # Validate currency if provided
+        if currency:
+            is_valid, error_msg = InputValidator.validate_currency_param(currency)
+            if not is_valid:
+                raise HTTPException(status_code=HTTP_400_BAD_REQUEST, detail=error_msg)
+
         service = ExchangeRateService(db)
         exchange_rates = service.get_exchange_rate_by_date_range(start_date, end_date, currency)
-        
+
         return ExchangeRateResponse(
             success=True,
             message=MSG_EXCHANGE_RATE_RANGE_SUCCESS.format(
-                start_date=start_date, 
-                end_date=end_date, 
+                start_date=start_date,
+                end_date=end_date,
                 count=len(exchange_rates)
             ),
             data=[rate.dict() for rate in exchange_rates]
         ).dict()
-    
+
     except HTTPException:
         raise
     except Exception as e:

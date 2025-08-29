@@ -1,0 +1,497 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<planAccion>
+  <titulo>Plan de Acción de Mejora - SIFU</titulo>
+  <fechaCreacion>2025-08-29</fechaCreacion>
+  <version>1.0</version>
+
+  <resumen>
+    <descripcion>Plan de acción detallado para mejorar la aplicación SIFU basado en el plan integral de auditoría. Incluye roadmap, checklist de verificación, métricas de éxito y estimaciones de esfuerzo.</descripcion>
+    <objetivos>
+      <objetivo>Mejorar la seguridad crítica (vulnerabilidades conocidas)</objetivo>
+      <objetivo>Implementar observabilidad completa</objetivo>
+      <objetivo>Optimizar rendimiento y escalabilidad</objetivo>
+      <objetivo>Mejorar UX y accesibilidad</objetivo>
+      <objetivo>Implementar mejores prácticas de datos y cumplimiento</objetivo>
+    </objetivos>
+    <metasGenerales>
+      <meta>Reducir vulnerabilidades críticas a 0</meta>
+      <meta>Implementar logging estructurado 100%</meta>
+      <meta>Alcanzar cobertura de tests 95%+</meta>
+      <meta>Cumplir WCAG 2.1 AA</meta>
+      <meta>Implementar backup automático de datos</meta>
+    </metasGenerales>
+  </resumen>
+
+  <roadmap>
+    <fase id="1" nombre="Seguridad Crítica" duracion="2 semanas" prioridad="CRITICA">
+      <descripcion>Resolver vulnerabilidades de seguridad conocidas y mejorar la postura de seguridad básica</descripcion>
+      <semanas>
+        <semana numero="1">
+          <tareas>
+            <tarea id="SEC-001" nombre="Actualizar dependencias vulnerables" esfuerzo="2d" responsable="DevOps">
+              <descripcion>Actualizar FastAPI, requests, python-multipart y otras dependencias con CVEs conocidas</descripcion>
+              <criterios>
+                <criterio>FastAPI actualizado a 0.116.1+</criterio>
+                <criterio>requests actualizado a 2.32.4+</criterio>
+                <criterio>python-multipart actualizado a 0.0.18+</criterio>
+                <criterio>pip-audit sin vulnerabilidades críticas</criterio>
+              </criterios>
+              <dependencias>
+                <dependencia>SEC-002</dependencia>
+              </dependencias>
+            </tarea>
+            <tarea id="SEC-002" nombre="Implementar validación de inputs" esfuerzo="3d" responsable="Backend">
+              <descripcion>Agregar sanitización XSS, validación CSRF y filtros de entrada</descripcion>
+              <criterios>
+                <criterio>Validación de todos los parámetros de entrada</criterio>
+                <criterio>Sanitización de datos HTML</criterio>
+                <criterio>Protección CSRF implementada</criterio>
+                <criterio>Tests de seguridad agregados</criterio>
+              </criterios>
+            </tarea>
+            <tarea id="SEC-003" nombre="Configurar gestión de secretos" esfuerzo="1d" responsable="DevOps">
+              <descripcion>Implementar variables de entorno y GitHub Secrets para configuración segura</descripcion>
+              <criterios>
+                <criterio>Secretos movidos a variables de entorno</criterio>
+                <criterio>GitHub Secrets configurados</criterio>
+                <criterio>Documentación de configuración actualizada</criterio>
+              </criterios>
+            </tarea>
+          </tareas>
+        </semana>
+        <semana numero="2">
+          <tareas>
+            <tarea id="SEC-004" nombre="Implementar HTTPS obligatorio" esfuerzo="2d" responsable="DevOps">
+              <descripcion>Configurar HTTPS en producción y redireccionamiento HTTP</descripcion>
+              <criterios>
+                <criterio>Certificado SSL configurado</criterio>
+                <criterio>Redireccionamiento HTTP→HTTPS</criterio>
+                <criterio>HSTS headers implementados</criterio>
+              </criterios>
+            </tarea>
+            <tarea id="SEC-005" nombre="Auditoría de permisos y RBAC" esfuerzo="3d" responsable="Backend">
+              <descripcion>Revisar y mejorar control de acceso basado en roles</descripcion>
+              <criterios>
+                <criterio>Roles definidos claramente</criterio>
+                <criterio>Permisos por endpoint documentados</criterio>
+                <criterio>Tests de autorización implementados</criterio>
+              </criterios>
+            </tarea>
+          </tareas>
+        </semana>
+      </semanas>
+      <metricas>
+        <metrica>0 vulnerabilidades críticas en dependencias</metrica>
+        <metrica>100% de endpoints con validación de entrada</metrica>
+        <metrica>Configuración segura documentada</metrica>
+      </metricas>
+    </fase>
+
+    <fase id="2" nombre="Observabilidad y Monitoreo" duracion="3 semanas" prioridad="ALTA">
+      <descripcion>Implementar logging estructurado, métricas y monitoreo completo</descripcion>
+      <semanas>
+        <semana numero="3">
+          <tareas>
+            <tarea id="OBS-001" nombre="Implementar logging estructurado" esfuerzo="3d" responsable="Backend">
+              <descripcion>Configurar logging JSON con niveles apropiados y sin PII</descripcion>
+              <criterios>
+                <criterio>Logging JSON implementado</criterio>
+                <criterio>Niveles de log configurados</criterio>
+                <criterio>Datos sensibles enmascarados</criterio>
+                <criterio>Rotación de logs configurada</criterio>
+              </criterios>
+            </tarea>
+            <tarea id="OBS-002" nombre="Agregar métricas básicas" esfuerzo="2d" responsable="Backend">
+              <descripcion>Implementar métricas de latencia, error rate y throughput</descripcion>
+              <criterios>
+                <criterio>Métricas de respuesta implementadas</criterio>
+                <criterio>Contadores de error configurados</criterio>
+                <criterio>Endpoint /metrics creado</criterio>
+              </criterios>
+            </tarea>
+          </tareas>
+        </semana>
+        <semana numero="4">
+          <tareas>
+            <tarea id="OBS-003" nombre="Configurar health checks avanzados" esfuerzo="2d" responsable="Backend">
+              <descripcion>Implementar health checks de base de datos y servicios externos</descripcion>
+              <criterios>
+                <criterio>Health check de BD implementado</criterio>
+                <criterio>Verificación de servicios externos</criterio>
+                <criterio>Endpoint /health mejorado</criterio>
+              </criterios>
+            </tarea>
+            <tarea id="OBS-004" nombre="Implementar trazas distribuidas" esfuerzo="3d" responsable="Backend">
+              <descripcion>Agregar correlation IDs y trazas de requests</descripcion>
+              <criterios>
+                <criterio>Correlation IDs en todos los requests</criterio>
+                <criterio>Trazas de requests implementadas</criterio>
+                <criterio>Contextos de usuario preservados</criterio>
+              </criterios>
+            </tarea>
+          </tareas>
+        </semana>
+        <semana numero="5">
+          <tareas>
+            <tarea id="OBS-005" nombre="Configurar alertas y dashboards" esfuerzo="2d" responsable="DevOps">
+              <descripcion>Implementar alertas automáticas y dashboards de monitoreo</descripcion>
+              <criterios>
+                <criterio>Alertas de error configuradas</criterio>
+                <criterio>Dashboard básico implementado</criterio>
+                <criterio>Runbooks de alertas documentados</criterio>
+              </criterios>
+            </tarea>
+          </tareas>
+        </semana>
+      </semanas>
+      <metricas>
+        <metrica>100% de requests con logging estructurado</metrica>
+        <metrica>Métricas de latencia < 500ms promedio</metrica>
+        <metrica>MTTR < 30 minutos para incidentes críticos</metrica>
+      </metricas>
+    </fase>
+
+    <fase id="3" nombre="Performance y Escalabilidad" duracion="2 semanas" prioridad="ALTA">
+      <descripcion>Optimizar rendimiento, implementar caching y mejorar escalabilidad</descripcion>
+      <semanas>
+        <semana numero="6">
+          <tareas>
+            <tarea id="PERF-001" nombre="Implementar rate limiting" esfuerzo="2d" responsable="Backend">
+              <descripcion>Agregar límites de requests por IP y endpoint</descripcion>
+              <criterios>
+                <criterio>Rate limiting por IP implementado</criterio>
+                <criterio>Límites por endpoint configurados</criterio>
+                <criterio>Headers de rate limit agregados</criterio>
+              </criterios>
+            </tarea>
+            <tarea id="PERF-002" nombre="Optimizar consultas de BD" esfuerzo="3d" responsable="Backend">
+              <descripcion>Implementar índices, caching y optimización de queries</descripcion>
+              <criterios>
+                <criterio>Índices de BD optimizados</criterio>
+                <criterio>Caching implementado</criterio>
+                <criterio>Queries N+1 eliminadas</criterio>
+              </criterios>
+            </tarea>
+          </tareas>
+        </semana>
+        <semana numero="7">
+          <tareas>
+            <tarea id="PERF-003" nombre="Implementar circuit breakers" esfuerzo="2d" responsable="Backend">
+              <descripcion>Agregar circuit breakers para servicios externos</descripcion>
+              <criterios>
+                <criterio>Circuit breaker para BCU implementado</criterio>
+                <criterio>Fallback automático configurado</criterio>
+                <criterio>Timeouts apropiados definidos</criterio>
+              </criterios>
+            </tarea>
+            <tarea id="PERF-004" nombre="Configurar perf budgets" esfuerzo="1d" responsable="DevOps">
+              <descripcion>Definir budgets de performance y alertas</descripcion>
+              <criterios>
+                <criterio>Perf budgets documentados</criterio>
+                <criterio>Alertas de performance configuradas</criterio>
+                <criterio>Monitoreo continuo implementado</criterio>
+              </criterios>
+            </tarea>
+          </tareas>
+        </semana>
+      </semanas>
+      <metricas>
+        <metrica>Latencia promedio < 200ms</metrica>
+        <metrica>Throughput > 1000 req/min</metrica>
+        <metrica>CPU usage < 70% bajo carga normal</metrica>
+      </metricas>
+    </fase>
+
+    <fase id="4" nombre="UX y Accesibilidad" duracion="3 semanas" prioridad="MEDIA">
+      <descripcion>Mejorar experiencia de usuario y cumplimiento de accesibilidad</descripcion>
+      <semanas>
+        <semana numero="8">
+          <tareas>
+            <tarea id="UX-001" nombre="Auditoría WCAG 2.1 AA" esfuerzo="3d" responsable="Frontend">
+              <descripcion>Evaluar y documentar cumplimiento de accesibilidad</descripcion>
+              <criterios>
+                <criterio>Auditoría WCAG completada</criterio>
+                <criterio>Issues de accesibilidad documentados</criterio>
+                <criterio>Plan de corrección definido</criterio>
+              </criterios>
+            </tarea>
+            <tarea id="UX-002" nombre="Implementar navegación por teclado" esfuerzo="2d" responsable="Frontend">
+              <descripcion>Mejorar navegación por teclado y focus management</descripcion>
+              <criterios>
+                <criterio>Focus indicators visibles</criterio>
+                <criterio>Navegación por teclado completa</criterio>
+                <criterio>Skip links implementados</criterio>
+              </criterios>
+            </tarea>
+          </tareas>
+        </semana>
+        <semana numero="9">
+          <tareas>
+            <tarea id="UX-003" nombre="Mejorar contraste y legibilidad" esfuerzo="2d" responsable="Frontend">
+              <descripcion>Ajustar colores y tipografía para mejor accesibilidad</descripcion>
+              <criterios>
+                <criterio>Contraste WCAG AA cumplido</criterio>
+                <criterio>Tipografía legible implementada</criterio>
+                <criterio>Modo alto contraste disponible</criterio>
+              </criterios>
+            </tarea>
+            <tarea id="UX-004" nombre="Implementar ARIA labels" esfuerzo="2d" responsable="Frontend">
+              <descripcion>Agregar labels y roles ARIA apropiados</descripcion>
+              <criterios>
+                <criterio>ARIA labels en componentes interactivos</criterio>
+                <criterio>Roles semánticos correctos</criterio>
+                <criterio>Screen reader testing completado</criterio>
+              </criterios>
+            </tarea>
+          </tareas>
+        </semana>
+        <semana numero="10">
+          <tareas>
+            <tarea id="UX-005" nombre="Agregar telemetría UX" esfuerzo="2d" responsable="Frontend">
+              <descripcion>Implementar analytics y medición de UX</descripcion>
+              <criterios>
+                <criterio>Eventos de usuario trackeados</criterio>
+                <criterio>Funnels de conversión definidos</criterio>
+                <criterio>Heatmaps implementados</criterio>
+              </criterios>
+            </tarea>
+          </tareas>
+        </semana>
+      </semanas>
+      <metricas>
+        <metrica>WCAG 2.1 AA 100% cumplido</metrica>
+        <metrica>Core Web Vitals en rango verde</metrica>
+        <metrica>NPS > 8.0</metrica>
+      </metricas>
+    </fase>
+
+    <fase id="5" nombre="Datos y Cumplimiento" duracion="2 semanas" prioridad="MEDIA">
+      <descripcion>Mejorar gestión de datos, backups y cumplimiento normativo</descripcion>
+      <semanas>
+        <semana numero="11">
+          <tareas>
+            <tarea id="DATA-001" nombre="Implementar backup automático" esfuerzo="3d" responsable="DevOps">
+              <descripcion>Configurar backups diarios de base de datos</descripcion>
+              <criterios>
+                <criterio>Backup diario automatizado</criterio>
+                <criterio>Retención de 30 días implementada</criterio>
+                <criterio>Restauración probada</criterio>
+              </criterios>
+            </tarea>
+            <tarea id="DATA-002" nombre="Encriptación de datos sensibles" esfuerzo="2d" responsable="Backend">
+              <descripcion>Implementar encriptación en reposo y tránsito</descripcion>
+              <criterios>
+                <criterio>Datos sensibles encriptados</criterio>
+                <criterio>Certificados SSL configurados</criterio>
+                <criterio>Keys de encriptación rotadas</criterio>
+              </criterios>
+            </tarea>
+          </tareas>
+        </semana>
+        <semana numero="12">
+          <tareas>
+            <tarea id="DATA-003" nombre="Política de retención de datos" esfuerzo="2d" responsable="Backend">
+              <descripcion>Definir y implementar política de borrado de datos antiguos</descripcion>
+              <criterios>
+                <criterio>Política de retención documentada</criterio>
+                <criterio>Borrado automático implementado</criterio>
+                <criterio>Compliance GDPR verificado</criterio>
+              </criterios>
+            </tarea>
+            <tarea id="DATA-004" nombre="Documentar cumplimiento normativo" esfuerzo="2d" responsable="Legal">
+              <descripcion>Documentar cumplimiento con leyes de protección de datos</descripcion>
+              <criterios>
+                <criterio>DPIA completado</criterio>
+                <criterio>Política de privacidad actualizada</criterio>
+                <criterio>Consentimiento de usuarios implementado</criterio>
+              </criterios>
+            </tarea>
+          </tareas>
+        </semana>
+      </semanas>
+      <metricas>
+        <metrica>RPO < 1 hora</metrica>
+        <metrica>RTO < 4 horas</metrica>
+        <metrica>100% compliance normativo</metrica>
+      </metricas>
+    </fase>
+  </roadmap>
+
+  <checklistVerificacion>
+    <categoria nombre="Seguridad">
+      <item id="SEC-CHK-001" descripcion="Dependencias sin vulnerabilidades críticas" estado="pendiente" prioridad="critica">
+        <verificacion>pip-audit --format json | jq '.vulnerabilities | length == 0'</verificacion>
+        <frecuencia>diaria</frecuencia>
+      </item>
+      <item id="SEC-CHK-002" descripcion="Validación de inputs implementada" estado="pendiente" prioridad="alta">
+        <verificacion>grep -r "validate\|sanitize" --include="*.py" . | wc -l > 0</verificacion>
+        <frecuencia>por-commit</frecuencia>
+      </item>
+      <item id="SEC-CHK-003" descripcion="HTTPS obligatorio configurado" estado="pendiente" prioridad="alta">
+        <verificacion>curl -I https://tu-dominio.com | grep "Strict-Transport-Security"</verificacion>
+        <frecuencia>despliegue</frecuencia>
+      </item>
+    </categoria>
+
+    <categoria nombre="Observabilidad">
+      <item id="OBS-CHK-001" descripcion="Logging estructurado funcionando" estado="pendiente" prioridad="alta">
+        <verificacion>curl http://localhost:8000/api/health | jq '.timestamp'</verificacion>
+        <frecuencia>continua</frecuencia>
+      </item>
+      <item id="OBS-CHK-002" descripcion="Métricas disponibles" estado="pendiente" prioridad="media">
+        <verificacion>curl http://localhost:8000/metrics | grep "http_requests_total"</verificacion>
+        <frecuencia>diaria</frecuencia>
+      </item>
+      <item id="OBS-CHK-003" descripcion="Health checks completos" estado="pendiente" prioridad="alta">
+        <verificacion>curl http://localhost:8000/health | jq '.database == "ok"'</verificacion>
+        <frecuencia>continua</frecuencia>
+      </item>
+    </categoria>
+
+    <categoria nombre="Performance">
+      <item id="PERF-CHK-001" descripcion="Rate limiting funcionando" estado="pendiente" prioridad="media">
+        <verificacion>curl -H "X-Forwarded-For: 1.2.3.4" http://localhost:8000/api/ui/latest</verificacion>
+        <frecuencia>por-request</frecuencia>
+      </item>
+      <item id="PERF-CHK-002" descripcion="Latencia bajo presupuesto" estado="pendiente" prioridad="alta">
+        <verificacion>curl -w "@curl-format.txt" http://localhost:8000/api/health</verificacion>
+        <frecuencia>continua</frecuencia>
+      </item>
+      <item id="PERF-CHK-003" descripcion="Circuit breaker operativo" estado="pendiente" prioridad="media">
+        <verificacion>grep "circuit_breaker" logs/app.log | tail -10</verificacion>
+        <frecuencia>diaria</frecuencia>
+      </item>
+    </categoria>
+
+    <categoria nombre="UX/Accesibilidad">
+      <item id="UX-CHK-001" descripcion="WCAG 2.1 AA cumplido" estado="pendiente" prioridad="media">
+        <verificacion>lighthouse --accessibility https://tu-dominio.com</verificacion>
+        <frecuencia>semanal</frecuencia>
+      </item>
+      <item id="UX-CHK-002" descripcion="Core Web Vitals óptimos" estado="pendiente" prioridad="media">
+        <verificacion>curl https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=https://tu-dominio.com</verificacion>
+        <frecuencia>diaria</frecuencia>
+      </item>
+      <item id="UX-CHK-003" descripcion="Navegación por teclado completa" estado="pendiente" prioridad="media">
+        <verificacion>Manual testing con keyboard navigation</verificacion>
+        <frecuencia>por-release</frecuencia>
+      </item>
+    </categoria>
+
+    <categoria nombre="Datos">
+      <item id="DATA-CHK-001" descripcion="Backup automático funcionando" estado="pendiente" prioridad="alta">
+        <verificacion>ls -la /backups/ | grep $(date +%Y-%m-%d)</verificacion>
+        <frecuencia>diaria</frecuencia>
+      </item>
+      <item id="DATA-CHK-002" descripcion="Encriptación implementada" estado="pendiente" prioridad="alta">
+        <verificacion>openssl enc -d -aes-256-cbc -in backup.enc -out backup.sql</verificacion>
+        <frecuencia>mensual</frecuencia>
+      </item>
+      <item id="DATA-CHK-003" descripcion="Retención de datos cumplida" estado="pendiente" prioridad="media">
+        <verificacion>SELECT COUNT(*) FROM ui_records WHERE date < DATE('now', '-2 years')</verificacion>
+        <frecuencia>mensual</frecuencia>
+      </item>
+    </categoria>
+  </checklistVerificacion>
+
+  <metricasExito>
+    <metricaGlobal>
+      <nombre>Puntuación General de Calidad</nombre>
+      <formula>(Seguridad * 0.3) + (Observabilidad * 0.2) + (Performance * 0.2) + (UX * 0.15) + (Datos * 0.15)</formula>
+      <objetivo>4.5/5.0</objetivo>
+      <frecuencia>mensual</frecuencia>
+    </metricaGlobal>
+
+    <metricaCategoria nombre="Seguridad">
+      <indicador>Vulnerabilidades Críticas</indicador>
+      <objetivo>0</objetivo>
+      <umbralAmarillo>1</umbralAmarillo>
+      <umbralRojo>3</umbralRojo>
+    </metricaCategoria>
+
+    <metricaCategoria nombre="Observabilidad">
+      <indicador>Cobertura de Logging</indicador>
+      <objetivo>100%</objetivo>
+      <umbralAmarillo>95%</umbralAmarillo>
+      <umbralRojo>90%</umbralRojo>
+    </metricaCategoria>
+
+    <metricaCategoria nombre="Performance">
+      <indicador>Latencia Promedio (ms)</indicador>
+      <objetivo>&lt; 200</objetivo>
+      <umbralAmarillo>&lt; 500</umbralAmarillo>
+      <umbralRojo>&lt; 1000</umbralRojo>
+    </metricaCategoria>
+
+    <metricaCategoria nombre="UX">
+      <indicador>Puntuación Lighthouse</indicador>
+      <objetivo>&gt; 90</objetivo>
+      <umbralAmarillo>&gt; 75</umbralAmarillo>
+      <umbralRojo>&gt; 50</umbralRojo>
+    </metricaCategoria>
+
+    <metricaCategoria nombre="Datos">
+      <indicador>Tiempo de Restauración (min)</indicador>
+      <objetivo>&lt; 60</objetivo>
+      <umbralAmarillo>&lt; 120</umbralAmarillo>
+      <umbralRojo>&lt; 240</umbralRojo>
+    </metricaCategoria>
+  </metricasExito>
+
+  <riesgos>
+    <riesgo id="RISK-001" nombre="Dependencias Legacy" probabilidad="ALTA" impacto="CRITICO">
+      <descripcion>Dependencias con vulnerabilidades conocidas pueden comprometer la seguridad</descripcion>
+      <mitigacion>Actualizar inmediatamente y configurar alertas automáticas</mitigacion>
+    </riesgo>
+
+    <riesgo id="RISK-002" nombre="Falta de Monitoreo" probabilidad="MEDIA" impacto="ALTO">
+      <descripcion>Sin observabilidad completa, los incidentes pasan desapercibidos</descripcion>
+      <mitigacion>Implementar logging y alertas en las primeras semanas</mitigacion>
+    </riesgo>
+
+    <riesgo id="RISK-003" nombre="Deuda Técnica Acumulativa" probabilidad="BAJA" impacto="MEDIO">
+      <descripcion>Postergar mejoras puede aumentar la complejidad futura</descripcion>
+      <mitigacion>Seguir roadmap estrictamente y revisar progreso semanal</mitigacion>
+    </riesgo>
+  </riesgos>
+
+  <seguimiento>
+    <revisiones>
+      <revision fecha="2025-09-05" tipo="semanal" responsable="Equipo Completo">
+        <actividades>
+          <actividad>Revisar progreso de la Semana 1</actividad>
+          <actividad>Validar métricas de seguridad</actividad>
+          <actividad>Ajustar prioridades si es necesario</actividad>
+        </actividades>
+      </revision>
+      <revision fecha="2025-09-30" tipo="mensual" responsable="Tech Lead">
+        <actividades>
+          <actividad>Evaluar métricas globales</actividad>
+          <actividad>Actualizar roadmap si es necesario</actividad>
+          <actividad>Comunicar progreso a stakeholders</actividad>
+        </actividades>
+      </revision>
+    </revisiones>
+
+    <reportes>
+      <reporte tipo="semanal" destinatarios="equipo-dev" formato="markdown">
+        <contenido>
+          <item>Progreso por tarea</item>
+          <item>Issues encontrados</item>
+          <item>Métricas actualizadas</item>
+          <item>Próximas prioridades</item>
+        </contenido>
+      </reporte>
+      <reporte tipo="mensual" destinatarios="stakeholders" formato="pdf">
+        <contenido>
+          <item>Resumen ejecutivo</item>
+          <item>Métricas de calidad</item>
+          <item>Riesgos y mitigaciones</item>
+          <item>Próximos hitos</item>
+        </contenido>
+      </reporte>
+    </reportes>
+  </seguimiento>
+</planAccion>
+</content>
+<parameter name="filePath">c:\Users\apmauj\repos\sifu\docs\PLAN_ACCION.xml
