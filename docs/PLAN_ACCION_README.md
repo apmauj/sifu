@@ -78,18 +78,39 @@ Mejorar experiencia de usuario y cumplimiento WCAG
 
 **Métricas de Éxito:** WCAG 2.1 AA 100%, Core Web Vitals verde
 
-### 🗄️ **Fase 5: Datos/Cumplimiento** (Semanas 11-12) - PRIORIDAD MEDIA
-Mejorar gestión de datos, backups y compliance
+### �️ **Fase 6: Organización del Proyecto** (Semanas 13-14) - PRIORIDAD MEDIA
+Reorganizar estructura del proyecto según mejores prácticas, eliminar código legacy y optimizar DRY
 
-#### Semana 11
-- [ ] **DATA-001** - Backup automático diario (3d) 🔴
-- [ ] **DATA-002** - Encriptación datos sensibles (2d) 🔴
+#### Semana 13: Estructura y Archivos
+- [ ] **ORG-001** - Reorganizar scripts de despliegue (1d) 🔴
+  - Mover `docker_update_tunnel_secret.ps1`, `run_tunnel_backend.ps1` a `scripts/deploy/`
+  - Mover `setup_*.py`, `validate_deploy.py`, `verify_security.py` a `scripts/setup/`
+- [ ] **ORG-002** - Consolidar archivos de documentación (1d) 🔴
+  - Mover `SECURITY_CONFIG.md`, `NEXT_SESSION.md` a `docs/`
+  - Eliminar duplicados (`NEXT_SESSION.md` existe en root y docs/)
+  - Convertir archivos XML a Markdown
+- [ ] **ORG-003** - Reorganizar archivos de testing (1d) 🔴
+  - Mover archivos de test del root (`async_test.py`, `main_test.py`, etc.) a `tests/`
+  - Crear estructura de carpetas en `tests/` por módulo
+- [ ] **ORG-004** - Crear carpetas de configuración y logs (1d) 🔴
+  - Crear `config/` para archivos `.env*`
+  - Crear `logs/` para archivos de log y auditoría
+  - Mover `pip_audit_*` a `docs/security/`
 
-#### Semana 12
-- [ ] **DATA-003** - Política retención datos (2d) 🔴
-- [ ] **DATA-004** - Documentar compliance normativo (2d) 🔴
+#### Semana 14: Optimización DRY y Limpieza
+- [ ] **ORG-005** - Revisar constantes y helpers para DRY (2d) 🔴
+  - Consolidar constantes duplicadas en `constants.py`
+  - Crear helpers reutilizables en `utils/`
+  - Eliminar código duplicado entre módulos
+- [ ] **ORG-006** - Limpiar archivos legacy y huérfanos (1d) 🔴
+  - Identificar archivos no utilizados
+  - Eliminar archivos temporales de debugging
+  - Actualizar `.gitignore` con nueva estructura
+- [ ] **ORG-007** - Actualizar documentación de arquitectura (1d) 🔴
+  - Documentar nueva estructura en `docs/ARCHITECTURE.md`
+  - Actualizar `README.md` con estructura organizada
 
-**Métricas de Éxito:** RPO < 1h, RTO < 4h, 100% compliance
+**Métricas de Éxito:** Estructura clara y documentada, 0 archivos duplicados, DRY score > 90%
 
 ---
 
@@ -184,6 +205,7 @@ Mejorar gestión de datos, backups y compliance
 2. ✅ **OBS-002 completado** - Métricas básicas (latencia, errores) implementadas
 3. ✅ **OBS-003 completado** - Health checks avanzados implementados
 4. **Semana 4:** Configurar trazas distribuidas (OBS-004)
+5. **Semanas 13-14:** **NUEVA FASE** - Organización del proyecto (ORG-001 a ORG-007)
 
 ### 📞 Contactos
 - **Tech Lead:** [Nombre]
@@ -194,6 +216,6 @@ Mejorar gestión de datos, backups y compliance
 ---
 
 *Plan de acción generado automáticamente basado en auditoría del 2025-08-29*  
-*Última actualización: 2025-08-29 - Semana 2 completada: SEC-001 a SEC-005 ✅ | Semana 3: OBS-001 ✅ | BROU con indicadores visuales ✅ | OBS-002 métricas básicas ✅ | OBS-003 health checks avanzados ✅*
+*Última actualización: 2025-08-30 - Semana 2 completada: SEC-001 a SEC-005 ✅ | Semana 3: OBS-001 ✅ | BROU con indicadores visuales ✅ | OBS-002 métricas básicas ✅ | OBS-003 health checks avanzados ✅ | **NUEVA FASE ORG agregada para semanas 13-14***
 </content>
 <parameter name="filePath">c:\Users\apmauj\repos\sifu\docs\PLAN_ACCION_README.md
