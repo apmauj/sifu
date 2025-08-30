@@ -88,8 +88,8 @@ const Dashboard = ({ isOpen, onClose }) => {
               <Card>
                 <CardBody>
                   <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Estado General del Sistema</h3>
-                  <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${getStatusColor(healthData.overall_status)}`}>
-                    {getStatusIcon(healthData.overall_status)} {healthData.overall_status || 'Unknown'}
+                  <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${getStatusColor(healthData.status)}`}>
+                    {getStatusIcon(healthData.status)} {healthData.status || 'Unknown'}
                   </div>
                   {healthData.timestamp && (
                     <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
@@ -100,16 +100,16 @@ const Dashboard = ({ isOpen, onClose }) => {
               </Card>
 
               {/* Detalles de Checks */}
-              {healthData.checks && (
+              {healthData.checks && Array.isArray(healthData.checks) && (
                 <div>
                   <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Detalles de Verificaciones</h3>
                   <div className="grid gap-4">
-                    {Object.entries(healthData.checks).map(([checkName, checkData]) => (
-                      <Card key={checkName}>
+                    {healthData.checks.map((checkData, index) => (
+                      <Card key={index}>
                         <CardBody>
                           <div className="flex items-center justify-between mb-2">
                             <h4 className="font-medium capitalize text-gray-900 dark:text-white">
-                              {checkName.replace(/_/g, ' ')}
+                              {checkData.name.replace(/_/g, ' ')}
                             </h4>
                             <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(checkData.status)}`}>
                               {getStatusIcon(checkData.status)} {checkData.status}
@@ -118,7 +118,7 @@ const Dashboard = ({ isOpen, onClose }) => {
                           {checkData.message && (
                             <p className="text-sm text-gray-600 dark:text-gray-300">{checkData.message}</p>
                           )}
-                          {checkData.details && (
+                          {checkData.details && Object.keys(checkData.details).length > 0 && (
                             <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
                               <pre className="whitespace-pre-wrap">{JSON.stringify(checkData.details, null, 2)}</pre>
                             </div>
@@ -130,22 +130,42 @@ const Dashboard = ({ isOpen, onClose }) => {
                 </div>
               )}
 
-              {/* Métricas de Aplicación */}
-              {healthData.metrics && (
+              {/* Información del Sistema */}
+              {healthData.system_info && (
                 <Card>
                   <CardBody>
-                    <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Métricas de Aplicación</h3>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                      {Object.entries(healthData.metrics).map(([key, value]) => (
-                        <div key={key} className="text-center">
-                          <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{value}</div>
-                          <div className="text-sm text-gray-500 dark:text-gray-400 capitalize">{key.replace(/_/g, ' ')}</div>
-                        </div>
-                      ))}
+                    <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Información del Sistema</h3>
+                    <div className="text-sm text-gray-600 dark:text-gray-300">
+                      <pre className="whitespace-pre-wrap">{JSON.stringify(healthData.system_info, null, 2)}</pre>
                     </div>
                   </CardBody>
                 </Card>
               )}
+
+              {/* Estadísticas Generales */}
+              <Card>
+                <CardBody>
+                  <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Estadísticas Generales</h3>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{healthData.total_checks}</div>
+                      <div className="text-sm text-gray-500 dark:text-gray-400">Total de verificaciones</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-green-600 dark:text-green-400">{healthData.healthy_checks}</div>
+                      <div className="text-sm text-gray-500 dark:text-gray-400">Verificaciones saludables</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{healthData.warning_checks}</div>
+                      <div className="text-sm text-gray-500 dark:text-gray-400">Verificaciones con advertencia</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-red-600 dark:text-red-400">{healthData.critical_checks}</div>
+                      <div className="text-sm text-gray-500 dark:text-gray-400">Verificaciones críticas</div>
+                    </div>
+                  </div>
+                </CardBody>
+              </Card>
             </div>
           )}
         </div>
