@@ -217,7 +217,7 @@ const ExchangeSearchForm = ({ onSearch, isLoading }) => {
             {t('exchange.all_currencies') || 'Todas las monedas'}
           </button>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 md:gap-3">
           {currencyButtons.map(c => (
             <button
               key={c.code}
@@ -225,8 +225,8 @@ const ExchangeSearchForm = ({ onSearch, isLoading }) => {
               onClick={() => toggleCurrency(c.code)}
               aria-pressed={selectedCurrency === c.code}
               aria-label={`${c.label} ${selectedCurrency === c.code ? '(activo)' : ''}`}
-              className={`px-4 py-2 rounded-md text-base flex items-center gap-2 border transition-colors font-semibold w-full ${selectedCurrency === c.code ? 'bg-blue-600 text-white border-blue-600' : 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 border-gray-300 dark:border-gray-600 hover:bg-gray-300 dark:hover:bg-gray-600'}`}
-              style={{minWidth: '120px', justifyContent: 'center'}}>
+              className={`px-3 md:px-4 py-2 rounded-md text-sm md:text-base flex items-center gap-2 border transition-colors font-semibold w-full ${selectedCurrency === c.code ? 'bg-blue-600 text-white border-blue-600' : 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 border-gray-300 dark:border-gray-600 hover:bg-gray-300 dark:hover:bg-gray-600'}`}
+              style={{justifyContent: 'center'}}>
               <Flag code={c.code} className="flag-icon" style={{verticalAlign: 'middle'}} />
               <span style={{verticalAlign: 'middle'}}>{c.code}</span>
             </button>
