@@ -1,21 +1,28 @@
 const API_BASE_URL = import.meta.env.VITE_PUBLIC_API_URL || 'http://localhost:8000';
 
-console.log('HealthService - API_BASE_URL:', API_BASE_URL);
+// Normalize the API base URL to ensure it doesn't have double /api
+const normalizeApiUrl = (baseUrl) => {
+  // Remove trailing slash
+  let url = baseUrl.replace(/\/$/, '');
+
+  // If it ends with /api, remove it since we'll add it in the endpoints
+  if (url.endsWith('/api')) {
+    url = url.slice(0, -4); // Remove '/api'
+  }
+
+  return url;
+};
+
+const NORMALIZED_API_URL = normalizeApiUrl(API_BASE_URL);
 
 class HealthService {
   async getSimpleHealth() {
-    console.log('HealthService - getSimpleHealth called');
     try {
-      const url = `${API_BASE_URL}/api/health/simple`;
-      console.log('HealthService - Fetching from:', url);
-      const response = await fetch(url);
-      console.log('HealthService - Response status:', response.status);
+      const response = await fetch(`${NORMALIZED_API_URL}/api/health/simple`);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      const data = await response.json();
-      console.log('HealthService - Response data:', data);
-      return data;
+      return await response.json();
     } catch (error) {
       console.error('Error fetching simple health:', error);
       return {
@@ -25,7 +32,7 @@ class HealthService {
         checks: {
           backend_availability: {
             status: 'critical',
-            message: 'No se puede conectar al backend. Asegúrate de que esté ejecutándose en ' + API_BASE_URL
+            message: 'No se puede conectar al backend. Asegúrate de que esté ejecutándose en ' + NORMALIZED_API_URL
           }
         }
       };
@@ -33,18 +40,12 @@ class HealthService {
   }
 
   async getAdvancedHealth() {
-    console.log('HealthService - getAdvancedHealth called');
     try {
-      const url = `${API_BASE_URL}/api/health/advanced`;
-      console.log('HealthService - Fetching from:', url);
-      const response = await fetch(url);
-      console.log('HealthService - Response status:', response.status);
+      const response = await fetch(`${NORMALIZED_API_URL}/api/health/advanced`);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      const data = await response.json();
-      console.log('HealthService - Response data:', data);
-      return data;
+      return await response.json();
     } catch (error) {
       console.error('Error fetching advanced health:', error);
       return {
@@ -54,7 +55,7 @@ class HealthService {
         checks: {
           backend_availability: {
             status: 'critical',
-            message: 'No se puede conectar al backend. Asegúrate de que esté ejecutándose en ' + API_BASE_URL
+            message: 'No se puede conectar al backend. Asegúrate de que esté ejecutándose en ' + NORMALIZED_API_URL
           }
         }
       };
