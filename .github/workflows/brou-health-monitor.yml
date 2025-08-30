@@ -46,14 +46,16 @@ jobs:
           # Configurar variables
           FAIL_ON_EMPTY="${{ github.event.inputs.fail_on_empty || 'true' }}"
           MAX_AGE_MINUTES="${{ github.event.inputs.max_age_minutes || '60' }}"
+          BROU_ENDPOINT="https://sifu.apmauj.com/api/brou/current?full=true"
 
           echo "Configuración:"
           echo "- FAIL_ON_EMPTY: $FAIL_ON_EMPTY"
           echo "- MAX_AGE_MINUTES: $MAX_AGE_MINUTES"
+          echo "- BROU_ENDPOINT: $BROU_ENDPOINT"
 
-          # Hacer request a BROU endpoint
-          echo "Consultando BROU endpoint..."
-          RESPONSE=$(curl -s -w "\nHTTP_STATUS:%{http_code}" http://127.0.0.1:8000/api/brou/current?full=true)
+          # Hacer request a BROU endpoint desplegado
+          echo "Consultando BROU endpoint en producción..."
+          RESPONSE=$(curl -s -w "\nHTTP_STATUS:%{http_code}" "$BROU_ENDPOINT")
 
           # Separar body y status
           BODY=$(echo "$RESPONSE" | head -n -1)
