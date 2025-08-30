@@ -477,11 +477,13 @@ function App() {
                 </a>
               </p>
               <p className="text-xs">
-                {t('footer.developed_with_love') || 'Desarrollado con '}<span 
+                <span 
                   className="cursor-pointer hover:text-red-500 transition-colors" 
                   onClick={() => setIsDashboardOpen(true)}
                   title="Abrir Dashboard de Monitoreo"
-                >❤️</span>{' usando React, FastAPI y Python'}
+                >
+                  {t('footer.developed_with_love') || 'Desarrollado con ❤️ usando React, FastAPI y Python'}
+                </span>
               </p>
               <div className="flex justify-center items-center my-2">
                 <UruguayFlagIcon className="flag-icon" aria-label="Uruguay" style={{verticalAlign: 'middle'}} />

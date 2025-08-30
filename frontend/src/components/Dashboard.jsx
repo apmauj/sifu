@@ -30,13 +30,13 @@ const Dashboard = ({ isOpen, onClose }) => {
   const getStatusColor = (status) => {
     switch (status?.toLowerCase()) {
       case 'healthy':
-        return 'text-green-600 bg-green-50 border-green-200';
+        return 'text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800';
       case 'warning':
-        return 'text-yellow-600 bg-yellow-50 border-yellow-200';
+        return 'text-yellow-600 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800';
       case 'critical':
-        return 'text-red-600 bg-red-50 border-red-200';
+        return 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800';
       default:
-        return 'text-gray-600 bg-gray-50 border-gray-200';
+        return 'text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-900/20 border-gray-200 dark:border-gray-800';
     }
   };
 
@@ -56,13 +56,13 @@ const Dashboard = ({ isOpen, onClose }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-        <div className="flex justify-between items-center p-6 border-b">
-          <h2 className="text-2xl font-bold text-gray-900">Dashboard de Monitoreo</h2>
+    <div className="fixed inset-0 bg-black bg-opacity-50 dark:bg-black dark:bg-opacity-70 flex items-center justify-center z-50">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+        <div className="flex justify-between items-center p-6 border-b border-gray-200 dark:border-gray-700">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Dashboard de Monitoreo</h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 text-2xl"
+            className="text-gray-400 hover:text-gray-600 dark:text-gray-300 dark:hover:text-gray-100 text-2xl"
           >
             ×
           </button>
@@ -71,14 +71,14 @@ const Dashboard = ({ isOpen, onClose }) => {
         <div className="p-6">
           {loading && (
             <div className="text-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-              <p className="text-gray-600">Cargando datos de salud...</p>
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 dark:border-blue-400 mx-auto mb-4"></div>
+              <p className="text-gray-600 dark:text-gray-300">Cargando datos de salud...</p>
             </div>
           )}
 
           {error && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-              <p className="text-red-800">{error}</p>
+            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-6">
+              <p className="text-red-800 dark:text-red-200">{error}</p>
             </div>
           )}
 
@@ -87,12 +87,12 @@ const Dashboard = ({ isOpen, onClose }) => {
               {/* Estado General */}
               <Card>
                 <CardBody>
-                  <h3 className="text-lg font-semibold mb-4">Estado General del Sistema</h3>
+                  <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Estado General del Sistema</h3>
                   <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${getStatusColor(healthData.overall_status)}`}>
                     {getStatusIcon(healthData.overall_status)} {healthData.overall_status || 'Unknown'}
                   </div>
                   {healthData.timestamp && (
-                    <p className="text-sm text-gray-500 mt-2">
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
                       Última actualización: {new Date(healthData.timestamp).toLocaleString()}
                     </p>
                   )}
@@ -102,13 +102,13 @@ const Dashboard = ({ isOpen, onClose }) => {
               {/* Detalles de Checks */}
               {healthData.checks && (
                 <div>
-                  <h3 className="text-lg font-semibold mb-4">Detalles de Verificaciones</h3>
+                  <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Detalles de Verificaciones</h3>
                   <div className="grid gap-4">
                     {Object.entries(healthData.checks).map(([checkName, checkData]) => (
                       <Card key={checkName}>
                         <CardBody>
                           <div className="flex items-center justify-between mb-2">
-                            <h4 className="font-medium capitalize">
+                            <h4 className="font-medium capitalize text-gray-900 dark:text-white">
                               {checkName.replace(/_/g, ' ')}
                             </h4>
                             <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(checkData.status)}`}>
@@ -116,10 +116,10 @@ const Dashboard = ({ isOpen, onClose }) => {
                             </div>
                           </div>
                           {checkData.message && (
-                            <p className="text-sm text-gray-600">{checkData.message}</p>
+                            <p className="text-sm text-gray-600 dark:text-gray-300">{checkData.message}</p>
                           )}
                           {checkData.details && (
-                            <div className="mt-2 text-xs text-gray-500">
+                            <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
                               <pre className="whitespace-pre-wrap">{JSON.stringify(checkData.details, null, 2)}</pre>
                             </div>
                           )}
@@ -134,12 +134,12 @@ const Dashboard = ({ isOpen, onClose }) => {
               {healthData.metrics && (
                 <Card>
                   <CardBody>
-                    <h3 className="text-lg font-semibold mb-4">Métricas de Aplicación</h3>
+                    <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Métricas de Aplicación</h3>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                       {Object.entries(healthData.metrics).map(([key, value]) => (
                         <div key={key} className="text-center">
-                          <div className="text-2xl font-bold text-blue-600">{value}</div>
-                          <div className="text-sm text-gray-500 capitalize">{key.replace(/_/g, ' ')}</div>
+                          <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{value}</div>
+                          <div className="text-sm text-gray-500 dark:text-gray-400 capitalize">{key.replace(/_/g, ' ')}</div>
                         </div>
                       ))}
                     </div>
@@ -150,16 +150,16 @@ const Dashboard = ({ isOpen, onClose }) => {
           )}
         </div>
 
-        <div className="flex justify-end p-6 border-t">
+        <div className="flex justify-end p-6 border-t border-gray-200 dark:border-gray-700">
           <button
             onClick={onClose}
-            className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 mr-2"
+            className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 mr-2"
           >
             Cerrar
           </button>
           <button
             onClick={fetchHealthData}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            className="px-4 py-2 bg-blue-600 dark:bg-blue-500 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600"
           >
             Actualizar
           </button>
