@@ -11,6 +11,7 @@ import logging
 from sqlalchemy.orm import Session
 from database import UIRecord, URRecord, ExchangeRateRecord
 import io
+from circuit_breaker import get_circuit_breaker, CircuitBreakerOpenException
 from constants import (
     UR_MONTH_NAMES,
     URL_BCU_EXCHANGE_RATES,
@@ -55,15 +56,21 @@ class ExcelProcessor:
             headers = {
                 'User-Agent': HTTP_USER_AGENT
             }
-            
-            response = requests.get(self.url, timeout=self.timeout, headers=headers)
-            response.raise_for_status()
-            
+
+            # Use circuit breaker to protect INE API calls
+            cb = get_circuit_breaker("INE_API")
+            with cb:
+                response = requests.get(self.url, timeout=self.timeout, headers=headers)
+                response.raise_for_status()
+
             # Read Excel file using xlrd for old .xls files
             excel_data = pd.read_excel(io.BytesIO(response.content), engine=EXCEL_ENGINE_XLS)
             logger.info(LOG_EXCEL_DOWNLOADED.format(count=len(excel_data)))
             return excel_data
-            
+
+        except CircuitBreakerOpenException:
+            logger.warning("Circuit breaker is OPEN for INE API - skipping download")
+            return None
         except requests.RequestException as e:
             logger.error(f"Error downloading file: {e}")
             return None
@@ -204,15 +211,21 @@ class URExcelProcessor:
             headers = {
                 'User-Agent': HTTP_USER_AGENT
             }
-            
-            response = requests.get(self.url, timeout=self.timeout, headers=headers)
-            response.raise_for_status()
-            
+
+            # Use circuit breaker to protect BHU API calls
+            cb = get_circuit_breaker("BHU_API")
+            with cb:
+                response = requests.get(self.url, timeout=self.timeout, headers=headers)
+                response.raise_for_status()
+
             # Read Excel file
             excel_data = pd.read_excel(io.BytesIO(response.content), engine=EXCEL_ENGINE_XLS)
             logger.info(LOG_EXCEL_UR_DOWNLOADED.format(count=len(excel_data)))
             return excel_data
-            
+
+        except CircuitBreakerOpenException:
+            logger.warning("Circuit breaker is OPEN for BHU API - skipping download")
+            return None
         except requests.RequestException as e:
             logger.error(f"Error downloading UR file: {e}")
             return None
@@ -469,15 +482,21 @@ class ExchangeRateExcelProcessor:
             headers = {
                 'User-Agent': HTTP_USER_AGENT
             }
-            
-            response = requests.get(self.url, timeout=self.timeout, headers=headers)
-            response.raise_for_status()
-            
+
+            # Use circuit breaker to protect INE API calls
+            cb = get_circuit_breaker("INE_API")
+            with cb:
+                response = requests.get(self.url, timeout=self.timeout, headers=headers)
+                response.raise_for_status()
+
             # Read Excel file
             excel_data = pd.read_excel(io.BytesIO(response.content), engine='openpyxl')
             logger.info(f"Exchange rate Excel downloaded successfully. Rows: {len(excel_data)}")
             return excel_data
-            
+
+        except CircuitBreakerOpenException:
+            logger.warning("Circuit breaker is OPEN for INE API - skipping download")
+            return None
         except requests.RequestException as e:
             logger.error(f"Error downloading exchange rate file: {e}")
             return None

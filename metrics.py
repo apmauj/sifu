@@ -57,6 +57,20 @@ class MetricsCollector:
         self._endpoint_stats: Dict[str, EndpointStats] = defaultdict(EndpointStats)
         self._start_time = datetime.utcnow()
 
+        # Import performance budget manager (lazy import to avoid circular dependency)
+        self._performance_budget_manager = None
+
+    def _get_performance_budget_manager(self):
+        """Lazy import of performance budget manager"""
+        if self._performance_budget_manager is None:
+            try:
+                from performance_budget import performance_budget_manager
+                self._performance_budget_manager = performance_budget_manager
+            except ImportError:
+                # Performance budget module not available
+                pass
+        return self._performance_budget_manager
+
     def record_request(self, method: str, endpoint: str, status_code: int,
                       duration: float, error: bool = False, error_message: str = ""):
         """Record a request metric"""
@@ -87,6 +101,12 @@ class MetricsCollector:
                 stats.min_duration = duration
             if duration > stats.max_duration:
                 stats.max_duration = duration
+
+        # Update performance budget throughput metrics
+        budget_manager = self._get_performance_budget_manager()
+        if budget_manager:
+            budget_manager.update_throughput("global")
+            budget_manager.update_throughput(key)
 
     def get_recent_requests(self, limit: int = 100) -> List[RequestMetrics]:
         """Get recent requests (most recent first)"""

@@ -11,6 +11,7 @@ from datetime import datetime, timedelta
 import logging
 from sqlalchemy.orm import Session
 from database import BROURecord, SessionLocal
+from circuit_breaker import get_circuit_breaker, CircuitBreakerOpenException
 
 logger = logging.getLogger(__name__)
 
@@ -130,12 +131,18 @@ class BROUProcessor:
             headers = {
                 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
             }
-            
-            response = requests.get(self.portlet_url, headers=headers, timeout=15)
-            response.raise_for_status()
-            
+
+            # Use circuit breaker to protect BROU API calls
+            cb = get_circuit_breaker("BROU_API")
+            with cb:
+                response = requests.get(self.portlet_url, headers=headers, timeout=15)
+                response.raise_for_status()
+
             return self._parse_html(response.text)
-            
+
+        except CircuitBreakerOpenException:
+            logger.warning("Circuit breaker is OPEN for BROU API - skipping request")
+            return None
         except requests.RequestException as e:
             logger.error(f"Error al obtener datos del BROU: {e}")
             return None

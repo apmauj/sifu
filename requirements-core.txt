@@ -19,3 +19,4 @@ python-dotenv==1.0.0
 PyJWT==2.8.0
 bcrypt==4.1.2
 psutil==5.9.8
+slowapi==0.1.9

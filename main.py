@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-from fastapi import FastAPI, HTTPException, Depends, BackgroundTasks
+from fastapi import FastAPI, HTTPException, Depends, BackgroundTasks, Request
 from contextlib import asynccontextmanager
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -19,6 +19,7 @@ from threading import Lock as ThreadLock
 from bootstrap import perform_bootstrap
 
 from database import get_db
+from database_optimizer import DatabaseOptimizer
 from models import UIResponse, RefreshResponse, URResponse, ExchangeRateResponse
 from services import UIService, URService, ExchangeRateService
 from excel_processor import ExcelProcessor, URExcelProcessor, ExchangeRateExcelProcessor, ExchangeRateBCUProcessor
@@ -36,7 +37,7 @@ from https_middleware import HTTPSRedirectMiddleware, SSLHeadersMiddleware
 from auth_routes import router as auth_router
 from rate_limit import RateLimitMiddleware, EndpointRateLimitMiddleware
 from secret_manager import secret_manager
-from secure_logging import init_security_logging, get_security_logger
+from circuit_breaker import get_all_circuit_breakers, get_circuit_breaker_status, reset_circuit_breaker
 from config_validator import validate_configuration_on_startup
 
 # Metrics middleware
@@ -126,9 +127,24 @@ else:
         CronTrigger = None  # type: ignore
         pytz = None  # type: ignore
 
-# Configure logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+# Correlation ID middleware for distributed tracing
+from correlation_middleware import CorrelationIdMiddleware, setup_correlation_logging, get_correlation_logger
+
+# Configure correlation logging
+setup_correlation_logging()
+logger = get_correlation_logger(__name__)
+
+# Alert and dashboard services
+from alerts import alert_manager
+from dashboard import dashboard_service
+
+# Performance budget service
+try:
+    from performance_budget import get_performance_budget_manager
+    performance_budget_manager = get_performance_budget_manager()
+except ImportError:
+    logger.warning("Performance budget module not available")
+    performance_budget_manager = None
 
 # Flag para omitir bootstrap y refresh en startup (usado en tests / CI)
 SKIP_BOOTSTRAP = os.getenv("SIFU_SKIP_BOOTSTRAP") == "1"
@@ -189,6 +205,18 @@ async def _execute_startup():
         _update_brou_cache()
     except Exception as e:  # noqa: BLE001
         logger.error(f"Cache warmup failed: {e}")
+
+    # Initialize database optimizer
+    try:
+        from database import SessionLocal
+        db = SessionLocal()
+        optimizer = DatabaseOptimizer(db)
+        logger.info("[DatabaseOptimizer] Initializing database optimizations...")
+        optimizer.create_optimized_indexes()
+        logger.info("[DatabaseOptimizer] Database optimizations completed")
+        db.close()
+    except Exception as e:  # noqa: BLE001
+        logger.error(f"[DatabaseOptimizer] Initialization failed: {e}")
 
     # Launch hourly refresher once
     if not hasattr(_execute_startup, "_refresher_started"):
@@ -285,6 +313,9 @@ app = FastAPI(
     ]
 )
 
+# Add correlation ID middleware (must be first)
+app.add_middleware(CorrelationIdMiddleware)
+
 # Add HTTPS security middlewares
 app.add_middleware(HTTPSRedirectMiddleware)
 app.add_middleware(SSLHeadersMiddleware)
@@ -308,13 +339,18 @@ app.add_middleware(MetricsMiddleware)
 # Include authentication router
 app.include_router(auth_router)
 
-@app.get("/", tags=["Sistema"])
-async def root_index():
+@app.get("/api/debug/correlation", tags=["Sistema"])
+async def debug_correlation_id(request: Request):
+    """Endpoint de debug para probar correlation IDs."""
+    from correlation_middleware import get_correlation_id
+
+    correlation_id = get_correlation_id(request)
+    logger.info(f"Debug endpoint called with correlation ID: {correlation_id}")
+
     return {
-        "name": API_TITLE,
-        "version": API_VERSION,
-        "docs": API_DOCS_URL,
-        "health": ENDPOINT_HEALTH,
+        "correlation_id": correlation_id,
+        "message": "Check server logs for correlation ID tracing",
+        "timestamp": datetime.utcnow().isoformat()
     }
 
 # -----------------------------------------------------------------------------
@@ -1421,6 +1457,150 @@ async def get_simple_metrics():
 
 
 # =============================================================================
+# DASHBOARD ENDPOINTS
+# =============================================================================
+
+@app.get("/api/dashboard", tags=["Sistema"])
+async def get_dashboard():
+    """Obtener dashboard completo con métricas, alertas y estado del sistema."""
+    return dashboard_service.get_dashboard_data()
+
+
+@app.get("/api/dashboard/summary", tags=["Sistema"])
+async def get_dashboard_summary():
+    """Obtener resumen simplificado del dashboard para monitoreo rápido."""
+    return dashboard_service.get_dashboard_summary()
+
+
+# =============================================================================
+# ALERTS ENDPOINTS
+# =============================================================================
+
+@app.get("/api/alerts", tags=["Sistema"])
+async def get_alerts():
+    """Obtener todas las alertas activas."""
+    return {"alerts": alert_manager.get_active_alerts()}
+
+
+@app.get("/api/alerts/all", tags=["Sistema"])
+async def get_all_alerts(limit: int = 50):
+    """Obtener todas las alertas (activas y resueltas)."""
+    return {"alerts": alert_manager.get_all_alerts(limit)}
+
+
+@app.get("/api/alerts/summary", tags=["Sistema"])
+async def get_alerts_summary():
+    """Obtener resumen estadístico de alertas."""
+    return alert_manager.get_alert_summary()
+
+
+@app.put("/api/alerts/{alert_id}/acknowledge", tags=["Sistema"])
+async def acknowledge_alert(alert_id: str):
+    """Marcar una alerta como reconocida."""
+    success = alert_manager.acknowledge_alert(alert_id)
+    if success:
+        return {"message": f"Alert {alert_id} acknowledged"}
+    raise HTTPException(status_code=404, detail="Alert not found")
+
+
+@app.put("/api/alerts/{alert_id}/resolve", tags=["Sistema"])
+async def resolve_alert(alert_id: str):
+    """Resolver manualmente una alerta."""
+    success = alert_manager.resolve_alert(alert_id)
+    if success:
+        return {"message": f"Alert {alert_id} resolved"}
+    raise HTTPException(status_code=404, detail="Alert not found")
+
+
+# =============================================================================
+# PERFORMANCE BUDGET ENDPOINTS
+# =============================================================================
+
+@app.get("/api/performance/budgets", tags=["Sistema"])
+async def get_performance_budgets():
+    """Obtener todos los budgets de performance configurados."""
+    try:
+        from performance_budget import performance_budget_manager
+        budgets = performance_budget_manager.get_all_budgets()
+        return {
+            "budgets": budgets,
+            "total_count": len(budgets),
+            "description": "Performance budgets based on roadmap targets (Latency <200ms, Throughput >1000 req/min)"
+        }
+    except Exception as e:
+        logger.error(f"Error getting performance budgets: {e}")
+        raise HTTPException(status_code=500, detail=f"Error retrieving performance budgets: {str(e)}")
+
+
+@app.get("/api/performance/budgets/status", tags=["Sistema"])
+async def get_performance_budgets_status():
+    """Obtener estado actual de todos los budgets de performance."""
+    try:
+        from performance_budget import performance_budget_manager
+        status = performance_budget_manager.get_budget_status()
+        return {
+            "budget_status": status,
+            "timestamp": datetime.utcnow().isoformat(),
+            "description": "Current performance budget status with health indicators"
+        }
+    except Exception as e:
+        logger.error(f"Error getting performance budget status: {e}")
+        raise HTTPException(status_code=500, detail=f"Error retrieving performance budget status: {str(e)}")
+
+
+@app.get("/api/performance/throughput", tags=["Sistema"])
+async def get_throughput_metrics():
+    """Obtener métricas de throughput actuales."""
+    try:
+        from performance_budget import performance_budget_manager
+        throughput = performance_budget_manager.get_throughput_metrics("global")
+        return {
+            "throughput": throughput,
+            "timestamp": datetime.utcnow().isoformat(),
+            "description": "Current request throughput metrics (requests per minute/hour)"
+        }
+    except Exception as e:
+        logger.error(f"Error getting throughput metrics: {e}")
+        raise HTTPException(status_code=500, detail=f"Error retrieving throughput metrics: {str(e)}")
+
+
+@app.get("/api/performance/budgets/{budget_name}", tags=["Sistema"])
+async def get_performance_budget(budget_name: str):
+    """Obtener detalles de un budget de performance específico."""
+    try:
+        from performance_budget import performance_budget_manager
+        budget = performance_budget_manager.get_budget(budget_name)
+        if budget is None:
+            raise HTTPException(status_code=404, detail=f"Performance budget '{budget_name}' not found")
+
+        # Get current status for this budget
+        status = performance_budget_manager.get_budget_status()
+        budget_status = status.get(budget_name)
+
+        return {
+            "budget": {
+                "name": budget.name,
+                "type": budget.budget_type.value,
+                "target_value": budget.target_value,
+                "warning_threshold": budget.warning_threshold,
+                "critical_threshold": budget.critical_threshold,
+                "warning_value": budget.warning_value,
+                "critical_value": budget.critical_value,
+                "window_minutes": budget.window_minutes,
+                "description": budget.description,
+                "enabled": budget.enabled
+            },
+            "current_status": budget_status,
+            "timestamp": datetime.utcnow().isoformat()
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting performance budget {budget_name}: {e}")
+        raise HTTPException(status_code=500, detail=f"Error retrieving performance budget: {str(e)}")
+
+
+# =============================================================================
 # ADVANCED HEALTH CHECK ENDPOINTS
 # =============================================================================
 
@@ -1447,6 +1627,74 @@ async def get_simple_health_endpoint():
     Retorna estado simple (OK/FAIL) con conteo de issues para monitoreo básico.
     """
     return await get_simple_health()
+
+
+# =============================================================================
+# CIRCUIT BREAKER ENDPOINTS
+# =============================================================================
+
+@app.get("/api/circuit-breakers", tags=["Sistema"])
+async def get_circuit_breakers_status():
+    """Obtener estado de todos los circuit breakers."""
+    try:
+        all_cb = get_all_circuit_breakers()
+        status = {}
+
+        for name, cb in all_cb.items():
+            cb_status = get_circuit_breaker_status(name)
+            if cb_status:
+                status[name] = cb_status
+
+        return {
+            "circuit_breakers": status,
+            "total_count": len(status),
+            "open_count": sum(1 for cb in status.values() if cb["state"] == "open"),
+            "half_open_count": sum(1 for cb in status.values() if cb["state"] == "half_open"),
+            "closed_count": sum(1 for cb in status.values() if cb["state"] == "closed")
+        }
+
+    except Exception as e:
+        logger.error(f"Error getting circuit breaker status: {e}")
+        raise HTTPException(status_code=500, detail=f"Error retrieving circuit breaker status: {str(e)}")
+
+
+@app.get("/api/circuit-breakers/{name}", tags=["Sistema"])
+async def get_circuit_breaker_status_endpoint(name: str):
+    """Obtener estado de un circuit breaker específico."""
+    try:
+        status = get_circuit_breaker_status(name)
+        if status is None:
+            raise HTTPException(status_code=404, detail=f"Circuit breaker '{name}' not found")
+
+        return status
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting circuit breaker status for {name}: {e}")
+        raise HTTPException(status_code=500, detail=f"Error retrieving circuit breaker status: {str(e)}")
+
+
+@app.post("/api/circuit-breakers/{name}/reset", tags=["Sistema"])
+async def reset_circuit_breaker_endpoint(name: str):
+    """Resetear un circuit breaker a estado cerrado."""
+    try:
+        success = reset_circuit_breaker(name)
+        if not success:
+            raise HTTPException(status_code=404, detail=f"Circuit breaker '{name}' not found")
+
+        logger.info(f"Circuit breaker '{name}' reset by API call")
+        return {
+            "message": f"Circuit breaker '{name}' has been reset to closed state",
+            "circuit_breaker": name,
+            "action": "reset"
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error resetting circuit breaker {name}: {e}")
+        raise HTTPException(status_code=500, detail=f"Error resetting circuit breaker: {str(e)}")
 
 
 # -----------------------------------------------------------------------------

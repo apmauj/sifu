@@ -1,6 +1,16 @@
 # 📋 Plan de Acción de Mejora - SIFU
 
-- [- [x] **OBS-003** - Health checks avanzados (2d) ✅ COMPLETADO] **OBS-002** - Métricas básicas (latencia, errores) (2d) ✅ COMPLETADO*Fecha de Creación:** 2025-08-29  
+- [- [x] **OBS-003** -#### Semana 6
+- [x] **PERF-001** - Rate limiting por IP/endpoint (2d) ✅ COMPLETADO
+- [x] **PERF-002** - Optimizar consultas BD (índices, caching) (3d) 🔄 EN PROGRESOalth checks avanzados (2d) ✅ COMPLETADO] **OBS-002** - Métricas básicas (latencia, errores) (2d) ✅ COMPLETADO*Fecha de Creación:** 2025-## 🎯 Próximos Pasos Inmediatos
+
+1. ✅ **BROU completado** - API con persistencia e indicadores visuales implementados
+2. ✅ **OBS-002 completado** - Métricas básicas (latencia, errores) implementadas
+3. ✅ **OBS-003 completado** - Health checks avanzados implementados
+4. ✅ **OBS-004 completado** - Trazas distribuidas (correlation IDs) implementadas y probadas
+5. ✅ **OBS-005 completado** - Alertas y dashboards implementados y probados
+6. **Semanas 6-7:** Configurar rate limiting y optimización de BD (PERF-001, PERF-002)
+7. **Semanas 13-14:** **NUEVA FASE** - Organización del proyecto (ORG-001 a ORG-007)
 **Versión:** 1.0  
 **Estado:** Activo
 
@@ -41,24 +51,24 @@ Implementar logging estructurado, métricas y monitoreo completo
 - [x] **OBS-002** - Métricas básicas (latencia, errores) (2d) � EN PROGRESO
 
 #### Semana 4
-- [ ] **OBS-003** - Health checks avanzados (2d) � EN PROGRESO
-- [ ] **OBS-004** - Trazas distribuidas (correlation IDs) (3d) 🔴
+- [x] **OBS-004** - Trazas distribuidas (correlation IDs) (3d) ✅ COMPLETADO
+- [x] **OBS-005** - Alertas y dashboards (2d) ✅ COMPLETADO
 
 #### Semana 5
-- [ ] **OBS-005** - Alertas y dashboards (2d) 🔴
+- [x] **OBS-005** - Alertas y dashboards (2d) ✅ COMPLETADO
 
 **Métricas de Éxito:** 100% requests loggeados, MTTR < 30min
 
-### ⚡ **Fase 3: Performance** (Semanas 6-7) - PRIORIDAD ALTA
+### ⚡ **Fase 3: Performance** (Semanas 6-7) - PRIORIDAD ALTA - EN PROGRESO
 Optimizar rendimiento, implementar caching y escalabilidad
 
 #### Semana 6
-- [ ] **PERF-001** - Rate limiting por IP/endpoint (2d) 🔴
-- [ ] **PERF-002** - Optimizar consultas BD (índices, caching) (3d) 🔴
+- [ ] **PERF-001** - Rate limiting por IP/endpoint (2d) � EN PROGRESO
+- [x] **PERF-002** - Optimizar consultas BD (índices, caching) (3d) ✅ COMPLETADO
 
 #### Semana 7
-- [ ] **PERF-003** - Circuit breakers para externos (2d) 🔴
-- [ ] **PERF-004** - Perf budgets y alertas (1d) 🔴
+- [x] **PERF-003** - Circuit breakers para externos (2d) ✅ COMPLETADO
+- [x] **PERF-004** - Perf budgets y alertas (1d) ✅ COMPLETADO
 
 **Métricas de Éxito:** Latencia < 200ms, Throughput > 1000 req/min
 
@@ -204,8 +214,9 @@ Reorganizar estructura del proyecto según mejores prácticas, eliminar código 
 1. ✅ **BROU completado** - API con persistencia e indicadores visuales implementados
 2. ✅ **OBS-002 completado** - Métricas básicas (latencia, errores) implementadas
 3. ✅ **OBS-003 completado** - Health checks avanzados implementados
-4. **Semana 4:** Configurar trazas distribuidas (OBS-004)
-5. **Semanas 13-14:** **NUEVA FASE** - Organización del proyecto (ORG-001 a ORG-007)
+4. ✅ **OBS-004 completado** - Trazas distribuidas (correlation IDs) implementadas y probadas
+5. **Semana 5:** Configurar alertas y dashboards (OBS-005)
+6. **Semanas 13-14:** **NUEVA FASE** - Organización del proyecto (ORG-001 a ORG-007)
 
 ### 📞 Contactos
 - **Tech Lead:** [Nombre]
@@ -216,6 +227,6 @@ Reorganizar estructura del proyecto según mejores prácticas, eliminar código 
 ---
 
 *Plan de acción generado automáticamente basado en auditoría del 2025-08-29*  
-*Última actualización: 2025-08-30 - Semana 2 completada: SEC-001 a SEC-005 ✅ | Semana 3: OBS-001 ✅ | BROU con indicadores visuales ✅ | OBS-002 métricas básicas ✅ | OBS-003 health checks avanzados ✅ | **NUEVA FASE ORG agregada para semanas 13-14***
+*Última actualización: 2025-08-30 - Semana 4 completada: OBS-004 trazas distribuidas y OBS-005 alertas/dashboards implementados ✅ | PERF-002 completado ✅ | PERF-003 completado ✅ | Próxima: Fase 3 Performance (PERF-004) 🔴 | **NUEVA FASE ORG semanas 13-14***
 </content>
 <parameter name="filePath">c:\Users\apmauj\repos\sifu\docs\PLAN_ACCION_README.md

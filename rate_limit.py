@@ -1,132 +1,245 @@
 """
 Rate limiting middleware for FastAPI
+Enhanced with security logging and configurable limits
 """
 import time
+import logging
 from collections import defaultdict
 from fastapi import Request, HTTPException
 from starlette.middleware.base import BaseHTTPMiddleware
-from typing import Dict, List
+from starlette.responses import JSONResponse
+from typing import Dict, List, Optional, Tuple
+from threading import Lock
+
+from secure_logging import get_security_logger
+
+logger = logging.getLogger(__name__)
+security_logger = get_security_logger()
+
+class RateLimitStorage:
+    """Thread-safe storage for rate limiting data"""
+
+    def __init__(self):
+        self._storage: Dict[str, List[float]] = defaultdict(list)
+        self._lock = Lock()
+
+    def get_requests_in_window(self, key: str, window_seconds: int) -> List[float]:
+        """Get request timestamps within the time window"""
+        with self._lock:
+            current_time = time.time()
+            # Filter out old requests
+            self._storage[key] = [
+                ts for ts in self._storage[key]
+                if current_time - ts < window_seconds
+            ]
+            return self._storage[key].copy()
+
+    def add_request(self, key: str, timestamp: float):
+        """Add a request timestamp"""
+        with self._lock:
+            self._storage[key].append(timestamp)
+
+    def is_rate_limited(self, key: str, limit: int, window_seconds: int) -> bool:
+        """Check if rate limit is exceeded"""
+        requests = self.get_requests_in_window(key, window_seconds)
+        return len(requests) >= limit
+
 
 class RateLimitMiddleware(BaseHTTPMiddleware):
-    """Simple in-memory rate limiting middleware"""
+    """Enhanced in-memory rate limiting middleware with security logging"""
 
-    def __init__(self, app, requests_per_minute: int = 60, burst_limit: int = 10):
+    def __init__(self, app, requests_per_minute: int = 100, burst_limit: int = 20):
         super().__init__(app)
         self.requests_per_minute = requests_per_minute
         self.burst_limit = burst_limit
-        self.requests: Dict[str, List[float]] = defaultdict(list)
+        self.storage = RateLimitStorage()
+
+        # Exempt certain endpoints from rate limiting
+        self.exempt_paths = {
+            "/api/health",
+            "/api/health/simple",
+            "/docs",
+            "/redoc",
+            "/openapi.json"
+        }
+
+        logger.info(f"RateLimitMiddleware initialized: {requests_per_minute} req/min, burst: {burst_limit}")
 
     async def dispatch(self, request: Request, call_next):
-        # Get client IP (in production, use a proper method to get real IP)
+        # Skip rate limiting for exempt paths
+        if request.url.path in self.exempt_paths:
+            return await call_next(request)
+
         client_ip = self._get_client_ip(request)
+        endpoint = request.url.path
 
-        # Clean old requests
+        # Check global rate limit (1 minute window)
+        global_key = f"global:{client_ip}"
+        if self.storage.is_rate_limited(global_key, self.requests_per_minute, 60):
+            if security_logger:
+                security_logger.log_rate_limit(client_ip, endpoint, self.requests_per_minute)
+            return self._rate_limit_response(client_ip, endpoint, "global", self.requests_per_minute)
+
+        # Check burst limit (10 second window)
+        burst_key = f"burst:{client_ip}"
+        if self.storage.is_rate_limited(burst_key, self.burst_limit, 10):
+            if security_logger:
+                security_logger.log_rate_limit(client_ip, endpoint, self.burst_limit)
+            return self._rate_limit_response(client_ip, endpoint, "burst", self.burst_limit)
+
+        # Record the request
         current_time = time.time()
-        self.requests[client_ip] = [
-            req_time for req_time in self.requests[client_ip]
-            if current_time - req_time < 60  # Keep only requests from last minute
-        ]
+        self.storage.add_request(global_key, current_time)
+        self.storage.add_request(burst_key, current_time)
 
-        # Check rate limits
-        if len(self.requests[client_ip]) >= self.requests_per_minute:
-            raise HTTPException(
-                status_code=429,
-                detail="Too many requests. Please try again later."
-            )
-
-        # Check burst limit (requests in last 10 seconds)
-        recent_requests = [
-            req_time for req_time in self.requests[client_ip]
-            if current_time - req_time < 10
-        ]
-        if len(recent_requests) >= self.burst_limit:
-            raise HTTPException(
-                status_code=429,
-                detail="Too many requests in short time. Please slow down."
-            )
-
-        # Add current request
-        self.requests[client_ip].append(current_time)
-
-        # Process request
         response = await call_next(request)
         return response
 
     def _get_client_ip(self, request: Request) -> str:
-        """Get client IP address"""
-        # Check for forwarded IP
-        forwarded = request.headers.get("X-Forwarded-For")
-        if forwarded:
-            return forwarded.split(",")[0].strip()
+        """Extract real client IP from request headers"""
+        # Check X-Forwarded-For (can contain multiple IPs)
+        forwarded_for = request.headers.get("X-Forwarded-For")
+        if forwarded_for:
+            # Take first IP (original client)
+            return forwarded_for.split(",")[0].strip()
 
-        # Check for real IP
+        # Check X-Real-IP (single IP from proxy)
         real_ip = request.headers.get("X-Real-IP")
         if real_ip:
-            return real_ip
+            return real_ip.strip()
 
-        # Fallback to client host
+        # Fallback to direct client
         return request.client.host if request.client else "unknown"
 
-class EndpointRateLimitMiddleware(BaseHTTPMiddleware):
-    """More granular rate limiting per endpoint"""
+    def _rate_limit_response(self, client_ip: str, endpoint: str, limit_type: str, limit: int) -> JSONResponse:
+        """Return standardized rate limit exceeded response"""
+        return JSONResponse(
+            status_code=429,
+            content={
+                "error": "Rate limit exceeded",
+                "message": f"Too many requests from {client_ip} to {endpoint}",
+                "limit_type": limit_type,
+                "limit": limit,
+                "retry_after": 60
+            },
+            headers={"Retry-After": "60"}
+        )
 
-    def __init__(self, app, limits: Dict[str, Dict[str, int]] = None):
+
+class EndpointRateLimitMiddleware(BaseHTTPMiddleware):
+    """Endpoint-specific rate limiting with configurable limits"""
+
+    def __init__(self, app, limits: Optional[Dict[str, Dict[str, int]]] = None):
         super().__init__(app)
-        self.limits = limits or {
+        self.storage = RateLimitStorage()
+
+        # Default endpoint-specific limits
+        self.endpoint_limits = limits or {
+            # Authentication endpoints - strict limits
+            "/api/auth/login": {"per_minute": 10, "burst": 3},
+            "/api/auth/register": {"per_minute": 5, "burst": 2},
+
+            # Refresh endpoints - moderate limits
             "/api/refresh": {"per_minute": 5, "burst": 2},
             "/api/ur/refresh": {"per_minute": 5, "burst": 2},
             "/api/exchange-rate/refresh": {"per_minute": 5, "burst": 2},
             "/api/exchange-rate/refresh-async": {"per_minute": 3, "burst": 1},
+
+            # Dashboard and monitoring - higher limits
+            "/api/dashboard": {"per_minute": 200, "burst": 50},
+            "/api/dashboard/summary": {"per_minute": 200, "burst": 50},
+            "/api/alerts": {"per_minute": 200, "burst": 50},
+            "/api/alerts/summary": {"per_minute": 200, "burst": 50},
+
+            # Data endpoints - moderate limits
+            "/api/ur": {"per_minute": 300, "burst": 100},
+            "/api/exchange-rates": {"per_minute": 300, "burst": 100},
+            "/api/ui-data": {"per_minute": 300, "burst": 100},
         }
-        self.requests: Dict[str, Dict[str, List[float]]] = defaultdict(lambda: defaultdict(list))
+
+        # Exempt paths from endpoint-specific limiting
+        self.exempt_paths = {
+            "/api/health",
+            "/api/health/simple",
+            "/docs",
+            "/redoc",
+            "/openapi.json"
+        }
+
+        logger.info("EndpointRateLimitMiddleware initialized with endpoint-specific limits")
 
     async def dispatch(self, request: Request, call_next):
         path = request.url.path
+
+        # Skip if exempt
+        if path in self.exempt_paths or path.startswith("/static/"):
+            return await call_next(request)
+
         client_ip = self._get_client_ip(request)
 
-        # Check if this endpoint has specific limits
-        if path in self.limits:
-            limits = self.limits[path]
-            current_time = time.time()
+        # Get limits for this endpoint
+        limits = self._get_endpoint_limits(path)
+        if not limits:
+            # No specific limits, continue
+            return await call_next(request)
 
-            # Clean old requests
-            self.requests[client_ip][path] = [
-                req_time for req_time in self.requests[client_ip][path]
-                if current_time - req_time < 60
-            ]
+        current_time = time.time()
+        endpoint_key = f"endpoint:{client_ip}:{path}"
 
-            # Check per-minute limit
-            if len(self.requests[client_ip][path]) >= limits["per_minute"]:
-                raise HTTPException(
-                    status_code=429,
-                    detail=f"Too many requests to {path}. Limit: {limits['per_minute']} per minute."
-                )
+        # Check per-minute limit
+        if self.storage.is_rate_limited(endpoint_key, limits["per_minute"], 60):
+            if security_logger:
+                security_logger.log_rate_limit(client_ip, path, limits["per_minute"])
+            return self._rate_limit_response(client_ip, path, "per_minute", limits["per_minute"])
 
-            # Check burst limit
-            recent_requests = [
-                req_time for req_time in self.requests[client_ip][path]
-                if current_time - req_time < 10
-            ]
-            if len(recent_requests) >= limits["burst"]:
-                raise HTTPException(
-                    status_code=429,
-                    detail=f"Too many requests to {path} in short time. Please slow down."
-                )
+        # Check burst limit (10 second window)
+        burst_requests = self.storage.get_requests_in_window(endpoint_key, 10)
+        if len(burst_requests) >= limits["burst"]:
+            if security_logger:
+                security_logger.log_rate_limit(client_ip, path, limits["burst"])
+            return self._rate_limit_response(client_ip, path, "burst", limits["burst"])
 
-            # Add current request
-            self.requests[client_ip][path].append(current_time)
+        # Record the request
+        self.storage.add_request(endpoint_key, current_time)
 
         response = await call_next(request)
         return response
 
     def _get_client_ip(self, request: Request) -> str:
-        """Get client IP address"""
-        forwarded = request.headers.get("X-Forwarded-For")
-        if forwarded:
-            return forwarded.split(",")[0].strip()
+        """Extract real client IP"""
+        forwarded_for = request.headers.get("X-Forwarded-For")
+        if forwarded_for:
+            return forwarded_for.split(",")[0].strip()
 
         real_ip = request.headers.get("X-Real-IP")
         if real_ip:
-            return real_ip
+            return real_ip.strip()
 
         return request.client.host if request.client else "unknown"
+
+    def _get_endpoint_limits(self, path: str) -> Optional[Dict[str, int]]:
+        """Get rate limits for specific endpoint"""
+        # Exact match first
+        if path in self.endpoint_limits:
+            return self.endpoint_limits[path]
+
+        # Prefix match for parameterized endpoints
+        for prefix, limits in self.endpoint_limits.items():
+            if path.startswith(prefix) and prefix != "default":
+                return limits
+
+        return None
+
+    def _rate_limit_response(self, client_ip: str, endpoint: str, limit_type: str, limit: int) -> JSONResponse:
+        """Return standardized rate limit exceeded response"""
+        return JSONResponse(
+            status_code=429,
+            content={
+                "error": "Rate limit exceeded",
+                "message": f"Too many requests from {client_ip} to {endpoint}",
+                "limit_type": limit_type,
+                "limit": limit,
+                "retry_after": 60
+            },
+            headers={"Retry-After": "60"}
+        )
