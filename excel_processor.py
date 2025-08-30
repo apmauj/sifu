@@ -675,7 +675,7 @@ class ExchangeRateExcelProcessor:
                         buy_rate=buy_rate,
                         sell_rate=sell_rate,
                         average_rate=average_rate,
-                        arbitrage="INE"
+                        arbitrage=None
                     ))
                     saved_count += 1
 

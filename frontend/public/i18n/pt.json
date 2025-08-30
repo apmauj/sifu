@@ -40,7 +40,8 @@
     "reload": "Recarregar",
     "refresh_success": "Dados atualizados com sucesso",
     "ur_refresh_success": "Dados de UR atualizados com sucesso",
-    "exchange_refresh_success": "Cotações atualizadas com sucesso"
+    "exchange_refresh_success": "Cotações atualizadas com sucesso",
+    "ui_refresh_success": "Dados de UI atualizados com sucesso"
   },
   "navigation": {
     "ui_calculator": "Unidade Indexada (UI)",
@@ -77,6 +78,7 @@
     "last_10_years": "Últimos 10 anos",
     "no_results": "Nenhum resultado encontrado",
     "no_results_hint": "Tente outra data ou use os seletores rápidos",
+    "no_results_description": "Faça uma consulta para ver os valores de UI.",
     "data_source": "Fonte: Instituto Nacional de Estatística (INE) - Uruguai",
     "data_status": "Status dos dados UI",
     "available": "disponíveis",
@@ -314,6 +316,8 @@
     "exchange_load_failed": "Não foi possível carregar as cotações",
     "refresh_failed": "Erro ao atualizar dados. Tente novamente.",
     "ur_refresh_failed": "Erro ao atualizar dados de UR. Tente novamente.",
-    "exchange_refresh_failed": "Erro ao atualizar cotações. Tente novamente."
+    "exchange_refresh_failed": "Erro ao atualizar cotações. Tente novamente.",
+    "exchange_refresh_timeout": "Timeout aguardando finalização da atualização",
+    "ui_refresh_failed": "Erro ao atualizar dados de UI. Tente novamente."
   }
 } 

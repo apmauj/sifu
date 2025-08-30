@@ -205,6 +205,7 @@ async def _execute_startup():
         _execute_startup._refresher_started = True  # type: ignore
 
     # Start scheduler once
+    global scheduler
     if scheduler is None:
         try:
             if SCHEDULER_ENABLED and AsyncIOScheduler and CronTrigger:
@@ -247,6 +248,7 @@ app = FastAPI(
     version=API_VERSION,
     docs_url=API_DOCS_URL,
     redoc_url=API_REDOC_URL,
+    lifespan=app_lifespan,
     tags_metadata=[
         {
             "name": "Sistema",

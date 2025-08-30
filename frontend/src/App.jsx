@@ -157,10 +157,11 @@ function App() {
 
       setExchangeResults(response);
 
-      if (response && response.success && response.message) {
-        const translatedMessage = translateBackendMessage(response.message);
-        showSuccess(translatedMessage);
-      }
+      // Remover toast de éxito en búsquedas - el resultado se muestra en pantalla
+      // if (response && response.success && response.message) {
+      //   const translatedMessage = translateBackendMessage(response.message);
+      //   showSuccess(translatedMessage);
+      // }
     } catch (error) {
       console.error('Error en búsqueda de cotizaciones:', error);
       const errorMessage = t('errors.exchange_search_failed') || 'Error al realizar la consulta de cotizaciones. Por favor, intenta nuevamente.';
@@ -216,7 +217,8 @@ function App() {
   // Intento de bootstrap inicial si la base está vacía
   const attemptInitialExchangeBootstrap = async () => {
     initialExchangeFetchAttemptedRef.current = true;
-  showInfo(safeT('exchange.initial_bootstrap_loading', 'Cargando cotizaciones iniciales (job asíncrono)...'));
+    // Remover toast informativo intrusivo durante inicialización automática
+    // showInfo(safeT('exchange.initial_bootstrap_loading', 'Cargando cotizaciones iniciales (job asíncrono)...'));
     try {
       const jobStart = await exchangeService.startAsyncHistoricalRefresh();
       if (jobStart?.job_id) {
@@ -252,10 +254,11 @@ function App() {
         await new Promise(r => setTimeout(r, intervalMs));
       }
       if (statusData?.status === 'success') {
-        if (successToast) {
-          const msg = translateBackendMessage(statusData.message) || t('common.exchange_refresh_success') || 'Actualización completada';
-          showSuccess(msg);
-        }
+        // Remover toast de éxito - el resultado se ve en pantalla
+        // if (successToast) {
+        //   const msg = translateBackendMessage(statusData.message) || t('common.exchange_refresh_success') || 'Actualización completada';
+        //   showSuccess(msg);
+        // }
         if (autoReload) {
           await loadLatestExchange({ skipAutoInit: true });
         }
@@ -278,8 +281,9 @@ function App() {
         // Refresh UI data (INE) and trigger UIPanel to refetch
         const response = await uiService.refresh();
         if (response.success) {
-          const successMessage = translateBackendMessage(response.message) || t('common.ui_refresh_success') || 'Datos de UI actualizados correctamente';
-          showSuccess(successMessage);
+          // Remover toast de éxito - el resultado se ve en pantalla
+          // const successMessage = translateBackendMessage(response.message) || t('common.ui_refresh_success') || 'Datos de UI actualizados correctamente';
+          // showSuccess(successMessage);
           setUiRefreshKey((k) => k + 1);
         } else {
           const errorMessage = response.message || t('errors.ui_refresh_failed') || 'Error al actualizar los datos de UI';
@@ -289,8 +293,9 @@ function App() {
         // Refresh UR data (BHU) and trigger URPanel to refetch
         const response = await urService.refresh();
         if (response.success) {
-          const successMessage = translateBackendMessage(response.message) || t('common.ur_refresh_success') || 'Datos de UR actualizados correctamente';
-          showSuccess(successMessage);
+          // Remover toast de éxito - el resultado se ve en pantalla
+          // const successMessage = translateBackendMessage(response.message) || t('common.ur_refresh_success') || 'Datos de UR actualizados correctamente';
+          // showSuccess(successMessage);
           setUrRefreshKey((k) => k + 1);
         } else {
           const errorMessage = response.message || t('errors.ur_refresh_failed') || 'Error al actualizar los datos de UR';
@@ -300,8 +305,9 @@ function App() {
         // Iniciar job async y monitorear
         const job = await exchangeService.startAsyncHistoricalRefresh();
         if (job?.job_id) {
-          showInfo(safeT('exchange.refresh_started', 'Actualización iniciada...'));
-          await pollExchangeJob(job.job_id, { successToast: true, autoReload: true });
+          // Remover toast informativo intrusivo - solo mostrar errores
+          // showInfo(safeT('exchange.refresh_started', 'Actualización iniciada...'));
+          await pollExchangeJob(job.job_id, { successToast: false, autoReload: true });
         } else {
           showError(t('errors.exchange_refresh_failed') || 'No se pudo iniciar la actualización');
         }

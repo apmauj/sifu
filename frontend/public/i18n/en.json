@@ -40,7 +40,8 @@
     "reload": "Reload",
     "refresh_success": "Data updated successfully",
     "ur_refresh_success": "UR data updated successfully",
-    "exchange_refresh_success": "Exchange rates updated successfully"
+    "exchange_refresh_success": "Exchange rates updated successfully",
+    "ui_refresh_success": "UI data updated successfully"
   },
   "navigation": {
     "ui_calculator": "Indexed Units (UI)",
@@ -77,6 +78,7 @@
     "last_10_years": "Last 10 years",
     "no_results": "No results found",
     "no_results_hint": "Try another date or use quick selectors",
+    "no_results_description": "Make a query to view UI values.",
     "data_source": "Source: National Institute of Statistics (INE) - Uruguay",
     "data_status": "UI data status",
     "available": "available",
@@ -314,6 +316,8 @@
     "exchange_load_failed": "Could not load exchange rates",
     "refresh_failed": "Error updating data. Please try again.",
     "ur_refresh_failed": "Error updating UR data. Please try again.",
-    "exchange_refresh_failed": "Error updating exchange rates. Please try again."
+    "exchange_refresh_failed": "Error updating exchange rates. Please try again.",
+    "exchange_refresh_timeout": "Timeout waiting for update completion",
+    "ui_refresh_failed": "Error updating UI data. Please try again."
   }
 } 

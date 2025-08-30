@@ -40,7 +40,8 @@
     "reload": "Recargar",
     "refresh_success": "Datos actualizados correctamente",
     "ur_refresh_success": "Datos de UR actualizados correctamente",
-    "exchange_refresh_success": "Cotizaciones actualizadas correctamente"
+    "exchange_refresh_success": "Cotizaciones actualizadas correctamente",
+    "ui_refresh_success": "Datos de UI actualizados correctamente"
   },
   "header": {
     "sifu_title": "SIFU",
@@ -81,6 +82,7 @@
     "last_10_years": "Últimos 10 años",
     "no_results": "No se encontraron resultados",
     "no_results_hint": "Intenta con otra fecha o usa los selectores rápidos",
+    "no_results_description": "Realiza una consulta para ver los valores de UI.",
     "data_source": "Fuente: Instituto Nacional de Estadística (INE) - Uruguay",
     "data_status": "Estado de los datos UI",
     "available": "disponibles",
@@ -319,6 +321,8 @@
     "exchange_load_failed": "No se pudo cargar las cotizaciones",
     "refresh_failed": "Error al actualizar los datos. Por favor, intenta nuevamente.",
     "ur_refresh_failed": "Error al actualizar los datos de UR. Por favor, intenta nuevamente.",
-    "exchange_refresh_failed": "Error al actualizar las cotizaciones. Por favor, intenta nuevamente."
+    "exchange_refresh_failed": "Error al actualizar las cotizaciones. Por favor, intenta nuevamente.",
+    "exchange_refresh_timeout": "Timeout esperando finalización de la actualización",
+    "ui_refresh_failed": "Error al actualizar los datos de UI. Por favor, intenta nuevamente."
   }
 } 
