@@ -28,10 +28,22 @@ from pydantic_models import (
     URRangeRequestModel, ExchangeRateRangeRequestModel,
     APIResponse, PaginatedResponse
 )
+
+# HTTPS Security Middleware
+from https_middleware import HTTPSRedirectMiddleware, SSLHeadersMiddleware
+
+# Authentication and Authorization
+from auth_routes import router as auth_router
 from rate_limit import RateLimitMiddleware, EndpointRateLimitMiddleware
 from secret_manager import secret_manager
 from secure_logging import init_security_logging, get_security_logger
 from config_validator import validate_configuration_on_startup
+
+# Metrics middleware
+from metrics_middleware import MetricsMiddleware, get_metrics, get_health, get_simple_metrics
+
+# Advanced health checks
+from health_checks import get_advanced_health, get_simple_health
 from constants import (
     HTTP_400_BAD_REQUEST,
     HTTP_404_NOT_FOUND,
@@ -271,6 +283,10 @@ app = FastAPI(
     ]
 )
 
+# Add HTTPS security middlewares
+app.add_middleware(HTTPSRedirectMiddleware)
+app.add_middleware(SSLHeadersMiddleware)
+
 # Configure CORS to allow frontend
 app.add_middleware(
     CORSMiddleware,
@@ -283,6 +299,12 @@ app.add_middleware(
 # Add security middlewares
 app.add_middleware(RateLimitMiddleware, requests_per_minute=100, burst_limit=20)
 app.add_middleware(EndpointRateLimitMiddleware)
+
+# Add metrics middleware
+app.add_middleware(MetricsMiddleware)
+
+# Include authentication router
+app.include_router(auth_router)
 
 @app.get("/", tags=["Sistema"])
 async def root_index():
@@ -439,11 +461,19 @@ def _update_bcu_cache():
 def _update_brou_cache():
     global brou_cache
     try:
-        current_rates, is_from_brou = brou_processor.get_current_rates()
+        current_rates, is_from_brou, source_type = brou_processor.get_current_rates()
         if not current_rates:
             logger.warning("[BROU Cache] No data fetched")
             return
-        source = "BROU" if is_from_brou else "BROU_SAMPLE"
+        
+        # Map source_type to user-friendly source name
+        source_map = {
+            "live": "BROU",
+            "persisted": "BROU_PERSISTED", 
+            "sample": "BROU_SAMPLE"
+        }
+        source = source_map.get(source_type, f"BROU_{source_type.upper()}")
+        
         formatted: list[dict] = []
         for rate in current_rates:
             # rate es un dict según BROUProcessor._get_sample_rates / get_current_rates
@@ -488,8 +518,8 @@ def _update_brou_cache():
                 logger.error(f"[BROU Cache] Fallback sample failed: {fe}")
                 return
         with _cache_lock:
-            brou_cache = {"data": formatted, "updated_at": datetime.utcnow()}
-        logger.info(f"[BROU Cache] Updated ({len(formatted)} currencies)")
+            brou_cache = {"data": formatted, "updated_at": datetime.utcnow(), "source": source, "source_type": source_type}
+        logger.info(f"[BROU Cache] Updated ({len(formatted)} currencies) from {source}")
     except Exception as e:
         logger.error(f"[BROU Cache] Update failed: {e}")
 
@@ -576,11 +606,12 @@ if os.path.exists(STATIC_DIRECTORY):
 
 @app.get(ENDPOINT_HEALTH, tags=["Sistema"])
 async def health_check():
-    """Health check del sistema.
+    """Health check básico del sistema.
 
-    Verifica que el servicio esta funcionando correctamente.
+    Verifica que el servicio esté funcionando correctamente.
+    Para health checks avanzados usar /api/health/advanced
     """
-    return {FIELD_STATUS: MSG_HEALTH_OK, FIELD_TIMESTAMP: datetime.utcnow().isoformat()}
+    return await get_simple_health()
 
 @app.get("/api/ui/latest", tags=[TAG_UI])
 async def get_latest_ui(db: Session = Depends(get_db)):
@@ -1303,17 +1334,59 @@ async def get_current_brou_rates(force_refresh: bool = False, full: bool = False
             _update_brou_cache()
             with _cache_lock:
                 if brou_cache is None:  # mocked case
-                    brou_cache = {"data": [], "updated_at": datetime.utcnow()}
+                    brou_cache = {"data": [], "updated_at": datetime.utcnow(), "source": "BROU_SAMPLE"}
                 cached = brou_cache
 
         data_list = cached["data"] if cached else []
+        source = cached.get("source", "BROU") if cached else "UNKNOWN"
+        source_type = cached.get("source_type", "unknown") if cached else "unknown"
+        
         if full:
+            # Calcular edad de los datos
+            data_age = None
+            if cached and cached.get("updated_at"):
+                data_age = (datetime.utcnow() - cached["updated_at"]).total_seconds() / 60  # en minutos
+
+            # Información de estado para el frontend
+            status_info = {
+                "live": {
+                    "label": "Datos en vivo",
+                    "color": "green",
+                    "description": "Cotizaciones obtenidas directamente del BROU"
+                },
+                "persisted": {
+                    "label": "Datos históricos",
+                    "color": "yellow", 
+                    "description": "Cotizaciones almacenadas de consultas anteriores"
+                },
+                "sample": {
+                    "label": "Datos de muestra",
+                    "color": "red",
+                    "description": "Datos de ejemplo - API no disponible"
+                }
+            }
+            
+            current_status = status_info.get(source_type, {
+                "label": "Estado desconocido",
+                "color": "gray",
+                "description": "No se pudo determinar el estado de los datos"
+            })
+
             return {
                 "success": True if data_list else False,
                 "message": f"Cotizaciones BROU obtenidas ({len(data_list)} monedas)" if data_list else "Sin datos BROU",
                 "data": data_list,
-                "source": "BROU",
-                "timestamp": datetime.utcnow().isoformat()
+                "source": source,
+                "source_type": source_type,
+                "status": current_status,
+                "timestamp": cached.get("updated_at").isoformat() if cached and cached.get("updated_at") else None,
+                "data_age_minutes": round(data_age, 1) if data_age is not None else None,
+                "is_fresh": data_age is not None and data_age < 60,  # Consideramos frescos datos de menos de 1 hora
+                "frontend_display": {
+                    "status_label": current_status["label"],
+                    "status_color": current_status["color"],
+                    "warning_message": current_status["description"] if source_type in ["persisted", "sample"] else None
+                }
             }
         return data_list
     except Exception as e:
@@ -1321,6 +1394,57 @@ async def get_current_brou_rates(force_refresh: bool = False, full: bool = False
         if full:
             return {"success": False, "message": f"Error interno: {str(e)}", "data": None}
         return []
+
+
+# =============================================================================
+# METRICS ENDPOINTS
+# =============================================================================
+
+@app.get("/api/metrics", tags=["Sistema"])
+async def get_comprehensive_metrics():
+    """Obtener métricas completas del sistema (latencia, errores, estadísticas por endpoint)."""
+    return await get_metrics()
+
+
+@app.get("/api/metrics/health", tags=["Sistema"])
+async def get_health_metrics():
+    """Obtener estado de salud del sistema con métricas."""
+    return await get_health()
+
+
+@app.get("/api/metrics/simple", tags=["Sistema"])
+async def get_simple_metrics():
+    """Obtener métricas simplificadas para monitoreo (uptime, requests, error rate)."""
+    return await get_simple_metrics()
+
+
+# =============================================================================
+# ADVANCED HEALTH CHECK ENDPOINTS
+# =============================================================================
+
+@app.get("/api/health/advanced", tags=["Sistema"])
+async def get_advanced_health_endpoint(force_refresh: bool = False):
+    """Obtener health check avanzado completo del sistema.
+
+    Incluye verificación de:
+    - Base de datos (conectividad y estadísticas)
+    - APIs externas (BROU, BCU)
+    - Recursos del sistema (CPU, memoria, disco)
+    - Métricas de aplicación (latencia, errores)
+
+    Parámetros:
+    - force_refresh: bool = False - Forzar actualización de caché (por defecto usa caché de 30s)
+    """
+    return await get_advanced_health(force_refresh=force_refresh)
+
+
+@app.get("/api/health/simple", tags=["Sistema"])
+async def get_simple_health_endpoint():
+    """Obtener health check simple para load balancers.
+
+    Retorna estado simple (OK/FAIL) con conteo de issues para monitoreo básico.
+    """
+    return await get_simple_health()
 
 
 # -----------------------------------------------------------------------------

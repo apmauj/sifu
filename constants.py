@@ -17,6 +17,7 @@ DATABASE_CONNECT_ARGS = {"check_same_thread": False}
 TABLE_UI_RECORDS = "ui_records"
 TABLE_UR_RECORDS = "ur_records"
 TABLE_EXCHANGE_RATE_RECORDS = "exchange_rate_records"
+TABLE_BROU_RECORDS = "brou_records"
 
 # Column names (English for international standards)
 COLUMN_UI_DATE = "date"

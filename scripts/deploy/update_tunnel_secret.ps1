@@ -40,7 +40,7 @@ if($LASTEXITCODE -ne 0){
 # 1. Levantar/forzar recreación del túnel
 if(Test-Path './docker-compose.tunnel.yml'){
   Info 'Levantando túnel con docker-compose.tunnel.yml'
-  docker compose -f docker-compose.tunnel.yml up -d --force-recreate tunnel | Out-Null
+  docker compose -f docker-compose.tunnel.yml up -d --force-recreate --remove-orphans tunnel | Out-Null
 } else {
   Err 'docker-compose.tunnel.yml no encontrado'; exit 1
 }

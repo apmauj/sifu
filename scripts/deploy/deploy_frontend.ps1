@@ -21,12 +21,12 @@ if (-not $SkipTunnel) {
 }
 
 # Baseline de runs existentes
-$baselineJson = gh run list --workflow "$wfName" --limit 30 --json databaseId,createdAt,status,conclusion 2>$null
+$baselineJson = gh run list --workflow "$wfName" --limit 5 --json databaseId,createdAt,status,conclusion 2>$null
 $baseline = @()
 if ($baselineJson) { $baseline = ($baselineJson | ConvertFrom-Json).databaseId }
 
 $triggerTime = Get-Date
-Write-Host "[DEBUG] Runs previos: $($baseline -join ',')" -ForegroundColor DarkGray
+# Write-Host "[DEBUG] Runs previos: $($baseline -join ',')" -ForegroundColor DarkGray
 
 gh workflow run "$wfName" -r $Branch | Out-Null
 Write-Host "[INFO] Workflow dispatch enviado."
@@ -40,7 +40,7 @@ $attempt = 0
 
 function Get-NewRun {
   param($Name,$BaselineIds,$Since)
-  $json = gh run list --workflow "$Name" --limit 30 --json databaseId,createdAt,status,conclusion,headBranch 2>$null
+  $json = gh run list --workflow "$Name" --limit 5 --json databaseId,createdAt,status,conclusion,headBranch 2>$null
   if (-not $json) { return $null }
   $items = $json | ConvertFrom-Json
   $candidates = $items |

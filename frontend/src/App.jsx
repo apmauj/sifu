@@ -10,6 +10,7 @@ import ExchangeSearchForm from './components/ExchangeSearchForm';
 import ExchangeResultsDisplay from './components/ExchangeResultsDisplay';
 import ExchangeDataStatusPanel from './components/ExchangeDataStatusPanel';
 import BROUPanel from './components/BROUPanel';
+import Dashboard from './components/Dashboard';
 import exchangeService from './services/exchangeService';
 import uiService from './services/api';
 import urService from './services/urService';
@@ -91,6 +92,9 @@ function App() {
   const [uiRefreshKey, setUiRefreshKey] = useState(0);
   const [urRefreshKey, setUrRefreshKey] = useState(0);
   const [exchangeRefreshKey, setExchangeRefreshKey] = useState(0); // fuerza refetch panel cotizaciones
+
+  // Dashboard state
+  const [isDashboardOpen, setIsDashboardOpen] = useState(false);
 
     // Load initial information when component mounts
   // Helper seguro de traducción que cae a fallback si todavía retorna la key
@@ -473,7 +477,11 @@ function App() {
                 </a>
               </p>
               <p className="text-xs">
-                {t('footer.developed_with_love') || 'Desarrollado con ❤️ usando React, FastAPI y Python'}
+                {t('footer.developed_with_love') || 'Desarrollado con '}<span 
+                  className="cursor-pointer hover:text-red-500 transition-colors" 
+                  onClick={() => setIsDashboardOpen(true)}
+                  title="Abrir Dashboard de Monitoreo"
+                >❤️</span>{' usando React, FastAPI y Python'}
               </p>
               <div className="flex justify-center items-center my-2">
                 <UruguayFlagIcon className="flag-icon" aria-label="Uruguay" style={{verticalAlign: 'middle'}} />
@@ -481,6 +489,12 @@ function App() {
             </div>
           </footer>
         </main>
+
+        {/* Dashboard de Monitoreo */}
+        <Dashboard 
+          isOpen={isDashboardOpen} 
+          onClose={() => setIsDashboardOpen(false)} 
+        />
       </div>
     </ErrorBoundary>
   );

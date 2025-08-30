@@ -7,8 +7,10 @@ Extrae cotizaciones del sitio web oficial del BROU y calcula arbitrajes
 import requests
 import re
 from typing import Dict, List, Tuple, Optional
-from datetime import datetime
+from datetime import datetime, timedelta
 import logging
+from sqlalchemy.orm import Session
+from database import BROURecord, SessionLocal
 
 logger = logging.getLogger(__name__)
 
@@ -47,18 +49,25 @@ class BROUProcessor:
         # Monedas para calcular arbitraje (vs USD)
         self.arbitrage_currencies = ['EUR', 'ARS', 'BRL']
     
-    def get_current_rates(self) -> Tuple[List[Dict], bool]:
+    def get_current_rates(self) -> Tuple[List[Dict], bool, str]:
         """
         Obtiene las cotizaciones actuales del BROU
-        Returns: (rates_list, is_from_brou)
+        Returns: (rates_list, is_from_brou, source_type)
+        source_type: 'live', 'persisted', 'sample'
         """
         try:
             logger.info("Obteniendo cotizaciones del BROU...")
             rates_data = self._fetch_rates()
             
             if not rates_data:
-                logger.warning("No se pudieron obtener datos del BROU, usando datos de muestra")
-                return self._get_sample_rates(), False
+                logger.warning("No se pudieron obtener datos del BROU, intentando usar datos persistidos")
+                persisted_data = self._get_persisted_rates()
+                if persisted_data:
+                    logger.info(f"Usando datos BROU persistidos: {len(persisted_data)} monedas")
+                    return persisted_data, True, "persisted"  # Agregamos tipo de fuente
+                else:
+                    logger.warning("No hay datos persistidos, usando datos de muestra")
+                    return self._get_sample_rates(), False, "sample"
             
             # Convertir a formato de lista
             rates_list = []
@@ -81,7 +90,7 @@ class BROUProcessor:
                             rate_data, usd_rate
                         )
                     
-                    rates_list.append({
+                    rate_dict = {
                         'currency': currency,
                         'name': rate_data['name'],
                         'buy_rate': rate_data['buy_rate'],
@@ -91,14 +100,29 @@ class BROUProcessor:
                         'arbitrage_sell': arbitrage_sell,
                         'source': 'BROU',
                         'timestamp': rate_data['timestamp']
-                    })
+                    }
+                    
+                    rates_list.append(rate_dict)
             
-            logger.info(f"Cotizaciones BROU obtenidas exitosamente: {len(rates_list)} monedas")
-            return rates_list, True
+            # Persistir los datos obtenidos exitosamente
+            if rates_list:
+                self._persist_rates(rates_list)
+                logger.info(f"Cotizaciones BROU obtenidas y persistidas: {len(rates_list)} monedas")
+            else:
+                logger.warning("No se obtuvieron cotizaciones BROU para persistir")
+            
+            return rates_list, True, "live"
             
         except Exception as e:
             logger.error(f"Error obteniendo cotizaciones BROU: {e}")
-            return self._get_sample_rates(), False
+            # Intentar usar datos persistidos antes de fallback a muestra
+            persisted_data = self._get_persisted_rates()
+            if persisted_data:
+                logger.info(f"Usando datos BROU persistidos tras error: {len(persisted_data)} monedas")
+                return persisted_data, True, "persisted"
+            else:
+                logger.warning("Usando datos de muestra BROU tras error")
+                return self._get_sample_rates(), False, "sample"
     
     def _fetch_rates(self) -> Optional[Dict]:
         """Obtiene las cotizaciones del BROU via scraping"""
@@ -272,4 +296,105 @@ class BROUProcessor:
             }
         ]
         
-        return sample_data 
+        return sample_data
+    
+    def _persist_rates(self, rates_list: List[Dict]) -> None:
+        """Persiste las cotizaciones BROU en la base de datos"""
+        if not rates_list:
+            return
+            
+        try:
+            db: Session = SessionLocal()
+            
+            # Para cada tasa, crear o actualizar el registro
+            for rate in rates_list:
+                # Parsear timestamp
+                timestamp = datetime.fromisoformat(rate['timestamp']) if isinstance(rate['timestamp'], str) else rate['timestamp']
+                
+                # Verificar si ya existe un registro para esta moneda en esta timestamp
+                existing = db.query(BROURecord).filter(
+                    BROURecord.currency == rate['currency'],
+                    BROURecord.timestamp == timestamp
+                ).first()
+                
+                if existing:
+                    # Actualizar registro existente
+                    existing.name = rate['name']
+                    existing.buy_rate = rate['buy_rate']
+                    existing.sell_rate = rate['sell_rate']
+                    existing.average_rate = rate['average_rate']
+                    existing.arbitrage_buy = rate['arbitrage_buy']
+                    existing.arbitrage_sell = rate['arbitrage_sell']
+                    existing.source = rate['source']
+                    existing.updated_at = datetime.utcnow()
+                else:
+                    # Crear nuevo registro
+                    brou_record = BROURecord(
+                        currency=rate['currency'],
+                        name=rate['name'],
+                        buy_rate=rate['buy_rate'],
+                        sell_rate=rate['sell_rate'],
+                        average_rate=rate['average_rate'],
+                        arbitrage_buy=rate['arbitrage_buy'],
+                        arbitrage_sell=rate['arbitrage_sell'],
+                        source=rate['source'],
+                        timestamp=timestamp
+                    )
+                    db.add(brou_record)
+            
+            db.commit()
+            logger.debug(f"Persistidos {len(rates_list)} registros BROU")
+            
+        except Exception as e:
+            logger.error(f"Error persistiendo datos BROU: {e}")
+            db.rollback()
+        finally:
+            db.close()
+    
+    def _get_persisted_rates(self) -> Optional[List[Dict]]:
+        """Obtiene las cotizaciones BROU más recientes de la base de datos"""
+        try:
+            db: Session = SessionLocal()
+            
+            # Obtener el timestamp más reciente
+            latest_timestamp = db.query(BROURecord.timestamp).order_by(
+                BROURecord.timestamp.desc()
+            ).first()
+            
+            if not latest_timestamp:
+                logger.debug("No hay datos BROU persistidos")
+                return None
+            
+            # Obtener todos los registros de ese timestamp
+            records = db.query(BROURecord).filter(
+                BROURecord.timestamp == latest_timestamp[0]
+            ).all()
+            
+            if not records:
+                logger.debug("No se encontraron registros BROU para el timestamp más reciente")
+                return None
+            
+            # Convertir a formato de lista
+            rates_list = []
+            for record in records:
+                if record.currency in self.target_currencies:  # Solo monedas que nos interesan
+                    rates_list.append({
+                        'currency': record.currency,
+                        'name': record.name,
+                        'buy_rate': record.buy_rate,
+                        'sell_rate': record.sell_rate,
+                        'average_rate': record.average_rate,
+                        'arbitrage_buy': record.arbitrage_buy,
+                        'arbitrage_sell': record.arbitrage_sell,
+                        'source': f"{record.source}_PERSISTED",
+                        'timestamp': record.timestamp.isoformat() if record.timestamp else None
+                    })
+            
+            logger.debug(f"Recuperados {len(rates_list)} registros BROU persistidos")
+            return rates_list
+            
+        except Exception as e:
+            logger.error(f"Error obteniendo datos BROU persistidos: {e}")
+            return None
+        finally:
+            db.close() 

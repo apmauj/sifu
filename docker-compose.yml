@@ -1,11 +1,11 @@
 services:
   # Backend - FastAPI
   backend:
-    # Usar imagen publicada (CI) en lugar de build local para producción
-    image: apmauj/sifu-backend:latest
-    # build:
-    #   context: .
-    #   dockerfile: Dockerfile
+    # Usar build local para desarrollo con autenticación
+    build:
+      context: .
+      dockerfile: Dockerfile
+    # image: apmauj/sifu-backend:latest
     container_name: sifu-backend
     ports:
       - "${BACKEND_PORT:-8000}:8000"
@@ -54,6 +54,23 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
+
+
+  # Nginx with HTTPS
+  nginx:
+    image: nginx:alpine
+    container_name: sifu-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./ssl:/app/ssl:ro
+      - ./nginx.https.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - backend
+    networks:
+      - sifu-network
+    restart: unless-stopped
 
 volumes:
   # Volumen nombrado para datos persistentes

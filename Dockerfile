@@ -18,6 +18,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copiar código fuente
 COPY *.py ./
+COPY auth_*.py ./
+COPY https_middleware.py ./
 COPY README.md ./
 
 # Crear directorio para la base de datos

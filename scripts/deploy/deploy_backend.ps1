@@ -126,7 +126,7 @@ if ($BuildImage) {
   WaitWF -WorkflowName "Publish Backend Image" -RunId $runId
 }
 docker pull apmauj/sifu-backend:latest | Out-Null
-docker compose up -d --force-recreate --no-deps backend
+docker compose up -d --force-recreate --remove-orphans --no-deps backend
 try { Write-Host ("Health: "+ (curl.exe -s "http://localhost:8000/api/health")) } catch {}
 
 # Probas de inicio según contexto

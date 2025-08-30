@@ -67,6 +67,28 @@ class URValue:
         }
 
 
+class ExchangeRateValue:
+    def __init__(self, date: date, currency: str, buy_rate: Optional[float] = None, 
+                 sell_rate: Optional[float] = None, average_rate: Optional[float] = None,
+                 arbitrage: Optional[float] = None):
+        self.date = date
+        self.currency = currency
+        self.buy_rate = buy_rate
+        self.sell_rate = sell_rate
+        self.average_rate = average_rate
+        self.arbitrage = arbitrage
+    
+    def dict(self):
+        return {
+            "date": self.date.isoformat() if isinstance(self.date, date) else self.date,
+            "currency": self.currency,
+            "buy_rate": self.buy_rate,
+            "sell_rate": self.sell_rate,
+            "average_rate": self.average_rate,
+            "arbitrage": self.arbitrage
+        }
+
+
 class UIRangeRequest:
     def __init__(self, start_date: date, end_date: date):
         self.start_date = start_date
@@ -109,6 +131,20 @@ class URResponse:
         }
 
 
+class ExchangeRateResponse:
+    def __init__(self, success: bool = True, message: str = "", data: Optional[Any] = None):
+        self.success = success
+        self.message = message
+        self.data = data
+    
+    def dict(self):
+        return {
+            "success": self.success,
+            "message": self.message,
+            "data": self.data
+        }
+
+
 class RefreshResponse:
     def __init__(self, success: bool = True, message: str = "", total_records: int = 0, last_updated: Optional[date] = None):
         self.success = success
@@ -125,24 +161,32 @@ class RefreshResponse:
         }
 
 
-class ExchangeRateValue:
-    def __init__(self, date: date, currency: str, buy_rate: float, sell_rate: float, 
-                 average_rate: Optional[float] = None, arbitrage: Optional[str] = None):
-        self.date = date
-        self.currency = currency  # USD, EUR, ARS, BRL, etc.
+class BROUValue:
+    def __init__(self, currency: str, name: str, buy_rate: Optional[float] = None, 
+                 sell_rate: Optional[float] = None, average_rate: Optional[float] = None,
+                 arbitrage_buy: Optional[float] = None, arbitrage_sell: Optional[float] = None,
+                 source: str = 'BROU', timestamp: Optional[str] = None):
+        self.currency = currency
+        self.name = name
         self.buy_rate = buy_rate
         self.sell_rate = sell_rate
         self.average_rate = average_rate
-        self.arbitrage = arbitrage
+        self.arbitrage_buy = arbitrage_buy
+        self.arbitrage_sell = arbitrage_sell
+        self.source = source
+        self.timestamp = timestamp
     
     def dict(self):
         return {
-            "date": self.date.isoformat() if isinstance(self.date, date) else self.date,
             "currency": self.currency,
+            "name": self.name,
             "buy_rate": self.buy_rate,
             "sell_rate": self.sell_rate,
             "average_rate": self.average_rate,
-            "arbitrage": self.arbitrage
+            "arbitrage_buy": self.arbitrage_buy,
+            "arbitrage_sell": self.arbitrage_sell,
+            "source": self.source,
+            "timestamp": self.timestamp
         }
 
 
@@ -153,15 +197,20 @@ class ExchangeRateRangeRequest:
         self.currency = currency  # Filter by specific currency
 
 
-class ExchangeRateResponse:
-    def __init__(self, success: bool = True, message: str = "", data: Optional[Any] = None):
+class BROUResponse:
+    def __init__(self, success: bool = True, message: str = "", data: Optional[Any] = None, 
+                 source: str = 'BROU', timestamp: Optional[str] = None):
         self.success = success
         self.message = message
         self.data = data
+        self.source = source
+        self.timestamp = timestamp
     
     def dict(self):
         return {
             "success": self.success,
             "message": self.message,
-            "data": self.data
+            "data": self.data,
+            "source": self.source,
+            "timestamp": self.timestamp
         } 
