@@ -8,25 +8,20 @@ const Dashboard = ({ isOpen, onClose }) => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    console.log('Dashboard isOpen changed:', isOpen);
     if (isOpen) {
-      console.log('Fetching health data...');
       fetchHealthData();
     }
   }, [isOpen]);
 
   const fetchHealthData = async () => {
-    console.log('Starting fetchHealthData...');
     setLoading(true);
     setError(null);
     try {
-      console.log('Calling healthService.getAdvancedHealth()...');
       const data = await healthService.getAdvancedHealth();
-      console.log('Health data received:', data);
       setHealthData(data);
     } catch (err) {
-      console.error('Error in fetchHealthData:', err);
-      setError('Failed to load health data: ' + err.message);
+      setError('Failed to load health data');
+      console.error('Error fetching health data:', err);
     } finally {
       setLoading(false);
     }
