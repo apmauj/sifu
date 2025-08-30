@@ -87,14 +87,37 @@ const Dashboard = ({ isOpen, onClose }) => {
               {/* Estado General */}
               <Card>
                 <CardBody>
-                  <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Estado General del Sistema</h3>
-                  <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${getStatusColor(healthData.status)}`}>
-                    {getStatusIcon(healthData.status)} {healthData.status || 'Unknown'}
+                  <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white flex items-center gap-2">
+                    <span className="text-lg">🚀</span>
+                    Estado General del Sistema
+                  </h3>
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      <span className="text-3xl">
+                        {healthData.status === 'healthy' ? '✅' :
+                         healthData.status === 'warning' ? '⚠️' :
+                         healthData.status === 'critical' ? '❌' : '❓'}
+                      </span>
+                      <div>
+                        <div className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-medium border ${
+                          healthData.status === 'healthy' ? 'text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800' :
+                          healthData.status === 'warning' ? 'text-yellow-600 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800' :
+                          healthData.status === 'critical' ? 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800' :
+                          'text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-900/20 border-gray-200 dark:border-gray-800'
+                        }`}>
+                          {healthData.status === 'healthy' ? 'Sistema Saludable' :
+                           healthData.status === 'warning' ? 'Sistema con Advertencias' :
+                           healthData.status === 'critical' ? 'Sistema Crítico' :
+                           'Estado Desconocido'}
+                        </div>
+                      </div>
+                    </div>
                   </div>
                   {healthData.timestamp && (
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                    <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+                      <span className="text-lg">🕒</span>
                       Última actualización: {new Date(healthData.timestamp).toLocaleString()}
-                    </p>
+                    </div>
                   )}
                 </CardBody>
               </Card>
@@ -107,21 +130,126 @@ const Dashboard = ({ isOpen, onClose }) => {
                     {healthData.checks.map((checkData, index) => (
                       <Card key={index}>
                         <CardBody>
-                          <div className="flex items-center justify-between mb-2">
-                            <h4 className="font-medium capitalize text-gray-900 dark:text-white">
+                          <div className="flex items-center justify-between mb-3">
+                            <h4 className="font-medium capitalize text-gray-900 dark:text-white flex items-center gap-2">
+                              <span className="text-lg">
+                                {checkData.name === 'database' && '🗄️'}
+                                {checkData.name === 'brou_api' && '💰'}
+                                {checkData.name === 'bcu_api' && '🏦'}
+                                {checkData.name === 'system_resources' && '🖥️'}
+                                {checkData.name === 'application_metrics' && '📊'}
+                              </span>
                               {checkData.name.replace(/_/g, ' ')}
                             </h4>
                             <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(checkData.status)}`}>
                               {getStatusIcon(checkData.status)} {checkData.status}
                             </div>
                           </div>
+
                           {checkData.message && (
-                            <p className="text-sm text-gray-600 dark:text-gray-300">{checkData.message}</p>
+                            <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">{checkData.message}</p>
                           )}
-                          {checkData.details && Object.keys(checkData.details).length > 0 && (
-                            <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-                              <pre className="whitespace-pre-wrap">{JSON.stringify(checkData.details, null, 2)}</pre>
+
+                          {/* Database Details */}
+                          {checkData.name === 'database' && checkData.details && (
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
+                              <div className="text-center p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                                <div className="text-xl font-bold text-blue-600 dark:text-blue-400">{checkData.details.ui_records?.toLocaleString()}</div>
+                                <div className="text-xs text-gray-500 dark:text-gray-400">UI Records</div>
+                              </div>
+                              <div className="text-center p-2 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                                <div className="text-xl font-bold text-green-600 dark:text-green-400">{checkData.details.ur_records?.toLocaleString()}</div>
+                                <div className="text-xs text-gray-500 dark:text-gray-400">UR Records</div>
+                              </div>
+                              <div className="text-center p-2 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+                                <div className="text-xl font-bold text-purple-600 dark:text-purple-400">{checkData.details.brou_records?.toLocaleString()}</div>
+                                <div className="text-xs text-gray-500 dark:text-gray-400">BROU Records</div>
+                              </div>
+                              <div className="text-center p-2 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
+                                <div className="text-xl font-bold text-orange-600 dark:text-orange-400">{checkData.details.total_records?.toLocaleString()}</div>
+                                <div className="text-xs text-gray-500 dark:text-gray-400">Total</div>
+                              </div>
                             </div>
+                          )}
+
+                          {/* API Details */}
+                          {(checkData.name === 'brou_api' || checkData.name === 'bcu_api') && checkData.details && (
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-3">
+                              <div className="text-center p-2 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                                <div className="text-xl font-bold text-green-600 dark:text-green-400">{checkData.details.currencies_count}</div>
+                                <div className="text-xs text-gray-500 dark:text-gray-400">Monedas</div>
+                              </div>
+                              <div className="text-center p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                                <div className="text-lg font-bold text-blue-600 dark:text-blue-400">
+                                  {checkData.details.is_live ? '🟢 Live' : '🟡 Cache'}
+                                </div>
+                                <div className="text-xs text-gray-500 dark:text-gray-400">Estado</div>
+                              </div>
+                              {checkData.details.source_type && (
+                                <div className="text-center p-2 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+                                  <div className="text-sm font-bold text-purple-600 dark:text-purple-400 capitalize">
+                                    {checkData.details.source_type}
+                                  </div>
+                                  <div className="text-xs text-gray-500 dark:text-gray-400">Fuente</div>
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          {/* System Resources Details */}
+                          {checkData.name === 'system_resources' && checkData.details && (
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
+                              <div className="text-center p-2 bg-red-50 dark:bg-red-900/20 rounded-lg">
+                                <div className="text-xl font-bold text-red-600 dark:text-red-400">{checkData.details.cpu_percent?.toFixed(1)}%</div>
+                                <div className="text-xs text-gray-500 dark:text-gray-400">CPU</div>
+                              </div>
+                              <div className="text-center p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                                <div className="text-xl font-bold text-blue-600 dark:text-blue-400">{checkData.details.memory_percent?.toFixed(1)}%</div>
+                                <div className="text-xs text-gray-500 dark:text-gray-400">Memoria</div>
+                              </div>
+                              <div className="text-center p-2 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                                <div className="text-lg font-bold text-green-600 dark:text-green-400">{(checkData.details.memory_used_mb / 1024)?.toFixed(1)} GB</div>
+                                <div className="text-xs text-gray-500 dark:text-gray-400">Usada</div>
+                              </div>
+                              <div className="text-center p-2 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+                                <div className="text-lg font-bold text-purple-600 dark:text-purple-400">{(checkData.details.memory_total_mb / 1024)?.toFixed(1)} GB</div>
+                                <div className="text-xs text-gray-500 dark:text-gray-400">Total</div>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Application Metrics Details */}
+                          {checkData.name === 'application_metrics' && checkData.details && (
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
+                              <div className="text-center p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                                <div className="text-xl font-bold text-blue-600 dark:text-blue-400">{checkData.details.total_requests?.toLocaleString()}</div>
+                                <div className="text-xs text-gray-500 dark:text-gray-400">Total Requests</div>
+                              </div>
+                              <div className="text-center p-2 bg-red-50 dark:bg-red-900/20 rounded-lg">
+                                <div className="text-xl font-bold text-red-600 dark:text-red-400">{checkData.details.error_rate_percent?.toFixed(1)}%</div>
+                                <div className="text-xs text-gray-500 dark:text-gray-400">Error Rate</div>
+                              </div>
+                              <div className="text-center p-2 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                                <div className="text-lg font-bold text-green-600 dark:text-green-400">{checkData.details.avg_response_time_ms?.toFixed(0)}ms</div>
+                                <div className="text-xs text-gray-500 dark:text-gray-400">Avg Response</div>
+                              </div>
+                              <div className="text-center p-2 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+                                <div className="text-lg font-bold text-purple-600 dark:text-purple-400">{Math.floor(checkData.details.uptime_seconds / 3600)}h</div>
+                                <div className="text-xs text-gray-500 dark:text-gray-400">Uptime</div>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Raw JSON for debugging (collapsed by default) */}
+                          {checkData.details && Object.keys(checkData.details).length > 0 && (
+                            <details className="mt-3">
+                              <summary className="text-xs text-gray-500 dark:text-gray-400 cursor-pointer hover:text-gray-700 dark:hover:text-gray-300">
+                                Ver datos técnicos
+                              </summary>
+                              <pre className="mt-2 text-xs text-gray-600 dark:text-gray-300 whitespace-pre-wrap bg-gray-50 dark:bg-gray-800 p-2 rounded overflow-x-auto">
+                                {JSON.stringify(checkData.details, null, 2)}
+                              </pre>
+                            </details>
                           )}
                         </CardBody>
                       </Card>
@@ -134,9 +262,116 @@ const Dashboard = ({ isOpen, onClose }) => {
               {healthData.system_info && (
                 <Card>
                   <CardBody>
-                    <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Información del Sistema</h3>
-                    <div className="text-sm text-gray-600 dark:text-gray-300">
-                      <pre className="whitespace-pre-wrap">{JSON.stringify(healthData.system_info, null, 2)}</pre>
+                    <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white flex items-center gap-2">
+                      <span className="text-lg">🖥️</span>
+                      Información del Sistema
+                    </h3>
+
+                    {healthData.system_info.error ? (
+                      <div className="text-center py-6">
+                        <div className="text-yellow-600 dark:text-yellow-400 mb-2 text-2xl">⚠️</div>
+                        <p className="text-sm text-gray-600 dark:text-gray-300 font-medium">
+                          Monitoreo de recursos no disponible
+                        </p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                          {healthData.system_info.error}
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div className="text-center p-4 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
+                          <div className="text-2xl font-bold text-red-600 dark:text-red-400 mb-1">
+                            {healthData.system_info.cpu_percent?.toFixed(1)}%
+                          </div>
+                          <div className="text-sm text-gray-500 dark:text-gray-400 flex items-center justify-center gap-1 mb-2">
+                            <span className="text-lg">🔥</span>
+                            CPU Usage
+                          </div>
+                          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                            <div
+                              className="bg-red-600 dark:bg-red-400 h-2 rounded-full transition-all duration-300"
+                              style={{ width: `${Math.min(healthData.system_info.cpu_percent, 100)}%` }}
+                            ></div>
+                          </div>
+                        </div>
+
+                        <div className="text-center p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                          <div className="text-2xl font-bold text-blue-600 dark:text-blue-400 mb-1">
+                            {healthData.system_info.memory_percent?.toFixed(1)}%
+                          </div>
+                          <div className="text-sm text-gray-500 dark:text-gray-400 flex items-center justify-center gap-1 mb-2">
+                            <span className="text-lg">💾</span>
+                            Memory Usage
+                          </div>
+                          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                            <div
+                              className="bg-blue-600 dark:bg-blue-400 h-2 rounded-full transition-all duration-300"
+                              style={{ width: `${healthData.system_info.memory_percent}%` }}
+                            ></div>
+                          </div>
+                        </div>
+
+                        <div className="text-center p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+                          <div className="text-xl font-bold text-green-600 dark:text-green-400 mb-1">
+                            {(healthData.system_info.memory_used_mb / 1024)?.toFixed(1)} GB
+                          </div>
+                          <div className="text-sm text-gray-500 dark:text-gray-400 flex items-center justify-center gap-1">
+                            <span className="text-lg">📈</span>
+                            Memory Used
+                          </div>
+                        </div>
+
+                        <div className="text-center p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-800">
+                          <div className="text-xl font-bold text-purple-600 dark:text-purple-400 mb-1">
+                            {(healthData.system_info.memory_total_mb / 1024)?.toFixed(1)} GB
+                          </div>
+                          <div className="text-sm text-gray-500 dark:text-gray-400 flex items-center justify-center gap-1">
+                            <span className="text-lg">💿</span>
+                            Memory Total
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </CardBody>
+                </Card>
+              )}
+
+              {/* Métricas de Rendimiento */}
+              {healthData.uptime_seconds && (
+                <Card>
+                  <CardBody>
+                    <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white flex items-center gap-2">
+                      <span className="text-lg">⚡</span>
+                      Métricas de Rendimiento
+                    </h3>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                      <div className="text-center p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg border border-indigo-200 dark:border-indigo-800">
+                        <div className="text-2xl font-bold text-indigo-600 dark:text-indigo-400 mb-1">
+                          {Math.floor(healthData.uptime_seconds / 86400)}d {Math.floor((healthData.uptime_seconds % 86400) / 3600)}h
+                        </div>
+                        <div className="text-sm text-gray-500 dark:text-gray-400 flex items-center justify-center gap-1">
+                          <span className="text-lg">⏱️</span>
+                          Uptime Total
+                        </div>
+                      </div>
+                      <div className="text-center p-4 bg-teal-50 dark:bg-teal-900/20 rounded-lg border border-teal-200 dark:border-teal-800">
+                        <div className="text-2xl font-bold text-teal-600 dark:text-teal-400 mb-1">
+                          {healthData.avg_response_time_ms?.toFixed(0) || 'N/A'}ms
+                        </div>
+                        <div className="text-sm text-gray-500 dark:text-gray-400 flex items-center justify-center gap-1">
+                          <span className="text-lg">🚀</span>
+                          Tiempo de Respuesta
+                        </div>
+                      </div>
+                      <div className="text-center p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800">
+                        <div className="text-2xl font-bold text-orange-600 dark:text-orange-400 mb-1">
+                          {healthData.total_requests?.toLocaleString() || 'N/A'}
+                        </div>
+                        <div className="text-sm text-gray-500 dark:text-gray-400 flex items-center justify-center gap-1">
+                          <span className="text-lg">📊</span>
+                          Total de Solicitudes
+                        </div>
+                      </div>
                     </div>
                   </CardBody>
                 </Card>
@@ -145,23 +380,38 @@ const Dashboard = ({ isOpen, onClose }) => {
               {/* Estadísticas Generales */}
               <Card>
                 <CardBody>
-                  <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Estadísticas Generales</h3>
+                  <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white flex items-center gap-2">
+                    <span className="text-lg">📊</span>
+                    Estadísticas Generales
+                  </h3>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{healthData.total_checks}</div>
-                      <div className="text-sm text-gray-500 dark:text-gray-400">Total de verificaciones</div>
+                    <div className="text-center p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                      <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1">{healthData.total_checks}</div>
+                      <div className="text-sm text-gray-500 dark:text-gray-400 flex items-center justify-center gap-1">
+                        <span className="text-lg">🔍</span>
+                        Total de verificaciones
+                      </div>
                     </div>
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-green-600 dark:text-green-400">{healthData.healthy_checks}</div>
-                      <div className="text-sm text-gray-500 dark:text-gray-400">Verificaciones saludables</div>
+                    <div className="text-center p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+                      <div className="text-3xl font-bold text-green-600 dark:text-green-400 mb-1">{healthData.healthy_checks}</div>
+                      <div className="text-sm text-gray-500 dark:text-gray-400 flex items-center justify-center gap-1">
+                        <span className="text-lg">✅</span>
+                        Verificaciones saludables
+                      </div>
                     </div>
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{healthData.warning_checks}</div>
-                      <div className="text-sm text-gray-500 dark:text-gray-400">Verificaciones con advertencia</div>
+                    <div className="text-center p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
+                      <div className="text-3xl font-bold text-yellow-600 dark:text-yellow-400 mb-1">{healthData.warning_checks}</div>
+                      <div className="text-sm text-gray-500 dark:text-gray-400 flex items-center justify-center gap-1">
+                        <span className="text-lg">⚠️</span>
+                        Verificaciones con advertencia
+                      </div>
                     </div>
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-red-600 dark:text-red-400">{healthData.critical_checks}</div>
-                      <div className="text-sm text-gray-500 dark:text-gray-400">Verificaciones críticas</div>
+                    <div className="text-center p-4 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
+                      <div className="text-3xl font-bold text-red-600 dark:text-red-400 mb-1">{healthData.critical_checks}</div>
+                      <div className="text-sm text-gray-500 dark:text-gray-400 flex items-center justify-center gap-1">
+                        <span className="text-lg">❌</span>
+                        Verificaciones críticas
+                      </div>
                     </div>
                   </div>
                 </CardBody>
