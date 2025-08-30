@@ -355,57 +355,93 @@ def check_system_resources() -> HealthCheckResult:
         )
 
 
-def check_application_metrics() -> HealthCheckResult:
-    """Check application performance metrics"""
+def check_brou_cache_freshness() -> HealthCheckResult:
+    """Check BROU cache freshness and data availability"""
     start_time = time.time()
 
     try:
-        global_stats = metrics_collector.get_global_stats()
+        # Import here to avoid circular imports
+        from main import brou_cache, _cache_lock
 
-        # Check for concerning metrics
-        status = HealthStatus.HEALTHY
-        issues = []
+        with _cache_lock:
+            cached = brou_cache
 
-        error_rate = global_stats["error_rate"]
-        avg_response_time = global_stats["avg_duration_ms"]
+        if not cached:
+            return HealthCheckResult(
+                name="brou_cache",
+                status=HealthStatus.CRITICAL,
+                message="BROU cache is empty",
+                details={"cache_status": "empty"},
+                response_time=time.time() - start_time
+            )
 
-        if error_rate > 10:
+        # Check data availability
+        data_list = cached.get("data", [])
+        if not data_list:
+            return HealthCheckResult(
+                name="brou_cache",
+                status=HealthStatus.CRITICAL,
+                message="BROU cache contains no data",
+                details={"cache_status": "no_data", "data_count": 0},
+                response_time=time.time() - start_time
+            )
+
+        # Check data freshness
+        updated_at = cached.get("updated_at")
+        if not updated_at:
+            return HealthCheckResult(
+                name="brou_cache",
+                status=HealthStatus.WARNING,
+                message="BROU cache has no timestamp",
+                details={"data_count": len(data_list), "timestamp": None},
+                response_time=time.time() - start_time
+            )
+
+        # Calculate age in minutes
+        age_seconds = (datetime.utcnow() - updated_at).total_seconds()
+        age_minutes = age_seconds / 60
+
+        # Determine status based on age
+        if age_minutes > 120:  # 2 hours
             status = HealthStatus.CRITICAL
-            issues.append(f"High error rate: {error_rate}%")
-        elif error_rate > 5:
-            if status == HealthStatus.HEALTHY:
-                status = HealthStatus.WARNING
-            issues.append(f"Elevated error rate: {error_rate}%")
+            message = f"BROU cache is very stale ({age_minutes:.1f} minutes old)"
+        elif age_minutes > 60:  # 1 hour
+            status = HealthStatus.WARNING
+            message = f"BROU cache is stale ({age_minutes:.1f} minutes old)"
+        else:
+            status = HealthStatus.HEALTHY
+            message = f"BROU cache is fresh ({age_minutes:.1f} minutes old)"
 
-        if avg_response_time > 2000:  # 2 seconds
-            status = HealthStatus.CRITICAL
-            issues.append(f"High average response time: {avg_response_time}ms")
-        elif avg_response_time > 1000:  # 1 second
-            if status == HealthStatus.HEALTHY:
-                status = HealthStatus.WARNING
-            issues.append(f"Elevated response time: {avg_response_time}ms")
+        # Get source information
+        source = cached.get("source", "UNKNOWN")
+        source_type = cached.get("source_type", "unknown")
 
-        message = "Application metrics OK" if not issues else "; ".join(issues)
+        # Count currencies
+        currencies_count = len(data_list)
+        usd_ebrou_present = any(rate.get("currency") == "USD_EBROU" for rate in data_list)
 
         return HealthCheckResult(
-            name="application_metrics",
+            name="brou_cache",
             status=status,
             message=message,
             details={
-                "total_requests": global_stats["total_requests"],
-                "error_rate_percent": global_stats["error_rate"],
-                "avg_response_time_ms": global_stats["avg_duration_ms"],
-                "uptime_seconds": global_stats["uptime_seconds"],
-                "endpoints_tracked": global_stats["endpoints_tracked"]
+                "data_count": currencies_count,
+                "age_minutes": round(age_minutes, 1),
+                "age_seconds": int(age_seconds),
+                "source": source,
+                "source_type": source_type,
+                "usd_ebrou_present": usd_ebrou_present,
+                "last_updated": updated_at.isoformat() if updated_at else None,
+                "is_fresh": age_minutes < 60
             },
             response_time=time.time() - start_time
         )
 
     except Exception as e:
         return HealthCheckResult(
-            name="application_metrics",
-            status=HealthStatus.WARNING,
-            message=f"Could not check application metrics: {str(e)}",
+            name="brou_cache",
+            status=HealthStatus.CRITICAL,
+            message=f"BROU cache check failed: {str(e)}",
             response_time=time.time() - start_time
         )
 
@@ -417,8 +453,8 @@ health_checker = HealthChecker()
 health_checker.add_check(check_database)
 health_checker.add_check(check_brou_api)
 health_checker.add_check(check_bcu_api)
+health_checker.add_check(check_brou_cache_freshness)
 health_checker.add_check(check_system_resources)
-health_checker.add_check(check_application_metrics)
 
 
 # Health check endpoints
