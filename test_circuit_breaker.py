@@ -53,7 +53,7 @@ def test_circuit_breaker_failure():
     )
     cb = get_circuit_breaker("TEST_FAILURE_API", test_config)
 
-    print(f"✅ Test circuit breaker created with low threshold")
+    print("✅ Test circuit breaker created with low threshold")
     print(f"   - Failure threshold: {cb.config.failure_threshold}")
     print(f"   - Initial state: {cb.state.value}")
 

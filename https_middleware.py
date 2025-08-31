@@ -3,7 +3,7 @@ HTTPS Middleware for FastAPI
 Forces HTTPS redirection and security headers
 """
 
-from fastapi import Request, Response
+from fastapi import Request
 from fastapi.responses import RedirectResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 import os

@@ -83,7 +83,6 @@ def main():
 
         # Step 5: Start the FastAPI application
         import uvicorn
-        from main import app
 
         # Get server configuration from environment
         host = os.getenv('HOST', '0.0.0.0')
@@ -110,7 +109,7 @@ def main():
             security_logger = get_security_logger()
             if security_logger:
                 security_logger.log_security_event('STARTUP_FAILURE', f'Application startup failed: {str(e)}')
-        except:
+        except Exception:
             pass  # Ignore logging errors during startup failure
         sys.exit(1)
 

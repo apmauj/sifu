@@ -82,7 +82,7 @@ def setup_correlation_logging():
                 current_task = asyncio.current_task()
                 if current_task and hasattr(current_task, 'request'):
                     correlation_id = getattr(current_task.request.state, 'correlation_id', None)
-            except:
+            except Exception:
                 pass
 
             # Add correlation ID to log record

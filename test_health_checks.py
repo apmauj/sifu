@@ -3,8 +3,6 @@
 Test script for advanced health checks
 """
 import requests
-import time
-import json
 
 def test_health_checks():
     print('Testing advanced health checks...')

@@ -2,12 +2,11 @@
 Metrics collection module for SIFU application
 Provides basic observability metrics: latency, error rates, request counts
 """
-import time
 from collections import defaultdict, deque
 from typing import Dict, List, Any
-from datetime import datetime, timedelta
+from datetime import datetime
 import threading
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 
 @dataclass

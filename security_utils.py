@@ -4,7 +4,6 @@ Security validation and sanitization utilities for SIFU API
 import re
 import html
 from typing import Any, Dict, List, Union
-from urllib.parse import quote
 
 # XSS protection patterns
 XSS_PATTERNS = [

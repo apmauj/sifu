@@ -3,11 +3,9 @@
 Security Log Monitor for SIFU
 Monitors security logs in real-time and alerts on suspicious activity
 """
-import os
 import time
 import logging
 from pathlib import Path
-from typing import Dict, List, Optional
 from datetime import datetime, timedelta
 import re
 
@@ -146,8 +144,8 @@ class SecurityLogMonitor:
 
         print(f"🚨🚨🚨 [{timestamp}] ALERT: {alert_type.upper()} THRESHOLD EXCEEDED")
         print(f"   📊 Count: {count} events in the last minute")
-        print(f"   🔔 Action Required: Review security logs immediately")
-        print(f"   📞 Recommended: Check system access logs and block suspicious IPs")
+        print("   🔔 Action Required: Review security logs immediately")
+        print("   📞 Recommended: Check system access logs and block suspicious IPs")
         print("-" * 60)
 
         # In a real system, this would:

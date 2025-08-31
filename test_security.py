@@ -4,9 +4,8 @@ Security validation script for SIFU API
 Tests input validation, sanitization, and security measures
 """
 import requests
-import json
 import time
-from typing import Dict, List
+from typing import Dict
 
 class SecurityTester:
     """Test security measures of the SIFU API"""
@@ -40,7 +39,7 @@ class SecurityTester:
                     results[f"UR XSS {payload[:20]}..."] = False
                 else:
                     results[f"UR XSS {payload[:20]}..."] = True
-            except:
+            except Exception:
                 results[f"UR XSS {payload[:20]}..."] = False
 
         return results
@@ -77,7 +76,7 @@ class SecurityTester:
                         results[f"SQL Injection {payload[:20]}..."] = True
                     else:
                         results[f"SQL Injection {payload[:20]}..."] = False
-                except:
+                except Exception:
                     results[f"SQL Injection {payload[:20]}..."] = True
 
         return results
@@ -101,7 +100,7 @@ class SecurityTester:
                 results["General Rate Limiting"] = True
             else:
                 results["General Rate Limiting"] = False
-        except:
+        except Exception:
             results["General Rate Limiting"] = False
 
         # Test endpoint-specific rate limiting
@@ -116,7 +115,7 @@ class SecurityTester:
                 results["Endpoint Rate Limiting"] = True
             else:
                 results["Endpoint Rate Limiting"] = False
-        except:
+        except Exception:
             results["Endpoint Rate Limiting"] = False
 
         return results
@@ -134,7 +133,7 @@ class SecurityTester:
                 results["Date Validation"] = True
             else:
                 results["Date Validation"] = False
-        except:
+        except Exception:
             results["Date Validation"] = False
 
         # Test invalid currency codes
@@ -144,7 +143,7 @@ class SecurityTester:
                 results["Currency Validation"] = True
             else:
                 results["Currency Validation"] = False
-        except:
+        except Exception:
             results["Currency Validation"] = False
 
         # Test invalid month values
@@ -157,7 +156,7 @@ class SecurityTester:
                 results["Month Validation"] = True
             else:
                 results["Month Validation"] = False
-        except:
+        except Exception:
             results["Month Validation"] = False
 
         return results

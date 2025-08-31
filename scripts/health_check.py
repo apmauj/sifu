@@ -1,13 +1,18 @@
 #!/usr/bin/env python3
 """
 Script de verificación automática para el Plan de Acción SIFU
-Ejecuta verificaciones automatizadas del checklist y genera reporte
+Ejecuta verificacion                    score = lighthouse_data.get('categories', {}).get('accessibility', {}).get('score', 0) * 100
+                    self.results['UX-CHK-002'] = {
+                        'status': 'PASS' if score >= 90 else 'WARN' if score >= 75 else 'FAIL',
+                        'value': f"{score:.1f}",
+                        'message': f'Lighthouse Accessibility: {score:.1f}/100'
+                    }
+                except Exception:
+                    self.results['UX-CHK-002'] = {'status': 'ERROR', 'message': 'Error parseando Lighthouse'}atizadas del checklist y genera reporte
 """
 
 import subprocess
 import json
-import sys
-import os
 from datetime import datetime
 from pathlib import Path
 
@@ -45,7 +50,7 @@ class SifuHealthChecker:
                     'value': vuln_count,
                     'message': f'{vuln_count} vulnerabilidades encontradas'
                 }
-            except:
+            except Exception:
                 self.results['SEC-CHK-001'] = {'status': 'ERROR', 'message': 'Error parseando pip-audit'}
         else:
             self.results['SEC-CHK-001'] = {'status': 'ERROR', 'message': stderr}
@@ -74,7 +79,7 @@ class SifuHealthChecker:
                     'status': 'PASS' if has_timestamp else 'FAIL',
                     'message': 'Health check con timestamp' if has_timestamp else 'Health check sin timestamp'
                 }
-            except:
+            except Exception:
                 self.results['OBS-CHK-001'] = {'status': 'ERROR', 'message': 'Error parseando health check'}
         else:
             self.results['OBS-CHK-001'] = {'status': 'FAIL', 'message': 'Health check no disponible'}
@@ -84,10 +89,7 @@ class SifuHealthChecker:
         print("⚡ Verificando Performance...")
 
         # PERF-CHK-002: Latencia del health check
-        import time
-        start_time = time.time()
         success, stdout, stderr = self.run_command("curl -s -w '%{time_total}' -o /dev/null http://localhost:8000/api/health")
-        end_time = time.time()
 
         if success:
             try:
@@ -97,7 +99,7 @@ class SifuHealthChecker:
                     'value': f"{latency:.2f}ms",
                     'message': f'Latencia: {latency:.2f}ms'
                 }
-            except:
+            except Exception:
                 self.results['PERF-CHK-002'] = {'status': 'ERROR', 'message': 'Error midiendo latencia'}
         else:
             self.results['PERF-CHK-002'] = {'status': 'FAIL', 'message': 'Endpoint no disponible'}
@@ -120,7 +122,7 @@ class SifuHealthChecker:
                         'value': f"{score:.1f}",
                         'message': f'Lighthouse Accessibility: {score:.1f}/100'
                     }
-                except:
+                except Exception:
                     self.results['UX-CHK-002'] = {'status': 'ERROR', 'message': 'Error parseando Lighthouse'}
             else:
                 self.results['UX-CHK-002'] = {'status': 'SKIP', 'message': 'Lighthouse no ejecutado'}
@@ -149,10 +151,7 @@ class SifuHealthChecker:
                 'SKIP': '⏭️'
             }.get(status, '❓')
 
-            value = result.get('value', '')
-            message = result.get('message', '')
-
-            print("20")
+            print(f"{emoji} {check_id}: {result.get('message', '')}")
 
         print("\n" + "-"*60)
         print("📊 RESUMEN:")

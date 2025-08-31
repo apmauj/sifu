@@ -4,8 +4,8 @@ Implements PERF-004: Performance budgets and alerts
 """
 import time
 import threading
-from datetime import datetime, timedelta
-from typing import Dict, List, Any, Optional, Callable
+from datetime import datetime
+from typing import Dict, Any, Optional
 from dataclasses import dataclass, field
 from enum import Enum
 import logging

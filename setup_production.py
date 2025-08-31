@@ -4,7 +4,6 @@ Script de configuración de producción para SIFU
 Genera configuración segura para entorno de producción
 """
 
-import os
 import secrets
 import string
 from pathlib import Path

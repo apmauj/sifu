@@ -5,9 +5,6 @@ Implementa autenticación básica y control de acceso basado en roles
 """
 
 import os
-import secrets
-from pathlib import Path
-from datetime import datetime
 
 def create_auth_models():
     """Crea modelos de autenticación y autorización"""
@@ -475,7 +472,6 @@ def update_main_for_auth():
         # Verificar si ya tiene los imports de auth
         if "from auth_routes import" not in content:
             # Agregar imports después del último import existente
-            import_lines = []
             in_imports = False
             last_import_index = -1
 

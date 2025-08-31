@@ -2,7 +2,7 @@
 Dashboard module for SIFU application
 Provides comprehensive dashboard data combining metrics and alerts
 """
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Dict, List, Any
 import logging
 

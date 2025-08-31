@@ -5,9 +5,8 @@ Tests all security components and provides recommendations
 """
 import os
 import sys
-import json
 from pathlib import Path
-from typing import Dict, List, Any
+from typing import Dict, Any
 
 # Add current directory to path
 sys.path.insert(0, str(Path(__file__).parent))
@@ -60,10 +59,8 @@ def test_secure_logging():
     print("📊 Testing secure logging...")
 
     try:
-        from secure_logging import init_security_logging, get_security_logger
-        from secret_manager import secret_manager
+        from secure_logging import init_security_logging
 
-        security_config = secret_manager.get_security_config()
         security_logger = init_security_logging({
             'log_level': 'INFO',
             'log_file': 'test_security.log',

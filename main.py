@@ -9,7 +9,6 @@ from sqlalchemy.orm import Session
 from datetime import date, datetime
 import asyncio
 from typing import Optional
-import logging
 import uuid
 import time
 import os
@@ -26,8 +25,7 @@ from excel_processor import ExcelProcessor, URExcelProcessor, ExchangeRateExcelP
 from brou_processor import BROUProcessor
 from security_utils import SecurityValidator, InputValidator, sanitize_request_data
 from pydantic_models import (
-    URRangeRequestModel, ExchangeRateRangeRequestModel,
-    APIResponse, PaginatedResponse
+    URRangeRequestModel
 )
 
 # HTTPS Security Middleware
@@ -36,12 +34,10 @@ from https_middleware import HTTPSRedirectMiddleware, SSLHeadersMiddleware
 # Authentication and Authorization
 from auth_routes import router as auth_router
 from rate_limit import RateLimitMiddleware, EndpointRateLimitMiddleware
-from secret_manager import secret_manager
 from circuit_breaker import get_all_circuit_breakers, get_circuit_breaker_status, reset_circuit_breaker
-from config_validator import validate_configuration_on_startup
 
 # Metrics middleware
-from metrics_middleware import MetricsMiddleware, get_metrics, get_health, get_simple_metrics
+from metrics_middleware import MetricsMiddleware, get_metrics, get_health
 
 # Advanced health checks
 from health_checks import get_advanced_health, get_simple_health
@@ -50,7 +46,6 @@ from constants import (
     HTTP_404_NOT_FOUND,
     HTTP_500_INTERNAL_SERVER_ERROR,
     VALID_CURRENCY_CODES,
-    FIELD_TIMESTAMP,
     CORS_ALLOW_HEADERS,
     CORS_ALLOW_METHODS,
     CORS_ALLOW_ORIGINS,
@@ -66,11 +61,9 @@ from constants import (
     SCHEDULER_ENABLED,
     SCHEDULER_TIMEZONE,
     ENDPOINT_HEALTH,
-    FIELD_STATUS,
     STATIC_DIRECTORY,
     STATIC_MOUNT_PATH,
     STATIC_NAME,
-    MSG_HEALTH_OK,
     TAG_EXCHANGE,
     TAG_UR,
     TAG_UI,
@@ -101,7 +94,6 @@ from constants import (
     ENDPOINT_EXCHANGE_RATE_BY_CURRENCY,
     ENDPOINT_EXCHANGE_RATE_INFO,
     ENDPOINT_EXCHANGE_RATE_LATEST,
-    MSG_INVALID_DATE_RANGE,
     ENDPOINT_EXCHANGE_RATE_RANGE,
     SCHEDULER_BUSINESS_DAY_ONLY,
     SCHEDULER_HOLIDAYS,
@@ -130,13 +122,13 @@ else:
 # Correlation ID middleware for distributed tracing
 from correlation_middleware import CorrelationIdMiddleware, setup_correlation_logging, get_correlation_logger
 
-# Configure correlation logging
-setup_correlation_logging()
-logger = get_correlation_logger(__name__)
-
 # Alert and dashboard services
 from alerts import alert_manager
 from dashboard import dashboard_service
+
+# Configure correlation logging
+setup_correlation_logging()
+logger = get_correlation_logger(__name__)
 
 # Performance budget service
 try:
@@ -667,7 +659,12 @@ async def health_check():
     Verifica que el servicio esté funcionando correctamente.
     Para health checks avanzados usar /api/health/advanced
     """
-    return {"status": "OK", "message": "Server is running"}
+    from datetime import datetime
+    return {
+        "status": "ok", 
+        "message": "Server is running",
+        "timestamp": datetime.utcnow().isoformat()
+    }
 
 @app.get("/api/ui/latest", tags=[TAG_UI])
 async def get_latest_ui(db: Session = Depends(get_db)):
@@ -948,8 +945,19 @@ async def get_ur_by_range(start_year: int, start_month: int, end_year: int, end_
 async def get_ur_by_range_post(request: dict, db: Session = Depends(get_db)):
     """Obtener UR por rango (POST). Body igual al endpoint GET correspondiente."""
     try:
-        # Sanitize input data
-        sanitized_data = sanitize_request_data(request)
+        # Convert Spanish field names to English
+        field_mapping = {
+            "año_inicio": "start_year",
+            "mes_inicio": "start_month", 
+            "año_fin": "end_year",
+            "mes_fin": "end_month"
+        }
+        
+        # Create sanitized data with English field names
+        sanitized_data = {}
+        for key, value in request.items():
+            english_key = field_mapping.get(key, key)
+            sanitized_data[english_key] = value
 
         # Validate with Pydantic model
         ur_request = URRangeRequestModel(**sanitized_data)
@@ -1466,12 +1474,6 @@ async def get_comprehensive_metrics():
 async def get_health_metrics():
     """Obtener estado de salud del sistema con métricas."""
     return await get_health()
-
-
-@app.get("/api/metrics/simple", tags=["Sistema"])
-async def get_simple_metrics():
-    """Obtener métricas simplificadas para monitoreo (uptime, requests, error rate)."""
-    return await get_simple_metrics()
 
 
 # =============================================================================

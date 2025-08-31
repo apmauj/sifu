@@ -6,7 +6,6 @@ import time
 from datetime import datetime
 from typing import Callable
 from fastapi import Request, Response
-from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from metrics import metrics_collector

@@ -4,10 +4,8 @@ Script de configuración de HTTPS para SIFU
 Implementa HTTPS obligatorio con certificados SSL/TLS
 """
 
-import os
 import subprocess
 from pathlib import Path
-from datetime import datetime
 
 def run_command(cmd, cwd=None):
     """Ejecuta un comando y retorna (success, output, error)"""
@@ -245,7 +243,6 @@ def update_main_for_https():
         # Verificar si ya tiene los imports
         if "from https_middleware import" not in content:
             # Agregar imports después del último import existente
-            import_lines = []
             in_imports = False
             last_import_index = -1
 

@@ -7,7 +7,7 @@ Extrae cotizaciones del sitio web oficial del BROU y calcula arbitrajes
 import requests
 import re
 from typing import Dict, List, Tuple, Optional
-from datetime import datetime, timedelta
+from datetime import datetime
 import logging
 from sqlalchemy.orm import Session
 from database import BROURecord, SessionLocal

@@ -5,9 +5,8 @@ Validates secrets and configuration before application starts
 import os
 import sys
 import logging
-from typing import Dict, List, Tuple, Optional
+from typing import List, Tuple
 from pathlib import Path
-import json
 from secret_manager import secret_manager
 
 class ConfigurationValidator:

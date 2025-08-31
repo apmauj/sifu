@@ -4,7 +4,6 @@ Script de documentación del estado actual de SIFU
 Genera un resumen completo de las implementaciones de seguridad y validaciones
 """
 
-import os
 from pathlib import Path
 from datetime import datetime
 

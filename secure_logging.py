@@ -3,13 +3,9 @@ Secure logging system with encryption and audit capabilities
 """
 import logging
 import logging.handlers
-import json
 import hashlib
-import hmac
-from datetime import datetime
 from typing import Dict, Any, Optional
 from pathlib import Path
-import os
 
 # Optional cryptography imports
 try:

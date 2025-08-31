@@ -4,7 +4,6 @@ Minimal SIFU server for debugging startup issues.
 This version includes only essential components to isolate the problem.
 """
 
-import os
 import logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware

@@ -3,16 +3,13 @@ Advanced health check system for SIFU application
 Provides comprehensive health monitoring for all system components
 """
 import time
-import os
 from datetime import datetime, timedelta
 from typing import Dict, Any, List, Optional
-from sqlalchemy.orm import Session
 from sqlalchemy import text
 
 from database import get_db
 from brou_processor import BROUProcessor
 from excel_processor import ExchangeRateBCUProcessor
-from metrics import metrics_collector
 
 try:
     import psutil
@@ -474,7 +471,7 @@ async def get_simple_health():
     is_healthy = results["status"] != HealthStatus.CRITICAL
 
     return {
-        "status": "OK" if is_healthy else "FAIL",
+        "status": "ok" if is_healthy else "FAIL",
         "timestamp": results["timestamp"],
         "checks": results["total_checks"],
         "issues": results["critical_checks"] + results["warning_checks"]

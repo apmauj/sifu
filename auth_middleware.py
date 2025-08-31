@@ -2,10 +2,10 @@
 Authentication and Authorization Middleware for FastAPI
 """
 
-from fastapi import Request, HTTPException, Depends
+from fastapi import HTTPException, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from starlette.status import HTTP_401_UNAUTHORIZED, HTTP_403_FORBIDDEN
-from typing import Optional, List
+from typing import List
 from auth_models import User, Permission
 from auth_service import auth_service
 

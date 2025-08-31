@@ -4,7 +4,6 @@ Script de validación de deploy para SIFU
 Verifica que todas las configuraciones de seguridad estén correctas antes del deploy
 """
 
-import os
 import sys
 import subprocess
 from pathlib import Path
