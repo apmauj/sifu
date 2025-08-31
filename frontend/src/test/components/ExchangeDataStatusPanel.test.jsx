@@ -58,14 +58,15 @@ describe('ExchangeDataStatusPanel', () => {
   it('renders data status info on success', async () => {
     getInfoMock.mockResolvedValue(sampleInfo);
     render(<ExchangeDataStatusPanel />);
-  await waitFor(() => expect(screen.getByText(/1\.234/)).toBeInTheDocument());
-  // Heading contains an emoji prefix and extra whitespace; match by regex substring
-  expect(screen.getByText(/Estado de los datos de Cotizaciones/)).toBeInTheDocument();
-  // Dates appear in separate spans; assert individually
-  expect(screen.getByText(/2020-01-02/)).toBeInTheDocument();
-  expect(screen.getAllByText(/2025-08-15/).length).toBeGreaterThan(0); // appears twice (range + latest)
-  // Currencies line has bullet and variable spacing around colon
-  expect(screen.getByText(/Monedas\s*:.*USD, EUR, ARS, BRL/)).toBeInTheDocument();
+    // Wait for the formatted number to appear (handles both 1,234 and 1.234 formats)
+    await waitFor(() => expect(screen.getByText(/1[,.]234/)).toBeInTheDocument());
+    // Heading contains an emoji prefix and extra whitespace; match by regex substring
+    expect(screen.getByText(/Estado de los datos de Cotizaciones/)).toBeInTheDocument();
+    // Dates appear in separate spans; assert individually
+    expect(screen.getByText(/2020-01-02/)).toBeInTheDocument();
+    expect(screen.getAllByText(/2025-08-15/).length).toBeGreaterThan(0); // appears twice (range + latest)
+    // Currencies line has bullet and variable spacing around colon
+    expect(screen.getByText(/Monedas\s*:.*USD, EUR, ARS, BRL/)).toBeInTheDocument();
   });
 
   it('renders error state', async () => {
