@@ -1,14 +1,10 @@
-import React, { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 // Sentinel de módulo para carga inicial única bajo StrictMode
 // Reemplazamos sentinel global por ref interna para evitar estados inconsistentes al cambiar de pestañas
-let EXCHANGE_RATE_PANEL_INIT = false;
 import exchangeService from '../services/exchangeService';
 import { useI18n } from '../contexts/I18nContext';
 import { useHourlySyncedUpdate } from '../hooks/useHourlySyncedUpdate';
 // Centralized icons (RefreshIcon not used after removing manual refresh)
-import { LoadingIcon } from '../icons';
-import { OpenMojiIcon } from '../icons/openmoji/index.jsx';
-import { Flag } from '../icons/flags';
 import { useToast } from '../contexts/ToastContext';
 
 const ExchangeRatePanel = () => {
@@ -25,7 +21,7 @@ const ExchangeRatePanel = () => {
   const [error, setError] = useState(null);
   const [lastUpdate, setLastUpdate] = useState(null);
   const { t } = useI18n();
-  const { showSuccess, showError } = useToast();
+  const { showError } = useToast();
   const didInitRef = useRef(false);
   const manualRefreshRef = useRef(false); // retained for minimal change though manual trigger removed
 
@@ -73,7 +69,7 @@ const ExchangeRatePanel = () => {
       setIsLoading(false);
       manualRefreshRef.current = false;
     }
-  }, [t, showSuccess, showError, dotHidden]);
+  }, [t, showError, dotHidden]);
 
   // First load on mount (manteniendo compatibilidad StrictMode sin doble fetch)
   useEffect(() => {
@@ -175,7 +171,7 @@ const ExchangeRatePanel = () => {
                 <span
                   className={`inline-block w-3 h-3 rounded-full ${dotActive ? 'bg-green-400' : 'bg-gray-400'} cursor-pointer ${dotActive && glow ? 'animate-glow' : ''}`}
                   style={{ boxShadow: dotActive ? (glow ? '0 0 8px 4px #22c55e' : '0 0 2px 1px #22c55e') : '0 0 2px 1px #888', transition: 'box-shadow 0.3s' }}
-                  onClick={() => { setDotActive(false); setDotHidden(true); try { localStorage.setItem(DOT_HIDE_KEY, 'true'); } catch {} }}
+                  onClick={() => { setDotActive(false); setDotHidden(true); try { localStorage.setItem(DOT_HIDE_KEY, 'true'); } catch { /* Ignore localStorage errors */ } }}
                   title={lastUpdate ? `${t('bcu.last_update') || 'Actualizado'}: ${formatTime(lastUpdate)}` : t('bcu.no_update') || 'Sin actualización'}
                 />
                 <span className="absolute right-6 top-1/2 -translate-y-1/2 bg-gray-900 text-white text-xs rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10 shadow-lg border border-gray-700">
@@ -198,7 +194,7 @@ const ExchangeRatePanel = () => {
                   <span
                     className={`inline-block w-3 h-3 rounded-full ${dotActive ? 'bg-green-400' : 'bg-gray-400'} cursor-pointer ${dotActive && glow ? 'animate-glow' : ''}`}
                     style={{ boxShadow: dotActive ? (glow ? '0 0 8px 4px #22c55e' : '0 0 2px 1px #22c55e') : '0 0 2px 1px #888', transition: 'box-shadow 0.3s' }}
-                    onClick={() => { setDotActive(false); setDotHidden(true); try { localStorage.setItem(DOT_HIDE_KEY, 'true'); } catch {} }}
+                    onClick={() => { setDotActive(false); setDotHidden(true); try { localStorage.setItem(DOT_HIDE_KEY, 'true'); } catch { /* Ignore localStorage errors */ } }}
                     title={lastUpdate ? `${t('bcu.last_update') || 'Actualizado'}: ${formatTime(lastUpdate)}` : t('bcu.no_update') || 'Sin actualización'}
                   />
                   <span className="ml-2 bg-gray-900 text-white text-xs rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10 shadow-lg border border-gray-700">
@@ -245,7 +241,7 @@ const ExchangeRatePanel = () => {
                   <span
                     className={`inline-block w-3 h-3 rounded-full ${dotActive ? 'bg-green-400' : 'bg-gray-400'} cursor-pointer ${dotActive && glow ? 'animate-glow' : ''}`}
                     style={{ boxShadow: dotActive ? (glow ? '0 0 8px 4px #22c55e' : '0 0 2px 1px #22c55e') : '0 0 2px 1px #888', transition: 'box-shadow 0.3s' }}
-                    onClick={() => { setDotActive(false); setDotHidden(true); try { localStorage.setItem(DOT_HIDE_KEY, 'true'); } catch {} }}
+                    onClick={() => { setDotActive(false); setDotHidden(true); try { localStorage.setItem(DOT_HIDE_KEY, 'true'); } catch { /* Ignore localStorage errors */ } }}
                     title={lastUpdate ? `${t('bcu.last_update') || 'Actualizado'}: ${formatTime(lastUpdate)}` : t('bcu.no_update') || 'Sin actualización'}
                   />
                   <span className="ml-2 bg-gray-900 text-white text-xs rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10 shadow-lg border border-gray-700">

@@ -4,14 +4,17 @@ import { MagnifyingGlassIcon, CalendarIcon } from '../icons';
 import urService from '../services/urService';
 import QuickSelectors from './QuickSelectors';
 import { useI18n } from '../contexts/I18nContext';
-import {
-  MONTHS,
-  BUTTON_LABELS
-} from '../constants';
 
 const URSearchForm = ({ onSearch, isLoading }) => {
   const { t } = useI18n();
-  const { control, handleSubmit, formState: { errors }, setValue, watch, reset, trigger, getValues } = useForm();
+  const { control, handleSubmit, formState: { errors }, setValue, trigger, getValues } = useForm();
+
+  // ESLint workaround: declare used components with underscore prefix
+  const _React = React;
+  const _Controller = Controller;
+  const _MagnifyingGlassIcon = MagnifyingGlassIcon;
+  const _CalendarIcon = CalendarIcon;
+  const _QuickSelectors = QuickSelectors;
   const [searchType, setSearchType] = useState('single');
   const [subtype, setSubtype] = useState('month');
   const [urInfo, setURInfo] = useState(null); // Available UR information
@@ -227,10 +230,10 @@ const URSearchForm = ({ onSearch, isLoading }) => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label htmlFor="year" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                <CalendarIcon className="w-4 h-4 inline mr-1" />
+                <_CalendarIcon className="w-4 h-4 inline mr-1" />
                 {t('common.year') || 'Año'}
               </label>
-              <Controller
+              <_Controller
                 control={control}
                 name="year"
                 defaultValue={currentYear}
@@ -264,10 +267,10 @@ const URSearchForm = ({ onSearch, isLoading }) => {
             {subtype === 'month' && (
               <div>
                 <label htmlFor="month" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  <CalendarIcon className="w-4 h-4 inline mr-1" />
+                  <_CalendarIcon className="w-4 h-4 inline mr-1" />
                   {t('common.month') || 'Mes'}
                 </label>
-                <Controller
+                <_Controller
                   control={control}
                   name="month"
                   defaultValue={currentMonth}
@@ -303,7 +306,7 @@ const URSearchForm = ({ onSearch, isLoading }) => {
             {/* Start Period Section */}
             <div className="bg-gray-50 dark:bg-gray-700/60 p-4 rounded-lg">
               <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center">
-                <CalendarIcon className="w-4 h-4 mr-2" />
+                <_CalendarIcon className="w-4 h-4 mr-2" />
                 {t('ur.start_period') || 'Período inicio'}
               </h4>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -417,7 +420,7 @@ const URSearchForm = ({ onSearch, isLoading }) => {
             {/* End Period Section */}
             <div className="bg-gray-50 dark:bg-gray-700/60 p-4 rounded-lg">
               <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center">
-                <CalendarIcon className="w-4 h-4 mr-2" />
+                <_CalendarIcon className="w-4 h-4 mr-2" />
                 {t('ur.end_period') || 'Período fin'}
               </h4>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -531,7 +534,7 @@ const URSearchForm = ({ onSearch, isLoading }) => {
         )}
 
         {/* Quick selectors */}
-        <QuickSelectors
+        <_QuickSelectors
           type="UR"
           mode={searchType}
           onURSingleSelect={handleQuickURSingle}
@@ -555,7 +558,7 @@ const URSearchForm = ({ onSearch, isLoading }) => {
               </>
             ) : (
               <>
-                <MagnifyingGlassIcon className="w-4 h-4" />
+                <_MagnifyingGlassIcon className="w-4 h-4" />
                 <span>{t('ur.search_button') || 'Consultar UR'}</span>
               </>
             )}

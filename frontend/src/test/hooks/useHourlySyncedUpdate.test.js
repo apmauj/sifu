@@ -54,7 +54,6 @@ describe('useHourlySyncedUpdate', () => {
 
   it('debería limpiar los timers al desmontar', () => {
     const spyClearTimeout = vi.spyOn(global, 'clearTimeout');
-    const spyClearInterval = vi.spyOn(global, 'clearInterval');
     
     const { unmount } = renderHook(() => useHourlySyncedUpdate(mockUpdateFunction));
     
@@ -76,7 +75,6 @@ describe('useHourlySyncedUpdate', () => {
 
   it('debería ejecutar la función de cleanup manualmente', () => {
     const spyClearTimeout = vi.spyOn(global, 'clearTimeout');
-    const spyClearInterval = vi.spyOn(global, 'clearInterval');
     
     const { result } = renderHook(() => useHourlySyncedUpdate(mockUpdateFunction));
     

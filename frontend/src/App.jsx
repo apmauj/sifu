@@ -1,4 +1,3 @@
-import { UruguayFlagIcon } from './icons/system_icons';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 // Sentinel de módulo para evitar doble inicialización con React StrictMode
 let APP_INIT_DONE = false;
@@ -16,13 +15,11 @@ import uiService from './services/api';
 import urService from './services/urService';
 import { useI18n } from './contexts/I18nContext';
 import { useToast } from './contexts/ToastContext';
-import { getTodayLocal } from './utils/dateUtils';
 import {
-  APP_TITLE,
   OFFICIAL_URLS
 } from './constants';
-// Legacy icon imports removed (migrated to OpenMojiIcon)
 import { OpenMojiIcon } from './icons/openmoji/index.jsx';
+import { UruguayFlagIcon } from './icons/system_icons';
 import Card, { CardBody } from './components/ui/Card';
 import { Tabs, Tab } from './components/ui/Tabs';
 import { useHourlySyncedUpdate } from './hooks/useHourlySyncedUpdate';
@@ -72,10 +69,10 @@ class ErrorBoundary extends React.Component {
 
 function App() {
   // Internationalization hook
-  const { t, isLoading: i18nLoading, currentLanguage, translateBackendMessage } = useI18n();
+  const { t, isLoading: i18nLoading } = useI18n();
   
   // Toast notifications hook
-  const { showSuccess, showError, showInfo } = useToast();
+  const { showError } = useToast();
   
   // Exchange states
   const [exchangeResults, setExchangeResults] = useState(null);
@@ -117,7 +114,7 @@ function App() {
         console.error('Error initializing app:', error);
       }
     })();
-  }, [i18nLoading]);
+  }, [i18nLoading, loadLatestExchange]);
 
   // Exchange functions
   // useCallback para proveer referencia estable al formulario y evitar re-render inútil / efectos extra
@@ -174,7 +171,7 @@ function App() {
     } finally {
       setIsExchangeLoading(false);
     }
-  }, [t, translateBackendMessage, showSuccess, showError]);
+  }, [t, showError]);
 
   const loadLatestExchange = async (options = {}) => {
     const { skipAutoInit = false } = options;
@@ -210,7 +207,7 @@ function App() {
     if (activeTab === 'exchange' && exchangeSearchType === 'latest' && !isExchangeLoading) {
       await loadLatestExchange({ skipAutoInit: true });
     }
-  }, [activeTab, exchangeSearchType, isExchangeLoading]);
+  }, [activeTab, exchangeSearchType, isExchangeLoading, loadLatestExchange]);
 
   useHourlySyncedUpdate(hourlyExchangeRefresh, true, { runImmediately: false });
 
@@ -223,7 +220,6 @@ function App() {
       const jobStart = await exchangeService.startAsyncHistoricalRefresh();
       if (jobStart?.job_id) {
         await pollExchangeJob(jobStart.job_id, {
-          successToast: true,
           autoReload: true,
         });
       } else {
@@ -239,14 +235,21 @@ function App() {
 
   // Polling de job de refresh histórico
   const pollExchangeJob = async (jobId, options = {}) => {
-    const { intervalMs = 4000, timeoutMs = 180000, successToast = false, autoReload = false } = options;
+    const { intervalMs = 4000, timeoutMs = 180000, autoReload = false } = options;
     const start = Date.now();
     let statusData = null;
+    let shouldContinue = true;
     try {
-      while (true) {
+      while (shouldContinue) {
         statusData = await exchangeService.getJobStatus(jobId);
-        if (!statusData || !statusData.status) break;
-        if (['success', 'error'].includes(statusData.status)) break;
+        if (!statusData || !statusData.status) {
+          shouldContinue = false;
+          break;
+        }
+        if (['success', 'error'].includes(statusData.status)) {
+          shouldContinue = false;
+          break;
+        }
         if (Date.now() - start > timeoutMs) {
           showError(t('errors.exchange_refresh_timeout') || 'Timeout esperando finalización de la actualización');
           return;
@@ -307,7 +310,7 @@ function App() {
         if (job?.job_id) {
           // Remover toast informativo intrusivo - solo mostrar errores
           // showInfo(safeT('exchange.refresh_started', 'Actualización iniciada...'));
-          await pollExchangeJob(job.job_id, { successToast: false, autoReload: true });
+          await pollExchangeJob(job.job_id, { autoReload: true });
         } else {
           showError(t('errors.exchange_refresh_failed') || 'No se pudo iniciar la actualización');
         }

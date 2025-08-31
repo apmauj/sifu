@@ -1,12 +1,8 @@
-import React, { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 // Eliminamos sentinel global para evitar quedarse en loading al volver desde otra pestaña
-let BROU_PANEL_INIT = false; // mantenido para compatibilidad pero ya no se usa como guard principal
 import { useI18n } from '../contexts/I18nContext';
 import { useHourlySyncedUpdate } from '../hooks/useHourlySyncedUpdate';
 import brouService from '../services/brouService';
-import { RefreshIcon, LoadingIcon, RetryIcon } from '../icons';
-import { OpenMojiIcon } from '../icons/openmoji/index.jsx';
-import { Flag } from '../icons/flags';
 import { useToast } from '../contexts/ToastContext';
 
 const BROUPanel = () => {
@@ -14,7 +10,6 @@ const BROUPanel = () => {
   const [rates, setRates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [lastUpdate, setLastUpdate] = useState(null);
   const { showSuccess, showError } = useToast();
 
   // Currency display configuration with official Unicode emojis
@@ -37,7 +32,6 @@ const BROUPanel = () => {
       const list = Array.isArray(data) ? data : (Array.isArray(data?.data) ? data.data : []);
       if (list.length > 0) {
         setRates(list);
-        setLastUpdate(new Date());
         if (rates.length) {
           showSuccess(t('brou.updated') || 'Cotizaciones BROU actualizadas');
         }
@@ -72,14 +66,6 @@ const BROUPanel = () => {
   const formatArbitrage = (arbitrage) => {
     if (arbitrage === null || arbitrage === undefined) return '-';
     return arbitrage.toFixed(4);
-  };
-
-  const formatTime = (date) => {
-    return date.toLocaleTimeString('es-UY', { 
-      hour: '2-digit', 
-      minute: '2-digit',
-      hour12: false 
-    });
   };
 
   const getCurrencyRowClass = (currency) => {

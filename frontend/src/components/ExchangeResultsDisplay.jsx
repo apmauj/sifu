@@ -1,12 +1,34 @@
 import React from 'react';
 import { getCurrencyInfo, formatExchangeRate } from '../services/exchangeService';
 import { useI18n } from '../contexts/I18nContext';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { format, parseISO } from 'date-fns';
-import { Flag } from '../icons/flags';
 
 const ExchangeResultsDisplay = ({ results, searchType, isLoading, error }) => {
-  const { t, translateBackendMessage } = useI18n();
+  const { t } = useI18n();
+
+  // Paginación para tabla / listado - hooks must be called before any early returns
+  const PAGE_SIZE = 20;
+  const [page, setPage] = React.useState(0);
+
+  // Process data and filter currencies before any early returns
+  const data = results && results.success && results.data ? 
+    (Array.isArray(results.data) ? results.data : [results.data]) : [];
+  
+  // Filtrar solo las monedas soportadas
+  const filteredData = data.filter(rate => {
+    const currencyInfo = getCurrencyInfo(rate.currency);
+    return currencyInfo !== undefined;
+  });
+
+  // Paginación para tabla / listado - useMemo must be called after data processing but before early returns
+  const paginatedData = React.useMemo(() => {
+    const start = page * PAGE_SIZE;
+    return filteredData.slice(start, start + PAGE_SIZE);
+  }, [filteredData, page]);
+
+  // Calcular fecha única para encabezado (si corresponde)
+  const uniqueDates = [...new Set(filteredData.map(r => r.date))];
+  const singleDate = uniqueDates.length === 1 ? uniqueDates[0] : null;
 
   // Función para formatear fecha para el gráfico
   const formatDateForChart = (dateString) => {
@@ -50,18 +72,6 @@ const ExchangeResultsDisplay = ({ results, searchType, isLoading, error }) => {
     const adjustedMax = maxRate + padding;
     
     return [adjustedMin.toFixed(4), adjustedMax.toFixed(4)];
-  };
-
-  // Función para agrupar datos por moneda
-  const groupByCurrency = (data) => {
-    const grouped = {};
-    data.forEach(item => {
-      if (!grouped[item.currency]) {
-        grouped[item.currency] = [];
-      }
-      grouped[item.currency].push(item);
-    });
-    return grouped;
   };
 
   // Mostrar loading
@@ -119,14 +129,6 @@ const ExchangeResultsDisplay = ({ results, searchType, isLoading, error }) => {
     );
   }
 
-  const data = Array.isArray(results.data) ? results.data : [results.data];
-  
-  // Filtrar solo las monedas soportadas
-  const filteredData = data.filter(rate => {
-    const currencyInfo = getCurrencyInfo(rate.currency);
-    return currencyInfo !== undefined;
-  });
-
   // Si no hay datos después del filtrado, mostrar mensaje
   if (filteredData.length === 0 && data.length > 0) {
     return (
@@ -147,59 +149,8 @@ const ExchangeResultsDisplay = ({ results, searchType, isLoading, error }) => {
     );
   }
 
-  // Componente para mostrar una tarjeta de moneda
-  const CurrencyCard = ({ rate }) => {
-    const currencyInfo = getCurrencyInfo(rate.currency);
-    
-    return (
-      <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center">
-            <span className="text-2xl mr-2"><Flag code={rate.currency} className="flag-icon" /></span>
-            <div>
-              <h3 className="font-bold text-gray-900">{rate.currency}</h3>
-              <p className="text-xs text-gray-600">{currencyInfo?.name || rate.currency}</p>
-            </div>
-          </div>
-          <div className="text-right">
-            <p className="text-xs text-gray-500">{rate.date}</p>
-            {rate.arbitrage && (
-              <p className="text-xs text-blue-600 font-medium">{rate.arbitrage}</p>
-            )}
-          </div>
-        </div>
-        
-        <div className="grid grid-cols-2 gap-3">
-          <div className="text-center">
-            <p className="text-xs text-gray-600 mb-1">{t('exchange.buy_rate') || 'Compra'}</p>
-            <p className="text-lg font-bold text-green-600">
-              ${formatExchangeRate(rate.buy_rate)}
-            </p>
-          </div>
-          <div className="text-center">
-            <p className="text-xs text-gray-600 mb-1">{t('exchange.sell_rate') || 'Venta'}</p>
-            <p className="text-lg font-bold text-red-600">
-              ${formatExchangeRate(rate.sell_rate)}
-            </p>
-          </div>
-        </div>
-        
-        {rate.average_rate && (
-          <div className="mt-3 pt-3 border-t border-blue-200">
-            <div className="text-center">
-              <p className="text-xs text-gray-600 mb-1">{t('exchange.average_rate') || 'Promedio'}</p>
-              <p className="text-sm font-semibold text-blue-700">
-                ${formatExchangeRate(rate.average_rate)}
-              </p>
-            </div>
-          </div>
-        )}
-      </div>
-    );
-  };
-
   // Componente para tabla de historial optimizada
-  const HistoryTable = ({ rates }) => (
+  const _HistoryTable = ({ rates }) => (
     <>
       {/* Vista de tabla para pantallas medianas y grandes */}
       <div className="hidden md:block overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
@@ -317,7 +268,7 @@ const ExchangeResultsDisplay = ({ results, searchType, isLoading, error }) => {
   );
 
   // Componente de gráfico de cotizaciones
-  const ExchangeChart = ({ data }) => {
+  const _ExchangeChart = ({ data }) => {
     const currencies = [...new Set(data.map(item => item.currency))];
     
     // Colores para diferentes monedas
@@ -463,17 +414,7 @@ const ExchangeResultsDisplay = ({ results, searchType, isLoading, error }) => {
   };
 
   // Paginación para tabla / listado
-  const PAGE_SIZE = 20;
-  const [page, setPage] = React.useState(0);
   const totalPages = Math.ceil(filteredData.length / PAGE_SIZE) || 1;
-  const paginatedData = React.useMemo(() => {
-    const start = page * PAGE_SIZE;
-    return filteredData.slice(start, start + PAGE_SIZE);
-  }, [filteredData, page]);
-
-  // Calcular fecha única para encabezado (si corresponde)
-  const uniqueDates = [...new Set(filteredData.map(r => r.date))];
-  const singleDate = uniqueDates.length === 1 ? uniqueDates[0] : null;
 
   return (
     <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-md p-6">
@@ -578,11 +519,11 @@ const ExchangeResultsDisplay = ({ results, searchType, isLoading, error }) => {
 
           {/* Gráfico de cotizaciones para múltiples datos */}
           {filteredData.length > 1 && (searchType === 'range' || searchType === 'history') && (
-            <ExchangeChart data={filteredData} />
+            <_ExchangeChart data={filteredData} />
           )}
 
           <div className="card">
-            <HistoryTable rates={paginatedData} />
+            <_HistoryTable rates={paginatedData} />
             {filteredData.length > PAGE_SIZE && (
               <div className="flex items-center justify-between mt-4 text-sm">
                 <button

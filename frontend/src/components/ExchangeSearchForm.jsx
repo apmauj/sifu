@@ -70,7 +70,7 @@ const ExchangeSearchForm = ({ onSearch, isLoading }) => {
       case 'latest':
         // No additional params needed
         break;
-      case 'date':
+      case 'date': {
         const date = dateRef.current?.value;
         if (!date) {
           setError(t('ui.date_required') || 'La fecha es requerida');
@@ -81,7 +81,8 @@ const ExchangeSearchForm = ({ onSearch, isLoading }) => {
         }
         searchParams.date = date;
         break;
-      case 'range':
+      }
+      case 'range': {
         const start = startDateRef.current?.value;
         const end = endDateRef.current?.value;
         if (!start || !end) {
@@ -94,13 +95,15 @@ const ExchangeSearchForm = ({ onSearch, isLoading }) => {
         searchParams.startDate = start;
         searchParams.endDate = end;
         break;
-      case 'history':
+      }
+      case 'history': {
         if (!finalCurrency) {
           setError(t('exchange.select_currency_for_history') || 'Selecciona una moneda para ver el historial');
           return;
         }
         searchParams.limit = historyLimit;
         break;
+      }
       default:
         break;
     }
@@ -118,7 +121,7 @@ const ExchangeSearchForm = ({ onSearch, isLoading }) => {
     const finalCurrency = selectedCurrency === 'ALL' ? null : selectedCurrency;
 
     switch (action) {
-      case 'latest':
+      case 'latest': {
         setSearchType('latest');
         // Ejecuta búsqueda 'latest'; se espera que el contenedor procese y devuelva datos.
         onSearch({ type: 'latest', currency: finalCurrency })
@@ -132,7 +135,8 @@ const ExchangeSearchForm = ({ onSearch, isLoading }) => {
           })
           .catch(() => {});
         break;
-      case 'week':
+      }
+      case 'week': {
         const weekAgo = getDaysAgoLocal(7);
         const todayWeek = getTodayLocal();
         setSearchType('range');
@@ -145,6 +149,7 @@ const ExchangeSearchForm = ({ onSearch, isLoading }) => {
           currency: finalCurrency,
         });
         break;
+      }
       case 'month': {
         const monthAgo = getDaysAgoLocal(30);
         const todayMonth = getTodayLocal();
