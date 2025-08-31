@@ -34,61 +34,121 @@ class DatabaseOptimizer:
         try:
             # UI Table optimizations
             # Composite index for date range queries
-            ui_date_range_idx = Index('idx_ui_date_range', UIRecord.date, UIRecord.value)
-            ui_date_range_idx.create(bind=engine)
+            try:
+                ui_date_range_idx = Index('idx_ui_date_range', UIRecord.date, UIRecord.value)
+                ui_date_range_idx.create(bind=engine)
+            except Exception as e:
+                if "already exists" in str(e).lower():
+                    logger.info("Index idx_ui_date_range already exists, skipping...")
+                else:
+                    logger.warning(f"Error creating idx_ui_date_range: {e}")
 
             # Covering index for latest queries
-            ui_latest_idx = Index('idx_ui_latest', UIRecord.date.desc(), UIRecord.value)
-            ui_latest_idx.create(bind=engine)
+            try:
+                ui_latest_idx = Index('idx_ui_latest', UIRecord.date.desc(), UIRecord.value)
+                ui_latest_idx.create(bind=engine)
+            except Exception as e:
+                if "already exists" in str(e).lower():
+                    logger.info("Index idx_ui_latest already exists, skipping...")
+                else:
+                    logger.warning(f"Error creating idx_ui_latest: {e}")
 
             # UR Table optimizations
             # Composite index for year-month queries
-            ur_year_month_idx = Index('idx_ur_year_month', URRecord.year, URRecord.month, URRecord.value)
-            ur_year_month_idx.create(bind=engine)
+            try:
+                ur_year_month_idx = Index('idx_ur_year_month', URRecord.year, URRecord.month, URRecord.value)
+                ur_year_month_idx.create(bind=engine)
+            except Exception as e:
+                if "already exists" in str(e).lower():
+                    logger.info("Index idx_ur_year_month already exists, skipping...")
+                else:
+                    logger.warning(f"Error creating idx_ur_year_month: {e}")
 
             # Index for year-based queries
-            ur_year_idx = Index('idx_ur_year_only', URRecord.year)
-            ur_year_idx.create(bind=engine)
+            try:
+                ur_year_idx = Index('idx_ur_year_only', URRecord.year)
+                ur_year_idx.create(bind=engine)
+            except Exception as e:
+                if "already exists" in str(e).lower():
+                    logger.info("Index idx_ur_year_only already exists, skipping...")
+                else:
+                    logger.warning(f"Error creating idx_ur_year_only: {e}")
 
             # Composite index for range queries
-            ur_range_idx = Index('idx_ur_range', URRecord.year, URRecord.month)
-            ur_range_idx.create(bind=engine)
+            try:
+                ur_range_idx = Index('idx_ur_range', URRecord.year, URRecord.month)
+                ur_range_idx.create(bind=engine)
+            except Exception as e:
+                if "already exists" in str(e).lower():
+                    logger.info("Index idx_ur_range already exists, skipping...")
+                else:
+                    logger.warning(f"Error creating idx_ur_range: {e}")
 
             # Exchange Rate Table optimizations
             # Composite index for date-currency queries
-            er_date_currency_idx = Index('idx_er_date_currency',
-                                       ExchangeRateRecord.date,
-                                       ExchangeRateRecord.currency,
-                                       ExchangeRateRecord.buy_rate,
-                                       ExchangeRateRecord.sell_rate,
-                                       ExchangeRateRecord.average_rate)
-            er_date_currency_idx.create(bind=engine)
+            try:
+                er_date_currency_idx = Index('idx_er_date_currency',
+                                           ExchangeRateRecord.date,
+                                           ExchangeRateRecord.currency,
+                                           ExchangeRateRecord.buy_rate,
+                                           ExchangeRateRecord.sell_rate,
+                                           ExchangeRateRecord.average_rate)
+                er_date_currency_idx.create(bind=engine)
+            except Exception as e:
+                if "already exists" in str(e).lower():
+                    logger.info("Index idx_er_date_currency already exists, skipping...")
+                else:
+                    logger.warning(f"Error creating idx_er_date_currency: {e}")
 
             # Index for currency-based queries
-            er_currency_date_idx = Index('idx_er_currency_date',
-                                       ExchangeRateRecord.currency,
-                                       ExchangeRateRecord.date.desc())
-            er_currency_date_idx.create(bind=engine)
+            try:
+                er_currency_date_idx = Index('idx_er_currency_date',
+                                           ExchangeRateRecord.currency,
+                                           ExchangeRateRecord.date.desc())
+                er_currency_date_idx.create(bind=engine)
+            except Exception as e:
+                if "already exists" in str(e).lower():
+                    logger.info("Index idx_er_currency_date already exists, skipping...")
+                else:
+                    logger.warning(f"Error creating idx_er_currency_date: {e}")
 
             # Covering index for latest queries
-            er_latest_idx = Index('idx_er_latest',
-                                ExchangeRateRecord.date.desc(),
-                                ExchangeRateRecord.currency,
-                                ExchangeRateRecord.average_rate)
-            er_latest_idx.create(bind=engine)
+            try:
+                er_latest_idx = Index('idx_er_latest',
+                                    ExchangeRateRecord.date.desc(),
+                                    ExchangeRateRecord.currency,
+                                    ExchangeRateRecord.average_rate)
+                er_latest_idx.create(bind=engine)
+            except Exception as e:
+                if "already exists" in str(e).lower():
+                    logger.info("Index idx_er_latest already exists, skipping...")
+                else:
+                    logger.warning(f"Error creating idx_er_latest: {e}")
 
             # BROU Table optimizations
             # Composite index for currency-timestamp queries
-            brou_currency_time_idx = Index('idx_brou_currency_timestamp',
-                                         BROURecord.currency,
-                                         BROURecord.timestamp.desc(),
-                                         BROURecord.buy_rate,
-                                         BROURecord.sell_rate)
-            brou_currency_time_idx.create(bind=engine)
+            try:
+                brou_currency_time_idx = Index('idx_brou_currency_timestamp',
+                                             BROURecord.currency,
+                                             BROURecord.timestamp.desc(),
+                                             BROURecord.buy_rate,
+                                             BROURecord.sell_rate)
+                brou_currency_time_idx.create(bind=engine)
+            except Exception as e:
+                if "already exists" in str(e).lower():
+                    logger.info("Index idx_brou_currency_timestamp already exists, skipping...")
+                else:
+                    logger.warning(f"Error creating idx_brou_currency_timestamp: {e}")
 
             # Index for timestamp-based queries
-            brou_time_idx = Index('idx_brou_timestamp', BROURecord.timestamp.desc())
-            brou_time_idx.create(bind=engine)
+            try:
+                brou_time_idx = Index('idx_brou_timestamp', BROURecord.timestamp.desc())
+                brou_time_idx.create(bind=engine)
+            except Exception as e:
+                if "already exists" in str(e).lower():
+                    logger.info("Index idx_brou_timestamp already exists, skipping...")
+                else:
+                    logger.warning(f"Error creating idx_brou_timestamp: {e}")
 
             logger.info("Database indexes created successfully")
             return True

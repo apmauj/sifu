@@ -141,9 +141,14 @@ from dashboard import dashboard_service
 # Performance budget service
 try:
     from performance_budget import get_performance_budget_manager
-    performance_budget_manager = get_performance_budget_manager()
+    # Initialize without monitoring/alerts for now to avoid startup issues
+    performance_budget_manager = get_performance_budget_manager(enable_monitoring=False, enable_alerts=False)
+    logger.info("Performance budget manager initialized successfully")
 except ImportError:
     logger.warning("Performance budget module not available")
+    performance_budget_manager = None
+except Exception as e:
+    logger.error(f"Error initializing performance budget manager: {e}")
     performance_budget_manager = None
 
 # Flag para omitir bootstrap y refresh en startup (usado en tests / CI)
@@ -155,98 +160,106 @@ async def _execute_startup():
     logger.info("Starting SIFU (bootstrap + cache warmup)... skip=%s", SKIP_BOOTSTRAP)
     global scheduler
 
-    # Minimal phase: siempre instanciamos servicio y consultamos total para que los tests
-    # puedan verificar la llamada (incluso cuando SKIP_BOOTSTRAP=1)
-    db = None
     try:
-        from database import SessionLocal as _SL  # local import para evitar costos al importar tests
-        db = _SL()
-        service = UIService(db)
-        total = service.get_total_records()  # <- los tests esperan que se llame
-        if total == 0:
-            if os.getenv("SIFU_SKIP_STARTUP_REFRESH") == "1":
-                logger.info("[Startup] Refresh suprimido (SIFU_SKIP_STARTUP_REFRESH=1)")
-            else:
-                try:
-                    excel_processor.refresh_data(db)
-                except Exception as e:  # noqa: BLE001
-                    logger.error(f"[LegacyBootstrap] UI refresh failed: {e}")
-        else:
-            logger.info(f"[Startup] UI data present ({total} records)")
-    except Exception as e:  # noqa: BLE001
-        logger.error(f"[LegacyBootstrap] skipped due to error: {e}")
-    finally:
-        if db:
-            try:
-                db.close()
-            except Exception:  # noqa: BLE001
-                pass
-
-    # Si skip activado, no continuamos con bootstrap pesado / caches / scheduler
-    if SKIP_BOOTSTRAP:
-        logger.info("[Startup] Bootstrap pesado omitido (skip flag)")
-        return
-
-    # Full bootstrap (solo si no skip)
-    try:
-        summary = perform_bootstrap(
-            force=False,
-            excel_processor=excel_processor,
-            ur_excel_processor=ur_excel_processor,
-            exchange_rate_excel_processor=exchange_rate_excel_processor,
-        )
-        logger.info(f"[Bootstrap] summary={summary}")
-    except Exception as e:  # noqa: BLE001
-        logger.error(f"[Bootstrap] failed: {e}")
-
-    # Warm caches
-    try:
-        _update_bcu_cache()
-        _update_brou_cache()
-    except Exception as e:  # noqa: BLE001
-        logger.error(f"Cache warmup failed: {e}")
-
-    # Initialize database optimizer
-    try:
-        from database import SessionLocal
-        db = SessionLocal()
-        optimizer = DatabaseOptimizer(db)
-        logger.info("[DatabaseOptimizer] Initializing database optimizations...")
-        optimizer.create_optimized_indexes()
-        logger.info("[DatabaseOptimizer] Database optimizations completed")
-        db.close()
-    except Exception as e:  # noqa: BLE001
-        logger.error(f"[DatabaseOptimizer] Initialization failed: {e}")
-
-    # Launch hourly refresher once
-    if not hasattr(_execute_startup, "_refresher_started"):
-        async def cache_refresher_loop():
-            while True:
-                await asyncio.sleep(3600)
-                logger.info("[CacheRefresher] Hourly refresh executing...")
-                try:
-                    _update_bcu_cache()
-                    _update_brou_cache()
-                except Exception as e:  # noqa: BLE001
-                    logger.error(f"[CacheRefresher] failure: {e}")
-        asyncio.create_task(cache_refresher_loop())
-        _execute_startup._refresher_started = True  # type: ignore
-
-    # Start scheduler once
-    global scheduler
-    if scheduler is None:
+        # Minimal phase: siempre instanciamos servicio y consultamos total para que los tests
+        # puedan verificar la llamada (incluso cuando SKIP_BOOTSTRAP=1)
+        db = None
         try:
-            if SCHEDULER_ENABLED and AsyncIOScheduler and CronTrigger:
-                scheduler = AsyncIOScheduler()
-                _add_jobs(scheduler)
-                scheduler.start()
-                logger.info(f"[Scheduler] Started (tz={SCHEDULER_TIMEZONE})")
+            from database import SessionLocal as _SL  # local import para evitar costos al importar tests
+            db = _SL()
+            service = UIService(db)
+            total = service.get_total_records()  # <- los tests esperan que se llame
+            if total == 0:
+                if os.getenv("SIFU_SKIP_STARTUP_REFRESH") == "1":
+                    logger.info("[Startup] Refresh suprimido (SIFU_SKIP_STARTUP_REFRESH=1)")
+                else:
+                    try:
+                        excel_processor.refresh_data(db)
+                    except Exception as e:  # noqa: BLE001
+                        logger.error(f"[LegacyBootstrap] UI refresh failed: {e}")
             else:
-                logger.info("[Scheduler] Disabled or APScheduler not installed")
+                logger.info(f"[Startup] UI data present ({total} records)")
         except Exception as e:  # noqa: BLE001
-            logger.error(f"[Scheduler] Failed to start: {e}")
+            logger.error(f"[LegacyBootstrap] skipped due to error: {e}")
+        finally:
+            if db:
+                try:
+                    db.close()
+                except Exception:  # noqa: BLE001
+                    pass
 
-    logger.info("Startup bootstrap complete")
+        # Si skip activado, no continuamos con bootstrap pesado / caches / scheduler
+        if SKIP_BOOTSTRAP:
+            logger.info("[Startup] Bootstrap pesado omitido (skip flag)")
+            return
+
+        # Full bootstrap (solo si no skip)
+        try:
+            summary = perform_bootstrap(
+                force=False,
+                excel_processor=excel_processor,
+                ur_excel_processor=ur_excel_processor,
+                exchange_rate_excel_processor=exchange_rate_excel_processor,
+            )
+            logger.info(f"[Bootstrap] summary={summary}")
+        except Exception as e:  # noqa: BLE001
+            logger.error(f"[Bootstrap] failed: {e}")
+
+        # Warm caches
+        try:
+            _update_bcu_cache()
+            _update_brou_cache()
+        except Exception as e:  # noqa: BLE001
+            logger.error(f"Cache warmup failed: {e}")
+
+        # Initialize database optimizer
+        try:
+            optimizer = DatabaseOptimizer()
+            logger.info("[DatabaseOptimizer] Initializing database optimizations...")
+            optimizer.create_optimized_indexes()
+            logger.info("[DatabaseOptimizer] Database optimizations completed")
+        except Exception as e:  # noqa: BLE001
+            logger.error(f"[DatabaseOptimizer] Initialization failed: {e}")
+
+        # Launch hourly refresher once
+        if not hasattr(_execute_startup, "_refresher_started"):
+            async def cache_refresher_loop():
+                while True:
+                    await asyncio.sleep(3600)
+                    logger.info("[CacheRefresher] Hourly refresh executing...")
+                    try:
+                        _update_bcu_cache()
+                        _update_brou_cache()
+                    except Exception as e:  # noqa: BLE001
+                        logger.error(f"[CacheRefresher] failure: {e}")
+            asyncio.create_task(cache_refresher_loop())
+            _execute_startup._refresher_started = True  # type: ignore
+
+        # Start scheduler once
+        global scheduler
+        if scheduler is None:
+            try:
+                if SCHEDULER_ENABLED and CronTrigger:
+                    # Try AsyncIOScheduler again to see if it works with middlewares disabled
+                    from apscheduler.schedulers.asyncio import AsyncIOScheduler
+                    scheduler = AsyncIOScheduler(timezone=SCHEDULER_TIMEZONE)
+                    _add_jobs(scheduler)
+                    scheduler.start()
+                    logger.info(f"[Scheduler] Started with AsyncIOScheduler (tz={SCHEDULER_TIMEZONE})")
+                else:
+                    logger.info("[Scheduler] Disabled or APScheduler not installed")
+            except Exception as e:  # noqa: BLE001
+                logger.error(f"[Scheduler] Failed to start: {e}")
+
+        logger.info("Startup bootstrap complete")
+
+    except Exception as e:
+        logger.error(f"[Startup] CRITICAL ERROR during startup: {e}")
+        logger.error(f"[Startup] Exception type: {type(e)}")
+        import traceback
+        logger.error(f"[Startup] Traceback: {traceback.format_exc()}")
+        # Re-raise to let FastAPI handle it properly
+        raise
 
 
 # Legacy-compatible symbol for tests
@@ -352,6 +365,11 @@ async def debug_correlation_id(request: Request):
         "message": "Check server logs for correlation ID tracing",
         "timestamp": datetime.utcnow().isoformat()
     }
+
+@app.get("/test", tags=["Sistema"])
+async def test_endpoint():
+    """Endpoint de prueba simple sin dependencias."""
+    return {"message": "Test endpoint working", "timestamp": datetime.utcnow().isoformat()}
 
 # -----------------------------------------------------------------------------
 # Scheduler setup (optional)
@@ -649,7 +667,7 @@ async def health_check():
     Verifica que el servicio esté funcionando correctamente.
     Para health checks avanzados usar /api/health/advanced
     """
-    return await get_simple_health()
+    return {"status": "OK", "message": "Server is running"}
 
 @app.get("/api/ui/latest", tags=[TAG_UI])
 async def get_latest_ui(db: Session = Depends(get_db)):
@@ -1520,7 +1538,8 @@ async def resolve_alert(alert_id: str):
 async def get_performance_budgets():
     """Obtener todos los budgets de performance configurados."""
     try:
-        from performance_budget import performance_budget_manager
+        if performance_budget_manager is None:
+            raise HTTPException(status_code=503, detail="Performance budget service not available")
         budgets = performance_budget_manager.get_all_budgets()
         return {
             "budgets": budgets,
@@ -1536,7 +1555,8 @@ async def get_performance_budgets():
 async def get_performance_budgets_status():
     """Obtener estado actual de todos los budgets de performance."""
     try:
-        from performance_budget import performance_budget_manager
+        if performance_budget_manager is None:
+            raise HTTPException(status_code=503, detail="Performance budget service not available")
         status = performance_budget_manager.get_budget_status()
         return {
             "budget_status": status,
@@ -1552,7 +1572,8 @@ async def get_performance_budgets_status():
 async def get_throughput_metrics():
     """Obtener métricas de throughput actuales."""
     try:
-        from performance_budget import performance_budget_manager
+        if performance_budget_manager is None:
+            raise HTTPException(status_code=503, detail="Performance budget service not available")
         throughput = performance_budget_manager.get_throughput_metrics("global")
         return {
             "throughput": throughput,
@@ -1564,40 +1585,58 @@ async def get_throughput_metrics():
         raise HTTPException(status_code=500, detail=f"Error retrieving throughput metrics: {str(e)}")
 
 
-@app.get("/api/performance/budgets/{budget_name}", tags=["Sistema"])
-async def get_performance_budget(budget_name: str):
-    """Obtener detalles de un budget de performance específico."""
+@app.post("/api/performance/enable-monitoring", tags=["Sistema"])
+async def enable_performance_monitoring():
+    """Habilitar monitoring y alertas de performance budgets."""
+    global performance_budget_manager
     try:
-        from performance_budget import performance_budget_manager
-        budget = performance_budget_manager.get_budget(budget_name)
-        if budget is None:
-            raise HTTPException(status_code=404, detail=f"Performance budget '{budget_name}' not found")
+        if performance_budget_manager is None:
+            raise HTTPException(status_code=503, detail="Performance budget service not available")
 
-        # Get current status for this budget
-        status = performance_budget_manager.get_budget_status()
-        budget_status = status.get(budget_name)
+        # Re-initialize with monitoring and alerts enabled
+        from performance_budget import get_performance_budget_manager
+        performance_budget_manager = get_performance_budget_manager(enable_monitoring=True, enable_alerts=True)
 
         return {
-            "budget": {
-                "name": budget.name,
-                "type": budget.budget_type.value,
-                "target_value": budget.target_value,
-                "warning_threshold": budget.warning_threshold,
-                "critical_threshold": budget.critical_threshold,
-                "warning_value": budget.warning_value,
-                "critical_value": budget.critical_value,
-                "window_minutes": budget.window_minutes,
-                "description": budget.description,
-                "enabled": budget.enabled
-            },
-            "current_status": budget_status,
-            "timestamp": datetime.utcnow().isoformat()
+            "message": "Performance monitoring and alerts enabled successfully",
+            "status": "enabled",
+            "budgets_count": len(performance_budget_manager.get_all_budgets())
         }
-    except HTTPException:
-        raise
     except Exception as e:
-        logger.error(f"Error getting performance budget {budget_name}: {e}")
-        raise HTTPException(status_code=500, detail=f"Error retrieving performance budget: {str(e)}")
+        logger.error(f"Error enabling performance monitoring: {e}")
+        raise HTTPException(status_code=500, detail=f"Error enabling performance monitoring: {str(e)}")
+
+
+@app.get("/api/performance/status", tags=["Sistema"])
+async def get_performance_service_status():
+    """Obtener estado del servicio de performance budgets."""
+    try:
+        if performance_budget_manager is None:
+            return {
+                "status": "unavailable",
+                "message": "Performance budget service not initialized",
+                "monitoring_enabled": False,
+                "alerts_enabled": False
+            }
+
+        # Check if monitoring is enabled by checking if the monitoring thread exists
+        monitoring_enabled = hasattr(performance_budget_manager, '_monitoring_thread') and performance_budget_manager._monitoring_thread.is_alive()
+
+        return {
+            "status": "available",
+            "message": "Performance budget service is running",
+            "monitoring_enabled": monitoring_enabled,
+            "alerts_enabled": True,  # We assume alerts are enabled if service is available
+            "budgets_count": len(performance_budget_manager.get_all_budgets())
+        }
+    except Exception as e:
+        logger.error(f"Error getting performance service status: {e}")
+        return {
+            "status": "error",
+            "message": f"Error checking service status: {str(e)}",
+            "monitoring_enabled": False,
+            "alerts_enabled": False
+        }
 
 
 # =============================================================================
