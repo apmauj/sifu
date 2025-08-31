@@ -1,3 +1,3 @@
-// Test file with syntax error
-const test = 'hello'
-console.log(test)
+// Test file with linting error
+const unusedVar = 'test';
+console.log('hello world');
