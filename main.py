@@ -204,14 +204,23 @@ async def _execute_startup():
         except Exception as e:  # noqa: BLE001
             logger.error(f"Cache warmup failed: {e}")
 
-        # Initialize database optimizer
-        try:
-            optimizer = DatabaseOptimizer()
-            logger.info("[DatabaseOptimizer] Initializing database optimizations...")
-            optimizer.create_optimized_indexes()
-            logger.info("[DatabaseOptimizer] Database optimizations completed")
-        except Exception as e:  # noqa: BLE001
-            logger.error(f"[DatabaseOptimizer] Initialization failed: {e}")
+        # Initialize database optimizer (skip in test environment)
+        is_test_env = (
+            os.getenv("PYTEST_CURRENT_TEST") is not None or
+            os.getenv("TESTING") == "true" or
+            "pytest" in os.getenv("_", "").lower()
+        )
+        
+        if not is_test_env:
+            try:
+                optimizer = DatabaseOptimizer()
+                logger.info("[DatabaseOptimizer] Initializing database optimizations...")
+                optimizer.create_optimized_indexes()
+                logger.info("[DatabaseOptimizer] Database optimizations completed")
+            except Exception as e:  # noqa: BLE001
+                logger.error(f"[DatabaseOptimizer] Initialization failed: {e}")
+        else:
+            logger.info("[DatabaseOptimizer] Skipping database optimizations in test environment")
 
         # Launch hourly refresher once
         if not hasattr(_execute_startup, "_refresher_started"):

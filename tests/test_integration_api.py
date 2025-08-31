@@ -26,15 +26,6 @@ def db_session(sqlite_file):
     SQLALCHEMY_DATABASE_URL = f"sqlite:///{sqlite_file}"
     engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False})
     
-    # Ensure complete cleanup before creating tables
-    try:
-        # Force drop all tables and indexes
-        with engine.connect() as conn:
-            conn.execute(DBBase.metadata.drop_all(engine))
-            conn.commit()
-    except Exception:
-        pass  # Ignore if tables don't exist
-    
     # Create all tables fresh
     DBBase.metadata.create_all(bind=engine)
     
@@ -45,7 +36,7 @@ def db_session(sqlite_file):
         yield db
     finally:
         db.close()
-        # Force cleanup
+        # Cleanup
         try:
             with engine.connect() as conn:
                 conn.execute(DBBase.metadata.drop_all(engine))
