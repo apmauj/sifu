@@ -141,7 +141,7 @@ from dashboard import dashboard_service
 # Performance budget service
 try:
     from performance_budget import get_performance_budget_manager
-    # Initialize without monitoring/alerts for now to avoid startup issues
+    # Initialize with monitoring disabled for now to avoid startup issues
     performance_budget_manager = get_performance_budget_manager(enable_monitoring=False, enable_alerts=False)
     logger.info("Performance budget manager initialized successfully")
 except ImportError:

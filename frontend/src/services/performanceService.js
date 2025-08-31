@@ -1,11 +1,26 @@
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+const API_BASE_URL = import.meta.env.VITE_PUBLIC_API_URL || 'http://localhost:8000';
+
+// Normalize the API base URL to ensure it doesn't have double /api
+const normalizeApiUrl = (baseUrl) => {
+  // Remove trailing slash
+  let url = baseUrl.replace(/\/$/, '');
+
+  // If it ends with /api, remove it since we'll add it in the endpoints
+  if (url.endsWith('/api')) {
+    url = url.slice(0, -4); // Remove '/api'
+  }
+
+  return url;
+};
+
+const NORMALIZED_API_URL = normalizeApiUrl(API_BASE_URL);
 
 class PerformanceService {
   constructor() {
     this.client = axios.create({
-      baseURL: API_BASE_URL,
+      baseURL: NORMALIZED_API_URL,
       timeout: 10000,
     });
   }
@@ -39,7 +54,7 @@ class PerformanceService {
       throw error;
     }
   }
-
+  
   async getBudgetDetails(name) {
     try {
       const response = await this.client.get(`/api/performance/budgets/${name}`);
