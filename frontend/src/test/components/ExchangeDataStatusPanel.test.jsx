@@ -4,31 +4,42 @@ import { vi } from 'vitest';
 import ExchangeDataStatusPanel from '../../components/ExchangeDataStatusPanel';
 
 // Mock i18n
+const t = (k) => {
+  const map = {
+    'common.loading': 'Cargando información...',
+    'exchange.data_status_title': 'Estado de los datos de Cotizaciones',
+    'common.records': 'registros',
+    'exchange.available': 'disponibles',
+    'common.period': 'Período',
+    'exchange.currencies_label': 'Monedas',
+    'exchange.latest_day': 'Último día disponible',
+    'exchange.source_note': 'Fuente: INE (histórico, último día hábil publicado)',
+    'exchange.status_error': 'Error al cargar estado de cotizaciones'
+  };
+  return map[k] || k;
+};
+
 vi.mock('../../contexts/I18nContext', () => ({
   useI18n: () => ({
-    t: (k) => {
-      const map = {
-        'common.loading': 'Cargando información...',
-        'exchange.data_status_title': 'Estado de los datos de Cotizaciones',
-        'common.records': 'registros',
-        'exchange.available': 'disponibles',
-        'common.period': 'Período',
-        'exchange.currencies_label': 'Monedas',
-        'exchange.latest_day': 'Último día disponible',
-        'exchange.source_note': 'Fuente: INE (histórico, último día hábil publicado)',
-        'exchange.status_error': 'Error al cargar estado de cotizaciones'
-      };
-      return map[k] || k;
-    }
+    t
   })
 }));
 
 // Mock service
-const getInfoMock = vi.fn();
-vi.mock('../../services/exchangeService', () => ({
-  __esModule: true,
-  default: { getInfo: (...args) => getInfoMock(...args) }
-}));
+vi.mock('../../services/exchangeService', () => {
+  const getInfoMock = vi.fn();
+  return {
+    __esModule: true,
+    default: { getInfo: getInfoMock }
+  };
+});
+
+let getInfoMock;
+beforeEach(async () => {
+  const { default: exchangeService } = await import('../../services/exchangeService');
+  getInfoMock = exchangeService.getInfo;
+  getInfoMock.mockReset();
+});
 
 const sampleInfo = {
   total_records: 1234,
@@ -37,9 +48,6 @@ const sampleInfo = {
 };
 
 describe('ExchangeDataStatusPanel', () => {
-  beforeEach(() => {
-    getInfoMock.mockReset();
-  });
 
   it('shows loading text initially', () => {
     getInfoMock.mockImplementation(() => new Promise(() => {}));
