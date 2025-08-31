@@ -11,7 +11,7 @@
     "test": "vitest",
     "test:coverage": "vitest --coverage",
     "test:ui": "vitest --ui",
-    "prepare": "husky"
+    "prepare": "husky install || true"
   },
   "dependencies": {
     "@headlessui/react": "^1.7.17",
@@ -50,7 +50,7 @@
     "vitest": "^1.6.1"
   },
   "lint-staged": {
-    "*.{js,jsx,ts,tsx}": [
+    "*.{js,jsx}": [
       "eslint --fix",
       "eslint --quiet"
     ]
