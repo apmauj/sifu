@@ -300,6 +300,16 @@ vi.mock('recharts', () => ({
       ...validProps 
     }, children);
   },
+  BarChart: ({ children, ...props }) => {
+    // Remove invalid DOM props
+    const { width, height, data, margin, ...validProps } = props;
+    return React.createElement('div', { 
+      'data-testid': 'bar-chart', 
+      'data-width': width,
+      'data-height': height,
+      ...validProps 
+    }, children);
+  },
   XAxis: (props) => {
     const { dataKey, type, tick, fontSize, ...validProps } = props;
     return React.createElement('div', { 
@@ -361,6 +371,25 @@ vi.mock('recharts', () => ({
       'data-stroke-dasharray': strokeDasharray,
       'data-type': type,
       'data-dot': dot,
+      'data-name': name,
+      ...validProps
+    });
+  },
+  Bar: (props) => {
+    const { 
+      dataKey, 
+      fill, 
+      stroke, 
+      strokeWidth, 
+      name, 
+      ...validProps 
+    } = props;
+    return React.createElement('div', { 
+      'data-testid': props.dataKey ? `bar-${props.dataKey}` : 'bar', 
+      'data-datakey': dataKey,
+      'data-fill': fill,
+      'data-stroke': stroke,
+      'data-stroke-width': strokeWidth,
       'data-name': name,
       ...validProps
     });
