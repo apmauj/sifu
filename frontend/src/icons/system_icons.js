@@ -8,7 +8,11 @@ import CalendarOpenMoji from './openmoji/CalendarOpenMoji';
 // Reemplazamos la bandera de Uruguay por PNG para simplificar (evitar problemas SVG / parsing)
 import flagUruguayPng from './flags/Flag_of_Uruguay.png';
 
-const makeFallback = (testId) => (props) => React.createElement('svg', { 'data-testid': testId, ...props });
+const makeFallback = (testId) => {
+  const FallbackIcon = (props) => React.createElement('svg', { 'data-testid': testId, ...props });
+  FallbackIcon.displayName = `FallbackIcon(${testId})`;
+  return FallbackIcon;
+};
 
 export const ArrowPathIcon = Outline.ArrowPathIcon || makeFallback('arrow-path-icon');
 export const ArrowDownIcon = Outline.ArrowDownIcon || makeFallback('arrow-down-icon');
@@ -23,6 +27,8 @@ export const ExclamationTriangleIcon = Outline.ExclamationTriangleIcon || makeFa
 export const ChartBarIcon = Outline.ChartBarIcon || makeFallback('chart-bar-icon');
 // OpenMoji custom icons with larger (24px) default size; caller can override via Tailwind className
 export const CalendarIcon = ({ className = 'w-6 h-6', ...props }) => React.createElement(CalendarOpenMoji, { className, ...props });
+CalendarIcon.displayName = 'CalendarIcon';
+
 export const UruguayFlagIcon = ({ className = 'flag-icon', alt = 'Uruguay', ...props }) =>
 	React.createElement('img', {
 		src: flagUruguayPng,
@@ -36,6 +42,7 @@ export const UruguayFlagIcon = ({ className = 'flag-icon', alt = 'Uruguay', ...p
 		decoding: 'async',
 		...props
 	});
+UruguayFlagIcon.displayName = 'UruguayFlagIcon';
 export const ClockIcon = Outline.ClockIcon || makeFallback('clock-icon');
 export const BanknotesIcon = Outline.BanknotesIcon || makeFallback('banknotes-icon');
 export const CurrencyDollarIcon = Outline.CurrencyDollarIcon || makeFallback('currency-dollar-icon');
