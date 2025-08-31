@@ -17,14 +17,39 @@ _AlertSeverity = None
 _AlertRule = None
 
 def _get_metrics_collector():
-    """Lazy import of metrics collector"""
+    """Lazy import of metrics collector with timeout"""
     global _metrics_collector
     if _metrics_collector is None:
         try:
-            from metrics import metrics_collector as mc
-            _metrics_collector = mc
-        except ImportError:
-            # Metrics module not available
+            # Use threading to add timeout for import
+            import threading
+            result = [None]
+            exception = [None]
+            
+            def import_metrics():
+                try:
+                    from metrics import metrics_collector as mc
+                    result[0] = mc
+                except Exception as e:
+                    exception[0] = e
+            
+            thread = threading.Thread(target=import_metrics)
+            thread.daemon = True
+            thread.start()
+            thread.join(timeout=5.0)  # 5 second timeout
+            
+            if thread.is_alive():
+                # Import is taking too long, consider it failed
+                _metrics_collector = None
+            elif exception[0]:
+                # Import failed with exception
+                _metrics_collector = None
+            else:
+                # Import successful
+                _metrics_collector = result[0]
+                
+        except Exception:
+            # Any other issue, consider metrics unavailable
             _metrics_collector = None
     return _metrics_collector
 
@@ -294,14 +319,24 @@ class PerformanceBudgetManager:
         """Get current status of all budgets"""
         with self._lock:
             status = {}
-            metrics_collector = _get_metrics_collector()
-            
-            # Use default values if metrics collector is not available
-            if metrics_collector:
-                global_stats = metrics_collector.get_global_stats()
-                global_throughput = self.get_throughput_metrics("global")
-            else:
-                # Fallback values when metrics are not available
+            try:
+                metrics_collector = _get_metrics_collector()
+                
+                # Use default values if metrics collector is not available
+                if metrics_collector:
+                    global_stats = metrics_collector.get_global_stats()
+                    global_throughput = self.get_throughput_metrics("global")
+                else:
+                    # Fallback values when metrics are not available
+                    global_stats = {
+                        "avg_duration_ms": 0,
+                        "error_rate": 0,
+                        "uptime_seconds": 0
+                    }
+                    global_throughput = {"requests_per_minute": 0}
+            except Exception as e:
+                # If there's any issue with metrics collection, use fallback values
+                self.logger.warning(f"Error getting metrics collector: {e}")
                 global_stats = {
                     "avg_duration_ms": 0,
                     "error_rate": 0,

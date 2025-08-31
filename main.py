@@ -1556,16 +1556,54 @@ async def get_performance_budgets_status():
     """Obtener estado actual de todos los budgets de performance."""
     try:
         if performance_budget_manager is None:
-            raise HTTPException(status_code=503, detail="Performance budget service not available")
-        status = performance_budget_manager.get_budget_status()
-        return {
-            "budget_status": status,
-            "timestamp": datetime.utcnow().isoformat(),
-            "description": "Current performance budget status with health indicators"
-        }
+            # Return a simple response if performance budget manager is not available
+            return {
+                "budget_status": {},
+                "timestamp": datetime.utcnow().isoformat(),
+                "description": "Performance budget service not available",
+                "message": "Performance monitoring is disabled"
+            }
+        
+        # Try to get budget status with a timeout
+        import asyncio
+        try:
+            # Create a task with timeout
+            status = await asyncio.wait_for(
+                asyncio.get_event_loop().run_in_executor(None, performance_budget_manager.get_budget_status),
+                timeout=10.0
+            )
+            return {
+                "budget_status": status,
+                "timestamp": datetime.utcnow().isoformat(),
+                "description": "Current performance budget status with health indicators"
+            }
+        except asyncio.TimeoutError:
+            # If it times out, return a simple status
+            return {
+                "budget_status": {
+                    "timeout": {
+                        "budget": "timeout",
+                        "type": "system",
+                        "target": 0,
+                        "current": 0,
+                        "warning_threshold": 0,
+                        "critical_threshold": 0,
+                        "status": "unknown",
+                        "description": "Request timed out"
+                    }
+                },
+                "timestamp": datetime.utcnow().isoformat(),
+                "description": "Performance budget status request timed out",
+                "message": "Using fallback values due to timeout"
+            }
     except Exception as e:
         logger.error(f"Error getting performance budget status: {e}")
-        raise HTTPException(status_code=500, detail=f"Error retrieving performance budget status: {str(e)}")
+        return {
+            "budget_status": {},
+            "timestamp": datetime.utcnow().isoformat(),
+            "description": "Error retrieving performance budget status",
+            "error": str(e)
+        }
 
 
 @app.get("/api/performance/throughput", tags=["Sistema"])
