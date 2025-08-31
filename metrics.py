@@ -102,11 +102,12 @@ class MetricsCollector:
             if duration > stats.max_duration:
                 stats.max_duration = duration
 
-        # Update performance budget throughput metrics
-        budget_manager = self._get_performance_budget_manager()
-        if budget_manager:
-            budget_manager.update_throughput("global")
-            budget_manager.update_throughput(key)
+        # Update performance budget throughput metrics (avoid circular dependency)
+        # This will be handled by the performance budget manager itself when needed
+        # budget_manager = self._get_performance_budget_manager()
+        # if budget_manager:
+        #     budget_manager.update_throughput("global")
+        #     budget_manager.update_throughput(key)
 
     def get_recent_requests(self, limit: int = 100) -> List[RequestMetrics]:
         """Get recent requests (most recent first)"""

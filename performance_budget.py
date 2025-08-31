@@ -20,8 +20,12 @@ def _get_metrics_collector():
     """Lazy import of metrics collector"""
     global _metrics_collector
     if _metrics_collector is None:
-        from metrics import metrics_collector as mc
-        _metrics_collector = mc
+        try:
+            from metrics import metrics_collector as mc
+            _metrics_collector = mc
+        except ImportError:
+            # Metrics module not available
+            _metrics_collector = None
     return _metrics_collector
 
 def _get_alert_manager():
@@ -291,8 +295,19 @@ class PerformanceBudgetManager:
         with self._lock:
             status = {}
             metrics_collector = _get_metrics_collector()
-            global_stats = metrics_collector.get_global_stats()
-            global_throughput = self.get_throughput_metrics("global")
+            
+            # Use default values if metrics collector is not available
+            if metrics_collector:
+                global_stats = metrics_collector.get_global_stats()
+                global_throughput = self.get_throughput_metrics("global")
+            else:
+                # Fallback values when metrics are not available
+                global_stats = {
+                    "avg_duration_ms": 0,
+                    "error_rate": 0,
+                    "uptime_seconds": 0
+                }
+                global_throughput = {"requests_per_minute": 0}
 
             for name, budget in self._budgets.items():
                 if not budget.enabled:
@@ -383,6 +398,9 @@ class PerformanceBudgetManager:
             return False
 
         metrics_collector = _get_metrics_collector()
+        if not metrics_collector:
+            return False
+            
         global_stats = metrics_collector.get_global_stats()
         current_latency = global_stats.get("avg_duration_ms", 0)
         return current_latency >= budget.warning_value
@@ -394,6 +412,9 @@ class PerformanceBudgetManager:
             return False
 
         metrics_collector = _get_metrics_collector()
+        if not metrics_collector:
+            return False
+            
         global_stats = metrics_collector.get_global_stats()
         current_latency = global_stats.get("avg_duration_ms", 0)
         return current_latency >= budget.critical_value
@@ -425,6 +446,9 @@ class PerformanceBudgetManager:
             return False
 
         metrics_collector = _get_metrics_collector()
+        if not metrics_collector:
+            return False
+            
         global_stats = metrics_collector.get_global_stats()
         current_error_rate = global_stats.get("error_rate", 0)
         return current_error_rate >= budget.warning_value
@@ -436,6 +460,9 @@ class PerformanceBudgetManager:
             return False
 
         metrics_collector = _get_metrics_collector()
+        if not metrics_collector:
+            return False
+            
         global_stats = metrics_collector.get_global_stats()
         current_error_rate = global_stats.get("error_rate", 0)
         return current_error_rate >= budget.critical_value
