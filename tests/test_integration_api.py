@@ -1,54 +1,42 @@
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine, text
+from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from database import Base, UIRecord
+from database import UIRecord
 from main import app, get_db
 from datetime import date
-import tempfile
-import os
+import uuid
+
+# Marcar estos tests para que se ejecuten en aislamiento
+pytestmark = pytest.mark.isolated
 
 # Crear un archivo temporal SQLite para pruebas
 @pytest.fixture(scope="function")
-def sqlite_file():
-    # Use a more unique filename in current directory for Windows compatibility
-    import uuid
-    temp_dir = os.getcwd()
-    db_path = os.path.join(temp_dir, f"test_db_{uuid.uuid4().hex}.db")
-    
-    # Ensure the file doesn't exist before creating
-    if os.path.exists(db_path):
-        os.remove(db_path)
-    
-    yield db_path
-    
-    # Ensure cleanup happens even if test fails
-    try:
-        if os.path.exists(db_path):
-            os.remove(db_path)
-    except (OSError, PermissionError):
-        # In Windows, file might be locked, try to remove on next run
-        pass
+def sqlite_file(tmp_path):
+    # Use pytest's tmp_path fixture for better isolation
+    db_path = tmp_path / f"test_db_{uuid.uuid4().hex}.db"
+    yield str(db_path)
+    # pytest's tmp_path fixture handles cleanup automatically
 
 @pytest.fixture(scope="function")
 def db_session(sqlite_file):
     from sqlalchemy import create_engine
-    from database import Base
+    from database import Base as DBBase
     
     SQLALCHEMY_DATABASE_URL = f"sqlite:///{sqlite_file}"
     engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False})
     
-    # Create a new connection and drop all tables to ensure clean state
-    with engine.connect() as conn:
-        # Use SQLAlchemy's drop_all to properly clean up all tables and indexes
-        try:
-            Base.metadata.drop_all(bind=engine)
-        except Exception as e:
-            print(f"Warning during drop_all: {e}")
-            pass  # Ignore errors if tables don't exist
+    # Ensure complete cleanup before creating tables
+    try:
+        # Force drop all tables and indexes
+        with engine.connect() as conn:
+            conn.execute(DBBase.metadata.drop_all(engine))
+            conn.commit()
+    except Exception:
+        pass  # Ignore if tables don't exist
     
     # Create all tables fresh
-    Base.metadata.create_all(bind=engine)
+    DBBase.metadata.create_all(bind=engine)
     
     TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
     db = TestingSessionLocal()
@@ -57,12 +45,12 @@ def db_session(sqlite_file):
         yield db
     finally:
         db.close()
-        # Clean up database
+        # Force cleanup
         try:
             with engine.connect() as conn:
-                Base.metadata.drop_all(bind=engine)
-        except Exception as e:
-            print(f"Warning during final cleanup: {e}")
+                conn.execute(DBBase.metadata.drop_all(engine))
+                conn.commit()
+        except Exception:
             pass
         engine.dispose()
 

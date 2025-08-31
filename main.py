@@ -23,7 +23,7 @@ from models import UIResponse, RefreshResponse, URResponse, ExchangeRateResponse
 from services import UIService, URService, ExchangeRateService
 from excel_processor import ExcelProcessor, URExcelProcessor, ExchangeRateExcelProcessor, ExchangeRateBCUProcessor
 from brou_processor import BROUProcessor
-from security_utils import SecurityValidator, InputValidator, sanitize_request_data
+from security_utils import SecurityValidator, InputValidator
 from pydantic_models import (
     URRangeRequestModel
 )
