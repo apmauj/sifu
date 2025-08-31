@@ -6,10 +6,12 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "lint": "echo 'Linting disabled for CI - too many warnings in legacy codebase'",
+    "lint": "eslint src/ --quiet",
+    "lint:fix": "eslint src/ --fix",
     "test": "vitest",
     "test:coverage": "vitest --coverage",
-    "test:ui": "vitest --ui"
+    "test:ui": "vitest --ui",
+    "prepare": "husky"
   },
   "dependencies": {
     "@headlessui/react": "^1.7.17",
@@ -39,10 +41,18 @@
     "eslint-plugin-react": "^7.33.2",
     "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-plugin-react-refresh": "^0.4.5",
+    "husky": "^9.1.7",
     "jsdom": "^23.2.0",
+    "lint-staged": "^16.1.5",
     "postcss": "^8.4.32",
     "tailwindcss": "^3.3.6",
     "vite": "^5.0.8",
     "vitest": "^1.6.1"
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx}": [
+      "eslint --fix",
+      "eslint --quiet"
+    ]
   }
 }
