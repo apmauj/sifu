@@ -2,6 +2,8 @@ import React from 'react';
 import { getCurrencyInfo, formatExchangeRate } from '../services/exchangeService';
 import { useI18n } from '../contexts/I18nContext';
 import { format, parseISO } from 'date-fns';
+import { Flag } from '../icons/flags.jsx';
+import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
 
 const ExchangeResultsDisplay = ({ results, searchType, isLoading, error }) => {
   const { t } = useI18n();
@@ -32,10 +34,14 @@ const ExchangeResultsDisplay = ({ results, searchType, isLoading, error }) => {
 
   // Función para formatear fecha para el gráfico
   const formatDateForChart = (dateString) => {
+    if (!dateString || typeof dateString !== 'string' || dateString.trim() === '') {
+      return 'Fecha no disponible';
+    }
     try {
       return format(parseISO(dateString), 'dd/MM/yyyy');
     } catch (error) {
-      return dateString;
+      console.warn('Error formatting date for chart:', dateString, error);
+      return dateString || 'Fecha inválida';
     }
   };
 

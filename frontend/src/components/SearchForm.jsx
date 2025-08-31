@@ -82,7 +82,7 @@ const SearchForm = ({ onSearch, isLoading }) => {
   const effectiveMaxDate = maxDate || today;
   // Fix parsing and log for debugging
   let maxDateObj;
-  if (maxDate) {
+  if (maxDate && typeof maxDate === 'string' && maxDate.trim() !== '') {
     maxDateObj = parseISO(maxDate);
     if (!isValid(maxDateObj)) {
       console.warn('maxDateObj no es válido:', maxDate, maxDateObj);
@@ -164,7 +164,7 @@ const SearchForm = ({ onSearch, isLoading }) => {
                   id="fecha"
                   className="input-field"
                   dateFormat="yyyy-MM-dd"
-                  selected={field.value ? parseISO(field.value) : null}
+                  selected={field.value && typeof field.value === 'string' && field.value.trim() !== '' ? parseISO(field.value) : null}
                   onChange={date => field.onChange(format(date, 'yyyy-MM-dd'))}
                   minDate={null}
                   // maxDate={maxDateObj}
@@ -220,7 +220,7 @@ const SearchForm = ({ onSearch, isLoading }) => {
                     id="fechaInicio"
                     className="input-field"
                     dateFormat="yyyy-MM-dd"
-                    selected={field.value ? parseISO(field.value) : null}
+                    selected={field.value && typeof field.value === 'string' && field.value.trim() !== '' ? parseISO(field.value) : null}
                     onChange={date => {
                       field.onChange(format(date, 'yyyy-MM-dd'));
                       // Trigger validation of end date when start date changes
@@ -271,7 +271,7 @@ const SearchForm = ({ onSearch, isLoading }) => {
                     id="fechaFin"
                     className="input-field"
                     dateFormat="yyyy-MM-dd"
-                    selected={field.value ? parseISO(field.value) : null}
+                    selected={field.value && typeof field.value === 'string' && field.value.trim() !== '' ? parseISO(field.value) : null}
                     onChange={date => {
                       field.onChange(format(date, 'yyyy-MM-dd'));
                       // Trigger validation of start date when end date changes

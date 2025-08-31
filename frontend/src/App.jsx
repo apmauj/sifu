@@ -101,20 +101,35 @@ function App() {
     return val;
   }, [t]);
 
-  // Inicializar sólo cuando las traducciones estén cargadas para no mostrar keys crudas
-  useEffect(() => {
-    if (i18nLoading) return; // Esperar
-    if (APP_INIT_DONE) return;
-    APP_INIT_DONE = true;
-    (async () => {
-      try {
-        console.log('App initializing after i18n ready...');
-        await loadLatestExchange();
-      } catch (error) {
-        console.error('Error initializing app:', error);
+  const loadLatestExchange = async (options = {}) => {
+    const { skipAutoInit = false } = options;
+    try {
+      setIsExchangeLoading(true);
+      setExchangeError(null);
+      const latest = await exchangeService.getLatest();
+
+      if (latest && latest.success && latest.data) {
+        setExchangeResults(latest);
+        setExchangeSearchType('latest');
+      } else {
+        // Si no hay datos y aún no intentamos inicializar, lanzamos un refresh inicial
+        if (!skipAutoInit && !initialExchangeFetchAttemptedRef.current) {
+          await attemptInitialExchangeBootstrap();
+        } else {
+          setExchangeError(t('errors.no_exchange_data') || 'No se encontraron datos de cotizaciones disponibles');
+        }
       }
-    })();
-  }, [i18nLoading, loadLatestExchange]);
+    } catch (error) {
+      console.error('Error cargando últimas cotizaciones:', error);
+      if (!skipAutoInit && !initialExchangeFetchAttemptedRef.current) {
+        await attemptInitialExchangeBootstrap();
+      } else {
+        setExchangeError(t('errors.exchange_load_failed') || 'No se pudo cargar las cotizaciones');
+      }
+    } finally {
+      setIsExchangeLoading(false);
+    }
+  };
 
   // Exchange functions
   // useCallback para proveer referencia estable al formulario y evitar re-render inútil / efectos extra
@@ -173,35 +188,20 @@ function App() {
     }
   }, [t, showError]);
 
-  const loadLatestExchange = async (options = {}) => {
-    const { skipAutoInit = false } = options;
-    try {
-      setIsExchangeLoading(true);
-      setExchangeError(null);
-      const latest = await exchangeService.getLatest();
-
-      if (latest && latest.success && latest.data) {
-        setExchangeResults(latest);
-        setExchangeSearchType('latest');
-      } else {
-        // Si no hay datos y aún no intentamos inicializar, lanzamos un refresh inicial
-        if (!skipAutoInit && !initialExchangeFetchAttemptedRef.current) {
-          await attemptInitialExchangeBootstrap();
-        } else {
-          setExchangeError(t('errors.no_exchange_data') || 'No se encontraron datos de cotizaciones disponibles');
-        }
+  // Inicializar sólo cuando las traducciones estén cargadas para no mostrar keys crudas
+  useEffect(() => {
+    if (i18nLoading) return; // Esperar
+    if (APP_INIT_DONE) return;
+    APP_INIT_DONE = true;
+    (async () => {
+      try {
+        console.log('App initializing after i18n ready...');
+        await loadLatestExchange();
+      } catch (error) {
+        console.error('Error initializing app:', error);
       }
-    } catch (error) {
-      console.error('Error cargando últimas cotizaciones:', error);
-      if (!skipAutoInit && !initialExchangeFetchAttemptedRef.current) {
-        await attemptInitialExchangeBootstrap();
-      } else {
-        setExchangeError(t('errors.exchange_load_failed') || 'No se pudo cargar las cotizaciones');
-      }
-    } finally {
-      setIsExchangeLoading(false);
-    }
-  };
+    })();
+  }, [i18nLoading, loadLatestExchange]);
   // Refresco horario automático sólo cuando la pestaña de cotizaciones está activa y el tipo actual es 'latest'
   const hourlyExchangeRefresh = useCallback(async () => {
     if (activeTab === 'exchange' && exchangeSearchType === 'latest' && !isExchangeLoading) {

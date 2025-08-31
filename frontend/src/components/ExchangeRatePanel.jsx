@@ -6,6 +6,9 @@ import { useI18n } from '../contexts/I18nContext';
 import { useHourlySyncedUpdate } from '../hooks/useHourlySyncedUpdate';
 // Centralized icons (RefreshIcon not used after removing manual refresh)
 import { useToast } from '../contexts/ToastContext';
+import { OpenMojiIcon } from '../icons/openmoji/index.jsx';
+import { Flag } from '../icons/flags.jsx';
+import { LoadingIcon } from '../components/icons/SimpleIcons.jsx';
 
 const ExchangeRatePanel = () => {
   const [glow, setGlow] = useState(false);

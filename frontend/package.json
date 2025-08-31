@@ -11,6 +11,7 @@
     "test": "vitest",
     "test:coverage": "vitest --coverage",
     "test:ui": "vitest --ui",
+    "test:precommit": "npm test -- --run --reporter=basic --no-coverage",
     "prepare": "husky install || true"
   },
   "dependencies": {
@@ -53,6 +54,12 @@
     "*.{js,jsx}": [
       "eslint --fix",
       "eslint --quiet"
+    ],
+    "**/*.{test,spec}.{js,jsx}": [
+      "npm run test:precommit"
+    ],
+    "**/src/**/*.{js,jsx}": [
+      "npm run test:precommit"
     ]
   }
 }

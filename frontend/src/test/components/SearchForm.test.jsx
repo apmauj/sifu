@@ -300,7 +300,9 @@ describe('SearchForm Component', () => {
   it('should handle clear button click in single mode', async () => {
     await renderAndWait();
     const clearButton = screen.getByText('Limpiar');
-    fireEvent.click(clearButton);
+    act(() => {
+      fireEvent.click(clearButton);
+    });
     
     // Should call setValue with today's date
     expect(mockSetValue).toHaveBeenCalledWith('fecha', expect.any(String));
@@ -313,7 +315,9 @@ describe('SearchForm Component', () => {
     fireEvent.click(rangeOption);
     
     const clearButton = screen.getByText('Limpiar');
-    fireEvent.click(clearButton);
+    act(() => {
+      fireEvent.click(clearButton);
+    });
     
     // Should call setValue for both dates
     expect(mockSetValue).toHaveBeenCalledWith('fechaInicio', expect.any(String));

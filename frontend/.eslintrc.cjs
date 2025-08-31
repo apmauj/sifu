@@ -3,6 +3,7 @@ module.exports = {
   env: { browser: true, es2020: true, node: true },
   extends: [
     'eslint:recommended',
+    'plugin:react/recommended',
     'plugin:react-hooks/recommended',
   ],
   ignorePatterns: ['dist', '.eslintrc.cjs', 'coverage/', 'html/'],
@@ -14,6 +15,11 @@ module.exports = {
     },
   },
   plugins: ['react-refresh'],
+  settings: {
+    react: {
+      version: 'detect',
+    },
+  },
   rules: {
     'react-refresh/only-export-components': [
       'warn',
@@ -21,6 +27,7 @@ module.exports = {
     ],
     'no-unused-vars': ['error', { varsIgnorePattern: '^_', argsIgnorePattern: '^_' }],
     'no-undef': 'off', // Turn off no-undef since we have Node.js globals
+    'react/prop-types': 'off', // Turn off prop-types validation for now
   },
   globals: {
     global: 'readonly',

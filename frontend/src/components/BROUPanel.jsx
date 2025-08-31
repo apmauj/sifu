@@ -4,6 +4,9 @@ import { useI18n } from '../contexts/I18nContext';
 import { useHourlySyncedUpdate } from '../hooks/useHourlySyncedUpdate';
 import brouService from '../services/brouService';
 import { useToast } from '../contexts/ToastContext';
+import { OpenMojiIcon } from '../icons/openmoji/index.jsx';
+import { Flag } from '../icons/flags.jsx';
+import { RetryIcon } from '../components/icons/SimpleIcons.jsx';
 
 const BROUPanel = () => {
   const { t } = useI18n();

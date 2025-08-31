@@ -69,7 +69,15 @@ const ResultsDisplay = ({ results, searchType }) => {
   }
 
   const formatDate = (dateString) => {
-    return format(parseISO(dateString), DATE_FORMAT_DDMMYYYY);
+    if (!dateString || typeof dateString !== 'string' || dateString.trim() === '') {
+      return 'Fecha no disponible';
+    }
+    try {
+      return format(parseISO(dateString), DATE_FORMAT_DDMMYYYY);
+    } catch (error) {
+      console.warn('Error formatting date:', dateString, error);
+      return 'Fecha inválida';
+    }
   };
 
   const formatCurrency = (value) => {

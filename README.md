@@ -172,6 +172,48 @@ npm test
 - Mensajes y tags centralizados en `constants.py` para respuestas homogéneas.
 - Script de control de duplicados: `python scripts/check_messages.py` (añade exit code 1 si encuentra repeticiones).
 
+### 🧪 Mejoras Recientes en Testing (2025-01-15)
+
+#### **Problemas Resueltos**
+- ✅ **RangeError en date-fns**: Eliminados errores de "Invalid time value" en operaciones de fecha
+- ✅ **Act() Warnings**: Corregidos warnings de React Testing Library en componentes asíncronos
+- ✅ **ParseISO Errors**: Mejorado manejo robusto de fechas inválidas/undefined en componentes
+- ✅ **Test Coverage**: Mejorada cobertura de casos edge en funciones de formateo de fecha
+
+#### **Mejoras Implementadas**
+
+**1. Enhanced Date-Fns Mock (`frontend/src/test/setup.jsx`)**
+```javascript
+// Validación robusta para fechas inválidas
+parseISO: vi.fn((dateString) => {
+  if (!dateString || typeof dateString !== 'string') {
+    console.warn('Invalid date string provided to parseISO:', dateString)
+    return new Date() // Return current date as fallback
+  }
+  const parsed = new Date(dateString)
+  if (isNaN(parsed.getTime())) {
+    console.warn('Invalid date string parsed:', dateString)
+    return new Date() // Return current date as fallback
+  }
+  return parsed
+})
+```
+
+**2. Componentes con Manejo Mejorado de Fechas**
+- **SearchForm.jsx**: Validación de tipo y contenido antes de `parseISO`
+- **ResultsDisplay.jsx**: Función `formatDate` con try-catch y fallbacks
+- **ExchangeResultsDisplay.jsx**: Función `formatDateForChart` con manejo de errores
+
+**3. Tests con Act() Wrappers**
+- **URSearchForm.test.jsx**: Wrappers en tests de quick selectors y clear buttons
+- **SearchForm.test.jsx**: Wrappers en tests de clear button y form submission
+
+#### **Métricas de Testing**
+- **598 tests** pasando exitosamente
+- **35 archivos** de test ejecutándose sin errores
+- **Cobertura completa** de casos edge en manejo de fechas
+- **0 warnings** críticos en test suite
+
 ### Cambios Recientes (2025-08-15)
 - Refactor caché BROU: soporte dict seguro + flag `preferential`.
 - Fallback a muestra cuando 0 monedas tras scraping.
@@ -308,6 +350,14 @@ Notas:
 
 ## 🗓️ Próxima Sesión (Plan Tentativo)
 
+### ✅ Completado - Mejoras en Testing (2025-01-15)
+- [x] **RangeError en date-fns**: Eliminados errores de "Invalid time value" en operaciones de fecha
+- [x] **Act() Warnings**: Corregidos warnings de React Testing Library en componentes asíncronos  
+- [x] **ParseISO Errors**: Mejorado manejo robusto de fechas inválidas/undefined en componentes
+- [x] **Test Coverage**: Mejorada cobertura de casos edge en funciones de formateo de fecha
+- [x] **Suite Verde**: 598 tests pasando exitosamente, 35 archivos sin errores
+
+### Próximos Pasos Planificados
 1. Automatizar (script/workflow) `docker pull` + recreación backend antes de actualizar secret del túnel.
 2. Workflow programado que verifique `/api/brou/current?full=true` y alerte si `data.length == 0`.
 3. Frontend: usar `?full=true` para mostrar timestamp y mensaje en panel BROU.

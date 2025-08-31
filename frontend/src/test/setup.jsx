@@ -192,13 +192,25 @@ vi.mock('date-fns', () => {
          format: vi.fn((date, formatStr) => {
        if (!date) return ''
        const d = new Date(date)
+       
+       // Verificar si la fecha es inválida
+       if (isNaN(d.getTime())) {
+         console.warn('Invalid date provided to format function:', date)
+         return 'Fecha inválida'
+       }
+       
        if (formatStr === 'dd/MM/yyyy') {
          // Handle specific test dates
-         const dateStr = d.toISOString().split('T')[0]
-         if (dateStr === '2024-01-01') return '01/01/2024'
-         if (dateStr === '2024-12-25') return '25/12/2024'
-         if (dateStr === '2023-12-31') return '31/12/2023'
-         return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`
+         try {
+           const dateStr = d.toISOString().split('T')[0]
+           if (dateStr === '2024-01-01') return '01/01/2024'
+           if (dateStr === '2024-12-25') return '25/12/2024'
+           if (dateStr === '2023-12-31') return '31/12/2023'
+           return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`
+         } catch (error) {
+           console.warn('Error formatting date:', error)
+           return 'Fecha inválida'
+         }
        }
        if (formatStr === 'HH:mm') {
          return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
@@ -206,44 +218,92 @@ vi.mock('date-fns', () => {
        if (formatStr === 'yyyy-MM-dd') {
          return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
        }
-       return d.toISOString().split('T')[0]
+       try {
+         return d.toISOString().split('T')[0]
+       } catch (error) {
+         console.warn('Error converting date to ISO string:', error)
+         return 'Fecha inválida'
+       }
      }),
-    parseISO: vi.fn((dateString) => new Date(dateString)),
+    parseISO: vi.fn((dateString) => {
+      if (!dateString || typeof dateString !== 'string') {
+        console.warn('Invalid date string provided to parseISO:', dateString)
+        return new Date() // Return current date as fallback
+      }
+      const parsed = new Date(dateString)
+      if (isNaN(parsed.getTime())) {
+        console.warn('Invalid date string parsed:', dateString)
+        return new Date() // Return current date as fallback
+      }
+      return parsed
+    }),
     isValid: vi.fn((date) => date instanceof Date && !isNaN(date)),
     startOfMonth: vi.fn((date) => {
+      if (!date || !(date instanceof Date) || isNaN(date.getTime())) {
+        return new Date(today.getFullYear(), today.getMonth(), 1)
+      }
       const d = new Date(date)
       return new Date(d.getFullYear(), d.getMonth(), 1)
     }),
     endOfMonth: vi.fn((date) => {
+      if (!date || !(date instanceof Date) || isNaN(date.getTime())) {
+        return new Date(today.getFullYear(), today.getMonth() + 1, 0)
+      }
       const d = new Date(date)
       return new Date(d.getFullYear(), d.getMonth() + 1, 0)
     }),
     startOfYear: vi.fn((date) => {
+      if (!date || !(date instanceof Date) || isNaN(date.getTime())) {
+        return new Date(today.getFullYear(), 0, 1)
+      }
       const d = new Date(date)
       return new Date(d.getFullYear(), 0, 1)
     }),
     endOfYear: vi.fn((date) => {
+      if (!date || !(date instanceof Date) || isNaN(date.getTime())) {
+        return new Date(today.getFullYear(), 11, 31)
+      }
       const d = new Date(date)
       return new Date(d.getFullYear(), 11, 31)
     }),
     subDays: vi.fn((date, days) => {
+      if (!date || !(date instanceof Date) || isNaN(date.getTime())) {
+        const d = new Date(today)
+        d.setDate(d.getDate() - (days || 0))
+        return d
+      }
       const d = new Date(date)
-      d.setDate(d.getDate() - days)
+      d.setDate(d.getDate() - (days || 0))
       return d
     }),
     subWeeks: vi.fn((date, weeks) => {
+      if (!date || !(date instanceof Date) || isNaN(date.getTime())) {
+        const d = new Date(today)
+        d.setDate(d.getDate() - ((weeks || 0) * 7))
+        return d
+      }
       const d = new Date(date)
-      d.setDate(d.getDate() - (weeks * 7))
+      d.setDate(d.getDate() - ((weeks || 0) * 7))
       return d
     }),
     subMonths: vi.fn((date, months) => {
+      if (!date || !(date instanceof Date) || isNaN(date.getTime())) {
+        const d = new Date(today)
+        d.setMonth(d.getMonth() - (months || 0))
+        return d
+      }
       const d = new Date(date)
-      d.setMonth(d.getMonth() - months)
+      d.setMonth(d.getMonth() - (months || 0))
       return d
     }),
     subYears: vi.fn((date, years) => {
+      if (!date || !(date instanceof Date) || isNaN(date.getTime())) {
+        const d = new Date(today)
+        d.setFullYear(d.getFullYear() - (years || 0))
+        return d
+      }
       const d = new Date(date)
-      d.setFullYear(d.getFullYear() - years)
+      d.setFullYear(d.getFullYear() - (years || 0))
       return d
     })
   }

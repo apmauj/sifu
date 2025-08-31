@@ -293,7 +293,9 @@ describe('URSearchForm Component', () => {
       render(<URSearchForm onSearch={mockOnSearch} />);
       
       const quickSingleButton = screen.getByText('Quick Single');
-      fireEvent.click(quickSingleButton);
+      act(() => {
+        fireEvent.click(quickSingleButton);
+      });
       
       expect(mockSetValue).toHaveBeenCalledWith('year', 2024);
       expect(mockSetValue).toHaveBeenCalledWith('month', 6);
@@ -309,7 +311,9 @@ describe('URSearchForm Component', () => {
       render(<URSearchForm onSearch={mockOnSearch} />);
       
       const quickRangeButton = screen.getByText('Quick Range');
-      fireEvent.click(quickRangeButton);
+      act(() => {
+        fireEvent.click(quickRangeButton);
+      });
       
       expect(mockSetValue).toHaveBeenCalledWith('startYear', 2023);
       expect(mockSetValue).toHaveBeenCalledWith('startMonth', 1);
@@ -373,7 +377,9 @@ describe('URSearchForm Component', () => {
       render(<URSearchForm onSearch={mockOnSearch} />);
       
       const clearButton = screen.getByRole('button', { name: 'Limpiar' });
-      fireEvent.click(clearButton);
+      act(() => {
+        fireEvent.click(clearButton);
+      });
       
       expect(mockSetValue).toHaveBeenCalledWith('year', currentYear);
       expect(mockSetValue).toHaveBeenCalledWith('month', currentMonth);
@@ -386,7 +392,9 @@ describe('URSearchForm Component', () => {
       fireEvent.click(rangeRadio);
       
       const clearButton = screen.getByRole('button', { name: 'Limpiar' });
-      fireEvent.click(clearButton);
+      act(() => {
+        fireEvent.click(clearButton);
+      });
       
       expect(mockSetValue).toHaveBeenCalledWith('startYear', currentYear - 1);
       expect(mockSetValue).toHaveBeenCalledWith('startMonth', 1);
