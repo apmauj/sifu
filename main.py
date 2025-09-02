@@ -1558,12 +1558,12 @@ async def get_performance_budgets():
                 "status": "service_unavailable"
             }
 
-        # Try to get budgets with a short timeout to avoid hanging
+        # Try to get budgets with a reasonable timeout
         import asyncio
         try:
             budgets = await asyncio.wait_for(
                 asyncio.get_event_loop().run_in_executor(None, performance_budget_manager.get_all_budgets),
-                timeout=5.0  # 5 second timeout
+                timeout=15.0  # Increased from 5.0 to 15.0 seconds
             )
             return {
                 "budgets": budgets,
@@ -1662,12 +1662,12 @@ async def get_throughput_metrics():
                 "status": "service_unavailable"
             }
 
-        # Try to get throughput metrics with a short timeout
+        # Try to get throughput metrics with a reasonable timeout
         import asyncio
         try:
             throughput = await asyncio.wait_for(
                 asyncio.get_event_loop().run_in_executor(None, lambda: performance_budget_manager.get_throughput_metrics("global")),
-                timeout=5.0  # 5 second timeout
+                timeout=15.0  # Increased from 5.0 to 15.0 seconds
             )
             return {
                 "throughput": throughput,

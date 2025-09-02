@@ -20,6 +20,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY *.py ./
 COPY auth_*.py ./
 COPY https_middleware.py ./
+COPY performance_budget.py ./
+COPY metrics.py ./
+COPY alerts.py ./
 COPY README.md ./
 
 # Crear directorio para la base de datos
