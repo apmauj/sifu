@@ -1,11 +1,7 @@
-name: Deploy Frontend to GitHub Pages
+name: Deploy Frontend to GitHub Pages (deprecated)
 
+# Deprecated: replaced by ci-cd.yml. Kept for manual runs only.
 on:
-  push:
-    branches: [ master ]
-    paths:
-      - 'frontend/**'
-      - '.github/workflows/deploy-frontend.yml'
   workflow_dispatch:
 
 # Recomendado por GitHub Pages Actions
@@ -27,15 +23,12 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Resolve API URL (secret/vars)
+      - name: Resolve API URL (secret)
         id: resolve_api
         run: |
           API_URL="${{ secrets.VITE_PUBLIC_API_URL }}"
           if [ -z "$API_URL" ]; then
-            API_URL="${{ vars.VITE_PUBLIC_API_URL }}"
-          fi
-          if [ -z "$API_URL" ]; then
-            echo "ERROR: VITE_PUBLIC_API_URL no definido (ni secret ni repo var)." >> $GITHUB_STEP_SUMMARY
+            echo "ERROR: VITE_PUBLIC_API_URL no definido." >> $GITHUB_STEP_SUMMARY
             exit 1
           fi
           # Normalizar: quitar /api o slash final y re-anexar /api

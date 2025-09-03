@@ -1,18 +1,7 @@
-name: Backend & Frontend CI
+name: Backend & Frontend CI (deprecated)
 
+# Deprecated: replaced by ci-cd.yml. Kept for manual runs only.
 on:
-  push:
-    branches: [ master ]
-    paths:
-      - '**/*.py'
-      - 'requirements*.txt'
-      - '.github/workflows/ci-backend.yml'
-      - 'scripts/util/check_messages.py'
-      - 'frontend/**'
-      - 'frontend/src/test/**'
-      - 'frontend/src/locales/**'
-  pull_request:
-    branches: [ master ]
   workflow_dispatch:
 
 permissions:

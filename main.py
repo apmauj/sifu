@@ -37,7 +37,7 @@ from rate_limit import RateLimitMiddleware, EndpointRateLimitMiddleware
 from circuit_breaker import get_all_circuit_breakers, get_circuit_breaker_status, reset_circuit_breaker
 
 # Metrics middleware
-from metrics_middleware import MetricsMiddleware, get_metrics, get_health
+from metrics_middleware import MetricsMiddleware, get_metrics, get_health, get_simple_metrics
 
 # Advanced health checks
 from health_checks import get_advanced_health, get_simple_health
@@ -1669,8 +1669,35 @@ async def get_throughput_metrics():
                 asyncio.get_event_loop().run_in_executor(None, lambda: performance_budget_manager.get_throughput_metrics("global")),
                 timeout=15.0  # Increased from 5.0 to 15.0 seconds
             )
+            # Enrich with simple application metrics for UI tiles
+            try:
+                simple = await get_simple_metrics()
+            except Exception:
+                simple = {}
+
+            extended = dict(throughput)
+            if isinstance(simple, dict):
+                avg_ms = simple.get("avg_response_time_ms")
+                err_pct = simple.get("error_rate_percent")
+                uptime_sec = simple.get("uptime_seconds")
+                # Availability proxy from error rate (100 - error%)
+                availability_pct = None
+                try:
+                    availability_pct = max(0.0, 100.0 - float(err_pct)) if err_pct is not None else None
+                except Exception:
+                    availability_pct = None
+
+                if avg_ms is not None:
+                    extended["avg_response_time_ms"] = avg_ms
+                if err_pct is not None:
+                    extended["error_rate_percent"] = err_pct
+                if uptime_sec is not None:
+                    extended["uptime_seconds"] = uptime_sec
+                if availability_pct is not None:
+                    extended["uptime_percent"] = availability_pct
+
             return {
-                "throughput": throughput,
+                "throughput": extended,
                 "timestamp": datetime.utcnow().isoformat(),
                 "description": "Current request throughput metrics (requests per minute/hour)"
             }
@@ -1682,7 +1709,11 @@ async def get_throughput_metrics():
                     "requests_per_hour": 0,
                     "peak_rpm": 0,
                     "current_window_requests": 0,
-                    "window_start": datetime.utcnow().isoformat()
+                    "window_start": datetime.utcnow().isoformat(),
+                    "avg_response_time_ms": None,
+                    "error_rate_percent": None,
+                    "uptime_seconds": None,
+                    "uptime_percent": None
                 },
                 "timestamp": datetime.utcnow().isoformat(),
                 "description": "Throughput metrics request timed out - using fallback values",
@@ -1696,7 +1727,11 @@ async def get_throughput_metrics():
                 "requests_per_hour": 0,
                 "peak_rpm": 0,
                 "current_window_requests": 0,
-                "window_start": datetime.utcnow().isoformat()
+                "window_start": datetime.utcnow().isoformat(),
+                "avg_response_time_ms": None,
+                "error_rate_percent": None,
+                "uptime_seconds": None,
+                "uptime_percent": None
             },
             "timestamp": datetime.utcnow().isoformat(),
             "description": "Error retrieving throughput metrics",

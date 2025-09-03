@@ -1,0 +1,187 @@
+name: CI/CD
+
+on:
+  push:
+    branches: [ master ]
+    paths:
+      - '**/*.py'
+      - 'requirements*.txt'
+      - 'Dockerfile'
+      - 'frontend/**'
+      - '.github/workflows/ci-cd.yml'
+  pull_request:
+    branches: [ master ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write   # for Docker Hub push
+  pages: write      # for Pages deploy
+  id-token: write   # for Pages OIDC
+
+concurrency:
+  group: ci-cd-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tests:
+    name: Backend & Frontend Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          if [ -f requirements-dev.txt ]; then pip install -r requirements-dev.txt; fi
+          pip install ruff
+
+      - name: Lint (ruff)
+        run: ruff check .
+
+      - name: Static message duplication check
+        run: python scripts/util/check_messages.py
+
+      - name: Run backend tests
+        env:
+          PYTHONUNBUFFERED: '1'
+          SIFU_SKIP_BOOTSTRAP: '1'
+          PYTEST_DISABLE_PLUGIN_AUTOLOAD: '1'
+        run: pytest -q --maxfail=1 --disable-warnings --tb=short
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: 'frontend/package.json'
+
+      - name: Install Frontend deps
+        working-directory: frontend
+        run: npm ci
+
+      - name: Lint & Test Frontend
+        working-directory: frontend
+        run: |
+          npm run lint
+          npm test -- --run --reporter=verbose
+
+  build-frontend:
+    name: Build Frontend (artifact)
+    runs-on: ubuntu-latest
+    needs: tests
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Resolve API URL (secret)
+        id: resolve_api
+        env:
+          SECRET_API_URL: ${{ secrets.VITE_PUBLIC_API_URL }}
+        run: |
+          API_URL="${SECRET_API_URL}"
+          if [ -z "$API_URL" ]; then
+            echo "ERROR: Secret VITE_PUBLIC_API_URL no definido." >> $GITHUB_STEP_SUMMARY
+            exit 1
+          fi
+          API_URL=$(echo "$API_URL" | sed -E 's#(/api)?/?$##')
+          API_URL="$API_URL/api"
+          echo "VITE_PUBLIC_API_URL=$API_URL" >> $GITHUB_ENV
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: 'frontend/package.json'
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Build
+        env:
+          NODE_ENV: production
+        run: npm run build --silent
+
+      - name: Prepare SPA 404 redirect
+        run: cp dist/index.html dist/404.html
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: frontend/dist
+
+  publish-backend-image:
+    name: Build & Push Backend Image
+    runs-on: ubuntu-latest
+    needs: tests
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Extract metadata (tags, labels)
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: apmauj/sifu-backend
+          tags: |
+            type=raw,value=latest
+            type=sha
+            type=raw,value={{date '2006-01-02'}}
+            type=raw,value={{date '20060102'}}
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy-frontend:
+    name: Deploy Frontend to GitHub Pages
+    runs-on: ubuntu-latest
+    needs: build-frontend
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    concurrency:
+      group: 'pages'
+      cancel-in-progress: true
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

@@ -1,15 +1,7 @@
-name: Frontend CI
+name: Frontend CI (deprecated)
 
+# Deprecated: replaced by ci-cd.yml. Kept for manual runs only.
 on:
-  push:
-    branches: [ master ]
-    paths:
-      - 'frontend/**'
-      - '.github/workflows/ci-frontend.yml'
-  pull_request:
-    branches: [ master ]
-    paths:
-      - 'frontend/**'
   workflow_dispatch:
 
 permissions:
