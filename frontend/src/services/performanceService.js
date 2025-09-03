@@ -26,11 +26,11 @@ class PerformanceService {
     });
   }
 
-  async getBudgets() {
+  async getBudgets(signal) {
     try {
   // Backend waits up to ~15s for budgets; align client timeout (allow env override)
   const timeout = parseInt(import.meta.env.VITE_PERF_BUDGETS_TIMEOUT_MS || "20000", 10);
-  const response = await this.client.get('/api/performance/budgets', { timeout });
+    const response = await this.client.get('/api/performance/budgets', { timeout, signal });
       return response.data;
     } catch (error) {
   const msg = error?.code === 'ECONNABORTED' ? `Timeout fetching performance budgets after ${error?.config?.timeout}ms` : 'Error fetching performance budgets';
@@ -39,11 +39,11 @@ class PerformanceService {
     }
   }
 
-  async getBudgetStatus() {
+  async getBudgetStatus(signal) {
     try {
   // Backend allows up to ~30s; align client timeout
   const timeout = parseInt(import.meta.env.VITE_PERF_STATUS_TIMEOUT_MS || "35000", 10);
-  const response = await this.client.get('/api/performance/budgets/status', { timeout });
+    const response = await this.client.get('/api/performance/budgets/status', { timeout, signal });
       return response.data;
     } catch (error) {
   const msg = error?.code === 'ECONNABORTED' ? `Timeout fetching budget status after ${error?.config?.timeout}ms` : 'Error fetching budget status';
@@ -52,11 +52,11 @@ class PerformanceService {
     }
   }
 
-  async getThroughput() {
+  async getThroughput(signal) {
     try {
   // Backend waits up to ~15s; align client
   const timeout = parseInt(import.meta.env.VITE_PERF_THROUGHPUT_TIMEOUT_MS || "20000", 10);
-  const response = await this.client.get('/api/performance/throughput', { timeout });
+    const response = await this.client.get('/api/performance/throughput', { timeout, signal });
       return response.data;
     } catch (error) {
   const msg = error?.code === 'ECONNABORTED' ? `Timeout fetching throughput metrics after ${error?.config?.timeout}ms` : 'Error fetching throughput metrics';
@@ -65,10 +65,10 @@ class PerformanceService {
     }
   }
   
-  async getBudgetDetails(name) {
+  async getBudgetDetails(name, signal) {
     try {
-  const timeout = parseInt(import.meta.env.VITE_PERF_BUDGET_DETAIL_TIMEOUT_MS || "20000", 10);
-  const response = await this.client.get(`/api/performance/budgets/${name}`, { timeout });
+    const timeout = parseInt(import.meta.env.VITE_PERF_BUDGET_DETAIL_TIMEOUT_MS || "20000", 10);
+    const response = await this.client.get(`/api/performance/budgets/${name}`, { timeout, signal });
       return response.data;
     } catch (error) {
   const msg = error?.code === 'ECONNABORTED' ? `Timeout fetching budget details after ${error?.config?.timeout}ms` : 'Error fetching budget details';

@@ -9,13 +9,27 @@ const Dashboard = ({ isOpen, onClose }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('health');
+  const controllersRef = React.useRef({});
 
   useEffect(() => {
-    if (isOpen) {
-      fetchHealthData();
+    if (!isOpen) return;
+    fetchHealthData();
+    // No cargar performance aún; esperar a que el usuario active la pestaña
+  }, [isOpen]);
+
+  // Cargar performance de forma lazy cuando el usuario va a esa pestaña
+  useEffect(() => {
+    if (!isOpen) return;
+    if (activeTab === 'performance' && !performanceData) {
       fetchPerformanceData();
     }
-  }, [isOpen]);
+    // Al cambiar de pestaña, cancela requests en vuelo de la otra pestaña
+    return () => {
+      // cancelar cualquier fetch en curso
+      Object.values(controllersRef.current).forEach((c) => c?.abort?.());
+      controllersRef.current = {};
+    };
+  }, [activeTab, isOpen]);
 
   const fetchHealthData = async () => {
     setLoading(true);
@@ -33,13 +47,25 @@ const Dashboard = ({ isOpen, onClose }) => {
 
   const fetchPerformanceData = async () => {
     try {
+      // Crear AbortControllers por request para poder cancelarlos al cambiar de pestaña
+      const c1 = new AbortController();
+      const c2 = new AbortController();
+      const c3 = new AbortController();
+      controllersRef.current = { c1, c2, c3 };
+
       const [budgets, status, throughput] = await Promise.all([
-        performanceService.getBudgets(),
-        performanceService.getBudgetStatus(),
-        performanceService.getThroughput()
+        performanceService.getBudgets(c1.signal),
+        performanceService.getBudgetStatus(c2.signal),
+        performanceService.getThroughput(c3.signal)
       ]);
+
+      // El backend devuelve budgets como objeto; mapear a array para la UI
+      const budgetsArray = Array.isArray(budgets?.budgets)
+        ? budgets.budgets
+        : Object.values(budgets?.budgets || {});
+
       setPerformanceData({
-        budgets: budgets.budgets || [],
+        budgets: budgetsArray,
         status: status,
         throughput: throughput
       });
@@ -657,7 +683,9 @@ const Dashboard = ({ isOpen, onClose }) => {
           <button
             onClick={() => {
               fetchHealthData();
-              fetchPerformanceData();
+              if (activeTab === 'performance') {
+                fetchPerformanceData();
+              }
             }}
             className="px-4 py-2 bg-blue-600 dark:bg-blue-500 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600"
           >
