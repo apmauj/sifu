@@ -59,14 +59,49 @@ const Dashboard = ({ isOpen, onClose }) => {
         performanceService.getThroughput(c3.signal)
       ]);
 
-      // El backend devuelve budgets como objeto; mapear a array para la UI
-      const budgetsArray = Array.isArray(budgets?.budgets)
+      // Normalizar definiciones y estado
+      const defsArray = Array.isArray(budgets?.budgets)
         ? budgets.budgets
         : Object.values(budgets?.budgets || {});
+      const statusMap = status?.budget_status || {};
+      const statusEntries = Object.entries(statusMap);
+
+      // Mezclar por nombre (cuando existan ambos); si no hay defs, usar sólo status
+      const byName = new Map(defsArray.map((d) => [d.name, d]));
+      const merged = statusEntries.length > 0
+        ? statusEntries.map(([name, st]) => {
+            const def = byName.get(name) || {};
+            return {
+              name,
+              type: def.type || st.type,
+              target: def.target_value ?? st.target,
+              warning_threshold: def.warning_threshold ?? st.warning_threshold,
+              critical_threshold: def.critical_threshold ?? st.critical_threshold,
+              window_minutes: def.window_minutes,
+              description: def.description,
+              enabled: def.enabled,
+              current_value: st.current,
+              status: st.status,
+            };
+          })
+        : defsArray; // si no hay status aún, mostrar definiciones sin estado
+
+      // Resumen de estado
+      const totals = statusEntries.reduce(
+        (acc, [, st]) => {
+          acc.total_budgets += 1;
+          const s = (st.status || '').toLowerCase();
+          if (s === 'healthy') acc.healthy_budgets += 1;
+          else if (s === 'warning') acc.warning_budgets += 1;
+          else if (s === 'critical') acc.critical_budgets += 1;
+          return acc;
+        },
+        { total_budgets: 0, healthy_budgets: 0, warning_budgets: 0, critical_budgets: 0 }
+      );
 
       setPerformanceData({
-        budgets: budgetsArray,
-        status: status,
+        budgets: merged,
+        status: totals,
         throughput: throughput
       });
     } catch (err) {
