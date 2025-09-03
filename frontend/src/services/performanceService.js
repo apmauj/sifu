@@ -76,6 +76,18 @@ class PerformanceService {
       throw error;
     }
   }
+  
+  async getServiceStatus(signal) {
+    try {
+      const timeout = parseInt(import.meta.env.VITE_PERF_SERVICE_STATUS_TIMEOUT_MS || "15000", 10);
+      const response = await this.client.get('/api/performance/status', { timeout, signal });
+      return response.data;
+    } catch (error) {
+      const msg = error?.code === 'ECONNABORTED' ? `Timeout fetching performance service status after ${error?.config?.timeout}ms` : 'Error fetching performance service status';
+      console.error(msg + ':', error);
+      throw error;
+    }
+  }
 }
 
 const performanceService = new PerformanceService();

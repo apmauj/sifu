@@ -39,6 +39,15 @@ class MetricsMiddleware(BaseHTTPMiddleware):
                 error_message=error_message
             )
 
+            # Increment lightweight throughput counter for performance dashboard (best-effort)
+            try:
+                from performance_budget import get_performance_budget_manager  # lazy import to avoid cycles
+                bm = get_performance_budget_manager(enable_monitoring=False, enable_alerts=False)
+                bm.update_throughput("global")
+            except Exception:
+                # Non-fatal; avoid impacting request path
+                pass
+
             return response
 
         except Exception as e:
@@ -56,6 +65,14 @@ class MetricsMiddleware(BaseHTTPMiddleware):
                 error=True,
                 error_message=error_message
             )
+
+            # Still count towards throughput to reflect incoming load
+            try:
+                from performance_budget import get_performance_budget_manager  # lazy import to avoid cycles
+                bm = get_performance_budget_manager(enable_monitoring=False, enable_alerts=False)
+                bm.update_throughput("global")
+            except Exception:
+                pass
 
             # Re-raise the exception to maintain normal error handling
             raise

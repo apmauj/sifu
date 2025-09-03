@@ -128,8 +128,8 @@ class PerformanceBudgetManager:
 
     def __init__(self, enable_monitoring=True, enable_alerts=True):
         self.logger = logging.getLogger(__name__)
-    # Use reentrant lock to avoid deadlocks when nested methods acquire the same lock
-    self._lock = threading.RLock()
+        # Use reentrant lock to avoid deadlocks when nested methods acquire the same lock
+        self._lock = threading.RLock()
         self._budgets: Dict[str, PerformanceBudget] = {}
         self._throughput_data: Dict[str, ThroughputMetrics] = {}
         self._last_check: Dict[str, datetime] = {}

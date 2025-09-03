@@ -51,12 +51,14 @@ const Dashboard = ({ isOpen, onClose }) => {
       const c1 = new AbortController();
       const c2 = new AbortController();
       const c3 = new AbortController();
-      controllersRef.current = { c1, c2, c3 };
+      const c4 = new AbortController();
+      controllersRef.current = { c1, c2, c3, c4 };
 
-      const [budgets, status, throughput] = await Promise.all([
+      const [budgets, status, throughputResp, serviceStatus] = await Promise.all([
         performanceService.getBudgets(c1.signal),
         performanceService.getBudgetStatus(c2.signal),
-        performanceService.getThroughput(c3.signal)
+        performanceService.getThroughput(c3.signal),
+        performanceService.getServiceStatus(c4.signal).catch(() => null)
       ]);
 
       // Normalizar definiciones y estado
@@ -99,10 +101,12 @@ const Dashboard = ({ isOpen, onClose }) => {
         { total_budgets: 0, healthy_budgets: 0, warning_budgets: 0, critical_budgets: 0 }
       );
 
+      const throughput = throughputResp?.throughput || throughputResp || null;
       setPerformanceData({
         budgets: merged,
         status: totals,
-        throughput: throughput
+        throughput,
+        serviceStatus
       });
     } catch (err) {
       console.error('Error fetching performance data:', err);
@@ -599,7 +603,12 @@ const Dashboard = ({ isOpen, onClose }) => {
                   ) : (
                     <div className="text-center py-8">
                       <div className="text-gray-400 dark:text-gray-500 mb-2 text-4xl">📊</div>
-                      <p className="text-gray-600 dark:text-gray-300">No se encontraron presupuestos de rendimiento configurados</p>
+                      <p className="text-gray-600 dark:text-gray-300 mb-2">No se encontraron presupuestos de rendimiento configurados</p>
+                      {performanceData?.serviceStatus && (
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          Estado del servicio: {performanceData.serviceStatus.status}. {performanceData.serviceStatus.message}
+                        </p>
+                      )}
                     </div>
                   )}
                 </CardBody>
@@ -616,7 +625,7 @@ const Dashboard = ({ isOpen, onClose }) => {
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                       <div className="text-center p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
                         <div className="text-2xl font-bold text-blue-600 dark:text-blue-400 mb-1">
-                          {performanceData.throughput.requests_per_minute || 'N/A'}
+                          {performanceData.throughput?.requests_per_minute ?? 'N/A'}
                         </div>
                         <div className="text-sm text-gray-500 dark:text-gray-400 flex items-center justify-center gap-1">
                           <span className="text-lg">📈</span>
@@ -625,7 +634,7 @@ const Dashboard = ({ isOpen, onClose }) => {
                       </div>
                       <div className="text-center p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
                         <div className="text-2xl font-bold text-green-600 dark:text-green-400 mb-1">
-                          {performanceData.throughput.avg_response_time_ms?.toFixed(0) || 'N/A'}ms
+                          {performanceData.throughput?.avg_response_time_ms?.toFixed?.(0) ?? 'N/A'}ms
                         </div>
                         <div className="text-sm text-gray-500 dark:text-gray-400 flex items-center justify-center gap-1">
                           <span className="text-lg">⚡</span>
@@ -634,7 +643,7 @@ const Dashboard = ({ isOpen, onClose }) => {
                       </div>
                       <div className="text-center p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
                         <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400 mb-1">
-                          {performanceData.throughput.error_rate_percent?.toFixed(2) || 'N/A'}%
+                          {performanceData.throughput?.error_rate_percent?.toFixed?.(2) ?? 'N/A'}%
                         </div>
                         <div className="text-sm text-gray-500 dark:text-gray-400 flex items-center justify-center gap-1">
                           <span className="text-lg">⚠️</span>
@@ -643,7 +652,7 @@ const Dashboard = ({ isOpen, onClose }) => {
                       </div>
                       <div className="text-center p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-800">
                         <div className="text-2xl font-bold text-purple-600 dark:text-purple-400 mb-1">
-                          {performanceData.throughput.uptime_percent?.toFixed(2) || 'N/A'}%
+                          {performanceData.throughput?.uptime_percent?.toFixed?.(2) ?? 'N/A'}%
                         </div>
                         <div className="text-sm text-gray-500 dark:text-gray-400 flex items-center justify-center gap-1">
                           <span className="text-lg">🟢</span>
