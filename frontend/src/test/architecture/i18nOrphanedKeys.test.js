@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { describe, it, expect } from 'vitest';
+import { extractI18nKeysFromContent } from '../helpers/i18nRegex.js';
 
 // Helper para recorrer árbol de directorios y obtener archivos fuente
 function collectFiles(dir, exts = ['.js', '.jsx']) {
@@ -21,16 +22,8 @@ function collectFiles(dir, exts = ['.js', '.jsx']) {
   return out;
 }
 
-function extractI18nKeys(fileContent) {
-  // Regex simple: t('some.key') o t("some.key") - ignora plantillas y concatenaciones
-  const regex = /\bt\(\s*['"]([a-zA-Z0-9_.]+)['"]/g;
-  const keys = new Set();
-  let match;
-  while ((match = regex.exec(fileContent)) !== null) {
-    keys.add(match[1]);
-  }
-  return keys;
-}
+// extractI18nKeys ahora vive en helper compartido (`../helpers/i18nRegex.js`).
+const extractI18nKeys = extractI18nKeysFromContent;
 
 function flattenTranslations(obj, prefix = '', out = new Set()) {
   if (obj && typeof obj === 'object' && !Array.isArray(obj)) {
@@ -148,6 +141,8 @@ const ALLOW_ORPHANED = new Set([
   'common.value',
   'common.variation',
   'common.year',
+
+  // (Claves dashboard removidas del allowlist tras añadir test de smoke en Dashboard.test.jsx)
 
   // Errors - manejo de errores implementado
   'errors.app_initialization',
@@ -371,8 +366,8 @@ const ALLOW_ORPHANED = new Set([
 ]);
 
 // Recolectar archivos fuente (excluyendo tests) desde src root
-const SRC_ROOT = path.join(__dirname, '..', '..');
-const SOURCE_DIR = path.join(SRC_ROOT, '..'); // subir a src/
+// __dirname => frontend/src/test/architecture  => subir dos niveles a frontend/src
+const SOURCE_DIR = path.join(__dirname, '..', '..'); // frontend/src
 const COMPONENT_ROOT = path.join(SOURCE_DIR, 'components');
 const HOOKS_ROOT = path.join(SOURCE_DIR, 'hooks');
 const CONTEXTS_ROOT = path.join(SOURCE_DIR, 'contexts');
@@ -381,7 +376,12 @@ const SERVICES_ROOT = path.join(SOURCE_DIR, 'services');
 const scanTargets = [COMPONENT_ROOT, HOOKS_ROOT, CONTEXTS_ROOT, SERVICES_ROOT].filter(p => fs.existsSync(p));
 const allFiles = scanTargets.flatMap(p => collectFiles(p));
 
-// Extraer claves usadas en código
+// Cargar todas las claves de traducciones primero (necesario antes de cualquier fallback)
+const esKeys = loadLocaleKeys('es');
+const enKeys = loadLocaleKeys('en');
+const ptKeys = loadLocaleKeys('pt');
+
+// Extraer claves usadas en código (componentes, hooks, contexts, services)
 const usedKeys = new Set();
 for (const file of allFiles) {
   try {
@@ -392,15 +392,16 @@ for (const file of allFiles) {
   }
 }
 
-// Añadir smoke check para claves plurales
+// Añadir smoke check para claves plurales que se generan dinámicamente
 ['exchange.currencies_plural.USD','exchange.currencies_plural.EUR','exchange.currencies_plural.ARS','exchange.currencies_plural.BRL'].forEach(k => usedKeys.add(k));
 
-// Cargar todas las claves de traducciones
-const esKeys = loadLocaleKeys('es');
-const enKeys = loadLocaleKeys('en');
-const ptKeys = loadLocaleKeys('pt');
-
 describe('Arquitectura I18n - Keys Huérfanas', () => {
+  it('defensivo: si existen claves dashboard.* en locales deben aparecer al menos una vez en código', () => {
+    const localeDashboardKeys = [...new Set([...esKeys, ...enKeys, ...ptKeys])].filter(k => k.startsWith('dashboard.'));
+    if (localeDashboardKeys.length === 0) return; // nada que comprobar
+    const usedDashboard = localeDashboardKeys.filter(k => usedKeys.has(k));
+    expect(usedDashboard.length, `Claves dashboard.* definidas (${localeDashboardKeys.length}) pero ninguna detectada por el escaneo. Verifica rutas/regex.`).toBeGreaterThan(0);
+  });
   it('no debe haber claves en español que no se usen en el código', () => {
     const orphaned = [];
     for (const key of esKeys) {

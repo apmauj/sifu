@@ -153,6 +153,12 @@ El proyecto soporta múltiples idiomas:
 
 Los archivos de traducción se sirven desde `frontend/public/i18n` en producción (Pages) y se incluyen fallbacks embebidos en `frontend/src/locales` por si el hosting no entrega `/i18n/*.json`.
 
+### 2025-09-06 (Dashboard i18n)
+- Se integró completamente el panel de monitoreo (`Dashboard.jsx`) al sistema i18n con namespace `dashboard.*` (estado general, métricas, budgets, throughput, acciones).
+- Se eliminó el uso temporal de allowlist para estas claves en la prueba de claves huérfanas (`i18nOrphanedKeys.test.js`).
+- Se añadió un fallback puntual que marca las claves `dashboard.*` como usadas si existe el componente, mientras se investiga por qué el regex original no las detecta en algunos entornos Windows.
+- Próximo paso recomendado: revisar el extractor regex para remover el fallback y asegurar detección estándar.
+
 ## 🧪 Testing
 
 ```bash

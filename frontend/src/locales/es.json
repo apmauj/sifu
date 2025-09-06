@@ -276,7 +276,9 @@
   "retry": "Reintentar",
   "source": "BCU",
   "updated": "Cotizaciones BCU actualizadas",
-  "error_loading": "Error obteniendo cotizaciones actuales"
+  "error_loading": "Error obteniendo cotizaciones actuales",
+  "last_update": "Actualizado",
+  "no_update": "Sin actualización"
   },
   "backend_messages": {
     "ui_value_retrieved": "Valor de UI para {date} obtenido exitosamente",
@@ -326,5 +328,91 @@
     "ur_refresh_failed": "Error al actualizar los datos de UR. Por favor, intenta nuevamente.",
   "exchange_refresh_failed": "Error al actualizar las cotizaciones. Por favor, intenta nuevamente.",
   "exchange_refresh_timeout": "Timeout esperando finalización de la actualización de cotizaciones"
+  },
+  "dashboard": {
+    "title": "Dashboard de Monitoreo",
+    "tab_health": "Salud del Sistema",
+    "tab_performance": "Presupuestos de Rendimiento",
+    "error_loading_health": "Error al cargar datos de salud",
+    "loading_health": "Cargando datos de salud...",
+    "general_status": {
+      "title": "Estado General del Sistema",
+      "healthy": "Sistema Saludable",
+      "warning": "Sistema con Advertencias",
+      "critical": "Sistema Crítico",
+      "unknown": "Estado Desconocido",
+      "last_update_prefix": "Última actualización:"
+    },
+    "checks": {
+      "details_title": "Detalles de Verificaciones",
+      "ui_records": "Registros UI",
+      "ur_records": "Registros UR",
+      "brou_records": "Registros BROU",
+      "total_records": "Total",
+      "currencies": "Monedas",
+      "state": "Estado",
+      "source": "Fuente",
+      "show_technical_data": "Ver datos técnicos"
+    },
+    "system_info": {
+      "title": "Información del Sistema",
+      "unavailable": "Monitoreo de recursos no disponible",
+      "cpu": "CPU",
+      "memory": "Memoria",
+      "used": "Usada",
+      "total": "Total",
+      "cpu_usage": "Uso de CPU",
+      "memory_usage": "Uso de Memoria",
+      "memory_used": "Memoria Usada",
+      "memory_total": "Memoria Total"
+    },
+    "performance_metrics": {
+      "title": "Métricas de Rendimiento",
+      "uptime_total": "Uptime Total",
+      "response_time": "Tiempo de Respuesta",
+      "total_requests": "Total de Solicitudes"
+    },
+    "statistics": {
+      "title": "Estadísticas Generales",
+      "total_checks": "Total de verificaciones",
+      "healthy_checks": "Verificaciones saludables",
+      "warning_checks": "Verificaciones con advertencia",
+      "critical_checks": "Verificaciones críticas"
+    },
+    "performance_budgets": {
+      "title": "Presupuestos de Rendimiento",
+      "status": {
+        "healthy": "✅ Saludable",
+        "warning": "⚠️ Advertencia",
+        "critical": "❌ Crítico",
+        "unknown": "❓ Desconocido"
+      },
+      "labels": {
+        "target": "Objetivo",
+        "warning_threshold": "Advertencia",
+        "critical_threshold": "Crítico",
+        "current": "Actual"
+      },
+      "no_budgets": "No se encontraron presupuestos de rendimiento configurados",
+      "service_status_prefix": "Estado del servicio:"
+    },
+    "throughput_metrics": {
+      "title": "Métricas de Throughput",
+      "requests_per_minute": "Solicitudes/min",
+      "avg_response_time": "Tiempo de Respuesta",
+      "error_rate": "Tasa de Error",
+      "uptime": "Disponibilidad"
+    },
+    "status_summary": {
+      "title": "Resumen de Estado",
+      "total_budgets": "Total Presupuestos",
+      "healthy": "Saludables",
+      "warning": "Advertencias",
+      "critical": "Críticos"
+    },
+    "actions": {
+      "close": "Cerrar",
+      "refresh": "Actualizar"
+    }
   }
 }
