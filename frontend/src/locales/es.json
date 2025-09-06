@@ -350,7 +350,8 @@
         "items": "Items",
         "last_updated": "Última actualización"
       },
-      "age_relative": "hace {value}"
+  "age_relative": "hace {value}",
+  "minutes": "min"
     },
     "title": "Dashboard de Monitoreo",
     "tab_health": "Salud del Sistema",

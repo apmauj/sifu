@@ -350,7 +350,8 @@
         "items": "Items",
         "last_updated": "Last Updated"
       },
-      "age_relative": "{value} ago"
+    "age_relative": "{value}m ago",
+    "minutes": "m"
     },
     "title": "Monitoring Dashboard",
     "tab_health": "System Health",

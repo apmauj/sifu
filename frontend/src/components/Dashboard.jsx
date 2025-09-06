@@ -269,11 +269,6 @@ const Dashboard = ({ isOpen, onClose }) => {
                       </h3>
                       <div className="mb-4 grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
                         <div className="flex items-center gap-3 flex-wrap">
-                          <span className="text-3xl">
-                            {healthData.status === 'healthy' ? '✅' :
-                              healthData.status === 'warning' ? '⚠️' :
-                              healthData.status === 'critical' ? '❌' : '❓'}
-                          </span>
                           <div className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-medium border ${
                             healthData.status === 'healthy' ? 'text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800' :
                               healthData.status === 'warning' ? 'text-yellow-600 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800' :
@@ -317,18 +312,25 @@ const Dashboard = ({ isOpen, onClose }) => {
                       }
                     }
                     if (!brou && !bcu) return null;
+                    const minutesLabel = t('dashboard.cache_panel.minutes') || 'm';
                     const formatAge = (age) => {
                       if (age == null) return '-';
                       const display = (typeof age === 'number') ? (age % 1 === 0 ? age : age.toFixed(1)) : age;
                       // i18n pattern e.g. es: "hace {value}m", en: "{value}m ago"
                       const rel = t('dashboard.cache_panel.age_relative', { value: display });
-                      return rel && rel !== 'dashboard.cache_panel.age_relative' ? rel : `${display}m`;
+                      return rel && rel !== 'dashboard.cache_panel.age_relative' ? rel : `${display}${minutesLabel}`;
                     };
                     const renderRow = (c, label) => (
                       <tr key={c.name} className="border-t border-gray-200 dark:border-gray-700">
                         <td className="py-2 px-2 font-medium text-gray-700 dark:text-gray-200">{label}</td>
                         <td className="py-2 px-2 text-xs">
-                          <span className={`inline-block px-2 py-1 rounded border ${getStatusColor(c.status)}`}>{getStatusIcon(c.status)} {c.status}</span>
+                          <span className={`inline-block px-2 py-1 rounded border ${getStatusColor(c.status)}`}>
+                            {getStatusIcon(c.status)} {(
+                              c.status?.toLowerCase?.() === 'healthy' ? (t('dashboard.status.healthy') || 'Healthy') :
+                              c.status?.toLowerCase?.() === 'warning' ? (t('dashboard.status.warning') || 'Warning') :
+                              c.status?.toLowerCase?.() === 'critical' ? (t('dashboard.status.critical') || 'Critical') : c.status
+                            )}
+                          </span>
                         </td>
                         <td className="py-2 px-2 text-gray-600 dark:text-gray-300 text-sm">{formatAge(c.details?.age_minutes)}</td>
                         <td className="py-2 px-2 text-xs text-gray-500 dark:text-gray-400">{c.details?.data_count ?? '-'}</td>
