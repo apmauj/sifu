@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 // Eliminamos sentinel global para evitar quedarse en loading al volver desde otra pestaña
 import { useI18n } from '../contexts/I18nContext';
 import { useHourlySyncedUpdate } from '../hooks/useHourlySyncedUpdate';
@@ -7,6 +7,7 @@ import { useToast } from '../contexts/ToastContext';
 import { OpenMojiIcon } from '../icons/openmoji/index.jsx';
 import { Flag } from '../icons/flags.jsx';
 import { RetryIcon } from '../components/icons/SimpleIcons.jsx';
+import { getCurrencyDisplayMap } from '../utils/currencyDisplay.js';
 
 const BROUPanel = () => {
   const { t } = useI18n();
@@ -15,14 +16,8 @@ const BROUPanel = () => {
   const [error, setError] = useState(null);
   const { showSuccess, showError } = useToast();
 
-  // Currency display configuration with official Unicode emojis
-  const currencyInfo = {
-  USD: { symbol: '$', flag: 'USD', name: t('brou.currencies.USD') || 'Dólar USA' },
-  USD_EBROU: { symbol: '$', flag: 'USD', name: t('brou.currencies.USD_EBROU') || 'Dólar eBROU', special: true },
-  EUR: { symbol: '€', flag: 'EUR', name: t('brou.currencies.EUR') || 'Euro' },
-  ARS: { symbol: '$', flag: 'ARS', name: t('brou.currencies.ARS') || 'Peso Arg.' },
-  BRL: { symbol: 'R$', flag: 'BRL', name: t('brou.currencies.BRL') || 'Real' }
-  };
+  // Centralized currency info (panel-specific overrides handled in helper)
+  const currencyInfo = useMemo(() => getCurrencyDisplayMap(t, 'brou'), [t]);
 
   const didInitRef = useRef(false);
   const fetchBROURates = useCallback(async () => {

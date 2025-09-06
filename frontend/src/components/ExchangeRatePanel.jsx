@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 // Sentinel de módulo para carga inicial única bajo StrictMode
 // Reemplazamos sentinel global por ref interna para evitar estados inconsistentes al cambiar de pestañas
 import exchangeService from '../services/exchangeService';
@@ -9,6 +9,7 @@ import { useToast } from '../contexts/ToastContext';
 import { OpenMojiIcon } from '../icons/openmoji/index.jsx';
 import { Flag } from '../icons/flags.jsx';
 import { LoadingIcon } from '../components/icons/SimpleIcons.jsx';
+import { getCurrencyDisplayMap } from '../utils/currencyDisplay.js';
 
 const ExchangeRatePanel = () => {
   const [glow, setGlow] = useState(false);
@@ -28,13 +29,8 @@ const ExchangeRatePanel = () => {
   const didInitRef = useRef(false);
   const manualRefreshRef = useRef(false); // retained for minimal change though manual trigger removed
 
-  // Centralizamos flags por código (sin emojis en UI para consistencia visual SVG)
-  const currencyInfo = {
-    USD: { symbol: 'US$', flag: 'USD', name: t('exchange.currencies.USD') || 'Dólar USA' },
-    EUR: { symbol: '€', flag: 'EUR', name: t('exchange.currencies.EUR') || 'Euro' },
-    ARS: { symbol: 'AR$', flag: 'ARS', name: t('exchange.currencies.ARS') || 'Peso Arg.' },
-    BRL: { symbol: 'R$', flag: 'BRL', name: t('exchange.currencies.BRL') || 'Real' }
-  };
+  // Currency info via centralized helper (panel = bcu)
+  const currencyInfo = useMemo(() => getCurrencyDisplayMap(t, 'bcu'), [t]);
 
   const fetchCurrentRates = useCallback(async () => {
     try {

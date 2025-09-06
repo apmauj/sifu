@@ -2,7 +2,10 @@ import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import ExchangeResultsDisplay from '../../components/ExchangeResultsDisplay';
-import { CURRENCY_SYMBOLS } from '../../services/currencySymbols.js';
+import { getCurrencyDisplayMap } from '../../utils/currencyDisplay.js';
+// Helper to access symbols consistent with component logic
+const t = (k) => k; // simple noop translator for tests
+const currencyDisplay = getCurrencyDisplayMap(t, 'bcu');
 
 // Mock de servicios (específico para este componente)
 vi.mock('../../services/exchangeService', () => ({
@@ -141,9 +144,9 @@ describe('ExchangeResultsDisplay Component', () => {
   expect(screen.getByText('Dólares')).toBeInTheDocument();
       expect(screen.getByText('Dólar Estadounidense')).toBeInTheDocument();
   // Flag rendered via <Flag code="USD" />, we assert by currency code text already present
-      expect(screen.getByText('$42.5000')).toBeInTheDocument();
-      expect(screen.getByText('$43.5000')).toBeInTheDocument();
-      expect(screen.getByText('$43.0000')).toBeInTheDocument();
+  expect(screen.getByText(/US\$\s*42\.5000/)).toBeInTheDocument();
+  expect(screen.getByText(/US\$\s*43\.5000/)).toBeInTheDocument();
+  expect(screen.getByText(/US\$\s*43\.0000/)).toBeInTheDocument();
       expect(screen.getByText('2024-01-01')).toBeInTheDocument();
       expect(screen.getByText('BCU')).toBeInTheDocument();
     });
@@ -171,8 +174,8 @@ describe('ExchangeResultsDisplay Component', () => {
       render(<ExchangeResultsDisplay results={resultWithoutAverage} searchType="latest" />);
       
     expect(screen.getByText('Euros')).toBeInTheDocument();
-      expect(screen.getByText('$45.5000')).toBeInTheDocument();
-      expect(screen.getByText('$46.5000')).toBeInTheDocument();
+  expect(screen.getByText(/€\s*45\.5000/)).toBeInTheDocument();
+  expect(screen.getByText(/€\s*46\.5000/)).toBeInTheDocument();
       expect(screen.queryByText('Promedio')).not.toBeInTheDocument();
     });
       // SVG flag present for USD
@@ -273,7 +276,7 @@ describe('ExchangeResultsDisplay Component', () => {
     it('should display N/D for missing average rates in table', () => {
       render(<ExchangeResultsDisplay results={tableResults} searchType="range" />);
       
-      const usdAvg = `${CURRENCY_SYMBOLS.USD}43.0000`;
+  const usdAvg = `${currencyDisplay.USD.symbol}43.0000`;
       expect(screen.getAllByText(usdAvg)).toHaveLength(2); // Desktop table + mobile view (symbol-aware)
       // EUR doesn't have average_rate, so should show N/D (not available in Spanish)
       const naElements = screen.queryAllByText('N/D');
@@ -386,7 +389,7 @@ describe('ExchangeResultsDisplay Component', () => {
       
       render(<ExchangeResultsDisplay results={missingBuyRate} searchType="latest" />);
       
-      expect(screen.getAllByText('$0.0000')).toHaveLength(1); // Only buy rate shows 0.0000
+  expect(screen.getAllByText(/US\$\s*0\.0000/)).toHaveLength(1); // Only buy rate shows 0.0000
     });
 
     it('should handle missing sell_rate', () => {
@@ -420,7 +423,7 @@ describe('ExchangeResultsDisplay Component', () => {
       
       render(<ExchangeResultsDisplay results={zeroRates} searchType="latest" />);
       
-      expect(screen.getAllByText('$0.0000')).toHaveLength(2); // Buy and sell rates both show 0.0000
+  expect(screen.getAllByText(/US\$\s*0\.0000/)).toHaveLength(2); // Buy and sell rates both show 0.0000
     });
 
     it('should handle negative rates', () => {
@@ -501,9 +504,9 @@ describe('ExchangeResultsDisplay Component', () => {
   // Flag rendered via SVG; currency code asserted separately
   expect(screen.getByText('Dólares')).toBeInTheDocument();
       expect(screen.getByText('Dólar Estadounidense')).toBeInTheDocument();
-      expect(screen.getByText('$42.5000')).toBeInTheDocument();
-      expect(screen.getByText('$43.5000')).toBeInTheDocument();
-      expect(screen.getByText('$43.0000')).toBeInTheDocument();
+  expect(screen.getByText(/US\$\s*42\.5000/)).toBeInTheDocument();
+  expect(screen.getByText(/US\$\s*43\.5000/)).toBeInTheDocument();
+  expect(screen.getByText(/US\$\s*43\.0000/)).toBeInTheDocument();
       expect(screen.getByText('2024-01-01')).toBeInTheDocument();
       expect(screen.getByText('BCU')).toBeInTheDocument();
     });
@@ -525,8 +528,8 @@ describe('ExchangeResultsDisplay Component', () => {
   // Flag rendered via SVG; currency code asserted separately
   expect(screen.getByText('Euros')).toBeInTheDocument();
       expect(screen.getByText('Euro')).toBeInTheDocument();
-      expect(screen.getByText('$45.5000')).toBeInTheDocument();
-      expect(screen.getByText('$46.5000')).toBeInTheDocument();
+  expect(screen.getByText(/€\s*45\.5000/)).toBeInTheDocument();
+  expect(screen.getByText(/€\s*46\.5000/)).toBeInTheDocument();
       // Should not show average rate section when not available
       expect(screen.queryByText('Promedio')).not.toBeInTheDocument();
     });
@@ -599,7 +602,7 @@ describe('ExchangeResultsDisplay Component', () => {
         />
       );
 
-      expect(screen.getByText('$41.0000')).toBeInTheDocument(); // formatExchangeRate uses 4 decimals
+  expect(screen.getByText(/US\$\s*41\.0000/)).toBeInTheDocument(); // formatExchangeRate uses 4 decimals
       expect(screen.getByText('Promedio')).toBeInTheDocument();
     });
 
@@ -730,7 +733,7 @@ describe('ExchangeResultsDisplay Component', () => {
       // Mobile view should show currency cards - check that we have multiple elements
       expect(screen.getAllByText('USD').length).toBeGreaterThan(0);
       expect(screen.getAllByText('EUR').length).toBeGreaterThan(0);
-      const usdAvg = `${CURRENCY_SYMBOLS.USD}41.0000`;
+  const usdAvg = `${currencyDisplay.USD.symbol}41.0000`;
       expect(screen.getAllByText(usdAvg).length).toBeGreaterThan(0); // Average rate appears multiple times (symbol-aware)
     });
 
@@ -872,7 +875,7 @@ describe('ExchangeResultsDisplay Component', () => {
       );
 
       // Line 565: conditional rendering of average_rate in large card
-      expect(screen.getByText('$41.0000')).toBeInTheDocument(); // formatExchangeRate uses 4 decimals
+  expect(screen.getByText(/US\$\s*41\.0000/)).toBeInTheDocument(); // formatExchangeRate uses 4 decimals
       expect(screen.getByText('Promedio')).toBeInTheDocument();
     });
   });
