@@ -236,14 +236,21 @@ const URResultsDisplay = ({ results, searchType, isLoading, error, pendingCurren
                   {formatPeriod(data[0].year, data[0].month)}
                 </div>
                 {pendingCurrentMonth && (
-                  <div
-                    className="mt-2 inline-flex items-center space-x-2 text-xs font-medium bg-amber-100 dark:bg-amber-600/25 text-amber-900 dark:text-amber-200 px-3 py-1 rounded-full border border-amber-300 dark:border-amber-500 animate-pulse"
-                    role="status"
-                    aria-label={pendingMessage || t('ur.pending_current_month') || 'Mes actual pendiente de publicación'}
-                  >
-                    <span aria-hidden="true">⏳</span>
-                    <span>{pendingMessage || t('ur.pending_current_month') || 'Mes actual pendiente de publicación'}</span>
-                  </div>
+                  (() => {
+                    // Prefer localized key; only fall back to backend message if no translation key present
+                    const localized = t('ur.pending_current_month');
+                    const effective = localized || pendingMessage || 'Mes actual pendiente de publicación';
+                    return (
+                      <div
+                        className="mt-2 inline-flex items-center space-x-2 text-xs font-medium bg-amber-100 dark:bg-amber-600/25 text-amber-900 dark:text-amber-200 px-3 py-1 rounded-full border border-amber-300 dark:border-amber-500 animate-pulse"
+                        role="status"
+                        aria-label={effective}
+                      >
+                        <span aria-hidden="true">⏳</span>
+                        <span>{effective}</span>
+                      </div>
+                    );
+                  })()
                 )}
               </div>
             </div>

@@ -15,9 +15,9 @@ export const getCurrencyDisplayMap = (t, panel = 'bcu') => {
     brou: {
       USD: { symbol: '$', nameKey: 'brou.currencies.USD' },
       USD_EBROU: { symbol: '$', flag: 'USD', nameKey: 'brou.currencies.USD_EBROU', defaultName: 'Dólar eBROU', special: true },
-      EUR: { nameKey: 'brou.currencies.EUR' },
+  EUR: { symbol: '$', nameKey: 'brou.currencies.EUR' },
       ARS: { symbol: '$', nameKey: 'brou.currencies.ARS' },
-      BRL: { nameKey: 'brou.currencies.BRL' },
+  BRL: { symbol: '$', nameKey: 'brou.currencies.BRL' },
     },
     // BCU (exchange rate) panel just ensures name keys under exchange namespace; symbols from base
     bcu: {
