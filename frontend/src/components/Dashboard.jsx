@@ -298,7 +298,7 @@ const Dashboard = ({ isOpen, onClose }) => {
                                   </div>
                                   <div className="text-center p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
                                     <div className="text-lg font-bold text-blue-600 dark:text-blue-400">
-                                      {checkData.details.is_live ? '🟢 Live' : '🟡 Cache'}
+                                      {checkData.details.is_live ? `🟢 ${t('dashboard.labels.live') || 'Live'}` : `🟡 ${t('dashboard.labels.cache') || 'Cache'}`}
                                     </div>
                                     <div className="text-xs text-gray-500 dark:text-gray-400">{t('dashboard.checks.state') || 'Estado'}</div>
                                   </div>

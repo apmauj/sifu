@@ -297,6 +297,16 @@
     "months_validation": "Os meses devem estar entre 1 e 12",
     "period_validation": "O período inicial deve ser anterior ou igual ao período final",
     "internal_server_error": "Erro interno do servidor"
+  ,"bcu_api_responding": "API BCU respondendo",
+  "bcu_api_cached": "API BCU usando dados em cache",
+  "bcu_api_not_responding": "API BCU sem resposta",
+  "brou_api_responding": "API BROU respondendo",
+  "brou_api_cached": "API BROU usando dados em cache",
+  "brou_api_not_responding": "API BROU sem resposta",
+  "brou_cache_very_stale": "Cache BROU muito desatualizado ({minutes} minutos)",
+  "brou_cache_stale": "Cache BROU desatualizado ({minutes} minutos)",
+  "brou_cache_fresh": "Cache BROU recente ({minutes} minutos)",
+  "system_resources_ok": "Recursos do sistema OK"
   },
   "footer": {
     "official_sources": "Fontes oficiais:",
@@ -353,6 +363,10 @@
       "state": "Estado",
       "source": "Fonte",
       "show_technical_data": "Ver dados técnicos"
+    },
+    "labels": {
+      "live": "Live",
+      "cache": "Cache"
     },
     "system_info": {
       "title": "Informações do Sistema",

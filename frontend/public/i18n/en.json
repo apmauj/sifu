@@ -286,7 +286,17 @@
     "exchange_currency_history_retrieved": "{currency} history retrieved successfully",
     "months_validation": "Months must be between 1 and 12",
     "period_validation": "Start period must be before or equal to end period",
-    "internal_server_error": "Internal server error"
+  "internal_server_error": "Internal server error",
+  "bcu_api_responding": "BCU API responding",
+  "bcu_api_cached": "BCU API using cached data",
+  "bcu_api_not_responding": "BCU API not responding",
+  "brou_api_responding": "BROU API responding",
+  "brou_api_cached": "BROU API using cached data",
+  "brou_api_not_responding": "BROU API not responding",
+  "brou_cache_very_stale": "BROU cache very stale ({minutes} minutes old)",
+  "brou_cache_stale": "BROU cache stale ({minutes} minutes old)",
+  "brou_cache_fresh": "BROU cache fresh ({minutes} minutes old)",
+  "system_resources_ok": "System resources OK"
   },
   "footer": {
     "official_sources": "Official sources:",
@@ -344,6 +354,10 @@
       "state": "State",
       "source": "Source",
       "show_technical_data": "Show technical data"
+    },
+    "labels": {
+      "live": "Live",
+      "cache": "Cache"
     },
     "system_info": {
       "title": "System Information",

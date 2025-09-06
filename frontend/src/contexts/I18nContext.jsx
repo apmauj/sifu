@@ -324,6 +324,57 @@ export const I18nProvider = ({ children, forceEmbedded = false }) => {
         pattern: /^Exchange rates refreshed successfully$/,
         key: 'backend_messages.exchange_refresh_success',
         params: () => ({})
+      },
+      // Health / API status messages
+      {
+        pattern: /^BCU API responding$/,
+        key: 'backend_messages.bcu_api_responding',
+        params: () => ({})
+      },
+      {
+        pattern: /^BCU API using cached data$/,
+        key: 'backend_messages.bcu_api_cached',
+        params: () => ({})
+      },
+      {
+        pattern: /^BCU API not responding$/,
+        key: 'backend_messages.bcu_api_not_responding',
+        params: () => ({})
+      },
+      {
+        pattern: /^BROU API responding$/,
+        key: 'backend_messages.brou_api_responding',
+        params: () => ({})
+      },
+      {
+        pattern: /^BROU API using cached data$/,
+        key: 'backend_messages.brou_api_cached',
+        params: () => ({})
+      },
+      {
+        pattern: /^BROU API not responding$/,
+        key: 'backend_messages.brou_api_not_responding',
+        params: () => ({})
+      },
+      {
+        pattern: /^BROU cache is very stale \(([\d.]+) minutes old\)$/,
+        key: 'backend_messages.brou_cache_very_stale',
+        params: (m) => ({ minutes: m[1] })
+      },
+      {
+        pattern: /^BROU cache is stale \(([\d.]+) minutes old\)$/,
+        key: 'backend_messages.brou_cache_stale',
+        params: (m) => ({ minutes: m[1] })
+      },
+      {
+        pattern: /^BROU cache is fresh \(([\d.]+) minutes old\)$/,
+        key: 'backend_messages.brou_cache_fresh',
+        params: (m) => ({ minutes: m[1] })
+      },
+      {
+        pattern: /^System resources OK$/,
+        key: 'backend_messages.system_resources_ok',
+        params: () => ({})
       }
     ];
 
