@@ -319,5 +319,91 @@
     "exchange_refresh_failed": "Error updating exchange rates. Please try again.",
     "exchange_refresh_timeout": "Timeout waiting for update completion",
     "ui_refresh_failed": "Error updating UI data. Please try again."
+  },
+  "dashboard": {
+    "title": "Monitoring Dashboard",
+    "tab_health": "System Health",
+    "tab_performance": "Performance Budgets",
+    "error_loading_health": "Error loading health data",
+    "loading_health": "Loading health data...",
+    "general_status": {
+      "title": "Overall System Status",
+      "healthy": "Healthy System",
+      "warning": "System with Warnings",
+      "critical": "Critical System",
+      "unknown": "Unknown Status",
+      "last_update_prefix": "Last update:"
+    },
+    "checks": {
+      "details_title": "Checks Details",
+      "ui_records": "UI Records",
+      "ur_records": "UR Records",
+      "brou_records": "BROU Records",
+      "total_records": "Total",
+      "currencies": "Currencies",
+      "state": "State",
+      "source": "Source",
+      "show_technical_data": "Show technical data"
+    },
+    "system_info": {
+      "title": "System Information",
+      "unavailable": "Resource monitoring not available",
+      "cpu": "CPU",
+      "memory": "Memory",
+      "used": "Used",
+      "total": "Total",
+      "cpu_usage": "CPU Usage",
+      "memory_usage": "Memory Usage",
+      "memory_used": "Memory Used",
+      "memory_total": "Memory Total"
+    },
+    "performance_metrics": {
+      "title": "Performance Metrics",
+      "uptime_total": "Total Uptime",
+      "response_time": "Response Time",
+      "total_requests": "Total Requests"
+    },
+    "statistics": {
+      "title": "General Statistics",
+      "total_checks": "Total checks",
+      "healthy_checks": "Healthy checks",
+      "warning_checks": "Warning checks",
+      "critical_checks": "Critical checks"
+    },
+    "performance_budgets": {
+      "title": "Performance Budgets",
+      "status": {
+        "healthy": "✅ Healthy",
+        "warning": "⚠️ Warning",
+        "critical": "❌ Critical",
+        "unknown": "❓ Unknown"
+      },
+      "labels": {
+        "target": "Target",
+        "warning_threshold": "Warning",
+        "critical_threshold": "Critical",
+        "current": "Current"
+      },
+      "no_budgets": "No performance budgets configured",
+      "service_status_prefix": "Service status:"
+    },
+    "throughput_metrics": {
+      "title": "Throughput Metrics",
+      "requests_per_minute": "Requests/min",
+      "avg_response_time": "Response Time",
+      "error_rate": "Error Rate",
+      "uptime": "Availability"
+    },
+    "status_summary": {
+      "title": "Status Summary",
+      "total_budgets": "Total Budgets",
+      "healthy": "Healthy",
+      "warning": "Warnings",
+      "critical": "Critical"
+    },
+    "actions": {
+      "close": "Close",
+      "refresh": "Refresh"
+    }
   }
 } 

@@ -319,5 +319,91 @@
     "exchange_refresh_failed": "Erro ao atualizar cotações. Tente novamente.",
     "exchange_refresh_timeout": "Timeout aguardando finalização da atualização",
     "ui_refresh_failed": "Erro ao atualizar dados de UI. Tente novamente."
+  },
+  "dashboard": {
+    "title": "Dashboard de Monitoramento",
+    "tab_health": "Saúde do Sistema",
+    "tab_performance": "Orçamentos de Desempenho",
+    "error_loading_health": "Erro ao carregar dados de saúde",
+    "loading_health": "Carregando dados de saúde...",
+    "general_status": {
+      "title": "Status Geral do Sistema",
+      "healthy": "Sistema Saudável",
+      "warning": "Sistema com Alertas",
+      "critical": "Sistema Crítico",
+      "unknown": "Status Desconhecido",
+      "last_update_prefix": "Última atualização:"
+    },
+    "checks": {
+      "details_title": "Detalhes das Verificações",
+      "ui_records": "Registros UI",
+      "ur_records": "Registros UR",
+      "brou_records": "Registros BROU",
+      "total_records": "Total",
+      "currencies": "Moedas",
+      "state": "Estado",
+      "source": "Fonte",
+      "show_technical_data": "Ver dados técnicos"
+    },
+    "system_info": {
+      "title": "Informações do Sistema",
+      "unavailable": "Monitoramento de recursos não disponível",
+      "cpu": "CPU",
+      "memory": "Memória",
+      "used": "Usada",
+      "total": "Total",
+      "cpu_usage": "Uso de CPU",
+      "memory_usage": "Uso de Memória",
+      "memory_used": "Memória Usada",
+      "memory_total": "Memória Total"
+    },
+    "performance_metrics": {
+      "title": "Métricas de Desempenho",
+      "uptime_total": "Uptime Total",
+      "response_time": "Tempo de Resposta",
+      "total_requests": "Total de Solicitações"
+    },
+    "statistics": {
+      "title": "Estatísticas Gerais",
+      "total_checks": "Total de verificações",
+      "healthy_checks": "Verificações saudáveis",
+      "warning_checks": "Verificações com alerta",
+      "critical_checks": "Verificações críticas"
+    },
+    "performance_budgets": {
+      "title": "Orçamentos de Desempenho",
+      "status": {
+        "healthy": "✅ Saudável",
+        "warning": "⚠️ Alerta",
+        "critical": "❌ Crítico",
+        "unknown": "❓ Desconhecido"
+      },
+      "labels": {
+        "target": "Objetivo",
+        "warning_threshold": "Alerta",
+        "critical_threshold": "Crítico",
+        "current": "Atual"
+      },
+      "no_budgets": "Nenhum orçamento de desempenho configurado",
+      "service_status_prefix": "Status do serviço:"
+    },
+    "throughput_metrics": {
+      "title": "Métricas de Throughput",
+      "requests_per_minute": "Solicitações/min",
+      "avg_response_time": "Tempo de Resposta",
+      "error_rate": "Taxa de Erro",
+      "uptime": "Disponibilidade"
+    },
+    "status_summary": {
+      "title": "Resumo de Status",
+      "total_budgets": "Total Orçamentos",
+      "healthy": "Saudáveis",
+      "warning": "Alertas",
+      "critical": "Críticos"
+    },
+    "actions": {
+      "close": "Fechar",
+      "refresh": "Atualizar"
+    }
   }
 } 

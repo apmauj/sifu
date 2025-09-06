@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 
 // Supported languages
 const SUPPORTED_LANGUAGES = ['es', 'en', 'pt'];
@@ -17,11 +17,49 @@ export const useI18n = () => {
   return context;
 };
 
+// Helper: deep merge (simple, non-circular) - remote overrides embedded
+function deepMerge(base, override) {
+  if (!base || typeof base !== 'object') return override;
+  if (!override || typeof override !== 'object') return Array.isArray(base) ? [...base] : { ...base };
+  const result = Array.isArray(base) ? [...base] : { ...base };
+  for (const key of Object.keys(override)) {
+    const bv = result[key];
+    const ov = override[key];
+    if (bv && typeof bv === 'object' && !Array.isArray(bv) && ov && typeof ov === 'object' && !Array.isArray(ov)) {
+      result[key] = deepMerge(bv, ov);
+    } else {
+      result[key] = ov;
+    }
+  }
+  return result;
+}
+
+// Preload embedded locales once (Vite eager import)
+let EMBEDDED_LOCALES = {};
+try {
+  const embeddedModules = import.meta.glob('../locales/*.json', { eager: true });
+  EMBEDDED_LOCALES = Object.fromEntries(
+    Object.entries(embeddedModules).map(([path, mod]) => {
+      const name = path.split('/').pop().replace('.json', '');
+      return [name, mod.default || mod];
+    })
+  );
+} catch (e) {
+  // ignore (tests / build edge)
+}
+
 // Context provider
-export const I18nProvider = ({ children }) => {
+export const I18nProvider = ({ children, forceEmbedded = false }) => {
   const [currentLanguage, setCurrentLanguage] = useState(DEFAULT_LANGUAGE);
-  const [translations, setTranslations] = useState({});
-  const [isLoading, setIsLoading] = useState(true);
+  const [translations, setTranslations] = useState(() => {
+    if (forceEmbedded) {
+      return EMBEDDED_LOCALES[DEFAULT_LANGUAGE] || {};
+    }
+    return {};
+  });
+  const [isLoading, setIsLoading] = useState(forceEmbedded ? false : true);
+  // Keep a ref to embedded for missing-key checks (avoid re-import cost)
+  const embeddedRef = useRef(EMBEDDED_LOCALES);
 
   // Load translations
   const loadTranslations = useCallback(async (lang) => {
@@ -52,8 +90,8 @@ export const I18nProvider = ({ children }) => {
         return null;
       };
 
-      let data = await fetchFirstOk(candidates);
-      if (!data) {
+      let remoteData = await fetchFirstOk(candidates);
+      if (!remoteData) {
         console.warn(`⚠️ I18nContext: No se pudo cargar '${lang}'. Probando fallback '${FALLBACK_LANGUAGE}'`);
         const fallbackCandidates = [
           `${base}i18n/${FALLBACK_LANGUAGE}.json${cacheBuster}`,
@@ -61,25 +99,21 @@ export const I18nProvider = ({ children }) => {
           `/i18n/${FALLBACK_LANGUAGE}.json${cacheBuster}`,
           `i18n/${FALLBACK_LANGUAGE}.json${cacheBuster}`,
         ];
-        data = await fetchFirstOk(fallbackCandidates);
+        remoteData = await fetchFirstOk(fallbackCandidates);
       }
 
       // Último recurso: usar traducciones embebidas en el bundle (src/locales)
-      if (!data) {
-        try {
-          const embeddedLocales = import.meta.glob('../locales/*.json', { eager: true });
-          const pick = (code) => {
-            const match = Object.entries(embeddedLocales).find(([path]) => path.endsWith(`/${code}.json`));
-            return match ? match[1].default || match[1] : null;
-          };
-          data = pick(lang) || pick(FALLBACK_LANGUAGE);
-        } catch (e) {
-          // ignore
-        }
+      const embeddedForLang = embeddedRef.current[lang] || embeddedRef.current[FALLBACK_LANGUAGE] || {};
+      let finalData;
+      if (remoteData) {
+        // Merge: embedded (full source) + remote (runtime overrides / possibly partial)
+        finalData = deepMerge(embeddedForLang, remoteData);
+      } else {
+        finalData = embeddedForLang; // Only embedded available
       }
 
-      if (data) {
-        setTranslations(data);
+      if (finalData && Object.keys(finalData).length > 0) {
+        setTranslations(finalData);
       } else {
         console.error('❌ I18nContext: No se encontró ningún archivo de traducción');
         setTranslations({});
@@ -94,14 +128,21 @@ export const I18nProvider = ({ children }) => {
 
   // Initialize language
   useEffect(() => {
-    const savedLang = localStorage.getItem('sifu-language');
-    const initialLang = (savedLang && SUPPORTED_LANGUAGES.includes(savedLang)) 
-      ? savedLang 
+    if (forceEmbedded) return; // ya inicializado
+    const savedLang = (!forceEmbedded) ? localStorage.getItem('sifu-language') : null;
+    const initialLang = (savedLang && SUPPORTED_LANGUAGES.includes(savedLang))
+      ? savedLang
       : DEFAULT_LANGUAGE;
-    
+
     setCurrentLanguage(initialLang);
-    loadTranslations(initialLang);
-  }, [loadTranslations]);
+    if (forceEmbedded) {
+      const embeddedForLang = embeddedRef.current[initialLang] || embeddedRef.current[FALLBACK_LANGUAGE] || {};
+      setTranslations(embeddedForLang);
+      setIsLoading(false);
+    } else {
+      loadTranslations(initialLang);
+    }
+  }, [loadTranslations, forceEmbedded]);
 
   // Translation function
   const t = useCallback((key, params = {}) => {
@@ -117,8 +158,25 @@ export const I18nProvider = ({ children }) => {
       if (value && typeof value === 'object' && k in value) {
         value = value[k];
       } else {
-        console.warn(`⚠️ I18nContext: Translation key not found: ${key} (lang: ${currentLanguage})`);
-        return key; // Return key if not found
+        // Double-check embedded locales to reduce falsos positivos (tests / race conditions)
+        const embedded = embeddedRef.current[currentLanguage] || embeddedRef.current[FALLBACK_LANGUAGE] || {};
+        let probe = embedded;
+        let existsInEmbedded = true;
+        for (const kk of keys) {
+          if (probe && typeof probe === 'object' && kk in probe) {
+            probe = probe[kk];
+          } else {
+            existsInEmbedded = false;
+            break;
+          }
+        }
+        if (!existsInEmbedded) {
+          const silence = import.meta.env.VITE_I18N_SILENCE_KNOWN === '1';
+          if (!silence) {
+            console.warn(`⚠️ I18nContext: Translation key not found: ${key} (lang: ${currentLanguage})`);
+          }
+        } // else existe en embedded: silencio (clave llegará tras merge remoto si era parcial)
+        return key; // Return key if not found (remote or embedded)
       }
     }
     
@@ -293,14 +351,27 @@ export const I18nProvider = ({ children }) => {
     localStorage.setItem('sifu-language', lang);
     
     // Load new translations first, then update language
-    await loadTranslations(lang);
-    setCurrentLanguage(lang);
-  }, [loadTranslations]);
+    if (forceEmbedded) {
+      const embeddedForLang = embeddedRef.current[lang] || embeddedRef.current[FALLBACK_LANGUAGE] || {};
+      setTranslations(embeddedForLang);
+      setCurrentLanguage(lang);
+      setIsLoading(false);
+    } else {
+      await loadTranslations(lang);
+      setCurrentLanguage(lang);
+    }
+  }, [loadTranslations, forceEmbedded]);
 
   // Force reload translations
   const reloadTranslations = useCallback(async () => {
-    await loadTranslations(currentLanguage);
-  }, [loadTranslations, currentLanguage]);
+    if (forceEmbedded) {
+      const embeddedForLang = embeddedRef.current[currentLanguage] || embeddedRef.current[FALLBACK_LANGUAGE] || {};
+      setTranslations(embeddedForLang);
+      setIsLoading(false);
+    } else {
+      await loadTranslations(currentLanguage);
+    }
+  }, [loadTranslations, currentLanguage, forceEmbedded]);
 
   const value = {
     currentLanguage,

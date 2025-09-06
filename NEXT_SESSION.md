@@ -54,6 +54,23 @@
    - Estandarizar términos entre INE/BCU/BROU
    - Actualizar ejemplos de API con casos reales
 
+### **Fase 4: Seguridad y Autenticación Avanzada** (nuevo)
+6. **Implementación de 2FA (TOTP + Recovery Codes)**
+   - Backend: endpoints para generar secreto (QR/otpauth), activar/desactivar y validar token
+   - Almacenar secreto cifrado (KDF + pepper) y códigos de recuperación hash (bcrypt / argon2)
+   - Métricas: usuarios con 2FA habilitado, intentos fallidos, uso de recovery codes
+   - Rate limiting específico en verificación de TOTP (reusar middlewares existentes)
+7. **Gestión de Códigos de Recuperación**
+   - Generación inicial (8-10 códigos one‑time) + descarga segura
+   - Rotación/regeneración invalida anteriores (audit log)
+8. **Flujo Frontend de Activación 2FA**
+   - Paso 1: Mostrar QR + código manual
+   - Paso 2: Ingreso de primer TOTP para confirmar
+   - Paso 3: Presentar y forzar almacenamiento de recovery codes
+9. **Observabilidad de Seguridad**
+   - Exponer métricas: auth_2fa_enabled_total, auth_2fa_failed_attempts_total
+   - Alertar > N intentos fallidos consecutivos por usuario/ip
+
 ## 📊 Métricas de Seguimiento
 
 ### **Testing Quality**
@@ -80,16 +97,19 @@
 - ¿Implementar Prometheus + Grafana para métricas avanzadas?
 - ¿Configurar alertas en GitHub para fallos de CI/CD?
 - ¿Agregar logging estructurado para debugging?
+ - ¿Incluir dashboard de adopción 2FA (tasa habilitación / intentos fallidos)?
 
 ### **Performance Optimization**
 - ¿Implementar Redis para caching avanzado?
 - ¿Optimizar queries de base de datos con índices compuestos?
 - ¿Agregar compression a responses de API?
+ - ¿Evaluar impacto de validaciones 2FA en latencia de login?
 
 ### **Developer Experience**
 - ¿Crear más scripts de automatización para desarrollo local?
 - ¿Implementar hot reload más eficiente?
 - ¿Agregar más validaciones en pre-commit hooks?
+ - ¿Agregar test helpers para generar códigos TOTP deterministas en CI?
 
 ## 🎯 Objetivos de la Próxima Sesión
 
@@ -109,6 +129,6 @@
 
 ---
 
-**Última actualización**: 2025-01-15
-**Suite de Tests**: ✅ 598/598 pasando
-**Estado General**: 🟢 Saludable y listo para próximos desarrollos
+**Última actualización**: 2025-09-06
+**Suite de Tests**: ✅ 600/600 pasando
+**Estado General**: 🟢 Saludable y listo para incorporar 2FA
