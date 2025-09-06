@@ -170,6 +170,13 @@ export const SUPPORTED_CURRENCIES = [
   { code: 'BRL', flag: '🇧🇷' },
 ];
 
+export const CURRENCY_SYMBOLS = {
+  USD: 'US$',
+  EUR: '€',
+  ARS: '$',
+  BRL: 'R$',
+};
+
 // Helper para obtener información de una moneda
 export const getCurrencyInfo = (currencyCode) => {
   return SUPPORTED_CURRENCIES.find(currency => currency.code === currencyCode);

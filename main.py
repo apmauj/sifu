@@ -579,6 +579,27 @@ def _add_jobs(_scheduler):
                         )
                         excel_processor.refresh_data(db)
                         _data_guard_last_attempt["ui"] = now_local
+                    else:
+                        # Cooldown active
+                        elapsed = (now_local - last_try).total_seconds() / 60
+                        logger.debug(
+                            "[DataGuard][UI] Cooldown active (elapsed=%.1fm < %dm, latest=%s)"
+                            % (
+                                elapsed,
+                                DATA_GUARD_UI_COOLDOWN_MIN,
+                                latest_ui.date if latest_ui else "None",
+                            )
+                        )
+                else:
+                    # Explicit log for visibility when no action needed
+                    logger.debug(
+                        "[DataGuard][UI] Up-to-date (latest=%s today=%s now=%s)"
+                        % (
+                            latest_ui.date if latest_ui else "None",
+                            today,
+                            now_local.strftime("%H:%M"),
+                        )
+                    )
             except Exception as e:  # noqa: BLE001
                 logger.error(f"[DataGuard][UI] error: {e}")
 
@@ -625,6 +646,27 @@ def _add_jobs(_scheduler):
                         )
                         ur_excel_processor.refresh_data(db)
                         _data_guard_last_attempt["ur"] = now_local
+                    else:
+                        elapsed = (now_local - last_try).total_seconds() / 60
+                        logger.debug(
+                            "[DataGuard][UR] Cooldown active (elapsed=%.1fm < %dm, latest=%s-%s)"
+                            % (
+                                elapsed,
+                                DATA_GUARD_UR_COOLDOWN_MIN,
+                                latest_ur.year if latest_ur else "None",
+                                latest_ur.month if latest_ur else "",
+                            )
+                        )
+                else:
+                    logger.debug(
+                        "[DataGuard][UR] Up-to-date (latest=%s current=%s first_bd=%s now=%s)"
+                        % (
+                            (f"{latest_ur.year}-{latest_ur.month:02d}") if latest_ur else "None",
+                            f"{year}-{month:02d}",
+                            first_bd.isoformat(),
+                            now_local.strftime("%H:%M"),
+                        )
+                    )
             except Exception as e:  # noqa: BLE001
                 logger.error(f"[DataGuard][UR] error: {e}")
 
@@ -651,6 +693,25 @@ def _add_jobs(_scheduler):
                         )
                         exchange_rate_excel_processor.refresh_data(db)
                         _data_guard_last_attempt["exchange"] = now_local
+                    else:
+                        elapsed = (now_local - last_try).total_seconds() / 60
+                        logger.debug(
+                            "[DataGuard][EXCHANGE] Cooldown active (elapsed=%.1fm < %dm, latest=%s)"
+                            % (
+                                elapsed,
+                                DATA_GUARD_EXCHANGE_COOLDOWN_MIN,
+                                ex_max if ex_max else "None",
+                            )
+                        )
+                else:
+                    logger.debug(
+                        "[DataGuard][EXCHANGE] Up-to-date (latest=%s today=%s now=%s)"
+                        % (
+                            ex_max if ex_max else "None",
+                            today,
+                            now_local.strftime("%H:%M"),
+                        )
+                    )
             except Exception as e:  # noqa: BLE001
                 logger.error(f"[DataGuard][EXCHANGE] error: {e}")
         except Exception as e:  # noqa: BLE001
@@ -1305,6 +1366,19 @@ async def get_ur_info(db: Session = Depends(get_db)):
         min_year, max_year = ur_service.get_year_range_available()
         latest_ur = ur_service.get_latest_ur()
         available_years = ur_service.get_available_years()
+        # Pending flag if latest year-month < current year-month
+        pending = False
+        pending_message = None
+        try:
+            if latest_ur:
+                from datetime import datetime as _dt
+                now = _dt.utcnow()
+                if (latest_ur.year, latest_ur.month) < (now.year, now.month):
+                    from constants import MSG_UR_PENDING_CURRENT_MONTH
+                    pending = True
+                    pending_message = MSG_UR_PENDING_CURRENT_MONTH
+        except Exception:
+            pass
 
         return {
             "success": True,
@@ -1313,6 +1387,8 @@ async def get_ur_info(db: Session = Depends(get_db)):
                 "year_range": {"min_year": min_year, "max_year": max_year},
                 "latest_value": latest_ur.dict() if latest_ur else None,
                 "available_years": available_years,
+                "pending_current_month": pending,
+                "pending_message": pending_message,
             },
         }
 

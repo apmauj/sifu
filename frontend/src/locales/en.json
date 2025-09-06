@@ -172,6 +172,7 @@
   "period": "Period",
   "latest_available": "Latest available value",
   "loading_info": "Loading information..."
+  ,"pending_current_month": "Current month pending publication"
   },
   "exchange": {
     "title": "Foreign Currency Exchange Rates",

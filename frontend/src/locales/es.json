@@ -172,6 +172,7 @@
     "period": "Período",
     "latest_available": "Último valor disponible",
     "loading_info": "Cargando información..."
+    ,"pending_current_month": "Mes actual pendiente de publicación"
   },
   "exchange": {
     "title": "Cotizaciones de Monedas Extranjeras",

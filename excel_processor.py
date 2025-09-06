@@ -553,6 +553,16 @@ class URExcelProcessor:
             # Save to database
             saved_count = self.save_to_database(db, records)
 
+            # Detect if current month missing (not published yet)
+            try:
+                from datetime import datetime as _dt
+                now = _dt.utcnow()
+                current_year, current_month = now.year, now.month
+                max_year, max_month = max((y, m) for y, m, _ in records)
+                missing_current = (max_year, max_month) < (current_year, current_month)
+            except Exception:  # pragma: no cover - defensive
+                missing_current = False
+
             if saved_count > 0:
                 return (
                     True,
@@ -560,6 +570,9 @@ class URExcelProcessor:
                     saved_count,
                 )
             else:
+                if missing_current:
+                    from constants import MSG_UR_MONTH_NOT_PUBLISHED
+                    return True, MSG_UR_MONTH_NOT_PUBLISHED, 0
                 return True, "No changes in UR data", 0
 
         except Exception as e:

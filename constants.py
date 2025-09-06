@@ -188,6 +188,8 @@ MSG_NO_EXCHANGE_RATE_DATE_DATA = (
     "No exchange rate data for {date}. Showing closest previous value"
 )
 MSG_NO_EXCHANGE_RATE_CURRENCY_DATA = "No exchange rate data available for {currency}"
+MSG_UR_MONTH_NOT_PUBLISHED = "UR current month value not yet published by BHU"
+MSG_UR_PENDING_CURRENT_MONTH = "Pending publication of current month UR value"
 
 # Validation messages
 MSG_INVALID_MONTH = "Month must be between 1 and 12"

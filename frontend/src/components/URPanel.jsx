@@ -169,7 +169,7 @@ const URPanel = ({ refreshKey }) => {
         </Card>
         <Card>
           <CardBody>
-            <URResultsDisplay results={results} searchType={searchType} isLoading={searchLoading} />
+            <URResultsDisplay results={results} searchType={searchType} isLoading={searchLoading} pendingCurrentMonth={urInfo?.pending_current_month} pendingMessage={urInfo?.pending_message} />
           </CardBody>
         </Card>
       </div>

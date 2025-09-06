@@ -168,6 +168,7 @@
   "period": "Período",
   "latest_available": "Último valor disponível",
   "loading_info": "Carregando informações..."
+  ,"pending_current_month": "Mês atual aguardando publicação"
   },
   "exchange": {
     "title": "Cotações de Moedas Estrangeiras",

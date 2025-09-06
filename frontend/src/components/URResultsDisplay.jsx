@@ -5,7 +5,7 @@ import { OpenMojiIcon } from '../icons/openmoji/index.jsx';
 import IconCircle from './ui/IconCircle.jsx';
 import { useI18n } from '../contexts/I18nContext';
 
-const URResultsDisplay = ({ results, searchType, isLoading, error }) => {
+const URResultsDisplay = ({ results, searchType, isLoading, error, pendingCurrentMonth = false, pendingMessage = null }) => {
   const { t } = useI18n();
 
   // ESLint workaround: declare used components with underscore prefix
@@ -230,9 +230,21 @@ const URResultsDisplay = ({ results, searchType, isLoading, error }) => {
               <div className="text-3xl font-bold text-uruguay-blue dark:text-blue-300 mb-2">
                 {formatURValue(data[0].value)}
               </div>
-              <div className="flex items-center justify-center text-gray-600 dark:text-gray-300">
-                <_CalendarIcon className="w-4 h-4 mr-2" />
-                {formatPeriod(data[0].year, data[0].month)}
+              <div className="flex flex-col items-center justify-center text-gray-600 dark:text-gray-300">
+                <div className="flex items-center">
+                  <_CalendarIcon className="w-4 h-4 mr-2" />
+                  {formatPeriod(data[0].year, data[0].month)}
+                </div>
+                {pendingCurrentMonth && (
+                  <div
+                    className="mt-2 inline-flex items-center space-x-2 text-xs font-medium bg-amber-100 dark:bg-amber-600/25 text-amber-900 dark:text-amber-200 px-3 py-1 rounded-full border border-amber-300 dark:border-amber-500 animate-pulse"
+                    role="status"
+                    aria-label={pendingMessage || t('ur.pending_current_month') || 'Mes actual pendiente de publicación'}
+                  >
+                    <span aria-hidden="true">⏳</span>
+                    <span>{pendingMessage || t('ur.pending_current_month') || 'Mes actual pendiente de publicación'}</span>
+                  </div>
+                )}
               </div>
             </div>
             <div className="text-sm text-gray-500 dark:text-gray-400">

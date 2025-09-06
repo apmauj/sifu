@@ -1,5 +1,5 @@
 import React from 'react';
-import { getCurrencyInfo, formatExchangeRate } from '../services/exchangeService';
+import { getCurrencyInfo, formatExchangeRate, CURRENCY_SYMBOLS } from '../services/exchangeService';
 import { useI18n } from '../contexts/I18nContext';
 import { format, parseISO } from 'date-fns';
 import { Flag } from '../icons/flags.jsx';
@@ -203,17 +203,17 @@ const ExchangeResultsDisplay = ({ results, searchType, isLoading, error }) => {
                   </td>
                   <td className="px-3 py-3 text-center">
                     <div className="text-sm font-semibold text-green-600">
-                      ${formatExchangeRate(rate.buy_rate)}
+                      {CURRENCY_SYMBOLS[rate.currency] || '$'}{formatExchangeRate(rate.buy_rate)}
                     </div>
                   </td>
                   <td className="px-3 py-3 text-center">
                     <div className="text-sm font-semibold text-red-600">
-                      ${formatExchangeRate(rate.sell_rate)}
+                      {CURRENCY_SYMBOLS[rate.currency] || '$'}{formatExchangeRate(rate.sell_rate)}
                     </div>
                   </td>
                   <td className="px-3 py-3 text-center">
                     <div className="text-sm font-semibold text-blue-600">
-                      {rate.average_rate ? `$${formatExchangeRate(rate.average_rate)}` : (
+                      {rate.average_rate ? `${CURRENCY_SYMBOLS[rate.currency] || '$'}${formatExchangeRate(rate.average_rate)}` : (
                         <span className="text-gray-400 dark:text-gray-500">{t('common.not_available') || 'N/A'}</span>
                       )}
                     </div>
@@ -248,19 +248,19 @@ const ExchangeResultsDisplay = ({ results, searchType, isLoading, error }) => {
                 <div>
                   <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">{t('exchange.buy_rate') || 'Compra'}</div>
                   <div className="text-sm font-semibold text-green-600">
-                    ${formatExchangeRate(rate.buy_rate)}
+                    {CURRENCY_SYMBOLS[rate.currency] || '$'}{formatExchangeRate(rate.buy_rate)}
                   </div>
                 </div>
                 <div>
                   <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">{t('exchange.sell_rate') || 'Venta'}</div>
                   <div className="text-sm font-semibold text-red-600">
-                    ${formatExchangeRate(rate.sell_rate)}
+                    {CURRENCY_SYMBOLS[rate.currency] || '$'}{formatExchangeRate(rate.sell_rate)}
                   </div>
                 </div>
                 <div>
                   <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">{t('exchange.average_rate') || 'Promedio'}</div>
                   <div className="text-sm font-semibold text-blue-600">
-                    {rate.average_rate ? `$${formatExchangeRate(rate.average_rate)}` : (
+                    {rate.average_rate ? `${CURRENCY_SYMBOLS[rate.currency] || '$'}${formatExchangeRate(rate.average_rate)}` : (
                       <span className="text-gray-400">{t('common.not_available') || 'N/A'}</span>
                     )}
                   </div>
