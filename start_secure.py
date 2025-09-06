@@ -58,9 +58,17 @@ def main():
         logger.info("📊 Initializing secure logging...")
         from secure_logging import init_security_logging
         security_config = secret_manager.get_security_config()
+        # Ensure logs directory exists
+        logs_dir = Path('logs')
+        try:
+            logs_dir.mkdir(parents=True, exist_ok=True)
+        except Exception:
+            logger.warning("Could not create 'logs' directory; falling back to current directory")
+            logs_dir = Path('.')
+
         security_logger = init_security_logging({
             'log_level': security_config['log_level'],
-            'log_file': 'sifu.log',
+            'log_file': str(logs_dir / 'sifu.log'),
             'audit_logging_enabled': security_config['audit_logging_enabled'],
             'encrypt_logs': secret_manager.should_encrypt_logs(),
             'log_encryption_key': secrets.get('LOG_ENCRYPTION_KEY'),

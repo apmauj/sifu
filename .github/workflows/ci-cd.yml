@@ -25,6 +25,12 @@ on:
         default: 'false'
         type: choice
         options: ['false','true']
+      override_tunnel_guard:
+        description: 'Ignorar guard de túnel (solo workflow_dispatch)'
+        required: false
+        default: 'false'
+        type: choice
+        options: ['false','true']
 
 permissions:
   contents: read
@@ -37,6 +43,69 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  tunnel-guard:
+    name: Tunnel Guard
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    outputs:
+      tunnel_ok: ${{ steps.evaluate.outputs.tunnel_ok }}
+    steps:
+      - name: Evaluar estado del túnel/API
+        id: evaluate
+        env:
+          SECRET_API_URL: ${{ secrets.VITE_PUBLIC_API_URL }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          set -e
+          if [ -z "$SECRET_API_URL" ]; then
+            echo "Secret VITE_PUBLIC_API_URL vacío" >> $GITHUB_STEP_SUMMARY
+            echo "tunnel_ok=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          # Normalizar quitando /api final si existe
+          BASE_URL="$SECRET_API_URL"
+          BASE_URL="${BASE_URL%/}"
+          if echo "$BASE_URL" | grep -qE '/api$'; then
+            ORIGIN="${BASE_URL%/api}"
+          else
+            ORIGIN="$BASE_URL"
+          fi
+          HOST=$(echo "$ORIGIN" | sed -E 's#https?://([^/]+).*#\1#')
+          IS_TUNNEL=0
+          if echo "$HOST" | grep -qi 'trycloudflare'; then IS_TUNNEL=1; fi
+          TARGET="${ORIGIN}/api/health/simple"
+          # Fallback si endpoint simple no existe
+          CODE=$(curl -sS -m 8 -o /dev/null -w '%{http_code}' "$TARGET" || true)
+          if [ -z "$CODE" ] || [ "$CODE" = "000" ]; then
+            # Intentar básico /api/health
+            TARGET="${ORIGIN}/api/health"
+            CODE=$(curl -sS -m 8 -o /dev/null -w '%{http_code}' "$TARGET" || true)
+          fi
+          # Considerar OK si respondió cualquier código <500
+          if [ -n "$CODE" ] && [ "$CODE" -lt 500 ]; then
+            OK=true
+          else
+            OK=false
+          fi
+          echo "Host: $HOST" >> $GITHUB_STEP_SUMMARY
+          echo "Endpoint probado: $TARGET (HTTP $CODE)" >> $GITHUB_STEP_SUMMARY
+          if [ $IS_TUNNEL -eq 1 ]; then
+            echo "Tipo: trycloudflare (dinámico)" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "Tipo: host estable" >> $GITHUB_STEP_SUMMARY
+          fi
+          if [ "$OK" = true ]; then
+            echo "Resultado guard: OK" >> $GITHUB_STEP_SUMMARY
+            echo "tunnel_ok=true" >> $GITHUB_OUTPUT
+          else
+            echo "Resultado guard: FALLÓ (no alcanzable / código >=500)" >> $GITHUB_STEP_SUMMARY
+            # Solo bloquear en push automático a master si es túnel y está caído; en PR/dispatch permitir override
+            if [ "$EVENT_NAME" = "push" ] && [ "$IS_TUNNEL" -eq 1 ]; then
+              echo "tunnel_ok=false" >> $GITHUB_OUTPUT
+            else
+              echo "tunnel_ok=false" >> $GITHUB_OUTPUT
+            fi
+          fi
   security-backend:
     name: Security Audit Backend
     runs-on: ubuntu-latest
@@ -168,8 +237,8 @@ jobs:
   build-frontend:
     name: Build Frontend (artifact)
     runs-on: ubuntu-latest
-    needs: [ frontend-tests ]
-    if: (github.event_name == 'push' && github.ref == 'refs/heads/master') || (github.event_name == 'workflow_dispatch' && inputs.force_frontend_deploy == 'true')
+    needs: [ frontend-tests, tunnel-guard ]
+    if: ((github.event_name == 'push' && github.ref == 'refs/heads/master') || (github.event_name == 'workflow_dispatch' && inputs.force_frontend_deploy == 'true')) && (needs.tunnel-guard.outputs.tunnel_ok == 'true' || (github.event_name == 'workflow_dispatch' && inputs.override_tunnel_guard == 'true'))
     permissions:
       contents: read
       pages: write
@@ -210,7 +279,11 @@ jobs:
       - name: Build
         env:
           NODE_ENV: production
-        run: npm run build --silent
+          VITE_APP_BUILD_SHA: ${{ github.sha }}
+          VITE_APP_BUILD_DATE: ${{ github.run_id }}-${{ github.run_number }}
+        run: |
+          echo "Using build metadata SHA=${VITE_APP_BUILD_SHA} DATE=${VITE_APP_BUILD_DATE}" >> $GITHUB_STEP_SUMMARY
+          npm run build --silent
       - name: Prepare SPA 404 redirect
         run: cp dist/index.html dist/404.html
       - name: Upload Pages artifact
@@ -275,19 +348,21 @@ jobs:
     runs-on: ubuntu-latest
     if: always()
     needs:
-      - security-backend
-      - security-frontend
-      - backend-tests
-      - frontend-tests
-      - publish-backend-image
-      - build-frontend
-      - deploy-frontend
+    - tunnel-guard
+    - security-backend
+    - security-frontend
+    - backend-tests
+    - frontend-tests
+    - publish-backend-image
+    - build-frontend
+    - deploy-frontend
     steps:
       - name: Build summary
         run: |
           echo "### CI/CD Summary" >> $GITHUB_STEP_SUMMARY
           echo "| Job | Result |" >> $GITHUB_STEP_SUMMARY
           echo "|-----|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| tunnel-guard | ${{ needs.tunnel-guard.result }} (ok=${{ needs.tunnel-guard.outputs.tunnel_ok }}) |" >> $GITHUB_STEP_SUMMARY
           echo "| security-backend | ${{ needs.security-backend.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| security-frontend | ${{ needs.security-frontend.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| backend-tests | ${{ needs.backend-tests.result }} |" >> $GITHUB_STEP_SUMMARY

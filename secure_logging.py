@@ -101,7 +101,7 @@ class SecureLogFormatter(logging.Formatter):
 class SecurityAuditHandler(logging.Handler):
     """Handler for security audit logs"""
 
-    def __init__(self, log_file: str = 'security_audit.log', max_bytes: int = 10*1024*1024, backup_count: int = 5):
+    def __init__(self, log_file: str = 'logs/security_audit.log', max_bytes: int = 10*1024*1024, backup_count: int = 5):
         super().__init__()
         self.log_file = Path(log_file)
 
@@ -179,8 +179,17 @@ class SecurityLogger:
 
         # File handler for general logs
         if config.get('log_file'):
+            # Auto-redirect plain filenames *.log or *.txt into logs/ if path not provided
+            raw_path = Path(config['log_file'])
+            if not raw_path.parent or str(raw_path.parent) == '.':
+                if raw_path.suffix in {'.log', '.txt'}:
+                    raw_path = Path('logs') / raw_path.name
+            try:
+                raw_path.parent.mkdir(parents=True, exist_ok=True)
+            except Exception:
+                pass
             file_handler = logging.handlers.RotatingFileHandler(
-                config['log_file'],
+                raw_path,
                 maxBytes=config.get('max_log_size', 100*1024*1024),
                 backupCount=config.get('log_backup_count', 5),
                 encoding='utf-8'
@@ -190,9 +199,13 @@ class SecurityLogger:
 
         # Security audit handler
         if config.get('audit_logging_enabled', True):
-            audit_handler = SecurityAuditHandler(
-                config.get('audit_log_file', 'security_audit.log')
-            )
+            audit_path = config.get('audit_log_file', 'logs/security_audit.log')
+            # Redirect plain audit filename
+            ap = Path(audit_path)
+            if not ap.parent or str(ap.parent) == '.':
+                if ap.suffix in {'.log', '.txt'}:
+                    audit_path = str(Path('logs') / ap.name)
+            audit_handler = SecurityAuditHandler(audit_path)
             self.logger.addHandler(audit_handler)
 
         # Log encryptor for sensitive data

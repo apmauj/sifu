@@ -54,9 +54,10 @@ frontend/.vite/
 .env.test.local
 .env.production.local
 
-# Logs
-logs
+# Logs (toda salida *.log y *.txt debe ir dentro de /logs)
+logs/
 *.log
+*.txt
 
 # Runtime data
 pids
@@ -165,6 +166,7 @@ htmlcov/
 
 # Windows
 *.lnk
+.tunnel_last_url.txt
 
 # macOS
 .AppleDouble
