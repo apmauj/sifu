@@ -1,5 +1,6 @@
 import React from 'react';
-import { getCurrencyInfo, formatExchangeRate, CURRENCY_SYMBOLS } from '../services/exchangeService';
+import { getCurrencyInfo, formatExchangeRate } from '../services/exchangeService';
+import { CURRENCY_SYMBOLS } from '../services/currencySymbols.js';
 import { useI18n } from '../contexts/I18nContext';
 import { format, parseISO } from 'date-fns';
 import { Flag } from '../icons/flags.jsx';

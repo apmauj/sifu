@@ -2,6 +2,7 @@ import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import ExchangeResultsDisplay from '../../components/ExchangeResultsDisplay';
+import { CURRENCY_SYMBOLS } from '../../services/currencySymbols.js';
 
 // Mock de servicios (específico para este componente)
 vi.mock('../../services/exchangeService', () => ({
@@ -272,7 +273,8 @@ describe('ExchangeResultsDisplay Component', () => {
     it('should display N/D for missing average rates in table', () => {
       render(<ExchangeResultsDisplay results={tableResults} searchType="range" />);
       
-      expect(screen.getAllByText('$43.0000')).toHaveLength(2); // Desktop table + mobile view
+      const usdAvg = `${CURRENCY_SYMBOLS.USD}43.0000`;
+      expect(screen.getAllByText(usdAvg)).toHaveLength(2); // Desktop table + mobile view (symbol-aware)
       // EUR doesn't have average_rate, so should show N/D (not available in Spanish)
       const naElements = screen.queryAllByText('N/D');
       const dashElements = screen.queryAllByText('-');
@@ -728,7 +730,8 @@ describe('ExchangeResultsDisplay Component', () => {
       // Mobile view should show currency cards - check that we have multiple elements
       expect(screen.getAllByText('USD').length).toBeGreaterThan(0);
       expect(screen.getAllByText('EUR').length).toBeGreaterThan(0);
-      expect(screen.getAllByText('$41.0000').length).toBeGreaterThan(0); // Average rate appears multiple times
+      const usdAvg = `${CURRENCY_SYMBOLS.USD}41.0000`;
+      expect(screen.getAllByText(usdAvg).length).toBeGreaterThan(0); // Average rate appears multiple times (symbol-aware)
     });
 
     it('should handle missing average_rate in mobile view', () => {
