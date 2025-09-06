@@ -6,6 +6,7 @@ Implementa autenticación básica y control de acceso basado en roles
 
 import os
 
+
 def create_auth_models():
     """Crea modelos de autenticación y autorización"""
     auth_models = '''"""
@@ -119,6 +120,7 @@ def has_any_permission(user: User, permissions: List[Permission]) -> bool:
     except Exception as e:
         print(f"❌ Error creando modelos de autenticación: {e}")
         return False
+
 
 def create_auth_service():
     """Crea servicio de autenticación"""
@@ -271,6 +273,7 @@ auth_service = AuthService()
         print(f"❌ Error creando servicio de autenticación: {e}")
         return False
 
+
 def create_auth_middleware():
     """Crea middleware de autenticación y autorización"""
     auth_middleware = '''"""
@@ -373,6 +376,7 @@ require_report_access = require_permissions([
         print(f"❌ Error creando middleware de autenticación: {e}")
         return False
 
+
 def create_auth_routes():
     """Crea rutas de autenticación"""
     auth_routes = '''"""
@@ -463,6 +467,7 @@ async def get_permissions(current_user: User = Depends(get_current_user)):
         print(f"❌ Error creando rutas de autenticación: {e}")
         return False
 
+
 def update_main_for_auth():
     """Actualiza main.py para incluir autenticación"""
     try:
@@ -475,24 +480,31 @@ def update_main_for_auth():
             in_imports = False
             last_import_index = -1
 
-            lines = content.split('\n')
+            lines = content.split("\n")
             for i, line in enumerate(lines):
-                if line.strip().startswith('from ') or line.strip().startswith('import '):
+                if line.strip().startswith("from ") or line.strip().startswith(
+                    "import "
+                ):
                     in_imports = True
                     last_import_index = i
-                elif in_imports and line.strip() and not line.strip().startswith('#'):
+                elif in_imports and line.strip() and not line.strip().startswith("#"):
                     break
 
             if last_import_index >= 0:
                 # Insertar imports después del último import
                 lines.insert(last_import_index + 1, "")
-                lines.insert(last_import_index + 2, "# Authentication and Authorization")
-                lines.insert(last_import_index + 3, "from auth_routes import router as auth_router")
+                lines.insert(
+                    last_import_index + 2, "# Authentication and Authorization"
+                )
+                lines.insert(
+                    last_import_index + 3,
+                    "from auth_routes import router as auth_router",
+                )
 
                 # Buscar donde se incluyen los routers
                 router_include_index = -1
                 for i, line in enumerate(lines):
-                    if 'app.include_router' in line:
+                    if "app.include_router" in line:
                         router_include_index = i
                         break
 
@@ -500,14 +512,16 @@ def update_main_for_auth():
                     # Agregar router de auth después del último include_router
                     last_router_index = router_include_index
                     for i in range(router_include_index + 1, len(lines)):
-                        if 'app.include_router' in lines[i]:
+                        if "app.include_router" in lines[i]:
                             last_router_index = i
 
                     lines.insert(last_router_index + 1, "")
                     lines.insert(last_router_index + 2, "# Authentication routes")
-                    lines.insert(last_router_index + 3, "app.include_router(auth_router)")
+                    lines.insert(
+                        last_router_index + 3, "app.include_router(auth_router)"
+                    )
 
-                    new_content = '\n'.join(lines)
+                    new_content = "\n".join(lines)
 
                     with open("main.py", "w", encoding="utf-8") as f:
                         f.write(new_content)
@@ -522,9 +536,10 @@ def update_main_for_auth():
         print(f"❌ Error actualizando main.py: {e}")
         return False
 
+
 def create_env_auth_vars():
     """Crea variables de entorno para autenticación"""
-    env_content = '''
+    env_content = """
 # Authentication Configuration
 JWT_SECRET_KEY=your-super-secret-jwt-key-change-this-in-production
 ACCESS_TOKEN_EXPIRE_MINUTES=30
@@ -533,7 +548,7 @@ ACCESS_TOKEN_EXPIRE_MINUTES=30
 # admin:admin123
 # manager:manager123
 # user:user123
-'''
+"""
 
     try:
         # Verificar si .env ya existe
@@ -557,6 +572,7 @@ ACCESS_TOKEN_EXPIRE_MINUTES=30
     except Exception as e:
         print(f"❌ Error configurando variables de entorno: {e}")
         return False
+
 
 def main():
     """Función principal de configuración RBAC"""
@@ -608,6 +624,7 @@ def main():
     print("   User: user / user123")
 
     return 0
+
 
 if __name__ == "__main__":
     exit(main())

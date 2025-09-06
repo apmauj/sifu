@@ -45,24 +45,27 @@ logger = logging.getLogger(__name__)
 
 class CircuitBreakerState(Enum):
     """Circuit breaker states"""
-    CLOSED = "closed"      # Normal operation
-    OPEN = "open"          # Circuit is open, failing fast
+
+    CLOSED = "closed"  # Normal operation
+    OPEN = "open"  # Circuit is open, failing fast
     HALF_OPEN = "half_open"  # Testing recovery
 
 
 class CircuitBreakerOpenException(Exception):
     """Exception raised when circuit breaker is open"""
+
     pass
 
 
 @dataclass
 class CircuitBreakerConfig:
     """Configuration for a circuit breaker"""
-    failure_threshold: int = 5          # Number of failures before opening
-    recovery_timeout: float = 60.0      # Seconds to wait before trying recovery
-    success_threshold: int = 3          # Number of successes needed in half-open state
-    timeout: float = 30.0               # Request timeout in seconds
-    name: str = "default"               # Circuit breaker name for logging
+
+    failure_threshold: int = 5  # Number of failures before opening
+    recovery_timeout: float = 60.0  # Seconds to wait before trying recovery
+    success_threshold: int = 3  # Number of successes needed in half-open state
+    timeout: float = 30.0  # Request timeout in seconds
+    name: str = "default"  # Circuit breaker name for logging
 
 
 class CircuitBreaker:
@@ -82,9 +85,11 @@ class CircuitBreaker:
         self._last_failure_time = 0.0
         self._lock = Lock()
 
-        logger.info(f"Circuit breaker '{config.name}' initialized: "
-                   f"failure_threshold={config.failure_threshold}, "
-                   f"recovery_timeout={config.recovery_timeout}s")
+        logger.info(
+            f"Circuit breaker '{config.name}' initialized: "
+            f"failure_threshold={config.failure_threshold}, "
+            f"recovery_timeout={config.recovery_timeout}s"
+        )
 
     @property
     def state(self) -> CircuitBreakerState:
@@ -113,7 +118,9 @@ class CircuitBreaker:
                     # Service has recovered, close the circuit
                     self._state = CircuitBreakerState.CLOSED
                     self._success_count = 0
-                    logger.info(f"Circuit breaker '{self.config.name}' closed (service recovered)")
+                    logger.info(
+                        f"Circuit breaker '{self.config.name}' closed (service recovered)"
+                    )
 
     def _record_failure(self):
         """Record a failed request"""
@@ -126,14 +133,18 @@ class CircuitBreaker:
                 if self._failure_count >= self.config.failure_threshold:
                     # Too many failures, open the circuit
                     self._state = CircuitBreakerState.OPEN
-                    logger.warning(f"Circuit breaker '{self.config.name}' opened "
-                                 f"(failure_count={self._failure_count})")
+                    logger.warning(
+                        f"Circuit breaker '{self.config.name}' opened "
+                        f"(failure_count={self._failure_count})"
+                    )
 
             elif self._state == CircuitBreakerState.HALF_OPEN:
                 # Failed during recovery test, go back to open
                 self._state = CircuitBreakerState.OPEN
-                logger.warning(f"Circuit breaker '{self.config.name}' recovery failed, "
-                             f"back to open state")
+                logger.warning(
+                    f"Circuit breaker '{self.config.name}' recovery failed, "
+                    f"back to open state"
+                )
 
     def _can_proceed(self) -> bool:
         """Check if request can proceed based on current state"""
@@ -145,7 +156,9 @@ class CircuitBreaker:
                     # Time to try recovery
                     self._state = CircuitBreakerState.HALF_OPEN
                     self._success_count = 0
-                    logger.info(f"Circuit breaker '{self.config.name}' attempting recovery")
+                    logger.info(
+                        f"Circuit breaker '{self.config.name}' attempting recovery"
+                    )
                     return True
                 else:
                     return False
@@ -158,7 +171,9 @@ class CircuitBreaker:
     def __enter__(self):
         """Context manager entry - check if request can proceed"""
         if not self._can_proceed():
-            logger.warning(f"Circuit breaker '{self.config.name}' is OPEN, failing fast")
+            logger.warning(
+                f"Circuit breaker '{self.config.name}' is OPEN, failing fast"
+            )
             raise CircuitBreakerOpenException(
                 f"Circuit breaker '{self.config.name}' is open. "
                 f"Last failure: {time.time() - self._last_failure_time:.1f}s ago"
@@ -199,7 +214,9 @@ _circuit_breakers: Dict[str, CircuitBreaker] = {}
 _registry_lock = Lock()
 
 
-def get_circuit_breaker(name: str, config: Optional[CircuitBreakerConfig] = None) -> CircuitBreaker:
+def get_circuit_breaker(
+    name: str, config: Optional[CircuitBreakerConfig] = None
+) -> CircuitBreaker:
     """
     Get or create a circuit breaker for a specific service
 
@@ -273,7 +290,7 @@ def get_circuit_breaker_status(name: str) -> Optional[Dict]:
                     "time_since_last_failure": time.time() - cb._last_failure_time,
                     "failure_threshold": cb.config.failure_threshold,
                     "recovery_timeout": cb.config.recovery_timeout,
-                    "success_threshold": cb.config.success_threshold
+                    "success_threshold": cb.config.success_threshold,
                 }
     return None
 
@@ -288,7 +305,7 @@ def initialize_default_circuit_breakers():
         failure_threshold=3,  # Open after 3 failures
         recovery_timeout=120.0,  # Wait 2 minutes before recovery
         success_threshold=2,  # Need 2 successes to close
-        timeout=30.0
+        timeout=30.0,
     )
     get_circuit_breaker("INE_API", ine_config)
 
@@ -298,7 +315,7 @@ def initialize_default_circuit_breakers():
         failure_threshold=3,
         recovery_timeout=120.0,
         success_threshold=2,
-        timeout=30.0
+        timeout=30.0,
     )
     get_circuit_breaker("BHU_API", bhu_config)
 
@@ -308,7 +325,7 @@ def initialize_default_circuit_breakers():
         failure_threshold=5,  # BROU might be more stable, higher threshold
         recovery_timeout=180.0,  # Wait 3 minutes before recovery
         success_threshold=3,  # Need 3 successes to close
-        timeout=15.0  # BROU has shorter timeout
+        timeout=15.0,  # BROU has shorter timeout
     )
     get_circuit_breaker("BROU_API", brou_config)
 
@@ -318,7 +335,7 @@ def initialize_default_circuit_breakers():
         failure_threshold=3,
         recovery_timeout=120.0,
         success_threshold=2,
-        timeout=20.0
+        timeout=20.0,
     )
     get_circuit_breaker("BCU_API", bcu_config)
 

@@ -1,6 +1,7 @@
 """
 Constants and configuration values for the SIFU application
 """
+
 import os
 
 # =============================================================================
@@ -25,7 +26,7 @@ COLUMN_UI_VALUE = "value"
 COLUMN_UR_YEAR = "year"
 COLUMN_UR_MONTH = "month"
 COLUMN_UR_VALUE = "value"
-COLUMN_EXCHANGE_RATE_DATE = "date"  
+COLUMN_EXCHANGE_RATE_DATE = "date"
 COLUMN_EXCHANGE_RATE_CURRENCY = "currency"
 COLUMN_EXCHANGE_RATE_BUY = "buy_rate"
 COLUMN_EXCHANGE_RATE_SELL = "sell_rate"
@@ -53,7 +54,7 @@ if _env_origins:
     # Basic validation - only allow http/https origins
     valid_origins = []
     for origin in origins_list:
-        if origin.startswith(('http://', 'https://')) or origin == "*":
+        if origin.startswith(("http://", "https://")) or origin == "*":
             valid_origins.append(origin)
     CORS_ALLOW_ORIGINS = valid_origins if valid_origins else []
 else:
@@ -73,7 +74,12 @@ STATIC_NAME = "static"
 # SCHEDULER (APScheduler) CONFIGURATION
 # =============================================================================
 # Enable/disable the background scheduler via env (default: enabled)
-SCHEDULER_ENABLED = os.getenv("SIFU_SCHEDULER_ENABLED", "true").lower() in ("1", "true", "yes", "on")
+SCHEDULER_ENABLED = os.getenv("SIFU_SCHEDULER_ENABLED", "true").lower() in (
+    "1",
+    "true",
+    "yes",
+    "on",
+)
 
 # Timezone used by cron triggers (defaults to Montevideo)
 SCHEDULER_TIMEZONE = os.getenv("TIMEZONE", "America/Montevideo")
@@ -91,13 +97,23 @@ CRON_DATA_GUARD = os.getenv("CRON_DATA_GUARD", "*/5 * * * *")
 # Cooldowns (minutes) to avoid hammering external sources when forcing refresh via guard
 DATA_GUARD_UI_COOLDOWN_MIN = int(os.getenv("DATA_GUARD_UI_COOLDOWN_MIN", "60"))
 DATA_GUARD_UR_COOLDOWN_MIN = int(os.getenv("DATA_GUARD_UR_COOLDOWN_MIN", "180"))
-DATA_GUARD_EXCHANGE_COOLDOWN_MIN = int(os.getenv("DATA_GUARD_EXCHANGE_COOLDOWN_MIN", "60"))
+DATA_GUARD_EXCHANGE_COOLDOWN_MIN = int(
+    os.getenv("DATA_GUARD_EXCHANGE_COOLDOWN_MIN", "60")
+)
 
 # Hourly health/check cron for Exchange (verifica y refresca si falta el día actual)
-CRON_EXCHANGE_HOURLY_CHECK = os.getenv("CRON_EXCHANGE_HOURLY_CHECK", "0 * * * *")  # top of every hour
-EXCHANGE_HOURLY_CHECK_ENABLED = os.getenv("EXCHANGE_HOURLY_CHECK_ENABLED", "true").lower() in ("1","true","yes","on")
-EXCHANGE_HOURLY_CHECK_START_HOUR = int(os.getenv("EXCHANGE_HOURLY_CHECK_START_HOUR", "9"))   # local tz hour to start attempts
-EXCHANGE_HOURLY_CHECK_END_HOUR = int(os.getenv("EXCHANGE_HOURLY_CHECK_END_HOUR", "18"))     # local tz hour to stop attempts
+CRON_EXCHANGE_HOURLY_CHECK = os.getenv(
+    "CRON_EXCHANGE_HOURLY_CHECK", "0 * * * *"
+)  # top of every hour
+EXCHANGE_HOURLY_CHECK_ENABLED = os.getenv(
+    "EXCHANGE_HOURLY_CHECK_ENABLED", "true"
+).lower() in ("1", "true", "yes", "on")
+EXCHANGE_HOURLY_CHECK_START_HOUR = int(
+    os.getenv("EXCHANGE_HOURLY_CHECK_START_HOUR", "9")
+)  # local tz hour to start attempts
+EXCHANGE_HOURLY_CHECK_END_HOUR = int(
+    os.getenv("EXCHANGE_HOURLY_CHECK_END_HOUR", "18")
+)  # local tz hour to stop attempts
 
 # =============================================================================
 # API ENDPOINTS
@@ -152,7 +168,9 @@ MSG_UR_YEAR_SUCCESS = "Retrieved {count} UR values for year {year}"
 MSG_UR_RANGE_SUCCESS = "Retrieved {count} UR values for range {start_year}-{start_month:02d} to {end_year}-{end_month:02d}"
 MSG_LATEST_EXCHANGE_RATE_SUCCESS = "Latest exchange rates retrieved successfully"
 MSG_EXCHANGE_RATE_DATE_SUCCESS = "Exchange rates for {date} retrieved successfully"
-MSG_EXCHANGE_RATE_CURRENCY_SUCCESS = "Exchange rates for {currency} retrieved successfully"
+MSG_EXCHANGE_RATE_CURRENCY_SUCCESS = (
+    "Exchange rates for {currency} retrieved successfully"
+)
 MSG_EXCHANGE_RATE_RANGE_SUCCESS = "Exchange rates for range {start_date} - {end_date} retrieved successfully. {count} records found"
 
 # Error messages
@@ -163,8 +181,12 @@ MSG_NO_UR_YEAR_MONTH_DATA = "No UR data available for {year}-{month:02d}"
 MSG_NO_UR_YEAR_DATA = "No UR data available for year {year}"
 MSG_NO_UR_RANGE_DATA = "No UR data available for range {start_year}-{start_month:02d} to {end_year}-{end_month:02d}"
 MSG_NO_UI_FOUND = "No UI data found for {date} or previous dates"
-MSG_NO_EXCHANGE_RATE_DATA = "No exchange rate data available. Run /api/exchange-rate/refresh to load data."
-MSG_NO_EXCHANGE_RATE_DATE_DATA = "No exchange rate data for {date}. Showing closest previous value"
+MSG_NO_EXCHANGE_RATE_DATA = (
+    "No exchange rate data available. Run /api/exchange-rate/refresh to load data."
+)
+MSG_NO_EXCHANGE_RATE_DATE_DATA = (
+    "No exchange rate data for {date}. Showing closest previous value"
+)
 MSG_NO_EXCHANGE_RATE_CURRENCY_DATA = "No exchange rate data available for {currency}"
 
 # Validation messages
@@ -205,22 +227,40 @@ URL_BCU_EXCHANGE_RATES = "https://www.bcu.gub.uy/Estadisticas-e-Indicadores/Pagi
 
 # HTTP Configuration
 HTTP_TIMEOUT = 30
-HTTP_USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+HTTP_USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
 
 # Excel processing
-EXCEL_ENGINE_XLS = 'xlrd'
-DATE_FORMATS = ['%Y-%m-%d', '%d/%m/%Y', '%d-%m-%Y']
+EXCEL_ENGINE_XLS = "xlrd"
+DATE_FORMATS = ["%Y-%m-%d", "%d/%m/%Y", "%d-%m-%Y"]
 
 # UR Excel specific
-UR_MONTH_NAMES = ['ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO', 
-                  'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'SETIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE']
+UR_MONTH_NAMES = [
+    "ENERO",
+    "FEBRERO",
+    "MARZO",
+    "ABRIL",
+    "MAYO",
+    "JUNIO",
+    "JULIO",
+    "AGOSTO",
+    "SEPTIEMBRE",
+    "SETIEMBRE",
+    "OCTUBRE",
+    "NOVIEMBRE",
+    "DICIEMBRE",
+]
 
 # Year validation
 MIN_VALID_YEAR = 1900
 MAX_VALID_YEAR = 2100
 
 # Exchange Rate Configuration
-SUPPORTED_CURRENCIES = ["USD", "EUR", "ARS", "BRL"]  # Main currencies (available in INE and BCU)
+SUPPORTED_CURRENCIES = [
+    "USD",
+    "EUR",
+    "ARS",
+    "BRL",
+]  # Main currencies (available in INE and BCU)
 DEFAULT_CURRENCY = "USD"
 
 # Exchange Rate Validation
@@ -293,24 +333,33 @@ TAG_UR = "Unidad Reajustable (UR)"
 TAG_EXCHANGE = "Cotizaciones de Monedas"
 
 
-
 # =============================================================================
 # VALIDATION CONSTANTS
 # =============================================================================
 MIN_MONTH = 1
-MAX_MONTH = 12 
+MAX_MONTH = 12
 
 # =============================================================================
 # SCHEDULER SETTINGS (ENV-configurable)
 # =============================================================================
 SCHEDULER_ENABLED = os.getenv("SCHEDULER_ENABLED", "true").lower() == "true"
 # Cron-like strings or simple presets for APScheduler triggers
-SCHEDULE_UI_REFRESH_CRON = os.getenv("SCHEDULE_UI_REFRESH_CRON", "0 2 * * *")  # daily 02:00
-SCHEDULE_EXCHANGE_REFRESH_CRON = os.getenv("SCHEDULE_EXCHANGE_REFRESH_CRON", "0 3 * * *")  # daily 03:00
-SCHEDULE_UR_REFRESH_CRON = os.getenv("SCHEDULE_UR_REFRESH_CRON", "0 4 1 * *")  # monthly day 1 at 04:00
+SCHEDULE_UI_REFRESH_CRON = os.getenv(
+    "SCHEDULE_UI_REFRESH_CRON", "0 2 * * *"
+)  # daily 02:00
+SCHEDULE_EXCHANGE_REFRESH_CRON = os.getenv(
+    "SCHEDULE_EXCHANGE_REFRESH_CRON", "0 3 * * *"
+)  # daily 03:00
+SCHEDULE_UR_REFRESH_CRON = os.getenv(
+    "SCHEDULE_UR_REFRESH_CRON", "0 4 1 * *"
+)  # monthly day 1 at 04:00
 
 # Business day (weekday / optional holiday) filtering for scheduled refreshes
-SCHEDULER_BUSINESS_DAY_ONLY = os.getenv("SCHEDULER_BUSINESS_DAY_ONLY", "true").lower() == "true"
+SCHEDULER_BUSINESS_DAY_ONLY = (
+    os.getenv("SCHEDULER_BUSINESS_DAY_ONLY", "true").lower() == "true"
+)
 # Comma-separated ISO dates (YYYY-MM-DD) of holidays where refresh should be skipped
 _holidays_env = os.getenv("SCHEDULER_HOLIDAYS", "").strip()
-SCHEDULER_HOLIDAYS = set([h for h in (x.strip() for x in _holidays_env.split(",")) if h])
+SCHEDULER_HOLIDAYS = set(
+    [h for h in (x.strip() for x in _holidays_env.split(",")) if h]
+)

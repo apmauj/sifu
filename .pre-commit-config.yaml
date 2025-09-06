@@ -1,0 +1,19 @@
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.5.7
+    hooks:
+      - id: ruff
+        args: ["--fix"]
+      - id: ruff-format
+  - repo: local
+    hooks:
+      - id: pytest-fast
+        name: pytest fast subset
+        entry: bash -c 'SIFU_SKIP_BOOTSTRAP=1 pytest -q tests/test_api_simple.py test_ur.py::TestURAPI::test_get_latest_ur || exit 1'
+        language: system
+        pass_filenames: false
+        stages: [commit]
+
+ci:
+  autofix_prs: false
+  autoupdate_schedule: quarterly

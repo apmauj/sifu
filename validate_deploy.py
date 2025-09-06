@@ -8,22 +8,19 @@ import sys
 import subprocess
 from pathlib import Path
 
+
 def run_command(cmd, cwd=None):
     """Ejecuta un comando y retorna (success, output, error)"""
     try:
         result = subprocess.run(
-            cmd,
-            shell=True,
-            cwd=cwd,
-            capture_output=True,
-            text=True,
-            timeout=30
+            cmd, shell=True, cwd=cwd, capture_output=True, text=True, timeout=30
         )
         return result.returncode == 0, result.stdout, result.stderr
     except subprocess.TimeoutExpired:
         return False, "", "Timeout ejecutando comando"
     except Exception as e:
         return False, "", str(e)
+
 
 def validate_environment():
     """Valida que el entorno esté correctamente configurado"""
@@ -35,7 +32,7 @@ def validate_environment():
         "requirements.txt",
         "secret_manager.py",
         "docker-compose.yml",
-        ".dockerignore"
+        ".dockerignore",
     ]
 
     missing_files = []
@@ -49,6 +46,7 @@ def validate_environment():
 
     print("✅ Archivos críticos presentes")
     return True
+
 
 def validate_secrets():
     """Valida la configuración de secrets"""
@@ -67,6 +65,7 @@ def validate_secrets():
     print("✅ Secrets configurados correctamente")
     return True
 
+
 def read_requirements_recursive(filename):
     """Lee requirements.txt recursivamente incluyendo archivos con -r"""
     requirements = []
@@ -80,11 +79,19 @@ def read_requirements_recursive(filename):
                     requirements.extend(read_requirements_recursive(ref_file))
                 elif line and not line.startswith("#"):
                     # Extraer nombre del paquete (antes de ==, >=, etc. o [extras])
-                    package_name = line.split()[0].split("==")[0].split(">=")[0].split("<=")[0].split("!=")[0].split("[")[0]
+                    package_name = (
+                        line.split()[0]
+                        .split("==")[0]
+                        .split(">=")[0]
+                        .split("<=")[0]
+                        .split("!=")[0]
+                        .split("[")[0]
+                    )
                     requirements.append(package_name)
     except FileNotFoundError:
         pass
     return requirements
+
 
 def validate_dependencies():
     """Valida que las dependencias críticas estén instaladas"""
@@ -110,6 +117,7 @@ def validate_dependencies():
 
     print("✅ Dependencias críticas presentes")
     return True
+
 
 def validate_docker():
     """Valida la configuración de Docker"""
@@ -144,18 +152,22 @@ def validate_docker():
     print("✅ Configuración Docker validada")
     return True
 
+
 def validate_build():
     """Valida que el proyecto se pueda construir"""
     print("🔨 Validando construcción del proyecto...")
 
     # Verificar que se puede importar el módulo principal
-    success, stdout, stderr = run_command("python -c \"import main; print('Import OK')\"")
+    success, stdout, stderr = run_command(
+        "python -c \"import main; print('Import OK')\""
+    )
     if not success:
         print(f"❌ Error importando módulo principal: {stderr}")
         return False
 
     print("✅ Proyecto se puede importar correctamente")
     return True
+
 
 def main():
     """Función principal de validación"""
@@ -166,7 +178,7 @@ def main():
         ("Secrets", validate_secrets),
         ("Dependencias", validate_dependencies),
         ("Docker", validate_docker),
-        ("Build", validate_build)
+        ("Build", validate_build),
     ]
 
     all_passed = True
@@ -178,7 +190,7 @@ def main():
             print(f"❌ Error en validación {name}: {e}")
             all_passed = False
 
-    print("\n" + "="*50)
+    print("\n" + "=" * 50)
     if all_passed:
         print("✅ Todas las validaciones pasaron exitosamente")
         print("🚀 El proyecto está listo para deploy")
@@ -187,6 +199,7 @@ def main():
         print("❌ Algunas validaciones fallaron")
         print("🔧 Corrija los problemas antes del deploy")
         return 1
+
 
 if __name__ == "__main__":
     sys.exit(main())

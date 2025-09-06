@@ -2,9 +2,11 @@
 """
 Script para ejecutar tests de manera que evite problemas de aislamiento
 """
+
 import subprocess
 import sys
 from pathlib import Path
+
 
 def run_tests_isolated():
     """Ejecuta los tests en lotes para evitar problemas de aislamiento"""
@@ -15,9 +17,7 @@ def run_tests_isolated():
     print("🧪 Ejecutando tests de SIFU con aislamiento...")
 
     # Tests que pueden tener problemas de aislamiento
-    isolated_tests = [
-        "tests/test_integration_api.py"
-    ]
+    isolated_tests = ["tests/test_integration_api.py"]
 
     # Todos los demás tests
     regular_tests = [
@@ -39,18 +39,22 @@ def run_tests_isolated():
         "tests/test_services.py",
         "tests/test_services_edge_cases.py",
         "tests/test_ur_api.py",
-        "tests/test_ur_services.py"
+        "tests/test_ur_services.py",
     ]
 
     # Ejecutar tests regulares primero
     print("\n📋 Ejecutando tests regulares...")
     cmd_regular = [
-        sys.executable, "-m", "pytest",
+        sys.executable,
+        "-m",
+        "pytest",
         "--tb=short",
-        "-x"  # Detener al primer fallo
+        "-x",  # Detener al primer fallo
     ] + regular_tests
 
-    result_regular = subprocess.run(cmd_regular, cwd=project_dir, capture_output=True, text=True)
+    result_regular = subprocess.run(
+        cmd_regular, cwd=project_dir, capture_output=True, text=True
+    )
 
     if result_regular.returncode != 0:
         print("❌ Fallaron los tests regulares:")
@@ -64,14 +68,11 @@ def run_tests_isolated():
     print("\n🔒 Ejecutando tests de integración (aislados)...")
     for test_file in isolated_tests:
         print(f"   Ejecutando {test_file}...")
-        cmd_isolated = [
-            sys.executable, "-m", "pytest",
-            test_file,
-            "--tb=short",
-            "-v"
-        ]
+        cmd_isolated = [sys.executable, "-m", "pytest", test_file, "--tb=short", "-v"]
 
-        result_isolated = subprocess.run(cmd_isolated, cwd=project_dir, capture_output=True, text=True)
+        result_isolated = subprocess.run(
+            cmd_isolated, cwd=project_dir, capture_output=True, text=True
+        )
 
         if result_isolated.returncode != 0:
             print(f"❌ Falló {test_file}:")
@@ -84,6 +85,7 @@ def run_tests_isolated():
     print("\n🎉 Todos los tests pasaron exitosamente!")
     return True
 
+
 def run_linting():
     """Ejecuta verificación de linting"""
     print("\n🔍 Ejecutando verificación de linting...")
@@ -91,7 +93,9 @@ def run_linting():
     project_dir = Path(__file__).parent
     cmd_lint = [sys.executable, "-m", "ruff", "check", ".", "--output-format=concise"]
 
-    result_lint = subprocess.run(cmd_lint, cwd=project_dir, capture_output=True, text=True)
+    result_lint = subprocess.run(
+        cmd_lint, cwd=project_dir, capture_output=True, text=True
+    )
 
     if result_lint.returncode != 0:
         print("❌ Errores de linting encontrados:")
@@ -100,6 +104,7 @@ def run_linting():
 
     print("✅ Linting pasó")
     return True
+
 
 if __name__ == "__main__":
     print("🚀 Iniciando verificación completa de SIFU...")

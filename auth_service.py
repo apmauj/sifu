@@ -11,13 +11,16 @@ from typing import Optional, Dict, Any
 from auth_models import User, UserRole, get_role_permissions
 import secrets
 
+
 class AuthService:
     """Authentication service"""
 
     def __init__(self):
         self.secret_key = os.getenv("JWT_SECRET_KEY", secrets.token_hex(32))
         self.algorithm = "HS256"
-        self.access_token_expire_minutes = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "30"))
+        self.access_token_expire_minutes = int(
+            os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "30")
+        )
 
     def hash_password(self, password: str) -> str:
         """Hash a password"""
@@ -67,7 +70,7 @@ class AuthService:
             role=user_data["role"],
             permissions=get_role_permissions(user_data["role"]),
             is_active=user_data["is_active"],
-            created_at=user_data["created_at"]
+            created_at=user_data["created_at"],
         )
 
         return user
@@ -96,7 +99,7 @@ class AuthService:
             role=user_data["role"],
             permissions=get_role_permissions(user_data["role"]),
             is_active=user_data["is_active"],
-            created_at=user_data["created_at"]
+            created_at=user_data["created_at"],
         )
 
     def _get_demo_users(self) -> Dict[str, Dict[str, Any]]:
@@ -112,7 +115,7 @@ class AuthService:
                 "hashed_password": admin_password,
                 "role": UserRole.ADMIN,
                 "is_active": True,
-                "created_at": datetime.utcnow()
+                "created_at": datetime.utcnow(),
             },
             "manager": {
                 "id": "manager-001",
@@ -121,7 +124,7 @@ class AuthService:
                 "hashed_password": self.hash_password("manager123"),
                 "role": UserRole.MANAGER,
                 "is_active": True,
-                "created_at": datetime.utcnow()
+                "created_at": datetime.utcnow(),
             },
             "user": {
                 "id": "user-001",
@@ -130,9 +133,10 @@ class AuthService:
                 "hashed_password": self.hash_password("user123"),
                 "role": UserRole.USER,
                 "is_active": True,
-                "created_at": datetime.utcnow()
-            }
+                "created_at": datetime.utcnow(),
+            },
         }
+
 
 # Global auth service instance
 auth_service = AuthService()

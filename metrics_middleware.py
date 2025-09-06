@@ -2,6 +2,7 @@
 Metrics middleware for FastAPI application
 Automatically captures request metrics: latency, status codes, errors
 """
+
 import time
 from datetime import datetime
 from typing import Callable
@@ -36,13 +37,18 @@ class MetricsMiddleware(BaseHTTPMiddleware):
                 status_code=response.status_code,
                 duration=duration,
                 error=error_occurred,
-                error_message=error_message
+                error_message=error_message,
             )
 
             # Increment lightweight throughput counter for performance dashboard (best-effort)
             try:
-                from performance_budget import get_performance_budget_manager  # lazy import to avoid cycles
-                bm = get_performance_budget_manager(enable_monitoring=False, enable_alerts=False)
+                from performance_budget import (
+                    get_performance_budget_manager,
+                )  # lazy import to avoid cycles
+
+                bm = get_performance_budget_manager(
+                    enable_monitoring=False, enable_alerts=False
+                )
                 bm.update_throughput("global")
             except Exception:
                 # Non-fatal; avoid impacting request path
@@ -63,13 +69,18 @@ class MetricsMiddleware(BaseHTTPMiddleware):
                 status_code=500,  # Internal server error
                 duration=duration,
                 error=True,
-                error_message=error_message
+                error_message=error_message,
             )
 
             # Still count towards throughput to reflect incoming load
             try:
-                from performance_budget import get_performance_budget_manager  # lazy import to avoid cycles
-                bm = get_performance_budget_manager(enable_monitoring=False, enable_alerts=False)
+                from performance_budget import (
+                    get_performance_budget_manager,
+                )  # lazy import to avoid cycles
+
+                bm = get_performance_budget_manager(
+                    enable_monitoring=False, enable_alerts=False
+                )
                 bm.update_throughput("global")
             except Exception:
                 pass
@@ -92,10 +103,10 @@ async def get_metrics():
                 "duration_ms": round(req.duration * 1000, 2),
                 "timestamp": req.timestamp.isoformat(),
                 "error": req.error,
-                "error_message": req.error_message if req.error else None
+                "error_message": req.error_message if req.error else None,
             }
             for req in metrics_collector.get_recent_requests(50)
-        ]
+        ],
     }
 
 
@@ -114,5 +125,5 @@ async def get_simple_metrics():
         "error_rate_percent": global_stats["error_rate"],
         "avg_response_time_ms": global_stats["avg_duration_ms"],
         "endpoints_tracked": global_stats["endpoints_tracked"],
-        "timestamp": datetime.utcnow().isoformat()
+        "timestamp": datetime.utcnow().isoformat(),
     }

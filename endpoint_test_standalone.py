@@ -3,12 +3,15 @@ import requests
 import time
 import sys
 
+
 def test_endpoint(url, description):
     try:
         print(f"Testing {description}...")
-        response = requests.get(url,
-                              headers={'Origin': 'https://edition-snake-rehab-ca.trycloudflare.com'},
-                              timeout=10)
+        response = requests.get(
+            url,
+            headers={"Origin": "https://edition-snake-rehab-ca.trycloudflare.com"},
+            timeout=10,
+        )
         print(f"✅ {description}: {response.status_code}")
         if response.status_code == 200:
             print(f"   Response time: {response.elapsed.total_seconds():.2f}s")
@@ -22,6 +25,7 @@ def test_endpoint(url, description):
     except Exception as e:
         print(f"❌ {description}: {str(e)}")
         return False
+
 
 def main():
     base_url = "http://localhost:8000"
@@ -51,6 +55,7 @@ def main():
     else:
         print("⚠️ Some endpoints failed")
         sys.exit(1)
+
 
 if __name__ == "__main__":
     main()

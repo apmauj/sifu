@@ -2,6 +2,7 @@
 Dashboard module for SIFU application
 Provides comprehensive dashboard data combining metrics and alerts
 """
+
 from datetime import datetime
 from typing import Dict, List, Any
 import logging
@@ -41,10 +42,7 @@ class DashboardService:
                 "timestamp": datetime.utcnow().isoformat(),
                 "system_status": system_status,
                 "metrics": dashboard_metrics,
-                "alerts": {
-                    "active": active_alerts,
-                    "summary": alert_summary
-                },
+                "alerts": {"active": active_alerts, "summary": alert_summary},
                 "performance": {
                     "global": global_stats,
                     "endpoints": endpoint_stats,
@@ -55,12 +53,12 @@ class DashboardService:
                             "status_code": req.status_code,
                             "duration_ms": round(req.duration * 1000, 2),
                             "timestamp": req.timestamp.isoformat(),
-                            "error": req.error
+                            "error": req.error,
                         }
                         for req in recent_requests
-                    ]
+                    ],
                 },
-                "health": health_status
+                "health": health_status,
             }
 
         except Exception as e:
@@ -68,47 +66,64 @@ class DashboardService:
             return {
                 "timestamp": datetime.utcnow().isoformat(),
                 "error": f"Failed to generate dashboard: {str(e)}",
-                "system_status": "error"
+                "system_status": "error",
             }
 
-    def _calculate_dashboard_metrics(self, global_stats: Dict, endpoint_stats: Dict,
-                                   recent_requests: List) -> Dict[str, Any]:
+    def _calculate_dashboard_metrics(
+        self, global_stats: Dict, endpoint_stats: Dict, recent_requests: List
+    ) -> Dict[str, Any]:
         """Calculate additional dashboard-specific metrics"""
 
         # Request rate (requests per minute)
         uptime_minutes = global_stats["uptime_seconds"] / 60
-        request_rate = global_stats["total_requests"] / uptime_minutes if uptime_minutes > 0 else 0
+        request_rate = (
+            global_stats["total_requests"] / uptime_minutes if uptime_minutes > 0 else 0
+        )
 
         # Error trend (last 10 requests)
-        recent_errors = len([r for r in recent_requests if r.error or r.status_code >= 400])
-        recent_error_rate = (recent_errors / len(recent_requests) * 100) if recent_requests else 0
+        recent_errors = len(
+            [r for r in recent_requests if r.error or r.status_code >= 400]
+        )
+        recent_error_rate = (
+            (recent_errors / len(recent_requests) * 100) if recent_requests else 0
+        )
 
         # Endpoint performance summary
         endpoint_summary = []
         for endpoint, stats in endpoint_stats.items():
-            endpoint_summary.append({
-                "endpoint": endpoint,
-                "requests": stats["total_requests"],
-                "error_rate": stats["error_rate"],
-                "avg_duration": stats["avg_duration_ms"],
-                "status": "healthy" if stats["error_rate"] < 10 else "warning" if stats["error_rate"] < 30 else "critical"
-            })
+            endpoint_summary.append(
+                {
+                    "endpoint": endpoint,
+                    "requests": stats["total_requests"],
+                    "error_rate": stats["error_rate"],
+                    "avg_duration": stats["avg_duration_ms"],
+                    "status": "healthy"
+                    if stats["error_rate"] < 10
+                    else "warning"
+                    if stats["error_rate"] < 30
+                    else "critical",
+                }
+            )
 
         # Sort by request count
         endpoint_summary.sort(key=lambda x: x["requests"], reverse=True)
 
         # Performance score (0-100)
-        performance_score = self._calculate_performance_score(global_stats, recent_error_rate)
+        performance_score = self._calculate_performance_score(
+            global_stats, recent_error_rate
+        )
 
         return {
             "request_rate_per_minute": round(request_rate, 2),
             "recent_error_rate": round(recent_error_rate, 2),
             "performance_score": performance_score,
             "endpoint_summary": endpoint_summary[:10],  # Top 10 endpoints
-            "total_endpoints": len(endpoint_stats)
+            "total_endpoints": len(endpoint_stats),
         }
 
-    def _calculate_performance_score(self, global_stats: Dict, recent_error_rate: float) -> int:
+    def _calculate_performance_score(
+        self, global_stats: Dict, recent_error_rate: float
+    ) -> int:
         """Calculate overall performance score (0-100)"""
         score = 100
 
@@ -130,7 +145,9 @@ class DashboardService:
             score -= 10
 
         # Request rate bonus
-        request_rate = global_stats["total_requests"] / max(global_stats["uptime_seconds"] / 60, 1)
+        request_rate = global_stats["total_requests"] / max(
+            global_stats["uptime_seconds"] / 60, 1
+        )
         if request_rate > 10:
             score += 5
         elif request_rate > 1:
@@ -177,8 +194,10 @@ class DashboardService:
                 "error_rate": f"{global_stats['error_rate']}%",
                 "avg_response_time": f"{global_stats['avg_duration_ms']}ms",
                 "active_alerts": len(active_alerts),
-                "critical_alerts": len([a for a in active_alerts if a["severity"] == "critical"]),
-                "endpoints_tracked": global_stats["endpoints_tracked"]
+                "critical_alerts": len(
+                    [a for a in active_alerts if a["severity"] == "critical"]
+                ),
+                "endpoints_tracked": global_stats["endpoints_tracked"],
             }
 
         except Exception as e:
@@ -186,7 +205,7 @@ class DashboardService:
             return {
                 "timestamp": datetime.utcnow().isoformat(),
                 "status": "error",
-                "error": str(e)
+                "error": str(e),
             }
 
 

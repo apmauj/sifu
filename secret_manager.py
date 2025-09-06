@@ -2,6 +2,7 @@
 Secure configuration management for SIFU
 Handles environment variables, secrets validation, and secure defaults
 """
+
 import os
 import logging
 from typing import Dict, List, Optional, Any
@@ -10,22 +11,23 @@ import secrets
 import string
 from dotenv import load_dotenv
 
+
 class SecretManager:
     """Manages application secrets and configuration securely"""
 
     # Critical security secrets that must be set
     REQUIRED_SECRETS = [
-        'DATABASE_URL',  # Database connection string
-        'SECRET_KEY',    # For session management/cookies
-        'API_KEY',       # For external API access (if needed)
+        "DATABASE_URL",  # Database connection string
+        "SECRET_KEY",  # For session management/cookies
+        "API_KEY",  # For external API access (if needed)
     ]
 
     # Optional but recommended secrets
     OPTIONAL_SECRETS = [
-        'ENCRYPTION_KEY',     # For data encryption
-        'JWT_SECRET',         # For JWT tokens (if implemented)
-        'REDIS_URL',          # For caching (if used)
-        'LOG_ENCRYPTION_KEY', # For log encryption
+        "ENCRYPTION_KEY",  # For data encryption
+        "JWT_SECRET",  # For JWT tokens (if implemented)
+        "REDIS_URL",  # For caching (if used)
+        "LOG_ENCRYPTION_KEY",  # For log encryption
     ]
 
     def __init__(self):
@@ -46,7 +48,9 @@ class SecretManager:
             if value:
                 secrets[secret_name] = value
             else:
-                self.logger.warning(f"Required secret {secret_name} not found in environment")
+                self.logger.warning(
+                    f"Required secret {secret_name} not found in environment"
+                )
 
         # Load optional secrets
         for secret_name in self.OPTIONAL_SECRETS:
@@ -55,14 +59,14 @@ class SecretManager:
                 secrets[secret_name] = value
 
         # Load CORS and other configuration
-        cors_origins = os.getenv('ALLOW_ORIGINS', '')
+        cors_origins = os.getenv("ALLOW_ORIGINS", "")
         if cors_origins:
-            secrets['ALLOW_ORIGINS'] = cors_origins
+            secrets["ALLOW_ORIGINS"] = cors_origins
 
         # Load security settings
-        secrets['ENVIRONMENT'] = os.getenv('ENVIRONMENT', 'development')
-        secrets['DEBUG'] = os.getenv('DEBUG', 'false').lower() == 'true'
-        secrets['LOG_LEVEL'] = os.getenv('LOG_LEVEL', 'INFO')
+        secrets["ENVIRONMENT"] = os.getenv("ENVIRONMENT", "development")
+        secrets["DEBUG"] = os.getenv("DEBUG", "false").lower() == "true"
+        secrets["LOG_LEVEL"] = os.getenv("LOG_LEVEL", "INFO")
 
         self._secrets = secrets
         return secrets
@@ -78,13 +82,15 @@ class SecretManager:
                 missing_secrets.append(secret_name)
             else:
                 # Validate secret format/strength
-                error = self._validate_secret_format(secret_name, self._secrets[secret_name])
+                error = self._validate_secret_format(
+                    secret_name, self._secrets[secret_name]
+                )
                 if error:
                     validation_errors.append(error)
 
         # Validate CORS configuration
-        if 'ALLOW_ORIGINS' in self._secrets:
-            cors_error = self._validate_cors_origins(self._secrets['ALLOW_ORIGINS'])
+        if "ALLOW_ORIGINS" in self._secrets:
+            cors_error = self._validate_cors_origins(self._secrets["ALLOW_ORIGINS"])
             if cors_error:
                 validation_errors.append(cors_error)
 
@@ -101,14 +107,14 @@ class SecretManager:
         if not value or len(value.strip()) == 0:
             return f"{name}: Secret cannot be empty"
 
-        if name == 'SECRET_KEY' and len(value) < 32:
+        if name == "SECRET_KEY" and len(value) < 32:
             return f"{name}: Secret key must be at least 32 characters long"
 
-        if name == 'DATABASE_URL':
-            if not value.startswith(('postgresql://', 'sqlite://', 'mysql://')):
+        if name == "DATABASE_URL":
+            if not value.startswith(("postgresql://", "sqlite://", "mysql://")):
                 return f"{name}: Invalid database URL format"
 
-        if name == 'API_KEY' and len(value) < 20:
+        if name == "API_KEY" and len(value) < 20:
             return f"{name}: API key must be at least 20 characters long"
 
         return None
@@ -118,12 +124,12 @@ class SecretManager:
         if not origins_str:
             return None
 
-        origins = [o.strip() for o in origins_str.split(',') if o.strip()]
+        origins = [o.strip() for o in origins_str.split(",") if o.strip()]
 
         for origin in origins:
-            if origin == '*':
+            if origin == "*":
                 return "CORS: Wildcard origin (*) not allowed in production"
-            if not origin.startswith(('http://', 'https://')):
+            if not origin.startswith(("http://", "https://")):
                 return f"CORS: Invalid origin format: {origin}"
 
         return None
@@ -131,19 +137,21 @@ class SecretManager:
     def _validate_environment_settings(self) -> List[str]:
         """Validate environment-specific security settings"""
         errors = []
-        environment = self._secrets.get('ENVIRONMENT', 'development')
+        environment = self._secrets.get("ENVIRONMENT", "development")
 
-        if environment == 'production':
+        if environment == "production":
             # Production-specific validations
-            if self._secrets.get('DEBUG', False):
+            if self._secrets.get("DEBUG", False):
                 errors.append("DEBUG: Debug mode must be disabled in production")
 
-            if not self._secrets.get('ALLOW_ORIGINS'):
+            if not self._secrets.get("ALLOW_ORIGINS"):
                 errors.append("ALLOW_ORIGINS: Must be configured in production")
 
-            log_level = self._secrets.get('LOG_LEVEL', 'INFO')
-            if log_level.upper() not in ['INFO', 'WARNING', 'ERROR']:
-                errors.append("LOG_LEVEL: Must be INFO, WARNING, or ERROR in production")
+            log_level = self._secrets.get("LOG_LEVEL", "INFO")
+            if log_level.upper() not in ["INFO", "WARNING", "ERROR"]:
+                errors.append(
+                    "LOG_LEVEL: Must be INFO, WARNING, or ERROR in production"
+                )
 
         return errors
 
@@ -152,28 +160,30 @@ class SecretManager:
         defaults = {}
 
         # Generate a secure random secret key
-        defaults['SECRET_KEY'] = self._generate_secret_key()
+        defaults["SECRET_KEY"] = self._generate_secret_key()
 
         # Generate API key
-        defaults['API_KEY'] = self._generate_api_key()
+        defaults["API_KEY"] = self._generate_api_key()
 
         # Default database URL for development
-        defaults['DATABASE_URL'] = 'sqlite:///test_ur.db'
+        defaults["DATABASE_URL"] = "sqlite:///test_ur.db"
 
         # Default CORS for development
-        defaults['ALLOW_ORIGINS'] = 'http://localhost:3000,http://localhost:5173,http://127.0.0.1:3000'
+        defaults["ALLOW_ORIGINS"] = (
+            "http://localhost:3000,http://localhost:5173,http://127.0.0.1:3000"
+        )
 
         return defaults
 
     def _generate_secret_key(self, length: int = 64) -> str:
         """Generate a cryptographically secure secret key"""
         alphabet = string.ascii_letters + string.digits + string.punctuation
-        return ''.join(secrets.choice(alphabet) for _ in range(length))
+        return "".join(secrets.choice(alphabet) for _ in range(length))
 
     def _generate_api_key(self, length: int = 32) -> str:
         """Generate a secure API key"""
         alphabet = string.ascii_letters + string.digits
-        return ''.join(secrets.choice(alphabet) for _ in range(length))
+        return "".join(secrets.choice(alphabet) for _ in range(length))
 
     def get_secret(self, name: str, default: Optional[str] = None) -> Optional[str]:
         """Get a secret value safely"""
@@ -181,25 +191,27 @@ class SecretManager:
 
     def is_production(self) -> bool:
         """Check if running in production environment"""
-        return self._secrets.get('ENVIRONMENT', 'development') == 'production'
+        return self._secrets.get("ENVIRONMENT", "development") == "production"
 
     def should_encrypt_logs(self) -> bool:
         """Check if logs should be encrypted"""
-        return 'LOG_ENCRYPTION_KEY' in self._secrets and self.is_production()
+        return "LOG_ENCRYPTION_KEY" in self._secrets and self.is_production()
 
     def get_security_config(self) -> Dict[str, Any]:
         """Get security-related configuration"""
         return {
-            'environment': self._secrets.get('ENVIRONMENT', 'development'),
-            'debug': self._secrets.get('DEBUG', False),
-            'log_level': self._secrets.get('LOG_LEVEL', 'INFO'),
-            'cors_origins': self._secrets.get('ALLOW_ORIGINS', ''),
-            'rate_limiting_enabled': not self._secrets.get('DISABLE_RATE_LIMITING', False),
-            'encryption_enabled': 'ENCRYPTION_KEY' in self._secrets,
-            'audit_logging_enabled': self.is_production(),
+            "environment": self._secrets.get("ENVIRONMENT", "development"),
+            "debug": self._secrets.get("DEBUG", False),
+            "log_level": self._secrets.get("LOG_LEVEL", "INFO"),
+            "cors_origins": self._secrets.get("ALLOW_ORIGINS", ""),
+            "rate_limiting_enabled": not self._secrets.get(
+                "DISABLE_RATE_LIMITING", False
+            ),
+            "encryption_enabled": "ENCRYPTION_KEY" in self._secrets,
+            "audit_logging_enabled": self.is_production(),
         }
 
-    def save_env_template(self, filepath: str = '.env.template'):
+    def save_env_template(self, filepath: str = ".env.template"):
         """Save environment template file with secure defaults"""
         template_content = f"""# SIFU Environment Configuration Template
 # Copy this file to .env and fill in your actual values
@@ -305,7 +317,7 @@ MAX_LOG_SIZE=100
 LOG_BACKUP_COUNT=5
 """
 
-        with open(filepath, 'w', encoding='utf-8') as f:
+        with open(filepath, "w", encoding="utf-8") as f:
             f.write(template_content)
 
         self.logger.info(f"Environment template saved to {filepath}")
@@ -317,15 +329,20 @@ LOG_BACKUP_COUNT=5
 
         # Log security status (without exposing secrets)
         status = {
-            'environment': self._secrets.get('ENVIRONMENT'),
-            'secrets_configured': len([s for s in self.REQUIRED_SECRETS if s in self._secrets]),
-            'optional_secrets': len([s for s in self.OPTIONAL_SECRETS if s in self._secrets]),
-            'cors_configured': 'ALLOW_ORIGINS' in self._secrets,
-            'encryption_enabled': 'ENCRYPTION_KEY' in self._secrets,
-            'production_mode': self.is_production(),
+            "environment": self._secrets.get("ENVIRONMENT"),
+            "secrets_configured": len(
+                [s for s in self.REQUIRED_SECRETS if s in self._secrets]
+            ),
+            "optional_secrets": len(
+                [s for s in self.OPTIONAL_SECRETS if s in self._secrets]
+            ),
+            "cors_configured": "ALLOW_ORIGINS" in self._secrets,
+            "encryption_enabled": "ENCRYPTION_KEY" in self._secrets,
+            "production_mode": self.is_production(),
         }
 
         self.logger.info(f"Security status: {json.dumps(status, indent=2)}")
+
 
 # Global instance
 secret_manager = SecretManager()

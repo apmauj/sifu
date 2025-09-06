@@ -11,8 +11,9 @@ from auth_service import auth_service
 
 security = HTTPBearer()
 
+
 async def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(security)
+    credentials: HTTPAuthorizationCredentials = Depends(security),
 ) -> User:
     """Dependency to get current authenticated user"""
     token = credentials.credentials
@@ -34,6 +35,7 @@ async def get_current_user(
 
     return user
 
+
 def require_permissions(required_permissions: List[Permission]):
     """Dependency factory for permission checking"""
 
@@ -43,13 +45,13 @@ def require_permissions(required_permissions: List[Permission]):
 
         if not has_any_permission(user, required_permissions):
             raise HTTPException(
-                status_code=HTTP_403_FORBIDDEN,
-                detail="Insufficient permissions"
+                status_code=HTTP_403_FORBIDDEN, detail="Insufficient permissions"
             )
 
         return user
 
     return permission_checker
+
 
 def require_role(required_role: str):
     """Dependency factory for role checking"""
@@ -59,12 +61,13 @@ def require_role(required_role: str):
         if user.role.value != required_role:
             raise HTTPException(
                 status_code=HTTP_403_FORBIDDEN,
-                detail=f"Role '{required_role}' required"
+                detail=f"Role '{required_role}' required",
             )
 
         return user
 
     return role_checker
+
 
 # Convenience dependencies for common use cases
 require_admin = require_role("admin")
@@ -72,18 +75,14 @@ require_manager = require_role("manager")
 require_user = require_role("user")
 
 # Permission-based dependencies
-require_user_management = require_permissions([
-    Permission.USER_READ,
-    Permission.USER_UPDATE,
-    Permission.USER_DELETE
-])
+require_user_management = require_permissions(
+    [Permission.USER_READ, Permission.USER_UPDATE, Permission.USER_DELETE]
+)
 
-require_exchange_management = require_permissions([
-    Permission.EXCHANGE_READ,
-    Permission.EXCHANGE_UPDATE
-])
+require_exchange_management = require_permissions(
+    [Permission.EXCHANGE_READ, Permission.EXCHANGE_UPDATE]
+)
 
-require_report_access = require_permissions([
-    Permission.REPORT_READ,
-    Permission.REPORT_GENERATE
-])
+require_report_access = require_permissions(
+    [Permission.REPORT_READ, Permission.REPORT_GENERATE]
+)

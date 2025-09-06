@@ -1,6 +1,29 @@
 #!/usr/bin/env sh
 . "$(dirname -- "$0")/_/husky.sh"
 
-echo "🔍 Ejecutando pre-commit hook..."
+echo "🔍 Ejecutando pre-commit hook (frontend + backend lint/tests)..."
+
+# 1. Ejecutar pre-commit (python) sobre archivos staged si está instalado.
+# Evita conflicto core.hooksPath usando husky como orquestador.
+if command -v pre-commit >/dev/null 2>&1; then
+	STAGED_FILES=$(git diff --cached --name-only)
+	if echo "$STAGED_FILES" | grep -E '\.py$' > /dev/null 2>&1; then
+		echo "⚙️  pre-commit (ruff + pytest subset)"
+		pre-commit run --hook-stage commit --files $STAGED_FILES
+		PRECOMMIT_STATUS=$?
+		if [ $PRECOMMIT_STATUS -ne 0 ]; then
+			echo "❌ pre-commit falló (corrige antes de commitear)"
+			exit $PRECOMMIT_STATUS
+		fi
+	else
+		echo "ℹ️  Sin archivos Python staged; salto pre-commit python"
+	fi
+else
+	echo "⚠️  pre-commit no encontrado en PATH (instala con: pip install pre-commit)"
+fi
+
+# 2. Lint + tests rápidos frontend vía lint-staged
+echo "🧪 Frontend lint/tests (lint-staged)"
 npx lint-staged
+
 echo "✅ Pre-commit hook completado"

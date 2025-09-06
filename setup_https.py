@@ -7,16 +7,12 @@ Implementa HTTPS obligatorio con certificados SSL/TLS
 import subprocess
 from pathlib import Path
 
+
 def run_command(cmd, cwd=None):
     """Ejecuta un comando y retorna (success, output, error)"""
     try:
         result = subprocess.run(
-            cmd,
-            shell=True,
-            cwd=cwd,
-            capture_output=True,
-            text=True,
-            timeout=60
+            cmd, shell=True, cwd=cwd, capture_output=True, text=True, timeout=60
         )
         return result.returncode == 0, result.stdout, result.stderr
     except subprocess.TimeoutExpired:
@@ -24,12 +20,14 @@ def run_command(cmd, cwd=None):
     except Exception as e:
         return False, "", str(e)
 
+
 def create_ssl_directory():
     """Crea directorio para certificados SSL"""
     ssl_dir = Path("ssl")
     ssl_dir.mkdir(exist_ok=True)
     print("✅ Directorio SSL creado: ssl/")
     return ssl_dir
+
 
 def generate_self_signed_cert(ssl_dir):
     """Genera certificado SSL autofirmado para desarrollo/testing"""
@@ -52,6 +50,7 @@ def generate_self_signed_cert(ssl_dir):
     else:
         print(f"❌ Error generando certificado: {stderr}")
         return False
+
 
 def update_nginx_ssl(nginx_conf_path):
     """Actualiza configuración de nginx para HTTPS"""
@@ -115,6 +114,7 @@ server {
         print(f"❌ Error actualizando nginx: {e}")
         return False
 
+
 def update_docker_compose_ssl():
     """Actualiza docker-compose.yml para incluir nginx con HTTPS"""
     compose_ssl = """
@@ -142,13 +142,17 @@ def update_docker_compose_ssl():
         # Agregar nginx después del servicio backend
         if "nginx:" not in content:
             # Encontrar la línea del servicio backend
-            lines = content.split('\n')
+            lines = content.split("\n")
             backend_end_index = -1
             for i, line in enumerate(lines):
-                if line.strip().startswith('backend:'):
+                if line.strip().startswith("backend:"):
                     # Encontrar el final del servicio backend
                     for j in range(i + 1, len(lines)):
-                        if lines[j].strip() and not lines[j].startswith(' ') and not lines[j].startswith('\t'):
+                        if (
+                            lines[j].strip()
+                            and not lines[j].startswith(" ")
+                            and not lines[j].startswith("\t")
+                        ):
                             backend_end_index = j
                             break
                     if backend_end_index == -1:
@@ -158,7 +162,7 @@ def update_docker_compose_ssl():
             if backend_end_index > 0:
                 # Insertar nginx después del backend
                 lines.insert(backend_end_index, compose_ssl)
-                new_content = '\n'.join(lines)
+                new_content = "\n".join(lines)
 
                 with open("docker-compose.yml", "w", encoding="utf-8") as f:
                     f.write(new_content)
@@ -172,6 +176,7 @@ def update_docker_compose_ssl():
     except Exception as e:
         print(f"❌ Error actualizando docker-compose: {e}")
         return False
+
 
 def create_https_middleware():
     """Crea middleware para forzar HTTPS en FastAPI"""
@@ -234,6 +239,7 @@ class SSLHeadersMiddleware(BaseHTTPMiddleware):
         print(f"❌ Error creando middleware HTTPS: {e}")
         return False
 
+
 def update_main_for_https():
     """Actualiza main.py para incluir middlewares HTTPS"""
     try:
@@ -246,24 +252,29 @@ def update_main_for_https():
             in_imports = False
             last_import_index = -1
 
-            lines = content.split('\n')
+            lines = content.split("\n")
             for i, line in enumerate(lines):
-                if line.strip().startswith('from ') or line.strip().startswith('import '):
+                if line.strip().startswith("from ") or line.strip().startswith(
+                    "import "
+                ):
                     in_imports = True
                     last_import_index = i
-                elif in_imports and line.strip() and not line.strip().startswith('#'):
+                elif in_imports and line.strip() and not line.strip().startswith("#"):
                     break
 
             if last_import_index >= 0:
                 # Insertar imports después del último import
                 lines.insert(last_import_index + 1, "")
                 lines.insert(last_import_index + 2, "# HTTPS Security Middleware")
-                lines.insert(last_import_index + 3, "from https_middleware import HTTPSRedirectMiddleware, SSLHeadersMiddleware")
+                lines.insert(
+                    last_import_index + 3,
+                    "from https_middleware import HTTPSRedirectMiddleware, SSLHeadersMiddleware",
+                )
 
                 # Buscar donde se crea la app para agregar middlewares
                 app_creation_index = -1
                 for i, line in enumerate(lines):
-                    if 'app = FastAPI' in line:
+                    if "app = FastAPI" in line:
                         app_creation_index = i
                         break
 
@@ -274,13 +285,13 @@ def update_main_for_https():
                         "# Add HTTPS security middlewares",
                         "app.add_middleware(HTTPSRedirectMiddleware)",
                         "app.add_middleware(SSLHeadersMiddleware)",
-                        ""
+                        "",
                     ]
 
                     for j, middleware_line in enumerate(middleware_lines):
                         lines.insert(app_creation_index + 1 + j, middleware_line)
 
-                    new_content = '\n'.join(lines)
+                    new_content = "\n".join(lines)
 
                     with open("main.py", "w", encoding="utf-8") as f:
                         f.write(new_content)
@@ -294,6 +305,7 @@ def update_main_for_https():
     except Exception as e:
         print(f"❌ Error actualizando main.py: {e}")
         return False
+
 
 def main():
     """Función principal de configuración HTTPS"""
@@ -329,7 +341,9 @@ def main():
     print("\n📋 Próximos pasos:")
     print("   1. Reiniciar contenedores: docker-compose down && docker-compose up -d")
     print("   2. Verificar HTTPS: curl -k https://localhost/api/health")
-    print("   3. Para producción: Reemplazar certificado autofirmado con certificado válido")
+    print(
+        "   3. Para producción: Reemplazar certificado autofirmado con certificado válido"
+    )
     print("\n🔒 Características implementadas:")
     print("   ✅ Redirección HTTP → HTTPS automática")
     print("   ✅ Headers de seguridad HSTS, CSP, etc.")
@@ -338,6 +352,7 @@ def main():
     print("   ✅ Certificado SSL autofirmado para desarrollo")
 
     return 0
+
 
 if __name__ == "__main__":
     exit(main())

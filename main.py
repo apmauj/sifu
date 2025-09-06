@@ -21,12 +21,15 @@ from database import get_db
 from database_optimizer import DatabaseOptimizer
 from models import UIResponse, RefreshResponse, URResponse, ExchangeRateResponse
 from services import UIService, URService, ExchangeRateService
-from excel_processor import ExcelProcessor, URExcelProcessor, ExchangeRateExcelProcessor, ExchangeRateBCUProcessor
+from excel_processor import (
+    ExcelProcessor,
+    URExcelProcessor,
+    ExchangeRateExcelProcessor,
+    ExchangeRateBCUProcessor,
+)
 from brou_processor import BROUProcessor
 from security_utils import SecurityValidator, InputValidator
-from pydantic_models import (
-    URRangeRequestModel
-)
+from pydantic_models import URRangeRequestModel
 
 # HTTPS Security Middleware
 from https_middleware import HTTPSRedirectMiddleware, SSLHeadersMiddleware
@@ -34,10 +37,19 @@ from https_middleware import HTTPSRedirectMiddleware, SSLHeadersMiddleware
 # Authentication and Authorization
 from auth_routes import router as auth_router
 from rate_limit import RateLimitMiddleware, EndpointRateLimitMiddleware
-from circuit_breaker import get_all_circuit_breakers, get_circuit_breaker_status, reset_circuit_breaker
+from circuit_breaker import (
+    get_all_circuit_breakers,
+    get_circuit_breaker_status,
+    reset_circuit_breaker,
+)
 
 # Metrics middleware
-from metrics_middleware import MetricsMiddleware, get_metrics, get_health, get_simple_metrics
+from metrics_middleware import (
+    MetricsMiddleware,
+    get_metrics,
+    get_health,
+    get_simple_metrics,
+)
 
 # Advanced health checks
 from health_checks import get_advanced_health, get_simple_health
@@ -104,11 +116,12 @@ from constants import (
     EXCHANGE_HOURLY_CHECK_END_HOUR,
     DATA_GUARD_UI_COOLDOWN_MIN,
     DATA_GUARD_UR_COOLDOWN_MIN,
-    DATA_GUARD_EXCHANGE_COOLDOWN_MIN
+    DATA_GUARD_EXCHANGE_COOLDOWN_MIN,
 )
 
 # APScheduler (background jobs)
 from typing import TYPE_CHECKING, Any
+
 if TYPE_CHECKING:
     from apscheduler.schedulers.asyncio import AsyncIOScheduler  # type: ignore
     from apscheduler.triggers.cron import CronTrigger  # type: ignore
@@ -124,7 +137,11 @@ else:
         pytz = None  # type: ignore
 
 # Correlation ID middleware for distributed tracing
-from correlation_middleware import CorrelationIdMiddleware, setup_correlation_logging, get_correlation_logger
+from correlation_middleware import (
+    CorrelationIdMiddleware,
+    setup_correlation_logging,
+    get_correlation_logger,
+)
 
 # Alert and dashboard services
 from alerts import alert_manager
@@ -137,8 +154,11 @@ logger = get_correlation_logger(__name__)
 # Performance budget service
 try:
     from performance_budget import get_performance_budget_manager
+
     # Reactivar performance budget manager con configuración segura
-    performance_budget_manager = get_performance_budget_manager(enable_monitoring=False, enable_alerts=False)
+    performance_budget_manager = get_performance_budget_manager(
+        enable_monitoring=False, enable_alerts=False
+    )
     logger.info("Performance budget manager reactivated successfully")
 except ImportError:
     logger.warning("Performance budget module not available")
@@ -149,6 +169,7 @@ except Exception as e:
 
 # Flag para omitir bootstrap y refresh en startup (usado en tests / CI)
 SKIP_BOOTSTRAP = os.getenv("SIFU_SKIP_BOOTSTRAP") == "1"
+
 
 # Lifespan context replacing deprecated on_event startup/shutdown
 async def _execute_startup():
@@ -161,13 +182,18 @@ async def _execute_startup():
         # puedan verificar la llamada (incluso cuando SKIP_BOOTSTRAP=1)
         db = None
         try:
-            from database import SessionLocal as _SL  # local import para evitar costos al importar tests
+            from database import (
+                SessionLocal as _SL,
+            )  # local import para evitar costos al importar tests
+
             db = _SL()
             service = UIService(db)
             total = service.get_total_records()  # <- los tests esperan que se llame
             if total == 0:
                 if os.getenv("SIFU_SKIP_STARTUP_REFRESH") == "1":
-                    logger.info("[Startup] Refresh suprimido (SIFU_SKIP_STARTUP_REFRESH=1)")
+                    logger.info(
+                        "[Startup] Refresh suprimido (SIFU_SKIP_STARTUP_REFRESH=1)"
+                    )
                 else:
                     try:
                         excel_processor.refresh_data(db)
@@ -210,24 +236,29 @@ async def _execute_startup():
 
         # Initialize database optimizer (skip in test environment)
         is_test_env = (
-            os.getenv("PYTEST_CURRENT_TEST") is not None or
-            os.getenv("TESTING") == "true" or
-            "pytest" in os.getenv("_", "").lower()
+            os.getenv("PYTEST_CURRENT_TEST") is not None
+            or os.getenv("TESTING") == "true"
+            or "pytest" in os.getenv("_", "").lower()
         )
-        
+
         if not is_test_env:
             try:
                 optimizer = DatabaseOptimizer()
-                logger.info("[DatabaseOptimizer] Initializing database optimizations...")
+                logger.info(
+                    "[DatabaseOptimizer] Initializing database optimizations..."
+                )
                 optimizer.create_optimized_indexes()
                 logger.info("[DatabaseOptimizer] Database optimizations completed")
             except Exception as e:  # noqa: BLE001
                 logger.error(f"[DatabaseOptimizer] Initialization failed: {e}")
         else:
-            logger.info("[DatabaseOptimizer] Skipping database optimizations in test environment")
+            logger.info(
+                "[DatabaseOptimizer] Skipping database optimizations in test environment"
+            )
 
         # Launch hourly refresher once
         if not hasattr(_execute_startup, "_refresher_started"):
+
             async def cache_refresher_loop():
                 while True:
                     await asyncio.sleep(3600)
@@ -237,6 +268,7 @@ async def _execute_startup():
                         _update_brou_cache()
                     except Exception as e:  # noqa: BLE001
                         logger.error(f"[CacheRefresher] failure: {e}")
+
             asyncio.create_task(cache_refresher_loop())
             _execute_startup._refresher_started = True  # type: ignore
 
@@ -247,10 +279,13 @@ async def _execute_startup():
                 if SCHEDULER_ENABLED and CronTrigger:
                     # Try AsyncIOScheduler again to see if it works with middlewares disabled
                     from apscheduler.schedulers.asyncio import AsyncIOScheduler
+
                     scheduler = AsyncIOScheduler(timezone=SCHEDULER_TIMEZONE)
                     _add_jobs(scheduler)
                     scheduler.start()
-                    logger.info(f"[Scheduler] Started with AsyncIOScheduler (tz={SCHEDULER_TIMEZONE})")
+                    logger.info(
+                        f"[Scheduler] Started with AsyncIOScheduler (tz={SCHEDULER_TIMEZONE})"
+                    )
                 else:
                     logger.info("[Scheduler] Disabled or APScheduler not installed")
             except Exception as e:  # noqa: BLE001
@@ -262,6 +297,7 @@ async def _execute_startup():
         logger.error(f"[Startup] CRITICAL ERROR during startup: {e}")
         logger.error(f"[Startup] Exception type: {type(e)}")
         import traceback
+
         logger.error(f"[Startup] Traceback: {traceback.format_exc()}")
         # Re-raise to let FastAPI handle it properly
         raise
@@ -298,37 +334,37 @@ app = FastAPI(
     tags_metadata=[
         {
             "name": "Sistema",
-            "description": "Endpoints de sistema: health check e informacion general"
+            "description": "Endpoints de sistema: health check e informacion general",
         },
         {
             "name": TAG_UI,
             "description": (
                 "Consulta de valores de la Unidad Indexada del Instituto Nacional de Estadistica (INE). "
                 "La UI es un indice de ajuste por inflacion utilizado en Uruguay desde 2002."
-            )
+            ),
         },
         {
             "name": TAG_UR,
             "description": (
                 "Consulta de valores de la Unidad Reajustable del Banco Hipotecario del Uruguay (BHU). "
                 "La UR es un indice utilizado para reajustar creditos hipotecarios desde 1969."
-            )
+            ),
         },
         {
             "name": TAG_EXCHANGE,
             "description": (
                 "Sistema dual de cotizaciones: datos historicos del INE (2001-presente) y "
                 "cotizaciones actuales del BCU en tiempo real. Incluye USD, EUR, ARS, BRL."
-            )
+            ),
         },
         {
             "name": "BROU",
             "description": (
                 "Cotizaciones del Banco de la Republica Oriental del Uruguay (BROU). "
                 "Incluye USD, USD eBROU, EUR, ARS, BRL con valores de compra/venta y arbitrajes."
-            )
-        }
-    ]
+            ),
+        },
+    ],
 )
 
 # Add correlation ID middleware (must be first)
@@ -357,6 +393,7 @@ app.add_middleware(MetricsMiddleware)
 # Include authentication router
 app.include_router(auth_router)
 
+
 @app.get("/api/debug/correlation", tags=["Sistema"])
 async def debug_correlation_id(request: Request):
     """Endpoint de debug para probar correlation IDs."""
@@ -368,18 +405,24 @@ async def debug_correlation_id(request: Request):
     return {
         "correlation_id": correlation_id,
         "message": "Check server logs for correlation ID tracing",
-        "timestamp": datetime.utcnow().isoformat()
+        "timestamp": datetime.utcnow().isoformat(),
     }
+
 
 @app.get("/test", tags=["Sistema"])
 async def test_endpoint():
     """Endpoint de prueba simple sin dependencias."""
-    return {"message": "Test endpoint working", "timestamp": datetime.utcnow().isoformat()}
+    return {
+        "message": "Test endpoint working",
+        "timestamp": datetime.utcnow().isoformat(),
+    }
+
 
 # -----------------------------------------------------------------------------
 # Scheduler setup (optional)
 # -----------------------------------------------------------------------------
 scheduler: Any = None
+
 
 def _add_jobs(_scheduler):
     tz = pytz.timezone(SCHEDULER_TIMEZONE) if pytz else None
@@ -402,10 +445,13 @@ def _add_jobs(_scheduler):
                 logger.info("[Scheduler][UI] Skipped (non-business day)")
                 return
             from database import SessionLocal
+
             db = SessionLocal()
             logger.info("[Scheduler] Running UI refresh job...")
             success, message, total_records = excel_processor.refresh_data(db)
-            logger.info(f"[Scheduler][UI] success={success} msg='{message}' total_records={total_records}")
+            logger.info(
+                f"[Scheduler][UI] success={success} msg='{message}' total_records={total_records}"
+            )
             db.close()
         except Exception as e:
             logger.error(f"[Scheduler][UI] error: {e}")
@@ -417,10 +463,15 @@ def _add_jobs(_scheduler):
                 logger.info("[Scheduler][EXCHANGE] Skipped (non-business day)")
                 return
             from database import SessionLocal
+
             db = SessionLocal()
             logger.info("[Scheduler] Running Exchange refresh job...")
-            success, message, total_records = exchange_rate_excel_processor.refresh_data(db)
-            logger.info(f"[Scheduler][EXCHANGE] success={success} msg='{message}' total_records={total_records}")
+            success, message, total_records = (
+                exchange_rate_excel_processor.refresh_data(db)
+            )
+            logger.info(
+                f"[Scheduler][EXCHANGE] success={success} msg='{message}' total_records={total_records}"
+            )
             db.close()
         except Exception as e:
             logger.error(f"[Scheduler][EXCHANGE] error: {e}")
@@ -431,12 +482,16 @@ def _add_jobs(_scheduler):
             return
         now = datetime.now()
         hour = now.hour
-        if hour < EXCHANGE_HOURLY_CHECK_START_HOUR or hour > EXCHANGE_HOURLY_CHECK_END_HOUR:
+        if (
+            hour < EXCHANGE_HOURLY_CHECK_START_HOUR
+            or hour > EXCHANGE_HOURLY_CHECK_END_HOUR
+        ):
             return
         try:
             if not _is_business_day(now):
                 return
             from database import SessionLocal
+
             db = SessionLocal()
             service = ExchangeRateService(db)
             _min, max_date = service.get_date_range_available()
@@ -446,10 +501,14 @@ def _add_jobs(_scheduler):
             else:
                 today = now.date()
                 if max_date < today:
-                    logger.info(f"[Scheduler][EXCHANGE_CHECK] Data stale (max={max_date}), attempting refresh")
+                    logger.info(
+                        f"[Scheduler][EXCHANGE_CHECK] Data stale (max={max_date}), attempting refresh"
+                    )
                     exchange_rate_excel_processor.refresh_data(db)
                 else:
-                    logger.debug(f"[Scheduler][EXCHANGE_CHECK] Data up-to-date (max={max_date})")
+                    logger.debug(
+                        f"[Scheduler][EXCHANGE_CHECK] Data up-to-date (max={max_date})"
+                    )
             db.close()
         except Exception as e:  # noqa: BLE001
             logger.error(f"[Scheduler][EXCHANGE_CHECK] error: {e}")
@@ -459,10 +518,13 @@ def _add_jobs(_scheduler):
         try:
             # UR es mensual; si cae fin de semana se ejecutará el primer día hábil siguiente (no aplicamos skip aquí)
             from database import SessionLocal
+
             db = SessionLocal()
             logger.info("[Scheduler] Running UR refresh job...")
             success, message, count = ur_excel_processor.refresh_data(db)
-            logger.info(f"[Scheduler][UR] success={success} msg='{message}' count={count}")
+            logger.info(
+                f"[Scheduler][UR] success={success} msg='{message}' count={count}"
+            )
             db.close()
         except Exception as e:
             logger.error(f"[Scheduler][UR] error: {e}")
@@ -474,7 +536,9 @@ def _add_jobs(_scheduler):
         if len(parts) != 5:
             raise ValueError(f"Invalid cron expression: {trigger_expr}")
         minute, hour, day, month, dow = parts
-        return CronTrigger(minute=minute, hour=hour, day=day, month=month, day_of_week=dow, timezone=tz)
+        return CronTrigger(
+            minute=minute, hour=hour, day=day, month=month, day_of_week=dow, timezone=tz
+        )
 
     # Data freshness guard (every few minutes) - forces refresh if expected new data missing
     _data_guard_last_attempt: dict[str, datetime] = {}
@@ -482,6 +546,7 @@ def _add_jobs(_scheduler):
     def job_data_freshness_guard():
         now_local = datetime.now(tz)
         from database import SessionLocal
+
         db = None
         try:
             db = SessionLocal()
@@ -494,14 +559,26 @@ def _add_jobs(_scheduler):
                 if latest_ui is None:
                     need_ui = True
                 else:
-                    if latest_ui.date < today and now_local.hour >= 2 and now_local.minute >= 30 and now_local.weekday() < 5:
+                    if (
+                        latest_ui.date < today
+                        and now_local.hour >= 2
+                        and now_local.minute >= 30
+                        and now_local.weekday() < 5
+                    ):
                         need_ui = True
                 if need_ui:
-                    last_try = _data_guard_last_attempt.get('ui')
-                    if not last_try or (now_local - last_try).total_seconds()/60 >= DATA_GUARD_UI_COOLDOWN_MIN:
-                        logger.info("[DataGuard][UI] Forcing refresh (latest=%s)" % (latest_ui.date if latest_ui else 'None'))
+                    last_try = _data_guard_last_attempt.get("ui")
+                    if (
+                        not last_try
+                        or (now_local - last_try).total_seconds() / 60
+                        >= DATA_GUARD_UI_COOLDOWN_MIN
+                    ):
+                        logger.info(
+                            "[DataGuard][UI] Forcing refresh (latest=%s)"
+                            % (latest_ui.date if latest_ui else "None")
+                        )
                         excel_processor.refresh_data(db)
-                        _data_guard_last_attempt['ui'] = now_local
+                        _data_guard_last_attempt["ui"] = now_local
             except Exception as e:  # noqa: BLE001
                 logger.error(f"[DataGuard][UI] error: {e}")
 
@@ -511,26 +588,43 @@ def _add_jobs(_scheduler):
                 latest_ur = ur_service.get_latest_ur()
                 year = now_local.year
                 month = now_local.month
+
                 def _first_business_day(y, m):
-                    for d in range(1,8):
-                        dt = date(y,m,d)
+                    for d in range(1, 8):
+                        dt = date(y, m, d)
                         if dt.weekday() < 5:  # Mon-Fri
                             return dt
-                    return date(y,m,1)
+                    return date(y, m, 1)
+
                 first_bd = _first_business_day(year, month)
                 need_ur = False
                 if latest_ur is None:
                     need_ur = True
                 else:
                     # Compare tuples (year, month)
-                    if (latest_ur.year, latest_ur.month) < (year, month) and now_local.date() >= first_bd and now_local.hour >= 8:
+                    if (
+                        (latest_ur.year, latest_ur.month) < (year, month)
+                        and now_local.date() >= first_bd
+                        and now_local.hour >= 8
+                    ):
                         need_ur = True
                 if need_ur:
-                    last_try = _data_guard_last_attempt.get('ur')
-                    if not last_try or (now_local - last_try).total_seconds()/60 >= DATA_GUARD_UR_COOLDOWN_MIN:
-                        logger.info("[DataGuard][UR] Forcing refresh (latest=%s-%s)" % ((latest_ur.year, latest_ur.month) if latest_ur else ('None','')))
+                    last_try = _data_guard_last_attempt.get("ur")
+                    if (
+                        not last_try
+                        or (now_local - last_try).total_seconds() / 60
+                        >= DATA_GUARD_UR_COOLDOWN_MIN
+                    ):
+                        logger.info(
+                            "[DataGuard][UR] Forcing refresh (latest=%s-%s)"
+                            % (
+                                (latest_ur.year, latest_ur.month)
+                                if latest_ur
+                                else ("None", "")
+                            )
+                        )
                         ur_excel_processor.refresh_data(db)
-                        _data_guard_last_attempt['ur'] = now_local
+                        _data_guard_last_attempt["ur"] = now_local
             except Exception as e:  # noqa: BLE001
                 logger.error(f"[DataGuard][UR] error: {e}")
 
@@ -546,11 +640,17 @@ def _add_jobs(_scheduler):
                     if ex_max < today and now_local.hour >= 11:
                         need_ex = True
                 if need_ex:
-                    last_try = _data_guard_last_attempt.get('exchange')
-                    if not last_try or (now_local - last_try).total_seconds()/60 >= DATA_GUARD_EXCHANGE_COOLDOWN_MIN:
-                        logger.info(f"[DataGuard][EXCHANGE] Forcing refresh (latest={ex_max})")
+                    last_try = _data_guard_last_attempt.get("exchange")
+                    if (
+                        not last_try
+                        or (now_local - last_try).total_seconds() / 60
+                        >= DATA_GUARD_EXCHANGE_COOLDOWN_MIN
+                    ):
+                        logger.info(
+                            f"[DataGuard][EXCHANGE] Forcing refresh (latest={ex_max})"
+                        )
                         exchange_rate_excel_processor.refresh_data(db)
-                        _data_guard_last_attempt['exchange'] = now_local
+                        _data_guard_last_attempt["exchange"] = now_local
             except Exception as e:  # noqa: BLE001
                 logger.error(f"[DataGuard][EXCHANGE] error: {e}")
         except Exception as e:  # noqa: BLE001
@@ -562,17 +662,40 @@ def _add_jobs(_scheduler):
             except Exception:
                 pass
 
-    _scheduler.add_job(job_ui_refresh, _cron(CRON_UI_REFRESH), id="ui_refresh", replace_existing=True)
-    _scheduler.add_job(job_exchange_refresh, _cron(CRON_EXCHANGE_REFRESH), id="exchange_refresh", replace_existing=True)
-    _scheduler.add_job(job_ur_refresh, _cron(CRON_UR_REFRESH), id="ur_refresh", replace_existing=True)
+    _scheduler.add_job(
+        job_ui_refresh, _cron(CRON_UI_REFRESH), id="ui_refresh", replace_existing=True
+    )
+    _scheduler.add_job(
+        job_exchange_refresh,
+        _cron(CRON_EXCHANGE_REFRESH),
+        id="exchange_refresh",
+        replace_existing=True,
+    )
+    _scheduler.add_job(
+        job_ur_refresh, _cron(CRON_UR_REFRESH), id="ur_refresh", replace_existing=True
+    )
     # Data guard job (every few minutes)
     try:
-        _scheduler.add_job(job_data_freshness_guard, _cron(CRON_DATA_GUARD), id="data_guard", replace_existing=True)
+        _scheduler.add_job(
+            job_data_freshness_guard,
+            _cron(CRON_DATA_GUARD),
+            id="data_guard",
+            replace_existing=True,
+        )
     except Exception as e:  # noqa: BLE001
         logger.error(f"[Scheduler] Could not schedule data_guard: {e}")
     if EXCHANGE_HOURLY_CHECK_ENABLED:
-        _scheduler.add_job(job_exchange_hourly_check, _cron(CRON_EXCHANGE_HOURLY_CHECK), id="exchange_hourly_check", replace_existing=True)
-    logger.info("[Scheduler] Jobs scheduled: ui_refresh, exchange_refresh, ur_refresh, data_guard" + (", exchange_hourly_check" if EXCHANGE_HOURLY_CHECK_ENABLED else ""))
+        _scheduler.add_job(
+            job_exchange_hourly_check,
+            _cron(CRON_EXCHANGE_HOURLY_CHECK),
+            id="exchange_hourly_check",
+            replace_existing=True,
+        )
+    logger.info(
+        "[Scheduler] Jobs scheduled: ui_refresh, exchange_refresh, ur_refresh, data_guard"
+        + (", exchange_hourly_check" if EXCHANGE_HOURLY_CHECK_ENABLED else "")
+    )
+
 
 # Excel processor instance
 excel_processor = ExcelProcessor()
@@ -586,6 +709,7 @@ bcu_cache: dict | None = None
 brou_cache: dict | None = None
 _cache_lock = ThreadLock()
 
+
 def _update_bcu_cache():
     global bcu_cache
     try:
@@ -596,19 +720,22 @@ def _update_bcu_cache():
         formatted = []
         source = "BCU" if is_from_bcu else "Historical Data"
         for currency, buy, sell, avg in current_rates:
-            formatted.append({
-                "currency": currency,
-                "buy_rate": buy,
-                "sell_rate": sell,
-                "average_rate": avg,
-                "source": source,
-                "timestamp": datetime.utcnow().isoformat()
-            })
+            formatted.append(
+                {
+                    "currency": currency,
+                    "buy_rate": buy,
+                    "sell_rate": sell,
+                    "average_rate": avg,
+                    "source": source,
+                    "timestamp": datetime.utcnow().isoformat(),
+                }
+            )
         with _cache_lock:
             bcu_cache = {"data": formatted, "updated_at": datetime.utcnow()}
         logger.info(f"[BCU Cache] Updated ({len(formatted)} currencies)")
     except Exception as e:
         logger.error(f"[BCU Cache] Update failed: {e}")
+
 
 def _update_brou_cache():
     global brou_cache
@@ -617,15 +744,15 @@ def _update_brou_cache():
         if not current_rates:
             logger.warning("[BROU Cache] No data fetched")
             return
-        
+
         # Map source_type to user-friendly source name
         source_map = {
             "live": "BROU",
-            "persisted": "BROU_PERSISTED", 
-            "sample": "BROU_SAMPLE"
+            "persisted": "BROU_PERSISTED",
+            "sample": "BROU_SAMPLE",
         }
         source = source_map.get(source_type, f"BROU_{source_type.upper()}")
-        
+
         formatted: list[dict] = []
         for rate in current_rates:
             # rate es un dict según BROUProcessor._get_sample_rates / get_current_rates
@@ -633,57 +760,73 @@ def _update_brou_cache():
                 currency = rate.get("currency")
                 if not currency:
                     continue
-                formatted.append({
-                    "currency": currency,
-                    "buy_rate": rate.get("buy_rate"),
-                    "sell_rate": rate.get("sell_rate"),
-                    "average_rate": rate.get("average_rate"),
-                    "arbitrage_buy": rate.get("arbitrage_buy"),
-                    "arbitrage_sell": rate.get("arbitrage_sell"),
-                    # Preferencial: marcar USD_EBROU
-                    "preferential": True if currency == "USD_EBROU" else None,
-                    "source": source,
-                    "timestamp": rate.get("timestamp") or datetime.utcnow().isoformat()
-                })
-            except Exception as e:  # noqa: BLE001
-                logger.error(f"[BROU Cache] Skipping rate due to error: {e}")
-        if not formatted:
-            logger.warning("[BROU Cache] No valid rate entries after formatting. Using sample fallback.")
-            try:
-                sample_rates = brou_processor._get_sample_rates()  # noqa: SLF001 (internal fallback)
-                for rate in sample_rates:
-                    currency = rate.get("currency")
-                    if not currency:
-                        continue
-                    formatted.append({
+                formatted.append(
+                    {
                         "currency": currency,
                         "buy_rate": rate.get("buy_rate"),
                         "sell_rate": rate.get("sell_rate"),
                         "average_rate": rate.get("average_rate"),
                         "arbitrage_buy": rate.get("arbitrage_buy"),
                         "arbitrage_sell": rate.get("arbitrage_sell"),
+                        # Preferencial: marcar USD_EBROU
                         "preferential": True if currency == "USD_EBROU" else None,
-                        "source": "BROU_SAMPLE",
-                        "timestamp": rate.get("timestamp") or datetime.utcnow().isoformat()
-                    })
+                        "source": source,
+                        "timestamp": rate.get("timestamp")
+                        or datetime.utcnow().isoformat(),
+                    }
+                )
+            except Exception as e:  # noqa: BLE001
+                logger.error(f"[BROU Cache] Skipping rate due to error: {e}")
+        if not formatted:
+            logger.warning(
+                "[BROU Cache] No valid rate entries after formatting. Using sample fallback."
+            )
+            try:
+                sample_rates = brou_processor._get_sample_rates()  # noqa: SLF001 (internal fallback)
+                for rate in sample_rates:
+                    currency = rate.get("currency")
+                    if not currency:
+                        continue
+                    formatted.append(
+                        {
+                            "currency": currency,
+                            "buy_rate": rate.get("buy_rate"),
+                            "sell_rate": rate.get("sell_rate"),
+                            "average_rate": rate.get("average_rate"),
+                            "arbitrage_buy": rate.get("arbitrage_buy"),
+                            "arbitrage_sell": rate.get("arbitrage_sell"),
+                            "preferential": True if currency == "USD_EBROU" else None,
+                            "source": "BROU_SAMPLE",
+                            "timestamp": rate.get("timestamp")
+                            or datetime.utcnow().isoformat(),
+                        }
+                    )
             except Exception as fe:  # noqa: BLE001
                 logger.error(f"[BROU Cache] Fallback sample failed: {fe}")
                 return
         with _cache_lock:
-            brou_cache = {"data": formatted, "updated_at": datetime.utcnow(), "source": source, "source_type": source_type}
+            brou_cache = {
+                "data": formatted,
+                "updated_at": datetime.utcnow(),
+                "source": source,
+                "source_type": source_type,
+            }
         logger.info(f"[BROU Cache] Updated ({len(formatted)} currencies) from {source}")
     except Exception as e:
         logger.error(f"[BROU Cache] Update failed: {e}")
 
+
 # =============================================================================
 # Simple in-memory job manager for long-running tasks (exchange historical refresh)
 # =============================================================================
+
 
 class JobStatus:
     PENDING = "pending"
     RUNNING = "running"
     SUCCESS = "success"
     ERROR = "error"
+
 
 class JobManager:
     def __init__(self):
@@ -745,16 +888,23 @@ class JobManager:
     def find_running_job(self, job_type: str) -> str | None:
         with self._lock:
             for jid, meta in self._jobs.items():
-                if meta["type"] == job_type and meta["status"] in (JobStatus.PENDING, JobStatus.RUNNING):
+                if meta["type"] == job_type and meta["status"] in (
+                    JobStatus.PENDING,
+                    JobStatus.RUNNING,
+                ):
                     return jid
         return None
+
 
 job_manager = JobManager()
 
 
 # Mount static files only if they exist
 if os.path.exists(STATIC_DIRECTORY):
-    app.mount(STATIC_MOUNT_PATH, StaticFiles(directory=STATIC_DIRECTORY), name=STATIC_NAME)
+    app.mount(
+        STATIC_MOUNT_PATH, StaticFiles(directory=STATIC_DIRECTORY), name=STATIC_NAME
+    )
+
 
 @app.get(ENDPOINT_HEALTH, tags=["Sistema"])
 async def health_check():
@@ -764,11 +914,13 @@ async def health_check():
     Para health checks avanzados usar /api/health/advanced
     """
     from datetime import datetime
+
     return {
-        "status": "ok", 
+        "status": "ok",
         "message": "Server is running",
-        "timestamp": datetime.utcnow().isoformat()
+        "timestamp": datetime.utcnow().isoformat(),
     }
+
 
 @app.get("/api/ui/latest", tags=[TAG_UI])
 async def get_latest_ui(db: Session = Depends(get_db)):
@@ -779,22 +931,20 @@ async def get_latest_ui(db: Session = Depends(get_db)):
     try:
         service = UIService(db)
         latest_ui = service.get_latest_ui()
-        
+
         if latest_ui:
             return UIResponse(
                 success=True,
                 message=MSG_LATEST_UI_SUCCESS,
-                data=latest_ui.dict() if hasattr(latest_ui, 'dict') else latest_ui
+                data=latest_ui.dict() if hasattr(latest_ui, "dict") else latest_ui,
             ).dict()
         else:
-            return UIResponse(
-                success=False,
-                message=MSG_NO_UI_DATA
-            ).dict()
-    
+            return UIResponse(success=False, message=MSG_NO_UI_DATA).dict()
+
     except Exception as e:
         logger.error(f"Error getting latest UI value: {e}")
         raise HTTPException(status_code=HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+
 
 @app.get("/api/ui/{date}", tags=[TAG_UI])
 async def get_ui_by_date(date: date, db: Session = Depends(get_db)):
@@ -805,12 +955,12 @@ async def get_ui_by_date(date: date, db: Session = Depends(get_db)):
     try:
         service = UIService(db)
         ui_value = service.get_ui_by_date(date)
-        
+
         if ui_value:
             return UIResponse(
                 success=True,
                 message=MSG_UI_DATE_SUCCESS.format(date=date),
-                data=ui_value.dict() if hasattr(ui_value, 'dict') else ui_value
+                data=ui_value.dict() if hasattr(ui_value, "dict") else ui_value,
             ).dict()
         else:
             # Try to find the closest value
@@ -819,18 +969,26 @@ async def get_ui_by_date(date: date, db: Session = Depends(get_db)):
                 return UIResponse(
                     success=True,
                     message=f"No data for {date}. Showing closest previous value",
-                    data=closest_ui.dict() if hasattr(closest_ui, 'dict') else closest_ui
+                    data=closest_ui.dict()
+                    if hasattr(closest_ui, "dict")
+                    else closest_ui,
                 ).dict()
             else:
-                raise HTTPException(status_code=404, detail=f"No UI data found for {date} or previous dates")
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"No UI data found for {date} or previous dates",
+                )
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Error getting UI by date {date}: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @app.get("/api/ui/range/{start_date}/{end_date}", tags=[TAG_UI])
-async def get_ui_by_range(start_date: date, end_date: date, db: Session = Depends(get_db)):
+async def get_ui_by_range(
+    start_date: date, end_date: date, db: Session = Depends(get_db)
+):
     """Obtener UI por rango de fechas (YYYY-MM-DD).
 
     Valida que start_date <= end_date.
@@ -838,24 +996,27 @@ async def get_ui_by_range(start_date: date, end_date: date, db: Session = Depend
     try:
         if start_date > end_date:
             raise HTTPException(
-                status_code=400, 
-                detail="Start date must be less than or equal to end date"
+                status_code=400,
+                detail="Start date must be less than or equal to end date",
             )
-        
+
         service = UIService(db)
         ui_values = service.get_ui_by_date_range(start_date, end_date)
-        
+
         return UIResponse(
             success=True,
-            message=MSG_UI_RANGE_SUCCESS.format(start_date=start_date, end_date=end_date, count=len(ui_values)),
-            data=[item.dict() if hasattr(item, 'dict') else item for item in ui_values]
+            message=MSG_UI_RANGE_SUCCESS.format(
+                start_date=start_date, end_date=end_date, count=len(ui_values)
+            ),
+            data=[item.dict() if hasattr(item, "dict") else item for item in ui_values],
         ).dict()
-    
+
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Error getting UI by range {start_date} - {end_date}: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
 
 @app.get("/api/info", tags=["Sistema"])
 async def get_info(db: Session = Depends(get_db)):
@@ -865,53 +1026,53 @@ async def get_info(db: Session = Depends(get_db)):
         total_records = service.get_total_records()
         min_date, max_date = service.get_date_range_available()
         latest_ui = service.get_latest_ui()
-        
+
         return {
             "total_records": total_records,
             "date_range": {
                 "min_date": min_date.isoformat() if min_date else None,
-                "max_date": max_date.isoformat() if max_date else None
+                "max_date": max_date.isoformat() if max_date else None,
             },
             "latest_ui": latest_ui.dict() if latest_ui else None,
-            "data_source": "National Institute of Statistics (INE) - Uruguay"
+            "data_source": "National Institute of Statistics (INE) - Uruguay",
         }
-    
+
     except Exception as e:
         logger.error(f"Error getting information: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @app.post("/api/refresh", tags=[TAG_UI])
-async def refresh_data(background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
+async def refresh_data(
+    background_tasks: BackgroundTasks, db: Session = Depends(get_db)
+):
     """Actualizar datos de UI desde INE (descarga y procesamiento)."""
     try:
         # Execute the update
         success, message, total_records = excel_processor.refresh_data(db)
-        
+
         if success:
             # Get the most recent date after the update
             service = UIService(db)
             latest_ui = service.get_latest_ui()
-            
+
             return RefreshResponse(
                 success=True,
                 message=message,
                 total_records=total_records,
-                last_updated=latest_ui.date if latest_ui else None
+                last_updated=latest_ui.date if latest_ui else None,
             ).dict()
         else:
             return RefreshResponse(
-                success=False,
-                message=message,
-                total_records=0
+                success=False, message=message, total_records=0
             ).dict()
-    
+
     except Exception as e:
         logger.error(f"Error updating data: {e}")
         return RefreshResponse(
-            success=False,
-            message=f"Internal error: {str(e)}",
-            total_records=0
+            success=False, message=f"Internal error: {str(e)}", total_records=0
         )
+
 
 @app.get("/api/ur/latest", tags=[TAG_UR])
 async def get_latest_ur(db: Session = Depends(get_db)):
@@ -919,26 +1080,20 @@ async def get_latest_ur(db: Session = Depends(get_db)):
     try:
         ur_service = URService(db)
         latest_ur = ur_service.get_latest_ur()
-        
+
         if latest_ur:
             return URResponse(
                 success=True,
                 message=MSG_LATEST_UR_SUCCESS,
-                data=latest_ur.dict() if hasattr(latest_ur, 'dict') else latest_ur
+                data=latest_ur.dict() if hasattr(latest_ur, "dict") else latest_ur,
             ).dict()
         else:
-            return URResponse(
-                success=False,
-                message= MSG_NO_UR_DATA,
-                data=None
-            ).dict()
-            
+            return URResponse(success=False, message=MSG_NO_UR_DATA, data=None).dict()
+
     except Exception as e:
         logger.error(f"Error in get_latest_ur: {e}")
-        raise HTTPException(
-            status_code=500,
-            detail="Internal server error"
-        )
+        raise HTTPException(status_code=500, detail="Internal server error")
+
 
 @app.get("/api/ur/year-month/{year}/{month}", tags=[TAG_UR])
 async def get_ur_by_year_month(year: int, month: int, db: Session = Depends(get_db)):
@@ -947,33 +1102,29 @@ async def get_ur_by_year_month(year: int, month: int, db: Session = Depends(get_
         # Validate month
         if month < 1 or month > 12:
             return URResponse(
-                success=False,
-                message="Month must be between 1 and 12",
-                data=None
+                success=False, message="Month must be between 1 and 12", data=None
             ).dict()
-        
+
         ur_service = URService(db)
         ur_value = ur_service.get_ur_by_year_month(year, month)
-        
+
         if ur_value:
             return URResponse(
                 success=True,
                 message=MSG_UR_YEAR_MONTH_SUCCESS.format(year=year, month=month),
-                data=ur_value.dict() if hasattr(ur_value, 'dict') else ur_value
+                data=ur_value.dict() if hasattr(ur_value, "dict") else ur_value,
             ).dict()
         else:
             return URResponse(
                 success=False,
                 message=MSG_NO_UR_YEAR_MONTH_DATA.format(year=year, month=month),
-                data=None
+                data=None,
             ).dict()
-                
+
     except Exception as e:
         logger.error(f"Error in get_ur_by_year_month: {e}")
-        raise HTTPException(
-            status_code=500,
-            detail="Internal server error"
-        )
+        raise HTTPException(status_code=500, detail="Internal server error")
+
 
 @app.get("/api/ur/year/{year}", tags=[TAG_UR])
 async def get_ur_by_year(year: int, db: Session = Depends(get_db)):
@@ -981,69 +1132,90 @@ async def get_ur_by_year(year: int, db: Session = Depends(get_db)):
     try:
         ur_service = URService(db)
         ur_values = ur_service.get_ur_by_year(year)
-        
+
         if ur_values:
             return URResponse(
                 success=True,
                 message=MSG_UR_YEAR_SUCCESS.format(count=len(ur_values), year=year),
-                data=[item.dict() if hasattr(item, 'dict') else item for item in ur_values]
+                data=[
+                    item.dict() if hasattr(item, "dict") else item for item in ur_values
+                ],
             ).dict()
         else:
             return URResponse(
-                success=False,
-                message=MSG_NO_UR_YEAR_DATA.format(year=year),
-                data=[]
+                success=False, message=MSG_NO_UR_YEAR_DATA.format(year=year), data=[]
             ).dict()
-            
+
     except Exception as e:
         logger.error(f"Error in get_ur_by_year: {e}")
-        raise HTTPException(
-            status_code=500,
-            detail="Internal server error"
-        )
+        raise HTTPException(status_code=500, detail="Internal server error")
 
-@app.get("/api/ur/range/{start_year}/{start_month}/{end_year}/{end_month}", tags=[TAG_UR])
-async def get_ur_by_range(start_year: int, start_month: int, end_year: int, end_month: int, db: Session = Depends(get_db)):
+
+@app.get(
+    "/api/ur/range/{start_year}/{start_month}/{end_year}/{end_month}", tags=[TAG_UR]
+)
+async def get_ur_by_range(
+    start_year: int,
+    start_month: int,
+    end_year: int,
+    end_month: int,
+    db: Session = Depends(get_db),
+):
     """Obtener UR por rango de periodos (anio/mes inicio a anio/mes fin)."""
     try:
         # Validate months
         if start_month < 1 or start_month > 12 or end_month < 1 or end_month > 12:
             return URResponse(
                 success=False,
-                message=MSG_INVALID_MONTH if 'MSG_INVALID_MONTH' in globals() else "Months must be between 1 and 12",
-                data=None
+                message=MSG_INVALID_MONTH
+                if "MSG_INVALID_MONTH" in globals()
+                else "Months must be between 1 and 12",
+                data=None,
             ).dict()
-        
+
         # Validate range
-        if (start_year > end_year) or (start_year == end_year and start_month > end_month):
+        if (start_year > end_year) or (
+            start_year == end_year and start_month > end_month
+        ):
             return URResponse(
-                success=False,
-                message=MSG_INVALID_PERIOD_RANGE,
-                data=None
+                success=False, message=MSG_INVALID_PERIOD_RANGE, data=None
             ).dict()
-        
+
         ur_service = URService(db)
-        ur_values = ur_service.get_ur_by_range(start_year, start_month, end_year, end_month)
-        
+        ur_values = ur_service.get_ur_by_range(
+            start_year, start_month, end_year, end_month
+        )
+
         if ur_values:
             return URResponse(
                 success=True,
-                message=MSG_UR_RANGE_SUCCESS.format(count=len(ur_values), start_year=start_year, start_month=start_month, end_year=end_year, end_month=end_month),
-                data=[item.dict() if hasattr(item, 'dict') else item for item in ur_values]
+                message=MSG_UR_RANGE_SUCCESS.format(
+                    count=len(ur_values),
+                    start_year=start_year,
+                    start_month=start_month,
+                    end_year=end_year,
+                    end_month=end_month,
+                ),
+                data=[
+                    item.dict() if hasattr(item, "dict") else item for item in ur_values
+                ],
             ).dict()
         else:
             return URResponse(
                 success=False,
-                message=MSG_NO_UR_RANGE_DATA.format(start_year=start_year, start_month=start_month, end_year=end_year, end_month=end_month),
-                data=[]
+                message=MSG_NO_UR_RANGE_DATA.format(
+                    start_year=start_year,
+                    start_month=start_month,
+                    end_year=end_year,
+                    end_month=end_month,
+                ),
+                data=[],
             ).dict()
-            
+
     except Exception as e:
         logger.error(f"Error in get_ur_by_range: {e}")
-        raise HTTPException(
-            status_code=500,
-            detail="Internal server error"
-        )
+        raise HTTPException(status_code=500, detail="Internal server error")
+
 
 @app.post("/api/ur/range", tags=[TAG_UR])
 async def get_ur_by_range_post(request: dict, db: Session = Depends(get_db)):
@@ -1052,11 +1224,11 @@ async def get_ur_by_range_post(request: dict, db: Session = Depends(get_db)):
         # Convert Spanish field names to English
         field_mapping = {
             "año_inicio": "start_year",
-            "mes_inicio": "start_month", 
+            "mes_inicio": "start_month",
             "año_fin": "end_year",
-            "mes_fin": "end_month"
+            "mes_fin": "end_month",
         }
-        
+
         # Create sanitized data with English field names
         sanitized_data = {}
         for key, value in request.items():
@@ -1068,8 +1240,10 @@ async def get_ur_by_range_post(request: dict, db: Session = Depends(get_db)):
 
         # Additional security validation
         is_valid, error_msg = InputValidator.validate_ur_range_params(
-            ur_request.start_year, ur_request.start_month,
-            ur_request.end_year, ur_request.end_month
+            ur_request.start_year,
+            ur_request.start_month,
+            ur_request.end_year,
+            ur_request.end_month,
         )
 
         if not is_valid:
@@ -1077,103 +1251,107 @@ async def get_ur_by_range_post(request: dict, db: Session = Depends(get_db)):
 
         # Check for injection attempts
         for key, value in sanitized_data.items():
-            if isinstance(value, str) and not SecurityValidator.validate_no_injection(value):
-                return URResponse(success=False, message="Invalid input detected").dict()
+            if isinstance(value, str) and not SecurityValidator.validate_no_injection(
+                value
+            ):
+                return URResponse(
+                    success=False, message="Invalid input detected"
+                ).dict()
 
-        return await get_ur_by_range(ur_request.start_year, ur_request.start_month,
-                                   ur_request.end_year, ur_request.end_month, db)
+        return await get_ur_by_range(
+            ur_request.start_year,
+            ur_request.start_month,
+            ur_request.end_year,
+            ur_request.end_month,
+            db,
+        )
 
     except Exception as e:
         logger.error(f"Error in get_ur_by_range_post: {e}")
         return URResponse(success=False, message="Invalid request format").dict()
+
 
 @app.post("/api/ur/refresh", tags=[TAG_UR])
 async def refresh_ur_data(db: Session = Depends(get_db)):
     """Actualizar datos de UR desde BHU (descarga + procesamiento)."""
     try:
         logger.info("Starting UR data update...")
-        
+
         success, message, count = ur_excel_processor.refresh_data(db)
-        
+
         # Get additional information
         ur_service = URService(db)
         total_records = ur_service.get_total_records()
-        
+
         return RefreshResponse(
             success=success,
             message=message,
             total_records=total_records,
-            last_updated=None  # UR has no specific date, only year-month
+            last_updated=None,  # UR has no specific date, only year-month
         ).dict()
-        
+
     except Exception as e:
         logger.error(f"Error in refresh_ur_data: {e}")
-        raise HTTPException(
-            status_code=500,
-            detail="Internal server error"
-        )
+        raise HTTPException(status_code=500, detail="Internal server error")
+
 
 @app.get("/api/ur/info", tags=[TAG_UR])
 async def get_ur_info(db: Session = Depends(get_db)):
     """Informacion del sistema UR (estadisticas basicas)."""
     try:
         ur_service = URService(db)
-        
+
         total_records = ur_service.get_total_records()
         min_year, max_year = ur_service.get_year_range_available()
         latest_ur = ur_service.get_latest_ur()
         available_years = ur_service.get_available_years()
-        
+
         return {
             "success": True,
             "data": {
                 "total_records": total_records,
-                "year_range": {
-                    "min_year": min_year,
-                    "max_year": max_year
-                },
+                "year_range": {"min_year": min_year, "max_year": max_year},
                 "latest_value": latest_ur.dict() if latest_ur else None,
-                "available_years": available_years
-            }
+                "available_years": available_years,
+            },
         }
-        
+
     except Exception as e:
         logger.error(f"Error in get_ur_info: {e}")
-        raise HTTPException(
-            status_code=500,
-            detail="Internal server error"
-        )
-
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 # =============================================================================
 # EXCHANGE RATE ENDPOINTS
 # =============================================================================
 
+
 @app.get(ENDPOINT_EXCHANGE_RATE_LATEST, tags=[TAG_EXCHANGE])
-async def get_latest_exchange_rates(currencies: Optional[str] = None, db: Session = Depends(get_db)):
+async def get_latest_exchange_rates(
+    currencies: Optional[str] = None, db: Session = Depends(get_db)
+):
     """Obtener ultimas cotizaciones historicas (INE). Puede filtrar por lista de monedas separadas por comas."""
     try:
         service = ExchangeRateService(db)
-        currency_list = currencies.split(',') if currencies else None
-        
+        currency_list = currencies.split(",") if currencies else None
+
         exchange_rates = service.get_latest_exchange_rates(currency_list)
-        
+
         if exchange_rates:
             return ExchangeRateResponse(
                 success=True,
                 message=MSG_LATEST_EXCHANGE_RATE_SUCCESS,
-                data=[rate.dict() for rate in exchange_rates]
+                data=[rate.dict() for rate in exchange_rates],
             ).dict()
         else:
             return ExchangeRateResponse(
-                success=False,
-                message=MSG_NO_EXCHANGE_RATE_DATA
+                success=False, message=MSG_NO_EXCHANGE_RATE_DATA
             ).dict()
-    
+
     except Exception as e:
         logger.error(f"Error getting latest exchange rates: {e}")
         raise HTTPException(status_code=HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+
 
 @app.get(ENDPOINT_EXCHANGE_RATE_INFO, tags=[TAG_EXCHANGE])
 async def get_exchange_rate_info(db: Session = Depends(get_db)):
@@ -1184,55 +1362,68 @@ async def get_exchange_rate_info(db: Session = Depends(get_db)):
         min_date, max_date = service.get_date_range_available()
         available_currencies = service.get_available_currencies()
         latest_rates = service.get_latest_exchange_rates()
-        
+
         return {
             "total_records": total_records,
             "date_range": {
                 "min_date": min_date.isoformat() if min_date else None,
-                "max_date": max_date.isoformat() if max_date else None
+                "max_date": max_date.isoformat() if max_date else None,
             },
             "available_currencies": available_currencies,
             "latest_rates": [rate.dict() for rate in latest_rates],
-            "data_source": "Central Bank of Uruguay (BCU)"
+            "data_source": "Central Bank of Uruguay (BCU)",
         }
-    
+
     except Exception as e:
         logger.error(f"Error getting exchange rate information: {e}")
         raise HTTPException(status_code=HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
+
 @app.get(ENDPOINT_EXCHANGE_RATE_BY_CURRENCY, tags=[TAG_EXCHANGE])
-async def get_exchange_rates_by_currency(currency: str, limit: int = 30, db: Session = Depends(get_db)):
+async def get_exchange_rates_by_currency(
+    currency: str, limit: int = 30, db: Session = Depends(get_db)
+):
     """Obtener historial de una moneda (limite por defecto 30)."""
     try:
         if currency.upper() not in VALID_CURRENCY_CODES:
             raise HTTPException(
                 status_code=HTTP_400_BAD_REQUEST,
-                detail=f"Invalid currency code. Supported currencies: {', '.join(VALID_CURRENCY_CODES)}"
+                detail=f"Invalid currency code. Supported currencies: {', '.join(VALID_CURRENCY_CODES)}",
             )
-        
+
         service = ExchangeRateService(db)
         exchange_rates = service.get_exchange_rate_by_currency(currency, limit)
-        
+
         if exchange_rates:
             return ExchangeRateResponse(
                 success=True,
-                message=MSG_EXCHANGE_RATE_CURRENCY_SUCCESS.format(currency=currency.upper()),
-                data=[rate.dict() for rate in exchange_rates]
+                message=MSG_EXCHANGE_RATE_CURRENCY_SUCCESS.format(
+                    currency=currency.upper()
+                ),
+                data=[rate.dict() for rate in exchange_rates],
             ).dict()
         else:
             return ExchangeRateResponse(
                 success=False,
-                message=MSG_NO_EXCHANGE_RATE_CURRENCY_DATA.format(currency=currency.upper())
+                message=MSG_NO_EXCHANGE_RATE_CURRENCY_DATA.format(
+                    currency=currency.upper()
+                ),
             ).dict()
-    
+
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Error getting exchange rates by currency {currency}: {e}")
         raise HTTPException(status_code=HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
+
 @app.get(ENDPOINT_EXCHANGE_RATE_RANGE, tags=[TAG_EXCHANGE])
-async def get_exchange_rates_by_range(start_date: date, end_date: date, currency: Optional[str] = None, db: Session = Depends(get_db)):
+async def get_exchange_rates_by_range(
+    start_date: date,
+    end_date: date,
+    currency: Optional[str] = None,
+    db: Session = Depends(get_db),
+):
     """Obtener cotizaciones por rango de fechas (opcional filtrar por moneda)."""
     try:
         # Validate date range
@@ -1249,29 +1440,34 @@ async def get_exchange_rates_by_range(start_date: date, end_date: date, currency
                 raise HTTPException(status_code=HTTP_400_BAD_REQUEST, detail=error_msg)
 
         service = ExchangeRateService(db)
-        exchange_rates = service.get_exchange_rate_by_date_range(start_date, end_date, currency)
+        exchange_rates = service.get_exchange_rate_by_date_range(
+            start_date, end_date, currency
+        )
 
         return ExchangeRateResponse(
             success=True,
             message=MSG_EXCHANGE_RATE_RANGE_SUCCESS.format(
-                start_date=start_date,
-                end_date=end_date,
-                count=len(exchange_rates)
+                start_date=start_date, end_date=end_date, count=len(exchange_rates)
             ),
-            data=[rate.dict() for rate in exchange_rates]
+            data=[rate.dict() for rate in exchange_rates],
         ).dict()
 
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error getting exchange rates by range {start_date} - {end_date}: {e}")
+        logger.error(
+            f"Error getting exchange rates by range {start_date} - {end_date}: {e}"
+        )
         raise HTTPException(status_code=HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+
 
 @app.post(ENDPOINT_EXCHANGE_RATE_REFRESH, tags=[TAG_EXCHANGE])
 async def refresh_exchange_rate_historical_data(db: Session = Depends(get_db)):
     """Actualizar datos historicos de cotizaciones (INE)."""
     try:
-        logger.info("Starting historical exchange rate data update from INE (synchronous endpoint)...")
+        logger.info(
+            "Starting historical exchange rate data update from INE (synchronous endpoint)..."
+        )
         success, message, total_records = exchange_rate_excel_processor.refresh_data(db)
         if success:
             service = ExchangeRateService(db)
@@ -1285,14 +1481,16 @@ async def refresh_exchange_rate_historical_data(db: Session = Depends(get_db)):
                     "total_db_records": total_db_records,
                     "date_range": {
                         "min_date": min_date.isoformat() if min_date else None,
-                        "max_date": max_date.isoformat() if max_date else None
-                    }
-                }
+                        "max_date": max_date.isoformat() if max_date else None,
+                    },
+                },
             ).dict()
         return ExchangeRateResponse(success=False, message=message, data=None).dict()
     except Exception as e:
         logger.error(f"Error refreshing historical exchange rate data: {e}")
-        return ExchangeRateResponse(success=False, message=f"Internal error: {str(e)}", data=None).dict()
+        return ExchangeRateResponse(
+            success=False, message=f"Internal error: {str(e)}", data=None
+        ).dict()
 
 
 # -----------------------------------------------------------------------------
@@ -1300,15 +1498,19 @@ async def refresh_exchange_rate_historical_data(db: Session = Depends(get_db)):
 # -----------------------------------------------------------------------------
 ASYNC_JOB_TYPE_EXCHANGE_REFRESH = "exchange_rate_refresh"
 
+
 def _run_exchange_refresh_job(job_id: str):  # runs in background thread
     """Internal function executed in background to perform the heavy refresh and update job metadata."""
     job_manager.mark_running(job_id)
     # New DB session (cannot reuse dependency outside request context)
     from database import SessionLocal
+
     db_local = SessionLocal()
     try:
         logger.info(f"[Job {job_id}] Running exchange historical refresh")
-        success, message, total_records = exchange_rate_excel_processor.refresh_data(db_local)
+        success, message, total_records = exchange_rate_excel_processor.refresh_data(
+            db_local
+        )
         if success:
             service = ExchangeRateService(db_local)
             total_db_records = service.get_total_records()
@@ -1318,8 +1520,8 @@ def _run_exchange_refresh_job(job_id: str):  # runs in background thread
                 "total_db_records": total_db_records,
                 "date_range": {
                     "min_date": min_date.isoformat() if min_date else None,
-                    "max_date": max_date.isoformat() if max_date else None
-                }
+                    "max_date": max_date.isoformat() if max_date else None,
+                },
             }
             job_manager.mark_success(job_id, message, result_summary)
             logger.info(f"[Job {job_id}] Completed successfully")
@@ -1333,23 +1535,36 @@ def _run_exchange_refresh_job(job_id: str):  # runs in background thread
         db_local.close()
 
 
-@app.post("/api/exchange-rate/refresh-async", status_code=202, tags=[TAG_EXCHANGE], summary="Iniciar actualizacion historica asincrona")
+@app.post(
+    "/api/exchange-rate/refresh-async",
+    status_code=202,
+    tags=[TAG_EXCHANGE],
+    summary="Iniciar actualizacion historica asincrona",
+)
 async def start_exchange_rate_refresh_async(background_tasks: BackgroundTasks):
     """Inicia la actualizacion historica de cotizaciones en segundo plano (202 Accepted)."""
     # Avoid parallel duplicate jobs
     existing = job_manager.find_running_job(ASYNC_JOB_TYPE_EXCHANGE_REFRESH)
     if existing:
         job = job_manager.get(existing)
-        return JSONResponse(status_code=202, content={
-            "job_id": existing,
-            "status": job["status"],
-            "message": "Job already running",
-            "type": job["type"],
-        })
+        return JSONResponse(
+            status_code=202,
+            content={
+                "job_id": existing,
+                "status": job["status"],
+                "message": "Job already running",
+                "type": job["type"],
+            },
+        )
 
     job_id = job_manager.create_job(ASYNC_JOB_TYPE_EXCHANGE_REFRESH)
     background_tasks.add_task(_run_exchange_refresh_job, job_id)
-    return {"job_id": job_id, "status": JobStatus.PENDING, "message": "Job accepted", "type": ASYNC_JOB_TYPE_EXCHANGE_REFRESH}
+    return {
+        "job_id": job_id,
+        "status": JobStatus.PENDING,
+        "message": "Job accepted",
+        "type": ASYNC_JOB_TYPE_EXCHANGE_REFRESH,
+    }
 
 
 @app.get("/api/jobs/{job_id}", tags=[TAG_EXCHANGE], summary="Estado de un job")
@@ -1357,9 +1572,11 @@ async def get_job_status(job_id: str):
     job = job_manager.get(job_id)
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
+
     # Provide ISO timestamps if present
     def _ts(ts):
         return None if ts is None else datetime.utcfromtimestamp(ts).isoformat() + "Z"
+
     job_out = dict(job)
     for fld in ("created_at", "started_at", "finished_at"):
         job_out[fld] = _ts(job_out[fld])
@@ -1378,7 +1595,11 @@ async def list_jobs():
     return {"jobs": ids}
 
 
-@app.get("/api/exchange-rate/refresh-status/{job_id}", tags=[TAG_EXCHANGE], summary="Alias estado refresh historico")
+@app.get(
+    "/api/exchange-rate/refresh-status/{job_id}",
+    tags=[TAG_EXCHANGE],
+    summary="Alias estado refresh historico",
+)
 async def get_exchange_refresh_status(job_id: str):
     return await get_job_status(job_id)
 
@@ -1395,7 +1616,9 @@ async def get_current_exchange_rates(force_refresh: bool = False):
         if not cached:
             need_update = True
         else:
-            age = (datetime.utcnow() - cached.get("updated_at", datetime.utcnow())).total_seconds()
+            age = (
+                datetime.utcnow() - cached.get("updated_at", datetime.utcnow())
+            ).total_seconds()
             if age > 55 * 60:
                 need_update = True
         if force_refresh or need_update:
@@ -1409,75 +1632,81 @@ async def get_current_exchange_rates(force_refresh: bool = False):
             return ExchangeRateResponse(
                 success=True,
                 message=f"Current exchange rates (cached) retrieved successfully. {len(cached['data'])} currencies",
-                data=cached["data"]
+                data=cached["data"],
             ).dict()
         return ExchangeRateResponse(
             success=False,
             message="Could not retrieve current exchange rates",
-            data=None
+            data=None,
         ).dict()
-    
+
     except Exception as e:
         logger.error(f"Error getting current exchange rates: {e}")
         return ExchangeRateResponse(
-            success=False,
-            message=f"Internal error: {str(e)}",
-            data=None
+            success=False, message=f"Internal error: {str(e)}", data=None
         ).dict()
 
+
 @app.get(ENDPOINT_EXCHANGE_RATE_BY_DATE, tags=[TAG_EXCHANGE])
-async def get_exchange_rates_by_date(date: date, currency: Optional[str] = None, db: Session = Depends(get_db)):
+async def get_exchange_rates_by_date(
+    date: date, currency: Optional[str] = None, db: Session = Depends(get_db)
+):
     """Obtener cotizaciones por fecha especifica (busca fecha mas cercana si no existe)."""
     try:
         service = ExchangeRateService(db)
         exchange_rates = service.get_exchange_rate_by_date(date, currency)
-        
+
         if exchange_rates:
             return ExchangeRateResponse(
                 success=True,
                 message=MSG_EXCHANGE_RATE_DATE_SUCCESS.format(date=date),
-                data=[rate.dict() for rate in exchange_rates]
+                data=[rate.dict() for rate in exchange_rates],
             ).dict()
         else:
             return ExchangeRateResponse(
-                success=False,
-                message=MSG_NO_EXCHANGE_RATE_DATE_DATA.format(date=date)
+                success=False, message=MSG_NO_EXCHANGE_RATE_DATE_DATA.format(date=date)
             ).dict()
-    
+
     except Exception as e:
         logger.error(f"Error getting exchange rates by date {date}: {e}")
         raise HTTPException(status_code=HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
+
 @app.get(ENDPOINT_EXCHANGE_RATE_BY_DATE_CURRENCY, tags=[TAG_EXCHANGE])
-async def get_exchange_rate_by_date_and_currency(date: date, currency: str, db: Session = Depends(get_db)):
+async def get_exchange_rate_by_date_and_currency(
+    date: date, currency: str, db: Session = Depends(get_db)
+):
     """Obtener cotizacion especifica (fecha + moneda)."""
     try:
         if currency.upper() not in VALID_CURRENCY_CODES:
             raise HTTPException(
                 status_code=HTTP_400_BAD_REQUEST,
-                detail=f"Invalid currency code. Supported currencies: {', '.join(VALID_CURRENCY_CODES)}"
+                detail=f"Invalid currency code. Supported currencies: {', '.join(VALID_CURRENCY_CODES)}",
             )
-        
+
         service = ExchangeRateService(db)
         exchange_rate = service.get_exchange_rate_closest_to_date(date, currency)
-        
+
         if exchange_rate:
             return ExchangeRateResponse(
                 success=True,
                 message=f"Exchange rate for {currency.upper()} on {date} retrieved successfully",
-                data=exchange_rate.dict()
+                data=exchange_rate.dict(),
             ).dict()
         else:
             raise HTTPException(
                 status_code=HTTP_404_NOT_FOUND,
-                detail=f"No exchange rate data found for {currency.upper()} on {date} or previous dates"
+                detail=f"No exchange rate data found for {currency.upper()} on {date} or previous dates",
             )
-    
+
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error getting exchange rate by date {date} and currency {currency}: {e}")
+        logger.error(
+            f"Error getting exchange rate by date {date} and currency {currency}: {e}"
+        )
         raise HTTPException(status_code=HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+
 
 @app.get("/api/brou/current", tags=["BROU"])
 async def get_current_brou_rates(force_refresh: bool = False, full: bool = False):
@@ -1495,78 +1724,103 @@ async def get_current_brou_rates(force_refresh: bool = False, full: bool = False
         if not cached:
             need_update = True
         else:
-            age = (datetime.utcnow() - cached.get("updated_at", datetime.utcnow())).total_seconds()
+            age = (
+                datetime.utcnow() - cached.get("updated_at", datetime.utcnow())
+            ).total_seconds()
             if age > 55 * 60:
                 need_update = True
         if force_refresh or need_update:
             _update_brou_cache()
             with _cache_lock:
                 if brou_cache is None:  # mocked case
-                    brou_cache = {"data": [], "updated_at": datetime.utcnow(), "source": "BROU_SAMPLE"}
+                    brou_cache = {
+                        "data": [],
+                        "updated_at": datetime.utcnow(),
+                        "source": "BROU_SAMPLE",
+                    }
                 cached = brou_cache
 
         data_list = cached["data"] if cached else []
         source = cached.get("source", "BROU") if cached else "UNKNOWN"
         source_type = cached.get("source_type", "unknown") if cached else "unknown"
-        
+
         if full:
             # Calcular edad de los datos
             data_age = None
             if cached and cached.get("updated_at"):
-                data_age = (datetime.utcnow() - cached["updated_at"]).total_seconds() / 60  # en minutos
+                data_age = (
+                    datetime.utcnow() - cached["updated_at"]
+                ).total_seconds() / 60  # en minutos
 
             # Información de estado para el frontend
             status_info = {
                 "live": {
                     "label": "Datos en vivo",
                     "color": "green",
-                    "description": "Cotizaciones obtenidas directamente del BROU"
+                    "description": "Cotizaciones obtenidas directamente del BROU",
                 },
                 "persisted": {
                     "label": "Datos históricos",
-                    "color": "yellow", 
-                    "description": "Cotizaciones almacenadas de consultas anteriores"
+                    "color": "yellow",
+                    "description": "Cotizaciones almacenadas de consultas anteriores",
                 },
                 "sample": {
                     "label": "Datos de muestra",
                     "color": "red",
-                    "description": "Datos de ejemplo - API no disponible"
-                }
+                    "description": "Datos de ejemplo - API no disponible",
+                },
             }
-            
-            current_status = status_info.get(source_type, {
-                "label": "Estado desconocido",
-                "color": "gray",
-                "description": "No se pudo determinar el estado de los datos"
-            })
+
+            current_status = status_info.get(
+                source_type,
+                {
+                    "label": "Estado desconocido",
+                    "color": "gray",
+                    "description": "No se pudo determinar el estado de los datos",
+                },
+            )
 
             return {
                 "success": True if data_list else False,
-                "message": f"Cotizaciones BROU obtenidas ({len(data_list)} monedas)" if data_list else "Sin datos BROU",
+                "message": f"Cotizaciones BROU obtenidas ({len(data_list)} monedas)"
+                if data_list
+                else "Sin datos BROU",
                 "data": data_list,
                 "source": source,
                 "source_type": source_type,
                 "status": current_status,
-                "timestamp": cached.get("updated_at").isoformat() if cached and cached.get("updated_at") else None,
-                "data_age_minutes": round(data_age, 1) if data_age is not None else None,
-                "is_fresh": data_age is not None and data_age < 60,  # Consideramos frescos datos de menos de 1 hora
+                "timestamp": cached.get("updated_at").isoformat()
+                if cached and cached.get("updated_at")
+                else None,
+                "data_age_minutes": round(data_age, 1)
+                if data_age is not None
+                else None,
+                "is_fresh": data_age is not None
+                and data_age < 60,  # Consideramos frescos datos de menos de 1 hora
                 "frontend_display": {
                     "status_label": current_status["label"],
                     "status_color": current_status["color"],
-                    "warning_message": current_status["description"] if source_type in ["persisted", "sample"] else None
-                }
+                    "warning_message": current_status["description"]
+                    if source_type in ["persisted", "sample"]
+                    else None,
+                },
             }
         return data_list
     except Exception as e:
         logger.error(f"Error getting current BROU rates: {e}")
         if full:
-            return {"success": False, "message": f"Error interno: {str(e)}", "data": None}
+            return {
+                "success": False,
+                "message": f"Error interno: {str(e)}",
+                "data": None,
+            }
         return []
 
 
 # =============================================================================
 # METRICS ENDPOINTS
 # =============================================================================
+
 
 @app.get("/api/metrics", tags=["Sistema"])
 async def get_comprehensive_metrics():
@@ -1584,6 +1838,7 @@ async def get_health_metrics():
 # DASHBOARD ENDPOINTS
 # =============================================================================
 
+
 @app.get("/api/dashboard", tags=["Sistema"])
 async def get_dashboard():
     """Obtener dashboard completo con métricas, alertas y estado del sistema."""
@@ -1599,6 +1854,7 @@ async def get_dashboard_summary():
 # =============================================================================
 # ALERTS ENDPOINTS
 # =============================================================================
+
 
 @app.get("/api/alerts", tags=["Sistema"])
 async def get_alerts():
@@ -1640,6 +1896,7 @@ async def resolve_alert(alert_id: str):
 # PERFORMANCE BUDGET ENDPOINTS
 # =============================================================================
 
+
 @app.get("/api/performance/budgets", tags=["Sistema"])
 async def get_performance_budgets():
     """Obtener todos los budgets de performance configurados."""
@@ -1650,20 +1907,23 @@ async def get_performance_budgets():
                 "budgets": {},
                 "total_count": 0,
                 "description": "Performance budgets not available - service temporarily disabled",
-                "status": "service_unavailable"
+                "status": "service_unavailable",
             }
 
         # Try to get budgets with a reasonable timeout
         import asyncio
+
         try:
             budgets = await asyncio.wait_for(
-                asyncio.get_event_loop().run_in_executor(None, performance_budget_manager.get_all_budgets),
-                timeout=15.0  # Increased from 5.0 to 15.0 seconds
+                asyncio.get_event_loop().run_in_executor(
+                    None, performance_budget_manager.get_all_budgets
+                ),
+                timeout=15.0,  # Increased from 5.0 to 15.0 seconds
             )
             return {
                 "budgets": budgets,
                 "total_count": len(budgets),
-                "description": "Performance budgets based on roadmap targets (Latency <200ms, Throughput >1000 req/min)"
+                "description": "Performance budgets based on roadmap targets (Latency <200ms, Throughput >1000 req/min)",
             }
         except asyncio.TimeoutError:
             # If timeout, return simple response
@@ -1671,7 +1931,7 @@ async def get_performance_budgets():
                 "budgets": {},
                 "total_count": 0,
                 "description": "Performance budgets request timed out - using fallback values",
-                "status": "timeout_fallback"
+                "status": "timeout_fallback",
             }
     except Exception as e:
         logger.error(f"Error getting performance budgets: {e}")
@@ -1679,7 +1939,7 @@ async def get_performance_budgets():
             "budgets": {},
             "total_count": 0,
             "description": "Error retrieving performance budgets",
-            "error": str(e)
+            "error": str(e),
         }
 
 
@@ -1693,21 +1953,24 @@ async def get_performance_budgets_status():
                 "budget_status": {},
                 "timestamp": datetime.utcnow().isoformat(),
                 "description": "Performance budget service not available",
-                "message": "Performance monitoring is disabled"
+                "message": "Performance monitoring is disabled",
             }
-        
+
         # Try to get budget status with a longer timeout
         import asyncio
+
         try:
             # Create a task with longer timeout
             status = await asyncio.wait_for(
-                asyncio.get_event_loop().run_in_executor(None, performance_budget_manager.get_budget_status),
-                timeout=30.0  # Increased from 10.0 to 30.0 seconds
+                asyncio.get_event_loop().run_in_executor(
+                    None, performance_budget_manager.get_budget_status
+                ),
+                timeout=30.0,  # Increased from 10.0 to 30.0 seconds
             )
             return {
                 "budget_status": status,
                 "timestamp": datetime.utcnow().isoformat(),
-                "description": "Current performance budget status with health indicators"
+                "description": "Current performance budget status with health indicators",
             }
         except asyncio.TimeoutError:
             # If it times out, return a simple status with fallback values
@@ -1721,12 +1984,12 @@ async def get_performance_budgets_status():
                         "warning_threshold": 0,
                         "critical_threshold": 0,
                         "status": "unknown",
-                        "description": "Request timed out - using fallback values"
+                        "description": "Request timed out - using fallback values",
                     }
                 },
                 "timestamp": datetime.utcnow().isoformat(),
                 "description": "Performance budget status request timed out",
-                "message": "Using fallback values due to timeout"
+                "message": "Using fallback values due to timeout",
             }
     except Exception as e:
         logger.error(f"Error getting performance budget status: {e}")
@@ -1734,7 +1997,7 @@ async def get_performance_budgets_status():
             "budget_status": {},
             "timestamp": datetime.utcnow().isoformat(),
             "description": "Error retrieving performance budget status",
-            "error": str(e)
+            "error": str(e),
         }
 
 
@@ -1750,19 +2013,23 @@ async def get_throughput_metrics():
                     "requests_per_hour": 0,
                     "peak_rpm": 0,
                     "current_window_requests": 0,
-                    "window_start": datetime.utcnow().isoformat()
+                    "window_start": datetime.utcnow().isoformat(),
                 },
                 "timestamp": datetime.utcnow().isoformat(),
                 "description": "Throughput metrics not available - service temporarily disabled",
-                "status": "service_unavailable"
+                "status": "service_unavailable",
             }
 
         # Try to get throughput metrics with a reasonable timeout
         import asyncio
+
         try:
             throughput = await asyncio.wait_for(
-                asyncio.get_event_loop().run_in_executor(None, lambda: performance_budget_manager.get_throughput_metrics("global")),
-                timeout=15.0  # Increased from 5.0 to 15.0 seconds
+                asyncio.get_event_loop().run_in_executor(
+                    None,
+                    lambda: performance_budget_manager.get_throughput_metrics("global"),
+                ),
+                timeout=15.0,  # Increased from 5.0 to 15.0 seconds
             )
             # Enrich with simple application metrics for UI tiles
             try:
@@ -1778,7 +2045,11 @@ async def get_throughput_metrics():
                 # Availability proxy from error rate (100 - error%)
                 availability_pct = None
                 try:
-                    availability_pct = max(0.0, 100.0 - float(err_pct)) if err_pct is not None else None
+                    availability_pct = (
+                        max(0.0, 100.0 - float(err_pct))
+                        if err_pct is not None
+                        else None
+                    )
                 except Exception:
                     availability_pct = None
 
@@ -1794,7 +2065,7 @@ async def get_throughput_metrics():
             return {
                 "throughput": extended,
                 "timestamp": datetime.utcnow().isoformat(),
-                "description": "Current request throughput metrics (requests per minute/hour)"
+                "description": "Current request throughput metrics (requests per minute/hour)",
             }
         except asyncio.TimeoutError:
             # If timeout, return simple response
@@ -1808,11 +2079,11 @@ async def get_throughput_metrics():
                     "avg_response_time_ms": None,
                     "error_rate_percent": None,
                     "uptime_seconds": None,
-                    "uptime_percent": None
+                    "uptime_percent": None,
                 },
                 "timestamp": datetime.utcnow().isoformat(),
                 "description": "Throughput metrics request timed out - using fallback values",
-                "status": "timeout_fallback"
+                "status": "timeout_fallback",
             }
     except Exception as e:
         logger.error(f"Error getting throughput metrics: {e}")
@@ -1826,11 +2097,11 @@ async def get_throughput_metrics():
                 "avg_response_time_ms": None,
                 "error_rate_percent": None,
                 "uptime_seconds": None,
-                "uptime_percent": None
+                "uptime_percent": None,
             },
             "timestamp": datetime.utcnow().isoformat(),
             "description": "Error retrieving throughput metrics",
-            "error": str(e)
+            "error": str(e),
         }
 
 
@@ -1840,20 +2111,27 @@ async def enable_performance_monitoring():
     global performance_budget_manager
     try:
         if performance_budget_manager is None:
-            raise HTTPException(status_code=503, detail="Performance budget service not available")
+            raise HTTPException(
+                status_code=503, detail="Performance budget service not available"
+            )
 
         # Re-initialize with monitoring and alerts enabled
         from performance_budget import get_performance_budget_manager
-        performance_budget_manager = get_performance_budget_manager(enable_monitoring=True, enable_alerts=True)
+
+        performance_budget_manager = get_performance_budget_manager(
+            enable_monitoring=True, enable_alerts=True
+        )
 
         return {
             "message": "Performance monitoring and alerts enabled successfully",
             "status": "enabled",
-            "budgets_count": len(performance_budget_manager.get_all_budgets())
+            "budgets_count": len(performance_budget_manager.get_all_budgets()),
         }
     except Exception as e:
         logger.error(f"Error enabling performance monitoring: {e}")
-        raise HTTPException(status_code=500, detail=f"Error enabling performance monitoring: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Error enabling performance monitoring: {str(e)}"
+        )
 
 
 @app.get("/api/performance/status", tags=["Sistema"])
@@ -1865,18 +2143,21 @@ async def get_performance_service_status():
                 "status": "unavailable",
                 "message": "Performance budget service not initialized",
                 "monitoring_enabled": False,
-                "alerts_enabled": False
+                "alerts_enabled": False,
             }
 
         # Check if monitoring is enabled by checking if the monitoring thread exists
-        monitoring_enabled = hasattr(performance_budget_manager, '_monitoring_thread') and performance_budget_manager._monitoring_thread.is_alive()
+        monitoring_enabled = (
+            hasattr(performance_budget_manager, "_monitoring_thread")
+            and performance_budget_manager._monitoring_thread.is_alive()
+        )
 
         return {
             "status": "available",
             "message": "Performance budget service is running",
             "monitoring_enabled": monitoring_enabled,
             "alerts_enabled": True,  # We assume alerts are enabled if service is available
-            "budgets_count": len(performance_budget_manager.get_all_budgets())
+            "budgets_count": len(performance_budget_manager.get_all_budgets()),
         }
     except Exception as e:
         logger.error(f"Error getting performance service status: {e}")
@@ -1884,13 +2165,14 @@ async def get_performance_service_status():
             "status": "error",
             "message": f"Error checking service status: {str(e)}",
             "monitoring_enabled": False,
-            "alerts_enabled": False
+            "alerts_enabled": False,
         }
 
 
 # =============================================================================
 # ADVANCED HEALTH CHECK ENDPOINTS
 # =============================================================================
+
 
 @app.get("/api/health/advanced", tags=["Sistema"])
 async def get_advanced_health_endpoint(force_refresh: bool = False):
@@ -1921,6 +2203,7 @@ async def get_simple_health_endpoint():
 # CIRCUIT BREAKER ENDPOINTS
 # =============================================================================
 
+
 @app.get("/api/circuit-breakers", tags=["Sistema"])
 async def get_circuit_breakers_status():
     """Obtener estado de todos los circuit breakers."""
@@ -1937,13 +2220,17 @@ async def get_circuit_breakers_status():
             "circuit_breakers": status,
             "total_count": len(status),
             "open_count": sum(1 for cb in status.values() if cb["state"] == "open"),
-            "half_open_count": sum(1 for cb in status.values() if cb["state"] == "half_open"),
-            "closed_count": sum(1 for cb in status.values() if cb["state"] == "closed")
+            "half_open_count": sum(
+                1 for cb in status.values() if cb["state"] == "half_open"
+            ),
+            "closed_count": sum(1 for cb in status.values() if cb["state"] == "closed"),
         }
 
     except Exception as e:
         logger.error(f"Error getting circuit breaker status: {e}")
-        raise HTTPException(status_code=500, detail=f"Error retrieving circuit breaker status: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Error retrieving circuit breaker status: {str(e)}"
+        )
 
 
 @app.get("/api/circuit-breakers/{name}", tags=["Sistema"])
@@ -1952,7 +2239,9 @@ async def get_circuit_breaker_status_endpoint(name: str):
     try:
         status = get_circuit_breaker_status(name)
         if status is None:
-            raise HTTPException(status_code=404, detail=f"Circuit breaker '{name}' not found")
+            raise HTTPException(
+                status_code=404, detail=f"Circuit breaker '{name}' not found"
+            )
 
         return status
 
@@ -1960,7 +2249,9 @@ async def get_circuit_breaker_status_endpoint(name: str):
         raise
     except Exception as e:
         logger.error(f"Error getting circuit breaker status for {name}: {e}")
-        raise HTTPException(status_code=500, detail=f"Error retrieving circuit breaker status: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Error retrieving circuit breaker status: {str(e)}"
+        )
 
 
 @app.post("/api/circuit-breakers/{name}/reset", tags=["Sistema"])
@@ -1969,20 +2260,24 @@ async def reset_circuit_breaker_endpoint(name: str):
     try:
         success = reset_circuit_breaker(name)
         if not success:
-            raise HTTPException(status_code=404, detail=f"Circuit breaker '{name}' not found")
+            raise HTTPException(
+                status_code=404, detail=f"Circuit breaker '{name}' not found"
+            )
 
         logger.info(f"Circuit breaker '{name}' reset by API call")
         return {
             "message": f"Circuit breaker '{name}' has been reset to closed state",
             "circuit_breaker": name,
-            "action": "reset"
+            "action": "reset",
         }
 
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Error resetting circuit breaker {name}: {e}")
-        raise HTTPException(status_code=500, detail=f"Error resetting circuit breaker: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Error resetting circuit breaker: {str(e)}"
+        )
 
 
 # -----------------------------------------------------------------------------
@@ -1990,4 +2285,5 @@ async def reset_circuit_breaker_endpoint(name: str):
 # -----------------------------------------------------------------------------
 if __name__ == "__main__":  # pragma: no cover (explicitly exercised in tests)
     import uvicorn  # local import to avoid mandatory dependency at import time
+
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)

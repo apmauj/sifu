@@ -3,9 +3,11 @@
 Security validation script for SIFU API
 Tests input validation, sanitization, and security measures
 """
+
 import requests
 import time
 from typing import Dict
+
 
 class SecurityTester:
     """Test security measures of the SIFU API"""
@@ -32,7 +34,12 @@ class SecurityTester:
             try:
                 response = self.session.post(
                     f"{self.base_url}/api/ur/range",
-                    json={"start_year": payload, "start_month": 1, "end_year": 2024, "end_month": 12}
+                    json={
+                        "start_year": payload,
+                        "start_month": 1,
+                        "end_year": 2024,
+                        "end_month": 12,
+                    },
                 )
                 # Check if payload was sanitized/escaped
                 if payload in response.text:
@@ -69,7 +76,9 @@ class SecurityTester:
                         url = f"{self.base_url}{endpoint_template.format(payload)}"
                         response = self.session.get(url)
                     else:
-                        response = self.session.get(f"{self.base_url}{endpoint_template}", params={"q": payload})
+                        response = self.session.get(
+                            f"{self.base_url}{endpoint_template}", params={"q": payload}
+                        )
 
                     # Check if injection succeeded (would return error or unexpected data)
                     if response.status_code in [400, 422, 500]:
@@ -138,7 +147,9 @@ class SecurityTester:
 
         # Test invalid currency codes
         try:
-            response = self.session.get(f"{self.base_url}/api/exchange-rate/currency/INVALID")
+            response = self.session.get(
+                f"{self.base_url}/api/exchange-rate/currency/INVALID"
+            )
             if response.status_code == 400:
                 results["Currency Validation"] = True
             else:
@@ -150,7 +161,12 @@ class SecurityTester:
         try:
             response = self.session.post(
                 f"{self.base_url}/api/ur/range",
-                json={"start_year": 2024, "start_month": 13, "end_year": 2024, "end_month": 12}
+                json={
+                    "start_year": 2024,
+                    "start_month": 13,
+                    "end_year": 2024,
+                    "end_month": 12,
+                },
             )
             if response.status_code in [400, 422]:
                 results["Month Validation"] = True
@@ -173,8 +189,8 @@ class SecurityTester:
                 f"{self.base_url}/api/health",
                 headers={
                     "Origin": "https://malicious-site.com",
-                    "Access-Control-Request-Method": "GET"
-                }
+                    "Access-Control-Request-Method": "GET",
+                },
             )
 
             cors_headers = {
@@ -213,9 +229,9 @@ class SecurityTester:
 
     def print_report(self, results: Dict[str, Dict]):
         """Print test results report"""
-        print("\n" + "="*60)
+        print("\n" + "=" * 60)
         print("SECURITY TEST REPORT")
-        print("="*60)
+        print("=" * 60)
 
         total_tests = 0
         passed_tests = 0
@@ -243,7 +259,8 @@ class SecurityTester:
             print("🎉 All security tests passed!")
         else:
             print("⚠️  Some security issues detected. Review failed tests.")
-        print("="*60)
+        print("=" * 60)
+
 
 def main():
     """Main function"""
@@ -257,6 +274,7 @@ def main():
     tester = SecurityTester(base_url)
     results = tester.run_all_tests()
     tester.print_report(results)
+
 
 if __name__ == "__main__":
     main()

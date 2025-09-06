@@ -11,6 +11,7 @@ Usage:
   python scripts/check_messages.py
 Optionally set MIN_LEN or MIN_COUNT env vars.
 """
+
 from __future__ import annotations
 import ast
 import os
@@ -32,8 +33,12 @@ if constants_module.exists():
         tree = ast.parse(constants_module.read_text(encoding="utf-8"))
         for node in tree.body:
             if isinstance(node, ast.Assign):
-                if all(isinstance(t, ast.Name) and t.id.isupper() for t in node.targets):
-                    if isinstance(node.value, ast.Constant) and isinstance(node.value.value, str):
+                if all(
+                    isinstance(t, ast.Name) and t.id.isupper() for t in node.targets
+                ):
+                    if isinstance(node.value, ast.Constant) and isinstance(
+                        node.value.value, str
+                    ):
                         constant_values.add(node.value.value)
     except Exception:  # pragma: no cover
         pass
@@ -46,7 +51,7 @@ for py_file in PROJECT_ROOT.rglob("*.py"):
     # Skip allowed (whitelisted) files and excluded directories / hidden folders
     if rel.name in ALLOWED_FILES:
         continue
-    if any(part in EXCLUDE_DIRS or part.startswith('.') for part in rel.parts):
+    if any(part in EXCLUDE_DIRS or part.startswith(".") for part in rel.parts):
         continue
     try:
         tree = ast.parse(py_file.read_text(encoding="utf-8"))
@@ -60,11 +65,15 @@ for py_file in PROJECT_ROOT.rglob("*.py"):
             if s in constant_values:
                 continue
             string_counter[s] += 1
-            string_locations.setdefault(s, []).append(f"{rel}:{getattr(node, 'lineno', '?')}")
+            string_locations.setdefault(s, []).append(
+                f"{rel}:{getattr(node, 'lineno', '?')}"
+            )
 
 problems = [s for s, c in string_counter.items() if c >= MIN_COUNT]
 if problems:
-    print("Hard-coded repeated message literals found (consider extracting to constants):")
+    print(
+        "Hard-coded repeated message literals found (consider extracting to constants):"
+    )
     for s in sorted(problems):
         print(f"- '{s}' (count={string_counter[s]})")
         for loc in string_locations[s]:

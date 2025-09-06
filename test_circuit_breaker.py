@@ -9,7 +9,12 @@ for protecting external API calls.
 
 import time
 import requests
-from circuit_breaker import get_circuit_breaker, get_all_circuit_breakers, CircuitBreakerOpenException
+from circuit_breaker import (
+    get_circuit_breaker,
+    get_all_circuit_breakers,
+    CircuitBreakerOpenException,
+)
+
 
 def test_circuit_breaker_basic():
     """Test basic circuit breaker functionality"""
@@ -38,6 +43,7 @@ def test_circuit_breaker_basic():
 
     print()
 
+
 def test_circuit_breaker_failure():
     """Test circuit breaker failure handling"""
     print("🧪 Testing Circuit Breaker Failure Handling")
@@ -45,11 +51,12 @@ def test_circuit_breaker_failure():
 
     # Create a test circuit breaker with low threshold
     from circuit_breaker import CircuitBreakerConfig
+
     test_config = CircuitBreakerConfig(
         name="TEST_FAILURE_API",
         failure_threshold=2,  # Open after 2 failures
-        recovery_timeout=5,   # Quick recovery for testing
-        success_threshold=1
+        recovery_timeout=5,  # Quick recovery for testing
+        success_threshold=1,
     )
     cb = get_circuit_breaker("TEST_FAILURE_API", test_config)
 
@@ -89,6 +96,7 @@ def test_circuit_breaker_failure():
 
     print()
 
+
 def test_all_circuit_breakers():
     """Test getting status of all circuit breakers"""
     print("🧪 Testing Circuit Breaker Registry")
@@ -107,6 +115,7 @@ def test_all_circuit_breakers():
 
     print()
 
+
 def main():
     """Run all circuit breaker tests"""
     print("🚀 Circuit Breaker Test Suite")
@@ -119,6 +128,7 @@ def main():
 
     print("🎉 Circuit Breaker Tests Completed!")
     print("=" * 60)
+
 
 if __name__ == "__main__":
     main()

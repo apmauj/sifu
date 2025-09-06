@@ -3,6 +3,7 @@
 Detects empty tables (UI, UR, ExchangeRate) and performs initial load.
 Returns a structured summary for logging and tests.
 """
+
 from __future__ import annotations
 
 from typing import Dict, Any
@@ -34,7 +35,9 @@ def perform_bootstrap(
     """
     excel_processor = excel_processor or ExcelProcessor()
     ur_excel_processor = ur_excel_processor or URExcelProcessor()
-    exchange_rate_excel_processor = exchange_rate_excel_processor or ExchangeRateExcelProcessor()
+    exchange_rate_excel_processor = (
+        exchange_rate_excel_processor or ExchangeRateExcelProcessor()
+    )
 
     summary: Dict[str, Any] = {"ui": {}, "ur": {}, "exchange": {}}
 
@@ -46,11 +49,21 @@ def perform_bootstrap(
             db = SessionLocal()
             try:
                 success, message, processed = excel_processor.refresh_data(db)
-                summary["ui"] = {"attempted": True, "success": success, "message": message, "processed": processed}
+                summary["ui"] = {
+                    "attempted": True,
+                    "success": success,
+                    "message": message,
+                    "processed": processed,
+                }
             finally:
                 db.close()
         else:
-            summary["ui"] = {"attempted": False, "success": True, "message": "present", "count": ui_count}
+            summary["ui"] = {
+                "attempted": False,
+                "success": True,
+                "message": "present",
+                "count": ui_count,
+            }
     except Exception as e:  # noqa: BLE001
         logger.error("[Bootstrap] UI failure: %s", e)
         summary["ui"] = {"attempted": True, "success": False, "error": str(e)}
@@ -63,11 +76,21 @@ def perform_bootstrap(
             db = SessionLocal()
             try:
                 success, message, processed = ur_excel_processor.refresh_data(db)
-                summary["ur"] = {"attempted": True, "success": success, "message": message, "processed": processed}
+                summary["ur"] = {
+                    "attempted": True,
+                    "success": success,
+                    "message": message,
+                    "processed": processed,
+                }
             finally:
                 db.close()
         else:
-            summary["ur"] = {"attempted": False, "success": True, "message": "present", "count": ur_count}
+            summary["ur"] = {
+                "attempted": False,
+                "success": True,
+                "message": "present",
+                "count": ur_count,
+            }
     except Exception as e:  # noqa: BLE001
         logger.error("[Bootstrap] UR failure: %s", e)
         summary["ur"] = {"attempted": True, "success": False, "error": str(e)}
@@ -76,15 +99,31 @@ def perform_bootstrap(
     try:
         exch_count = get_exchange_rate_table_record_count()
         if exch_count == 0 or force:
-            logger.info("[Bootstrap] ExchangeRate: loading (count=%s force=%s)", exch_count, force)
+            logger.info(
+                "[Bootstrap] ExchangeRate: loading (count=%s force=%s)",
+                exch_count,
+                force,
+            )
             db = SessionLocal()
             try:
-                success, message, processed = exchange_rate_excel_processor.refresh_data(db)
-                summary["exchange"] = {"attempted": True, "success": success, "message": message, "processed": processed}
+                success, message, processed = (
+                    exchange_rate_excel_processor.refresh_data(db)
+                )
+                summary["exchange"] = {
+                    "attempted": True,
+                    "success": success,
+                    "message": message,
+                    "processed": processed,
+                }
             finally:
                 db.close()
         else:
-            summary["exchange"] = {"attempted": False, "success": True, "message": "present", "count": exch_count}
+            summary["exchange"] = {
+                "attempted": False,
+                "success": True,
+                "message": "present",
+                "count": exch_count,
+            }
     except Exception as e:  # noqa: BLE001
         logger.error("[Bootstrap] Exchange failure: %s", e)
         summary["exchange"] = {"attempted": True, "success": False, "error": str(e)}

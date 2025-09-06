@@ -2,6 +2,7 @@
 Alert system for SIFU application
 Provides comprehensive alerting for metrics, security, and system health
 """
+
 import time
 import threading
 from datetime import datetime
@@ -15,6 +16,7 @@ from metrics import metrics_collector
 
 class AlertSeverity(Enum):
     """Alert severity levels"""
+
     LOW = "low"
     MEDIUM = "medium"
     HIGH = "high"
@@ -23,6 +25,7 @@ class AlertSeverity(Enum):
 
 class AlertStatus(Enum):
     """Alert status"""
+
     ACTIVE = "active"
     RESOLVED = "resolved"
     ACKNOWLEDGED = "acknowledged"
@@ -31,6 +34,7 @@ class AlertStatus(Enum):
 @dataclass
 class Alert:
     """Alert data structure"""
+
     id: str
     title: str
     description: str
@@ -48,6 +52,7 @@ class Alert:
 @dataclass
 class AlertRule:
     """Alert rule configuration"""
+
     name: str
     description: str
     condition: Callable[[], bool]
@@ -72,58 +77,70 @@ class AlertManager:
         self._setup_default_rules()
 
         # Start background monitoring
-        self._monitoring_thread = threading.Thread(target=self._monitor_loop, daemon=True)
+        self._monitoring_thread = threading.Thread(
+            target=self._monitor_loop, daemon=True
+        )
         self._monitoring_thread.start()
 
     def _setup_default_rules(self):
         """Setup default alert rules"""
 
         # Performance alerts
-        self.add_rule(AlertRule(
-            name="high_error_rate",
-            description="Error rate above 20%",
-            condition=self._check_high_error_rate,
-            severity=AlertSeverity.HIGH,
-            cooldown_minutes=10,
-            tags={"category": "performance", "metric": "error_rate"}
-        ))
+        self.add_rule(
+            AlertRule(
+                name="high_error_rate",
+                description="Error rate above 20%",
+                condition=self._check_high_error_rate,
+                severity=AlertSeverity.HIGH,
+                cooldown_minutes=10,
+                tags={"category": "performance", "metric": "error_rate"},
+            )
+        )
 
-        self.add_rule(AlertRule(
-            name="critical_error_rate",
-            description="Error rate above 50%",
-            condition=self._check_critical_error_rate,
-            severity=AlertSeverity.CRITICAL,
-            cooldown_minutes=5,
-            tags={"category": "performance", "metric": "error_rate"}
-        ))
+        self.add_rule(
+            AlertRule(
+                name="critical_error_rate",
+                description="Error rate above 50%",
+                condition=self._check_critical_error_rate,
+                severity=AlertSeverity.CRITICAL,
+                cooldown_minutes=5,
+                tags={"category": "performance", "metric": "error_rate"},
+            )
+        )
 
-        self.add_rule(AlertRule(
-            name="high_latency",
-            description="Average response time above 500ms",
-            condition=self._check_high_latency,
-            severity=AlertSeverity.MEDIUM,
-            cooldown_minutes=15,
-            tags={"category": "performance", "metric": "latency"}
-        ))
+        self.add_rule(
+            AlertRule(
+                name="high_latency",
+                description="Average response time above 500ms",
+                condition=self._check_high_latency,
+                severity=AlertSeverity.MEDIUM,
+                cooldown_minutes=15,
+                tags={"category": "performance", "metric": "latency"},
+            )
+        )
 
-        self.add_rule(AlertRule(
-            name="no_recent_requests",
-            description="No requests in the last 5 minutes",
-            condition=self._check_no_recent_requests,
-            severity=AlertSeverity.MEDIUM,
-            cooldown_minutes=5,
-            tags={"category": "availability", "metric": "requests"}
-        ))
+        self.add_rule(
+            AlertRule(
+                name="no_recent_requests",
+                description="No requests in the last 5 minutes",
+                condition=self._check_no_recent_requests,
+                severity=AlertSeverity.MEDIUM,
+                cooldown_minutes=5,
+                tags={"category": "availability", "metric": "requests"},
+            )
+        )
 
         # System alerts
-        self.add_rule(AlertRule(
-            name="endpoint_high_error_rate",
-            description="Specific endpoint has error rate above 30%",
-            condition=self._check_endpoint_high_error_rate,
-            severity=AlertSeverity.HIGH,
-            cooldown_minutes=10,
-            tags={"category": "performance", "metric": "endpoint_error_rate"}
-        ))
+        self.add_rule(
+            AlertRule(
+                name="endpoint_high_error_rate",
+                description="Specific endpoint has error rate above 30%",
+                condition=self._check_endpoint_high_error_rate,
+                severity=AlertSeverity.HIGH,
+                cooldown_minutes=10,
+                tags={"category": "performance", "metric": "endpoint_error_rate"},
+            )
+        )
 
     def add_rule(self, rule: AlertRule):
         """Add an alert rule"""
@@ -154,14 +171,16 @@ class AlertManager:
             source=rule.name,
             created_at=now,
             updated_at=now,
-            tags=rule.tags.copy()
+            tags=rule.tags.copy(),
         )
 
         with self._lock:
             self._alerts[alert_id] = alert
             self._last_check[rule.name] = now
 
-        self.logger.warning(f"Alert created: {alert.title} (Severity: {alert.severity.value})")
+        self.logger.warning(
+            f"Alert created: {alert.title} (Severity: {alert.severity.value})"
+        )
         return alert
 
     def _resolve_alert(self, alert_id: str):
@@ -192,7 +211,9 @@ class AlertManager:
 
             # Check cooldown
             last_check = self._last_check.get(rule.name)
-            if last_check and (datetime.utcnow() - last_check).seconds < (rule.cooldown_minutes * 60):
+            if last_check and (datetime.utcnow() - last_check).seconds < (
+                rule.cooldown_minutes * 60
+            ):
                 continue
 
             try:
@@ -260,7 +281,7 @@ class AlertManager:
                     "created_at": alert.created_at.isoformat(),
                     "updated_at": alert.updated_at.isoformat(),
                     "tags": alert.tags,
-                    "metadata": alert.metadata
+                    "metadata": alert.metadata,
                 }
                 for alert in self._alerts.values()
                 if alert.status == AlertStatus.ACTIVE
@@ -282,9 +303,11 @@ class AlertManager:
                     "source": alert.source,
                     "created_at": alert.created_at.isoformat(),
                     "updated_at": alert.updated_at.isoformat(),
-                    "resolved_at": alert.resolved_at.isoformat() if alert.resolved_at else None,
+                    "resolved_at": alert.resolved_at.isoformat()
+                    if alert.resolved_at
+                    else None,
                     "tags": alert.tags,
-                    "metadata": alert.metadata
+                    "metadata": alert.metadata,
                 }
                 for alert in alerts[:limit]
             ]
@@ -312,11 +335,21 @@ class AlertManager:
     def get_alert_summary(self) -> Dict[str, Any]:
         """Get alert summary statistics"""
         with self._lock:
-            active_alerts = [a for a in self._alerts.values() if a.status == AlertStatus.ACTIVE]
-            critical_count = len([a for a in active_alerts if a.severity == AlertSeverity.CRITICAL])
-            high_count = len([a for a in active_alerts if a.severity == AlertSeverity.HIGH])
-            medium_count = len([a for a in active_alerts if a.severity == AlertSeverity.MEDIUM])
-            low_count = len([a for a in active_alerts if a.severity == AlertSeverity.LOW])
+            active_alerts = [
+                a for a in self._alerts.values() if a.status == AlertStatus.ACTIVE
+            ]
+            critical_count = len(
+                [a for a in active_alerts if a.severity == AlertSeverity.CRITICAL]
+            )
+            high_count = len(
+                [a for a in active_alerts if a.severity == AlertSeverity.HIGH]
+            )
+            medium_count = len(
+                [a for a in active_alerts if a.severity == AlertSeverity.MEDIUM]
+            )
+            low_count = len(
+                [a for a in active_alerts if a.severity == AlertSeverity.LOW]
+            )
 
             return {
                 "total_active": len(active_alerts),
@@ -324,10 +357,16 @@ class AlertManager:
                     "critical": critical_count,
                     "high": high_count,
                     "medium": medium_count,
-                    "low": low_count
+                    "low": low_count,
                 },
-                "total_resolved": len([a for a in self._alerts.values() if a.status == AlertStatus.RESOLVED]),
-                "rules_active": len([r for r in self._rules if r.enabled])
+                "total_resolved": len(
+                    [
+                        a
+                        for a in self._alerts.values()
+                        if a.status == AlertStatus.RESOLVED
+                    ]
+                ),
+                "rules_active": len([r for r in self._rules if r.enabled]),
             }
 
 

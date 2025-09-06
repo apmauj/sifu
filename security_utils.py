@@ -1,33 +1,35 @@
 """
 Security validation and sanitization utilities for SIFU API
 """
+
 import re
 import html
 from typing import Any, Dict, List, Union
 
 # XSS protection patterns
 XSS_PATTERNS = [
-    r'<script[^>]*>.*?</script>',
-    r'javascript:',
-    r'vbscript:',
-    r'on\w+\s*=',
-    r'<iframe[^>]*>.*?</iframe>',
-    r'<object[^>]*>.*?</object>',
-    r'<embed[^>]*>.*?</embed>',
-    r'<form[^>]*>.*?</form>',
-    r'<input[^>]*>',
-    r'<meta[^>]*>',
-    r'<link[^>]*>',
-    r'<style[^>]*>.*?</style>',
+    r"<script[^>]*>.*?</script>",
+    r"javascript:",
+    r"vbscript:",
+    r"on\w+\s*=",
+    r"<iframe[^>]*>.*?</iframe>",
+    r"<object[^>]*>.*?</object>",
+    r"<embed[^>]*>.*?</embed>",
+    r"<form[^>]*>.*?</form>",
+    r"<input[^>]*>",
+    r"<meta[^>]*>",
+    r"<link[^>]*>",
+    r"<style[^>]*>.*?</style>",
 ]
 
 # SQL injection patterns (additional protection beyond SQLAlchemy)
 SQL_INJECTION_PATTERNS = [
-    r';\s*(drop|delete|update|insert|alter|create|truncate)\s',
-    r'union\s+select',
-    r'--',
-    r'/\*.*?\*/',
+    r";\s*(drop|delete|update|insert|alter|create|truncate)\s",
+    r"union\s+select",
+    r"--",
+    r"/\*.*?\*/",
 ]
+
 
 class SecurityValidator:
     """Security validation and sanitization utilities"""
@@ -47,7 +49,7 @@ class SecurityValidator:
 
         # Remove potentially dangerous patterns
         for pattern in XSS_PATTERNS:
-            sanitized = re.sub(pattern, '', sanitized, flags=re.IGNORECASE | re.DOTALL)
+            sanitized = re.sub(pattern, "", sanitized, flags=re.IGNORECASE | re.DOTALL)
 
         return sanitized.strip()
 
@@ -99,7 +101,7 @@ class SecurityValidator:
             return False
 
         # Only allow YYYY-MM-DD format
-        date_pattern = r'^\d{4}-\d{2}-\d{2}$'
+        date_pattern = r"^\d{4}-\d{2}-\d{2}$"
         return bool(re.match(date_pattern, date_str))
 
     @staticmethod
@@ -109,7 +111,7 @@ class SecurityValidator:
             return False
 
         # Only allow 3-letter uppercase codes
-        currency_pattern = r'^[A-Z]{3}$'
+        currency_pattern = r"^[A-Z]{3}$"
         return bool(re.match(currency_pattern, currency))
 
     @staticmethod
@@ -118,8 +120,9 @@ class SecurityValidator:
         if not isinstance(num_str, str):
             return False
 
-        pattern = r'^-?\d+(\.\d+)?$' if allow_negative else r'^\d+(\.\d+)?$'
+        pattern = r"^-?\d+(\.\d+)?$" if allow_negative else r"^\d+(\.\d+)?$"
         return bool(re.match(pattern, num_str))
+
 
 class InputValidator:
     """Input validation utilities"""
@@ -139,8 +142,12 @@ class InputValidator:
         return True, ""
 
     @staticmethod
-    def validate_ur_range_params(start_year: Union[str, int], start_month: Union[str, int],
-                                end_year: Union[str, int], end_month: Union[str, int]) -> tuple[bool, str]:
+    def validate_ur_range_params(
+        start_year: Union[str, int],
+        start_month: Union[str, int],
+        end_year: Union[str, int],
+        end_month: Union[str, int],
+    ) -> tuple[bool, str]:
         """Validate UR range parameters"""
         try:
             # Convert to int if string
@@ -172,7 +179,9 @@ class InputValidator:
                 return False, "end_month must be between 1 and 12"
 
             # Validate period order
-            if (end_year < start_year) or (end_year == start_year and end_month < start_month):
+            if (end_year < start_year) or (
+                end_year == start_year and end_month < start_month
+            ):
                 return False, "End period must be after start period"
 
             return True, ""
@@ -185,9 +194,14 @@ class InputValidator:
         """Validate currency parameter"""
         if not SecurityValidator.validate_currency_code(currency):
             from constants import VALID_CURRENCY_CODES
-            return False, f"Invalid currency code. Supported: {', '.join(VALID_CURRENCY_CODES)}"
+
+            return (
+                False,
+                f"Invalid currency code. Supported: {', '.join(VALID_CURRENCY_CODES)}",
+            )
 
         return True, ""
+
 
 def sanitize_request_data(data: Union[Dict, List]) -> Union[Dict, List]:
     """Convenience function to sanitize request data"""

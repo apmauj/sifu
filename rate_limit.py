@@ -2,6 +2,7 @@
 Rate limiting middleware for FastAPI
 Enhanced with security logging and configurable limits
 """
+
 import time
 import logging
 from collections import defaultdict
@@ -16,6 +17,7 @@ from secure_logging import get_security_logger
 logger = logging.getLogger(__name__)
 security_logger = get_security_logger()
 
+
 class RateLimitStorage:
     """Thread-safe storage for rate limiting data"""
 
@@ -29,8 +31,7 @@ class RateLimitStorage:
             current_time = time.time()
             # Filter out old requests
             self._storage[key] = [
-                ts for ts in self._storage[key]
-                if current_time - ts < window_seconds
+                ts for ts in self._storage[key] if current_time - ts < window_seconds
             ]
             return self._storage[key].copy()
 
@@ -50,21 +51,26 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 
     def __init__(self, app, requests_per_minute: int = 100, burst_limit: int = 20):
         super().__init__(app)
-        
+
         # Detect test environment and use more permissive limits
         import os
         import sys
+
         is_test_env = (
-            os.getenv('PYTEST_CURRENT_TEST') is not None or
-            os.getenv('TESTING') == '1' or
-            'pytest' in sys.argv[0] if len(sys.argv) > 0 else False
+            os.getenv("PYTEST_CURRENT_TEST") is not None
+            or os.getenv("TESTING") == "1"
+            or "pytest" in sys.argv[0]
+            if len(sys.argv) > 0
+            else False
         )
-        
+
         if is_test_env:
             # Much more permissive limits for testing
             self.requests_per_minute = 10000  # 10k requests per minute for tests
             self.burst_limit = 1000  # 1k burst limit for tests
-            logger.info("RateLimitMiddleware: Test environment detected, using permissive limits")
+            logger.info(
+                "RateLimitMiddleware: Test environment detected, using permissive limits"
+            )
         else:
             self.requests_per_minute = requests_per_minute
             self.burst_limit = burst_limit
@@ -82,10 +88,12 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             "/api/refresh",  # UI data refresh
             "/api/ur/refresh",  # UR data refresh
             "/api/exchange-rate/refresh",  # Exchange rate refresh
-            "/api/exchange-rate/refresh-async"  # Async exchange rate refresh
+            "/api/exchange-rate/refresh-async",  # Async exchange rate refresh
         }
 
-        logger.info(f"RateLimitMiddleware initialized: {self.requests_per_minute} req/min, burst: {self.burst_limit}")
+        logger.info(
+            f"RateLimitMiddleware initialized: {self.requests_per_minute} req/min, burst: {self.burst_limit}"
+        )
 
     async def dispatch(self, request: Request, call_next):
         # Skip rate limiting for exempt paths
@@ -99,15 +107,21 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         global_key = f"global:{client_ip}"
         if self.storage.is_rate_limited(global_key, self.requests_per_minute, 60):
             if security_logger:
-                security_logger.log_rate_limit(client_ip, endpoint, self.requests_per_minute)
-            return self._rate_limit_response(client_ip, endpoint, "global", self.requests_per_minute)
+                security_logger.log_rate_limit(
+                    client_ip, endpoint, self.requests_per_minute
+                )
+            return self._rate_limit_response(
+                client_ip, endpoint, "global", self.requests_per_minute
+            )
 
         # Check burst limit (10 second window)
         burst_key = f"burst:{client_ip}"
         if self.storage.is_rate_limited(burst_key, self.burst_limit, 10):
             if security_logger:
                 security_logger.log_rate_limit(client_ip, endpoint, self.burst_limit)
-            return self._rate_limit_response(client_ip, endpoint, "burst", self.burst_limit)
+            return self._rate_limit_response(
+                client_ip, endpoint, "burst", self.burst_limit
+            )
 
         # Record the request
         current_time = time.time()
@@ -133,7 +147,9 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         # Fallback to direct client
         return request.client.host if request.client else "unknown"
 
-    def _rate_limit_response(self, client_ip: str, endpoint: str, limit_type: str, limit: int) -> JSONResponse:
+    def _rate_limit_response(
+        self, client_ip: str, endpoint: str, limit_type: str, limit: int
+    ) -> JSONResponse:
         """Return standardized rate limit exceeded response"""
         return JSONResponse(
             status_code=429,
@@ -142,9 +158,9 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
                 "message": f"Too many requests from {client_ip} to {endpoint}",
                 "limit_type": limit_type,
                 "limit": limit,
-                "retry_after": 60
+                "retry_after": 60,
             },
-            headers={"Retry-After": "60"}
+            headers={"Retry-After": "60"},
         )
 
 
@@ -160,19 +176,16 @@ class EndpointRateLimitMiddleware(BaseHTTPMiddleware):
             # Authentication endpoints - strict limits
             "/api/auth/login": {"per_minute": 10, "burst": 3},
             "/api/auth/register": {"per_minute": 5, "burst": 2},
-
             # Refresh endpoints - moderate limits
             "/api/refresh": {"per_minute": 5, "burst": 2},
             "/api/ur/refresh": {"per_minute": 5, "burst": 2},
             "/api/exchange-rate/refresh": {"per_minute": 5, "burst": 2},
             "/api/exchange-rate/refresh-async": {"per_minute": 3, "burst": 1},
-
             # Dashboard and monitoring - higher limits
             "/api/dashboard": {"per_minute": 200, "burst": 50},
             "/api/dashboard/summary": {"per_minute": 200, "burst": 50},
             "/api/alerts": {"per_minute": 200, "burst": 50},
             "/api/alerts/summary": {"per_minute": 200, "burst": 50},
-
             # Data endpoints - moderate limits
             "/api/ur": {"per_minute": 300, "burst": 100},
             "/api/exchange-rates": {"per_minute": 300, "burst": 100},
@@ -190,10 +203,12 @@ class EndpointRateLimitMiddleware(BaseHTTPMiddleware):
             "/api/refresh",  # UI data refresh
             "/api/ur/refresh",  # UR data refresh
             "/api/exchange-rate/refresh",  # Exchange rate refresh
-            "/api/exchange-rate/refresh-async"  # Async exchange rate refresh
+            "/api/exchange-rate/refresh-async",  # Async exchange rate refresh
         }
 
-        logger.info("EndpointRateLimitMiddleware initialized with endpoint-specific limits")
+        logger.info(
+            "EndpointRateLimitMiddleware initialized with endpoint-specific limits"
+        )
 
     async def dispatch(self, request: Request, call_next):
         path = request.url.path
@@ -217,7 +232,9 @@ class EndpointRateLimitMiddleware(BaseHTTPMiddleware):
         if self.storage.is_rate_limited(endpoint_key, limits["per_minute"], 60):
             if security_logger:
                 security_logger.log_rate_limit(client_ip, path, limits["per_minute"])
-            return self._rate_limit_response(client_ip, path, "per_minute", limits["per_minute"])
+            return self._rate_limit_response(
+                client_ip, path, "per_minute", limits["per_minute"]
+            )
 
         # Check burst limit (10 second window)
         burst_requests = self.storage.get_requests_in_window(endpoint_key, 10)
@@ -257,7 +274,9 @@ class EndpointRateLimitMiddleware(BaseHTTPMiddleware):
 
         return None
 
-    def _rate_limit_response(self, client_ip: str, endpoint: str, limit_type: str, limit: int) -> JSONResponse:
+    def _rate_limit_response(
+        self, client_ip: str, endpoint: str, limit_type: str, limit: int
+    ) -> JSONResponse:
         """Return standardized rate limit exceeded response"""
         return JSONResponse(
             status_code=429,
@@ -266,7 +285,7 @@ class EndpointRateLimitMiddleware(BaseHTTPMiddleware):
                 "message": f"Too many requests from {client_ip} to {endpoint}",
                 "limit_type": limit_type,
                 "limit": limit,
-                "retry_after": 60
+                "retry_after": 60,
             },
-            headers={"Retry-After": "60"}
+            headers={"Retry-After": "60"},
         )

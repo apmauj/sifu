@@ -4,6 +4,7 @@ Correlation ID middleware for distributed tracing.
 This module provides middleware to add correlation IDs to all requests,
 enabling distributed tracing across the application.
 """
+
 import uuid
 from typing import Optional
 from fastapi import Request, Response
@@ -12,6 +13,7 @@ import logging
 
 # Correlation ID header name
 CORRELATION_ID_HEADER = "X-Correlation-ID"
+
 
 class CorrelationIdMiddleware(BaseHTTPMiddleware):
     """
@@ -57,7 +59,7 @@ class CorrelationIdMiddleware(BaseHTTPMiddleware):
 
 def get_correlation_id(request: Request) -> Optional[str]:
     """Get the correlation ID from the current request."""
-    return getattr(request.state, 'correlation_id', None)
+    return getattr(request.state, "correlation_id", None)
 
 
 def setup_correlation_logging():
@@ -78,15 +80,18 @@ def setup_correlation_logging():
             # to use context variables or thread-local storage
             try:
                 import asyncio
+
                 # Get current task
                 current_task = asyncio.current_task()
-                if current_task and hasattr(current_task, 'request'):
-                    correlation_id = getattr(current_task.request.state, 'correlation_id', None)
+                if current_task and hasattr(current_task, "request"):
+                    correlation_id = getattr(
+                        current_task.request.state, "correlation_id", None
+                    )
             except Exception:
                 pass
 
             # Add correlation ID to log record
-            record.correlation_id = correlation_id or 'NO_CORRELATION_ID'
+            record.correlation_id = correlation_id or "NO_CORRELATION_ID"
             return True
 
     # Add filter to root logger
@@ -94,7 +99,7 @@ def setup_correlation_logging():
     logging.getLogger().addFilter(correlation_filter)
 
     # Update existing loggers
-    for name in ['uvicorn', 'uvicorn.access', 'fastapi', '__main__']:
+    for name in ["uvicorn", "uvicorn.access", "fastapi", "__main__"]:
         logger = logging.getLogger(name)
         logger.addFilter(correlation_filter)
 
@@ -105,14 +110,16 @@ def get_correlation_logger(name: str) -> logging.Logger:
 
     # Ensure correlation filter is added
     has_correlation_filter = any(
-        isinstance(f, type('CorrelationIdFilter', (), {}))
-        for f in logger.filters
+        isinstance(f, type("CorrelationIdFilter", (), {})) for f in logger.filters
     )
 
     if not has_correlation_filter:
+
         class CorrelationIdFilter(logging.Filter):
             def filter(self, record):
-                record.correlation_id = getattr(record, 'correlation_id', 'NO_CORRELATION_ID')
+                record.correlation_id = getattr(
+                    record, "correlation_id", "NO_CORRELATION_ID"
+                )
                 return True
 
         logger.addFilter(CorrelationIdFilter())

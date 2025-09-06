@@ -2,6 +2,7 @@
 Metrics collection module for SIFU application
 Provides basic observability metrics: latency, error rates, request counts
 """
+
 from collections import defaultdict, deque
 from typing import Dict, List, Any
 from datetime import datetime
@@ -12,6 +13,7 @@ from dataclasses import dataclass
 @dataclass
 class RequestMetrics:
     """Metrics for a single request"""
+
     method: str
     endpoint: str
     status_code: int
@@ -24,10 +26,11 @@ class RequestMetrics:
 @dataclass
 class EndpointStats:
     """Statistics for an endpoint"""
+
     total_requests: int = 0
     total_errors: int = 0
     total_duration: float = 0.0
-    min_duration: float = float('inf')
+    min_duration: float = float("inf")
     max_duration: float = 0.0
     last_request: datetime = None
 
@@ -64,14 +67,22 @@ class MetricsCollector:
         if self._performance_budget_manager is None:
             try:
                 from performance_budget import performance_budget_manager
+
                 self._performance_budget_manager = performance_budget_manager
             except ImportError:
                 # Performance budget module not available
                 pass
         return self._performance_budget_manager
 
-    def record_request(self, method: str, endpoint: str, status_code: int,
-                      duration: float, error: bool = False, error_message: str = ""):
+    def record_request(
+        self,
+        method: str,
+        endpoint: str,
+        status_code: int,
+        duration: float,
+        error: bool = False,
+        error_message: str = "",
+    ):
         """Record a request metric"""
         metric = RequestMetrics(
             method=method,
@@ -80,7 +91,7 @@ class MetricsCollector:
             duration=duration,
             timestamp=datetime.utcnow(),
             error=error,
-            error_message=error_message
+            error_message=error_message,
         )
 
         with self._lock:
@@ -123,30 +134,48 @@ class MetricsCollector:
                     "total_errors": stats.total_errors,
                     "error_rate": round(stats.error_rate, 2),
                     "avg_duration_ms": round(stats.avg_duration * 1000, 2),
-                    "min_duration_ms": round(stats.min_duration * 1000, 2) if stats.min_duration != float('inf') else 0,
+                    "min_duration_ms": round(stats.min_duration * 1000, 2)
+                    if stats.min_duration != float("inf")
+                    else 0,
                     "max_duration_ms": round(stats.max_duration * 1000, 2),
-                    "last_request": stats.last_request.isoformat() if stats.last_request else None
+                    "last_request": stats.last_request.isoformat()
+                    if stats.last_request
+                    else None,
                 }
             return result
 
     def get_global_stats(self) -> Dict[str, Any]:
         """Get global application statistics"""
         with self._lock:
-            total_requests = sum(stats.total_requests for stats in self._endpoint_stats.values())
-            total_errors = sum(stats.total_errors for stats in self._endpoint_stats.values())
-            total_duration = sum(stats.total_duration for stats in self._endpoint_stats.values())
+            total_requests = sum(
+                stats.total_requests for stats in self._endpoint_stats.values()
+            )
+            total_errors = sum(
+                stats.total_errors for stats in self._endpoint_stats.values()
+            )
+            total_duration = sum(
+                stats.total_duration for stats in self._endpoint_stats.values()
+            )
 
             uptime = datetime.utcnow() - self._start_time
 
             return {
                 "total_requests": total_requests,
                 "total_errors": total_errors,
-                "error_rate": round((total_errors / total_requests * 100) if total_requests > 0 else 0, 2),
-                "avg_duration_ms": round((total_duration / total_requests * 1000) if total_requests > 0 else 0, 2),
+                "error_rate": round(
+                    (total_errors / total_requests * 100) if total_requests > 0 else 0,
+                    2,
+                ),
+                "avg_duration_ms": round(
+                    (total_duration / total_requests * 1000)
+                    if total_requests > 0
+                    else 0,
+                    2,
+                ),
                 "uptime_seconds": int(uptime.total_seconds()),
-                "uptime_human": str(uptime).split('.')[0],  # HH:MM:SS format
+                "uptime_human": str(uptime).split(".")[0],  # HH:MM:SS format
                 "endpoints_tracked": len(self._endpoint_stats),
-                "recent_requests_count": len(self._recent_requests)
+                "recent_requests_count": len(self._recent_requests),
             }
 
     def get_health_status(self) -> Dict[str, Any]:
@@ -174,7 +203,7 @@ class MetricsCollector:
             "status": health,
             "message": status_message,
             "timestamp": datetime.utcnow().isoformat(),
-            "metrics": global_stats
+            "metrics": global_stats,
         }
 
 

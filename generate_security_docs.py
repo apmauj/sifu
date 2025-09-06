@@ -7,6 +7,7 @@ Genera un resumen completo de las implementaciones de seguridad y validaciones
 from pathlib import Path
 from datetime import datetime
 
+
 def generate_security_summary():
     """Genera resumen de medidas de seguridad implementadas"""
 
@@ -152,6 +153,7 @@ def generate_security_summary():
 
     return summary
 
+
 def save_documentation():
     """Guarda la documentación en un archivo"""
     docs_dir = Path("docs")
@@ -164,6 +166,7 @@ def save_documentation():
 
     print("✅ Documentación generada: docs/SEGURIDAD_ESTADO_ACTUAL.md")
     print("📋 Resumen de implementaciones de seguridad completado")
+
 
 if __name__ == "__main__":
     save_documentation()

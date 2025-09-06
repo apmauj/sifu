@@ -2,6 +2,7 @@
 Advanced health check system for SIFU application
 Provides comprehensive health monitoring for all system components
 """
+
 import time
 from datetime import datetime, timedelta
 from typing import Dict, Any, List, Optional
@@ -13,6 +14,7 @@ from excel_processor import ExchangeRateBCUProcessor
 
 try:
     import psutil
+
     PSUTIL_AVAILABLE = True
 except ImportError:
     PSUTIL_AVAILABLE = False
@@ -20,6 +22,7 @@ except ImportError:
 
 class HealthStatus:
     """Health status enumeration"""
+
     HEALTHY = "healthy"
     WARNING = "warning"
     CRITICAL = "critical"
@@ -29,9 +32,14 @@ class HealthStatus:
 class HealthCheckResult:
     """Result of a health check"""
 
-    def __init__(self, name: str, status: str, message: str = "",
-                 details: Optional[Dict[str, Any]] = None,
-                 response_time: Optional[float] = None):
+    def __init__(
+        self,
+        name: str,
+        status: str,
+        message: str = "",
+        details: Optional[Dict[str, Any]] = None,
+        response_time: Optional[float] = None,
+    ):
         self.name = name
         self.status = status
         self.message = message
@@ -46,8 +54,10 @@ class HealthCheckResult:
             "status": self.status,
             "message": self.message,
             "details": self.details,
-            "response_time_ms": round(self.response_time * 1000, 2) if self.response_time else None,
-            "timestamp": self.timestamp.isoformat()
+            "response_time_ms": round(self.response_time * 1000, 2)
+            if self.response_time
+            else None,
+            "timestamp": self.timestamp.isoformat(),
         }
 
 
@@ -94,7 +104,7 @@ class HealthChecker:
                         status=result.get("status", HealthStatus.UNKNOWN),
                         message=result.get("message", ""),
                         details=result.get("details", {}),
-                        response_time=check_time
+                        response_time=check_time,
                     )
 
                 if isinstance(result, HealthCheckResult):
@@ -103,16 +113,19 @@ class HealthChecker:
                     # Update overall status
                     if result.status == HealthStatus.CRITICAL:
                         overall_status = HealthStatus.CRITICAL
-                    elif result.status == HealthStatus.WARNING and overall_status == HealthStatus.HEALTHY:
+                    elif (
+                        result.status == HealthStatus.WARNING
+                        and overall_status == HealthStatus.HEALTHY
+                    ):
                         overall_status = HealthStatus.WARNING
 
             except Exception as e:
                 # Handle check failures
                 error_result = HealthCheckResult(
-                    name=getattr(check_func, '__name__', 'unknown_check'),
+                    name=getattr(check_func, "__name__", "unknown_check"),
                     status=HealthStatus.CRITICAL,
                     message=f"Health check failed: {str(e)}",
-                    response_time=time.time() - check_start
+                    response_time=time.time() - check_start,
                 )
                 results.append(error_result.to_dict())
                 overall_status = HealthStatus.CRITICAL
@@ -124,12 +137,18 @@ class HealthChecker:
             "status": overall_status,
             "timestamp": datetime.utcnow().isoformat(),
             "total_checks": len(results),
-            "healthy_checks": len([r for r in results if r["status"] == HealthStatus.HEALTHY]),
-            "warning_checks": len([r for r in results if r["status"] == HealthStatus.WARNING]),
-            "critical_checks": len([r for r in results if r["status"] == HealthStatus.CRITICAL]),
+            "healthy_checks": len(
+                [r for r in results if r["status"] == HealthStatus.HEALTHY]
+            ),
+            "warning_checks": len(
+                [r for r in results if r["status"] == HealthStatus.WARNING]
+            ),
+            "critical_checks": len(
+                [r for r in results if r["status"] == HealthStatus.CRITICAL]
+            ),
             "total_response_time_ms": round(total_time * 1000, 2),
             "checks": results,
-            "system_info": self._get_system_info()
+            "system_info": self._get_system_info(),
         }
 
         # Cache results
@@ -148,15 +167,18 @@ class HealthChecker:
                 "cpu_percent": psutil.cpu_percent(interval=0.1),
                 "memory_percent": psutil.virtual_memory().percent,
                 "memory_used_mb": round(psutil.virtual_memory().used / 1024 / 1024, 2),
-                "memory_total_mb": round(psutil.virtual_memory().total / 1024 / 1024, 2),
-                "disk_usage_percent": psutil.disk_usage('/').percent,
-                "uptime_seconds": int(time.time() - psutil.boot_time())
+                "memory_total_mb": round(
+                    psutil.virtual_memory().total / 1024 / 1024, 2
+                ),
+                "disk_usage_percent": psutil.disk_usage("/").percent,
+                "uptime_seconds": int(time.time() - psutil.boot_time()),
             }
         except Exception:
             return {"error": "Could not retrieve system information"}
 
 
 # Individual health check functions
+
 
 def check_database() -> HealthCheckResult:
     """Check database connectivity and basic operations"""
@@ -171,7 +193,9 @@ def check_database() -> HealthCheckResult:
             # Test more complex query - count records
             ui_count = db.execute(text("SELECT COUNT(*) FROM ui_records")).fetchone()[0]
             ur_count = db.execute(text("SELECT COUNT(*) FROM ur_records")).fetchone()[0]
-            brou_count = db.execute(text("SELECT COUNT(*) FROM brou_records")).fetchone()[0]
+            brou_count = db.execute(
+                text("SELECT COUNT(*) FROM brou_records")
+            ).fetchone()[0]
 
             return HealthCheckResult(
                 name="database",
@@ -181,16 +205,16 @@ def check_database() -> HealthCheckResult:
                     "ui_records": ui_count,
                     "ur_records": ur_count,
                     "brou_records": brou_count,
-                    "total_records": ui_count + ur_count + brou_count
+                    "total_records": ui_count + ur_count + brou_count,
                 },
-                response_time=time.time() - start_time
+                response_time=time.time() - start_time,
             )
         else:
             return HealthCheckResult(
                 name="database",
                 status=HealthStatus.CRITICAL,
                 message="Database test query failed",
-                response_time=time.time() - start_time
+                response_time=time.time() - start_time,
             )
 
     except Exception as e:
@@ -198,7 +222,7 @@ def check_database() -> HealthCheckResult:
             name="database",
             status=HealthStatus.CRITICAL,
             message=f"Database connection failed: {str(e)}",
-            response_time=time.time() - start_time
+            response_time=time.time() - start_time,
         )
 
 
@@ -212,7 +236,9 @@ def check_brou_api() -> HealthCheckResult:
 
         if rates:
             status = HealthStatus.HEALTHY if is_from_brou else HealthStatus.WARNING
-            message = "BROU API responding" if is_from_brou else "BROU API using cached data"
+            message = (
+                "BROU API responding" if is_from_brou else "BROU API using cached data"
+            )
 
             return HealthCheckResult(
                 name="brou_api",
@@ -221,16 +247,16 @@ def check_brou_api() -> HealthCheckResult:
                 details={
                     "source_type": source_type,
                     "currencies_count": len(rates),
-                    "is_live": is_from_brou
+                    "is_live": is_from_brou,
                 },
-                response_time=time.time() - start_time
+                response_time=time.time() - start_time,
             )
         else:
             return HealthCheckResult(
                 name="brou_api",
                 status=HealthStatus.CRITICAL,
                 message="BROU API not responding",
-                response_time=time.time() - start_time
+                response_time=time.time() - start_time,
             )
 
     except Exception as e:
@@ -238,7 +264,7 @@ def check_brou_api() -> HealthCheckResult:
             name="brou_api",
             status=HealthStatus.CRITICAL,
             message=f"BROU API check failed: {str(e)}",
-            response_time=time.time() - start_time
+            response_time=time.time() - start_time,
         )
 
 
@@ -252,24 +278,23 @@ def check_bcu_api() -> HealthCheckResult:
 
         if rates:
             status = HealthStatus.HEALTHY if is_from_bcu else HealthStatus.WARNING
-            message = "BCU API responding" if is_from_bcu else "BCU API using cached data"
+            message = (
+                "BCU API responding" if is_from_bcu else "BCU API using cached data"
+            )
 
             return HealthCheckResult(
                 name="bcu_api",
                 status=status,
                 message=message,
-                details={
-                    "currencies_count": len(rates),
-                    "is_live": is_from_bcu
-                },
-                response_time=time.time() - start_time
+                details={"currencies_count": len(rates), "is_live": is_from_bcu},
+                response_time=time.time() - start_time,
             )
         else:
             return HealthCheckResult(
                 name="bcu_api",
                 status=HealthStatus.CRITICAL,
                 message="BCU API not responding",
-                response_time=time.time() - start_time
+                response_time=time.time() - start_time,
             )
 
     except Exception as e:
@@ -277,7 +302,7 @@ def check_bcu_api() -> HealthCheckResult:
             name="bcu_api",
             status=HealthStatus.CRITICAL,
             message=f"BCU API check failed: {str(e)}",
-            response_time=time.time() - start_time
+            response_time=time.time() - start_time,
         )
 
 
@@ -290,13 +315,13 @@ def check_system_resources() -> HealthCheckResult:
             name="system_resources",
             status=HealthStatus.WARNING,
             message="System resource monitoring not available (psutil not installed)",
-            response_time=time.time() - start_time
+            response_time=time.time() - start_time,
         )
 
     try:
         cpu_percent = psutil.cpu_percent(interval=0.1)
         memory = psutil.virtual_memory()
-        disk = psutil.disk_usage('/')
+        disk = psutil.disk_usage("/")
 
         # Define thresholds
         status = HealthStatus.HEALTHY
@@ -338,9 +363,9 @@ def check_system_resources() -> HealthCheckResult:
                 "memory_used_mb": round(memory.used / 1024 / 1024, 2),
                 "memory_total_mb": round(memory.total / 1024 / 1024, 2),
                 "disk_percent": disk.percent,
-                "disk_free_gb": round(disk.free / 1024 / 1024 / 1024, 2)
+                "disk_free_gb": round(disk.free / 1024 / 1024 / 1024, 2),
             },
-            response_time=time.time() - start_time
+            response_time=time.time() - start_time,
         )
 
     except Exception as e:
@@ -348,7 +373,7 @@ def check_system_resources() -> HealthCheckResult:
             name="system_resources",
             status=HealthStatus.WARNING,
             message=f"Could not check system resources: {str(e)}",
-            response_time=time.time() - start_time
+            response_time=time.time() - start_time,
         )
 
 
@@ -369,7 +394,7 @@ def check_brou_cache_freshness() -> HealthCheckResult:
                 status=HealthStatus.CRITICAL,
                 message="BROU cache is empty",
                 details={"cache_status": "empty"},
-                response_time=time.time() - start_time
+                response_time=time.time() - start_time,
             )
 
         # Check data availability
@@ -380,7 +405,7 @@ def check_brou_cache_freshness() -> HealthCheckResult:
                 status=HealthStatus.CRITICAL,
                 message="BROU cache contains no data",
                 details={"cache_status": "no_data", "data_count": 0},
-                response_time=time.time() - start_time
+                response_time=time.time() - start_time,
             )
 
         # Check data freshness
@@ -391,7 +416,7 @@ def check_brou_cache_freshness() -> HealthCheckResult:
                 status=HealthStatus.WARNING,
                 message="BROU cache has no timestamp",
                 details={"data_count": len(data_list), "timestamp": None},
-                response_time=time.time() - start_time
+                response_time=time.time() - start_time,
             )
 
         # Calculate age in minutes
@@ -415,7 +440,9 @@ def check_brou_cache_freshness() -> HealthCheckResult:
 
         # Count currencies
         currencies_count = len(data_list)
-        usd_ebrou_present = any(rate.get("currency") == "USD_EBROU" for rate in data_list)
+        usd_ebrou_present = any(
+            rate.get("currency") == "USD_EBROU" for rate in data_list
+        )
 
         return HealthCheckResult(
             name="brou_cache",
@@ -429,9 +456,9 @@ def check_brou_cache_freshness() -> HealthCheckResult:
                 "source_type": source_type,
                 "usd_ebrou_present": usd_ebrou_present,
                 "last_updated": updated_at.isoformat() if updated_at else None,
-                "is_fresh": age_minutes < 60
+                "is_fresh": age_minutes < 60,
             },
-            response_time=time.time() - start_time
+            response_time=time.time() - start_time,
         )
 
     except Exception as e:
@@ -439,7 +466,7 @@ def check_brou_cache_freshness() -> HealthCheckResult:
             name="brou_cache",
             status=HealthStatus.CRITICAL,
             message=f"BROU cache check failed: {str(e)}",
-            response_time=time.time() - start_time
+            response_time=time.time() - start_time,
         )
 
 
@@ -474,5 +501,5 @@ async def get_simple_health():
         "status": "ok" if is_healthy else "FAIL",
         "timestamp": results["timestamp"],
         "checks": results["total_checks"],
-        "issues": results["critical_checks"] + results["warning_checks"]
+        "issues": results["critical_checks"] + results["warning_checks"],
     }

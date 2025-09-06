@@ -8,15 +8,18 @@ import secrets
 import string
 from pathlib import Path
 
+
 def generate_secure_key(length=32):
     """Genera una clave segura aleatoria"""
     alphabet = string.ascii_letters + string.digits + "!@#$%^&*()_+-=[]{}|;:,.<>?"
-    return ''.join(secrets.choice(alphabet) for _ in range(length))
+    return "".join(secrets.choice(alphabet) for _ in range(length))
+
 
 def generate_secure_password(length=32):
     """Genera una contraseña segura"""
     alphabet = string.ascii_letters + string.digits + "!@#$%^&*()-_=+[]{}|;:,.<>?"
-    return ''.join(secrets.choice(alphabet) for _ in range(length))
+    return "".join(secrets.choice(alphabet) for _ in range(length))
+
 
 def setup_production_env():
     """Configura el entorno de producción con valores seguros"""
@@ -35,10 +38,18 @@ def setup_production_env():
     # Generar valores seguros
     replacements = {
         "CHANGE_THIS_STRONG_PASSWORD_32_CHARS_MIN": generate_secure_password(32),
-        "CHANGE_THIS_TO_A_NEW_64_CHAR_RANDOM_SECRET_KEY_FOR_PRODUCTION_SECURITY": generate_secure_key(64),
-        "CHANGE_THIS_TO_A_NEW_SECURE_API_KEY_FROM_VAULT_32_CHARS_MIN": generate_secure_key(32),
-        "CHANGE_THIS_TO_A_NEW_32_CHAR_ENCRYPTION_KEY_VAULT_ONLY": generate_secure_key(32),
-        "CHANGE_THIS_TO_A_NEW_64_CHAR_JWT_SECRET_FOR_PRODUCTION": generate_secure_key(64),
+        "CHANGE_THIS_TO_A_NEW_64_CHAR_RANDOM_SECRET_KEY_FOR_PRODUCTION_SECURITY": generate_secure_key(
+            64
+        ),
+        "CHANGE_THIS_TO_A_NEW_SECURE_API_KEY_FROM_VAULT_32_CHARS_MIN": generate_secure_key(
+            32
+        ),
+        "CHANGE_THIS_TO_A_NEW_32_CHAR_ENCRYPTION_KEY_VAULT_ONLY": generate_secure_key(
+            32
+        ),
+        "CHANGE_THIS_TO_A_NEW_64_CHAR_JWT_SECRET_FOR_PRODUCTION": generate_secure_key(
+            64
+        ),
         "CHANGE_THIS_TO_A_NEW_32_CHAR_LOG_ENCRYPTION_KEY": generate_secure_key(32),
     }
 
@@ -61,6 +72,7 @@ def setup_production_env():
 
     return True
 
+
 def validate_production_config():
     """Valida la configuración de producción"""
     print("\n🔍 Validando configuración de producción...")
@@ -80,7 +92,7 @@ def validate_production_config():
         "your-sifu-prod-domain.com",
         "/path/to/ssl/",
         "your-alert-system.com",
-        "alerts@yourdomain.com"
+        "alerts@yourdomain.com",
     ]
 
     warnings = []
@@ -96,6 +108,7 @@ def validate_production_config():
         print("✅ Todos los valores parecen estar configurados")
 
     return len(warnings) == 0
+
 
 def main():
     """Función principal"""
@@ -117,12 +130,15 @@ def main():
         print("   2. Configura tu base de datos PostgreSQL")
         print("   3. Configura Redis para cache")
         print("   4. Configura certificados SSL")
-        print("   5. Prueba el deploy: pwsh -File .\\scripts\\deploy\\deploy_backend.ps1")
+        print(
+            "   5. Prueba el deploy: pwsh -File .\\scripts\\deploy\\deploy_backend.ps1"
+        )
         return 0
     else:
         print("⚠️  Configuración completada pero requiere ajustes manuales")
         print("🔧 Revisa las advertencias arriba y configura los valores necesarios")
         return 1
+
 
 if __name__ == "__main__":
     exit(main())
