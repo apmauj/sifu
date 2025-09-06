@@ -241,6 +241,47 @@ const Dashboard = ({ isOpen, onClose }) => {
                       </div>
                     </CardBody>
                   </Card>
+                  {/* Panel de edad de cachés BROU/BCU */}
+                  {(() => {
+                    const brou = healthData.checks?.find(c => c.name === 'brou_cache');
+                    const bcu = healthData.checks?.find(c => c.name === 'bcu_cache');
+                    if (!brou && !bcu) return null;
+                    const renderRow = (c, label) => (
+                      <tr key={c.name} className="border-t border-gray-200 dark:border-gray-700">
+                        <td className="py-2 px-2 font-medium text-gray-700 dark:text-gray-200">{label}</td>
+                        <td className="py-2 px-2 text-xs">
+                          <span className={`inline-block px-2 py-1 rounded border ${getStatusColor(c.status)}`}>{getStatusIcon(c.status)} {c.status}</span>
+                        </td>
+                        <td className="py-2 px-2 text-gray-600 dark:text-gray-300 text-sm">{c.details?.age_minutes != null ? `${c.details.age_minutes}m` : '-'}</td>
+                        <td className="py-2 px-2 text-xs text-gray-500 dark:text-gray-400">{c.details?.data_count ?? '-'}</td>
+                        <td className="py-2 px-2 text-xs text-gray-500 dark:text-gray-400">{c.details?.last_updated ? new Date(c.details.last_updated).toLocaleTimeString() : '-'}</td>
+                      </tr>
+                    );
+                    return (
+                      <Card>
+                        <CardBody>
+                          <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white flex items-center gap-2">🗄️ Cachés de Cotizaciones</h3>
+                          <div className="overflow-x-auto">
+                            <table className="w-full text-left text-sm">
+                              <thead>
+                                <tr className="text-gray-500 dark:text-gray-400 text-xs uppercase">
+                                  <th className="py-2 px-2">Cache</th>
+                                  <th className="py-2 px-2">Estado</th>
+                                  <th className="py-2 px-2">Edad</th>
+                                  <th className="py-2 px-2">Items</th>
+                                  <th className="py-2 px-2">Última actualización</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {brou && renderRow(brou, 'BROU')}
+                                {bcu && renderRow(bcu, 'BCU')}
+                              </tbody>
+                            </table>
+                          </div>
+                        </CardBody>
+                      </Card>
+                    );
+                  })()}
 
                   {/* Detalles de Checks */}
                   {healthData.checks && Array.isArray(healthData.checks) && (

@@ -470,6 +470,80 @@ def check_brou_cache_freshness() -> HealthCheckResult:
         )
 
 
+def check_bcu_cache_freshness() -> HealthCheckResult:
+    """Check BCU cache freshness and data availability (mirrors BROU pattern)."""
+    start_time = time.time()
+
+    try:
+        from main import bcu_cache, _cache_lock  # local import to avoid circular
+
+        with _cache_lock:
+            cached = bcu_cache
+
+        if not cached:
+            return HealthCheckResult(
+                name="bcu_cache",
+                status=HealthStatus.CRITICAL,
+                message="BCU cache is empty",
+                details={"cache_status": "empty"},
+                response_time=time.time() - start_time,
+            )
+
+        data_list = cached.get("data", [])
+        if not data_list:
+            return HealthCheckResult(
+                name="bcu_cache",
+                status=HealthStatus.CRITICAL,
+                message="BCU cache contains no data",
+                details={"cache_status": "no_data", "data_count": 0},
+                response_time=time.time() - start_time,
+            )
+
+        updated_at = cached.get("updated_at")
+        if not updated_at:
+            return HealthCheckResult(
+                name="bcu_cache",
+                status=HealthStatus.WARNING,
+                message="BCU cache has no timestamp",
+                details={"data_count": len(data_list), "timestamp": None},
+                response_time=time.time() - start_time,
+            )
+
+        age_seconds = (datetime.utcnow() - updated_at).total_seconds()
+        age_minutes = age_seconds / 60
+
+        if age_minutes > 120:
+            status = HealthStatus.CRITICAL
+            message = f"BCU cache is very stale ({age_minutes:.1f} minutes old)"
+        elif age_minutes > 60:
+            status = HealthStatus.WARNING
+            message = f"BCU cache is stale ({age_minutes:.1f} minutes old)"
+        else:
+            status = HealthStatus.HEALTHY
+            message = f"BCU cache is fresh ({age_minutes:.1f} minutes old)"
+
+        return HealthCheckResult(
+            name="bcu_cache",
+            status=status,
+            message=message,
+            details={
+                "data_count": len(data_list),
+                "age_minutes": round(age_minutes, 1),
+                "age_seconds": int(age_seconds),
+                "last_updated": updated_at.isoformat() if updated_at else None,
+                "is_fresh": age_minutes < 60,
+            },
+            response_time=time.time() - start_time,
+        )
+    except Exception as e:
+        return HealthCheckResult(
+            name="bcu_cache",
+            status=HealthStatus.CRITICAL,
+            message=f"BCU cache check failed: {str(e)}",
+            response_time=time.time() - start_time,
+        )
+
+
 # Global health checker instance
 health_checker = HealthChecker()
 
@@ -478,6 +552,7 @@ health_checker.add_check(check_database)
 health_checker.add_check(check_brou_api)
 health_checker.add_check(check_bcu_api)
 health_checker.add_check(check_brou_cache_freshness)
+health_checker.add_check(check_bcu_cache_freshness)
 health_checker.add_check(check_system_resources)
 
 

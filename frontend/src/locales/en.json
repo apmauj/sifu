@@ -103,7 +103,8 @@
     "ui_evolution": "UI Value Evolution",
     "daily_percentage_variation": "Daily Percentage Variation",
     "variation_percentage": "Variation %",
-    "no_data_found": "No data found"
+  "no_data_found": "No data found",
+  "no_results_description": "Run a query to view UI values."
   },
   "ur": {
     "title": "Readjustable Units (UR)",

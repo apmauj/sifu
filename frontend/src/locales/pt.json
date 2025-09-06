@@ -99,7 +99,8 @@
     "ui_evolution": "Evolução do valor da UI",
     "daily_percentage_variation": "Variação percentual diária",
     "variation_percentage": "Variação %",
-    "no_data_found": "Nenhum dado encontrado"
+  "no_data_found": "Nenhum dado encontrado",
+  "no_results_description": "Faça uma consulta para ver os valores de UI."
   },
   "ur": {
     "title": "Calculadora de Unidades Reajustáveis (UR)",

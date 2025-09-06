@@ -23,6 +23,7 @@ import { UruguayFlagIcon } from './icons/system_icons';
 import Card, { CardBody } from './components/ui/Card';
 import { Tabs, Tab } from './components/ui/Tabs';
 import { useHourlySyncedUpdate } from './hooks/useHourlySyncedUpdate';
+import BuildInfoFooter from './components/BuildInfoFooter.jsx';
 
 // Error Boundary Component
 class ErrorBoundary extends React.Component {
@@ -497,6 +498,7 @@ function App() {
               <div className="flex justify-center items-center my-2">
                 <UruguayFlagIcon className="flag-icon" aria-label="Uruguay" style={{verticalAlign: 'middle'}} />
               </div>
+              <BuildInfoFooter />
             </div>
           </footer>
         </main>
