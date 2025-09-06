@@ -351,8 +351,9 @@
       "brou_records": "BROU Records",
       "total_records": "Total",
       "currencies": "Currencies",
-      "state": "State",
-  "source": "Source"
+  "state": "State",
+  "source": "Source",
+  "database_ok": "Database connection successful"
     },
     "labels": {
       "live": "Live",
@@ -413,6 +414,26 @@
       "healthy": "Healthy",
       "warning": "Warnings",
       "critical": "Critical"
+    },
+    "status": {
+      "healthy": "Healthy",
+      "warning": "Warning",
+      "critical": "Critical"
+    },
+    "tooltips": {
+      "general_status": "Aggregated summary status of all executed checks",
+      "checks_section": "Detailed list of each health verification",
+      "database_check": "Connectivity and key table counts for UI/UR/BROU",
+      "brou_api_check": "Availability & data freshness of the BROU API",
+      "bcu_api_check": "Availability and mode (live/cache) of the BCU API",
+      "brou_cache_check": "Age and freshness state of internal BROU rates cache",
+      "system_resources_check": "Current server CPU and memory usage",
+      "application_metrics_check": "Internal app metrics (requests, errors, uptime)",
+      "status_badge": "Evaluated status of the check",
+      "performance_metrics": "Aggregated performance metrics (latency, uptime, traffic)",
+      "performance_budgets": "Targets with thresholds to keep system healthy",
+      "throughput_metrics": "Recent throughput and latency indicators",
+      "status_summary": "Count of budgets by status"
     },
     "actions": {
       "close": "Close",

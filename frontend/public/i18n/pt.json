@@ -351,8 +351,9 @@
       "brou_records": "Registros BROU",
       "total_records": "Total",
       "currencies": "Moedas",
-      "state": "Estado",
-  "source": "Fonte"
+  "state": "Estado",
+  "source": "Fonte",
+  "database_ok": "Conexão ao banco de dados bem-sucedida"
     },
     "labels": {
       "live": "Live",
@@ -413,6 +414,26 @@
       "healthy": "Saudáveis",
       "warning": "Alertas",
       "critical": "Críticos"
+    },
+    "status": {
+      "healthy": "Saudável",
+      "warning": "Alerta",
+      "critical": "Crítico"
+    },
+    "tooltips": {
+      "general_status": "Resumo agregado do estado de todas as verificações",
+      "checks_section": "Lista detalhada de cada verificação de saúde",
+      "database_check": "Conectividade e contagens principais das tabelas UI/UR/BROU",
+      "brou_api_check": "Disponibilidade e frescor dos dados da API BROU",
+      "bcu_api_check": "Disponibilidade e modo (live/cache) da API BCU",
+      "brou_cache_check": "Idade e estado do cache interno de cotações BROU",
+      "system_resources_check": "Uso atual de CPU e memória do servidor",
+      "application_metrics_check": "Métricas internas da aplicação (requisições, erros, uptime)",
+      "status_badge": "Estado avaliado da verificação",
+      "performance_metrics": "Métricas agregadas de desempenho (latência, uptime, tráfego)",
+      "performance_budgets": "Metas com limites para manter o sistema saudável",
+      "throughput_metrics": "Indicadores recentes de throughput e latência",
+      "status_summary": "Contagem de orçamentos por estado"
     },
     "actions": {
       "close": "Fechar",

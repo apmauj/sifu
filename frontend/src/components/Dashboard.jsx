@@ -207,9 +207,13 @@ const Dashboard = ({ isOpen, onClose }) => {
                       <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white flex items-center gap-2">
                         <span className="text-lg">🚀</span>
                         {t('dashboard.general_status.title') || 'Estado General del Sistema'}
+                        <span
+                          className="text-xs text-gray-400 cursor-help"
+                          title={t('dashboard.tooltips.general_status') || 'Resumen agregado del estado actual de todos los checks'}
+                        >ℹ️</span>
                       </h3>
-                      <div className="flex flex-wrap items-center gap-4 mb-4">
-                        <div className="flex items-center gap-3">
+                      <div className="mb-4 grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+                        <div className="flex items-center gap-3 flex-wrap">
                           <span className="text-3xl">
                             {healthData.status === 'healthy' ? '✅' :
                               healthData.status === 'warning' ? '⚠️' :
@@ -228,10 +232,10 @@ const Dashboard = ({ isOpen, onClose }) => {
                           </div>
                         </div>
                         {healthData.timestamp && (
-                          <div className="flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400">
+                          <div className="flex md:justify-end items-center gap-1 text-sm text-gray-500 dark:text-gray-400 md:text-right">
                             <span className="text-lg">🕒</span>
-                            <span>{(t('dashboard.general_status.last_update_prefix') || 'Última actualización:')}</span>
-                            <time dateTime={new Date(healthData.timestamp).toISOString()}>{new Date(healthData.timestamp).toLocaleString()}</time>
+                            <span className="whitespace-nowrap">{(t('dashboard.general_status.last_update_prefix') || 'Última actualización:')}</span>
+                            <time className="truncate" dateTime={new Date(healthData.timestamp).toISOString()}>{new Date(healthData.timestamp).toLocaleString()}</time>
                           </div>
                         )}
                       </div>
@@ -241,7 +245,10 @@ const Dashboard = ({ isOpen, onClose }) => {
                   {/* Detalles de Checks */}
                   {healthData.checks && Array.isArray(healthData.checks) && (
                     <div>
-                      <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">{t('dashboard.checks.details_title') || 'Detalles de Verificaciones'}</h3>
+                      <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white flex items-center gap-2">
+                        <span>{t('dashboard.checks.details_title') || 'Detalles de Verificaciones'}</span>
+                        <span className="text-xs text-gray-400 cursor-help" title={t('dashboard.tooltips.checks_section') || 'Listado detallado de verificaciones individuales'}>ℹ️</span>
+                      </h3>
                       <div className="grid gap-4">
                         {healthData.checks.map((checkData, index) => (
                           <Card key={index}>
@@ -254,6 +261,7 @@ const Dashboard = ({ isOpen, onClose }) => {
                                     {checkData.name === 'bcu_api' && '🏦'}
                                     {checkData.name === 'system_resources' && '🖥️'}
                                     {checkData.name === 'application_metrics' && '📊'}
+                                    {checkData.name === 'brou_cache' && '🗄️'}
                                   </span>
                                   {/* Translate known check names; fallback to formatted name */}
                                   {(
@@ -262,16 +270,31 @@ const Dashboard = ({ isOpen, onClose }) => {
                                     checkData.name === 'bcu_api' ? (t('dashboard.checks.names.bcu_api') || 'Bcu Api') :
                                     checkData.name === 'system_resources' ? (t('dashboard.checks.names.system_resources') || 'System Resources') :
                                     checkData.name === 'application_metrics' ? (t('dashboard.checks.names.application_metrics') || 'Application Metrics') :
+                                    checkData.name === 'brou_cache' ? (t('dashboard.checks.names.brou_cache') || 'Brou Cache') :
                                     checkData.name.replace(/_/g, ' ')
                                   )}
+                                  <span
+                                    className="text-[10px] text-gray-400 cursor-help"
+                                    title={
+                                      (checkData.name === 'database' && (t('dashboard.tooltips.database_check') || 'Conexión y conteos de registros')) ||
+                                      (checkData.name === 'brou_api' && (t('dashboard.tooltips.brou_api_check') || 'Disponibilidad de API BROU')) ||
+                                      (checkData.name === 'bcu_api' && (t('dashboard.tooltips.bcu_api_check') || 'Disponibilidad de API BCU')) ||
+                                      (checkData.name === 'brou_cache' && (t('dashboard.tooltips.brou_cache_check') || 'Estado de frescura de caché BROU')) ||
+                                      (checkData.name === 'system_resources' && (t('dashboard.tooltips.system_resources_check') || 'Uso de CPU y memoria')) ||
+                                      (checkData.name === 'application_metrics' && (t('dashboard.tooltips.application_metrics_check') || 'Métricas internas de la app')) ||
+                                      undefined
+                                    }
+                                  >ℹ️</span>
                                 </h4>
-                                <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(checkData.status)}`}>
-                                  {getStatusIcon(checkData.status)} {checkData.status}
+                                <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(checkData.status)}`} title={t('dashboard.tooltips.status_badge') || 'Estado actual del check'}>
+                                  {getStatusIcon(checkData.status)} {t(`dashboard.status.${checkData.status}`) || checkData.status}
                                 </div>
                               </div>
 
                               {checkData.message && (
-                                <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">{translateBackendMessage(checkData.message)}</p>
+                                <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">{translateBackendMessage(checkData.message) === checkData.message && checkData.message === 'Database connection successful'
+                                  ? (t('dashboard.checks.database_ok') || 'Conexión a base de datos exitosa')
+                                  : translateBackendMessage(checkData.message)}</p>
                               )}
 
                               {/* Database Details */}
@@ -379,6 +402,7 @@ const Dashboard = ({ isOpen, onClose }) => {
                         <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white flex items-center gap-2">
                           <span className="text-lg">🖥️</span>
                           {t('dashboard.system_info.title') || 'Información del Sistema'}
+                          <span className="text-xs text-gray-400 cursor-help" title={t('dashboard.tooltips.system_resources_check') || 'Uso de recursos del servidor'}>ℹ️</span>
                         </h3>
 
                         {healthData.system_info.error ? (
@@ -457,6 +481,7 @@ const Dashboard = ({ isOpen, onClose }) => {
                         <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white flex items-center gap-2">
                           <span className="text-lg">⚡</span>
                           {t('dashboard.performance_metrics.title') || 'Métricas de Rendimiento'}
+                          <span className="text-xs text-gray-400 cursor-help" title={t('dashboard.tooltips.performance_metrics') || 'Métricas agregadas de rendimiento'}>ℹ️</span>
                         </h3>
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                           <div className="text-center p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg border border-indigo-200 dark:border-indigo-800">
@@ -540,10 +565,11 @@ const Dashboard = ({ isOpen, onClose }) => {
               {/* Performance Budgets Overview */}
               <Card>
                 <CardBody>
-                  <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white flex items-center gap-2">
-                    <span className="text-lg">📊</span>
-                    {t('dashboard.performance_budgets.title') || 'Presupuestos de Rendimiento'}
-                  </h3>
+                    <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white flex items-center gap-2">
+                      <span className="text-lg">📊</span>
+                      {t('dashboard.performance_budgets.title') || 'Presupuestos de Rendimiento'}
+                      <span className="text-xs text-gray-400 cursor-help" title={t('dashboard.tooltips.performance_budgets') || 'Objetivos y umbrales de salud para métricas clave'}>ℹ️</span>
+                    </h3>
                   
                   {performanceData?.budgets && performanceData.budgets.length > 0 ? (
                     <div className="grid gap-4">
@@ -620,6 +646,7 @@ const Dashboard = ({ isOpen, onClose }) => {
                     <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white flex items-center gap-2">
                       <span className="text-lg">🚀</span>
                       {t('dashboard.throughput_metrics.title') || 'Métricas de Throughput'}
+                      <span className="text-xs text-gray-400 cursor-help" title={t('dashboard.tooltips.throughput_metrics') || 'Rendimiento reciente de solicitudes'}>ℹ️</span>
                     </h3>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                       <div className="text-center p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
@@ -670,6 +697,7 @@ const Dashboard = ({ isOpen, onClose }) => {
                     <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white flex items-center gap-2">
                       <span className="text-lg">📋</span>
                       {t('dashboard.status_summary.title') || 'Resumen de Estado'}
+                      <span className="text-xs text-gray-400 cursor-help" title={t('dashboard.tooltips.status_summary') || 'Conteo de presupuestos por estado'}>ℹ️</span>
                     </h3>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                       <div className="text-center p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
