@@ -208,34 +208,33 @@ const Dashboard = ({ isOpen, onClose }) => {
                         <span className="text-lg">🚀</span>
                         {t('dashboard.general_status.title') || 'Estado General del Sistema'}
                       </h3>
-                      <div className="flex items-center justify-between mb-4">
+                      <div className="flex flex-wrap items-center gap-4 mb-4">
                         <div className="flex items-center gap-3">
                           <span className="text-3xl">
                             {healthData.status === 'healthy' ? '✅' :
-                             healthData.status === 'warning' ? '⚠️' :
-                             healthData.status === 'critical' ? '❌' : '❓'}
+                              healthData.status === 'warning' ? '⚠️' :
+                              healthData.status === 'critical' ? '❌' : '❓'}
                           </span>
-                          <div>
-                            <div className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-medium border ${
-                              healthData.status === 'healthy' ? 'text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800' :
+                          <div className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-medium border ${
+                            healthData.status === 'healthy' ? 'text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800' :
                               healthData.status === 'warning' ? 'text-yellow-600 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800' :
-                              healthData.status === 'critical' ? 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800' :
-                              'text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-900/20 border-gray-200 dark:border-gray-800'
-                            }`}>
-            {healthData.status === 'healthy' ? (t('dashboard.general_status.healthy') || 'Sistema Saludable') :
-             healthData.status === 'warning' ? (t('dashboard.general_status.warning') || 'Sistema con Advertencias') :
-             healthData.status === 'critical' ? (t('dashboard.general_status.critical') || 'Sistema Crítico') :
-             (t('dashboard.general_status.unknown') || 'Estado Desconocido')}
-                            </div>
+                                healthData.status === 'critical' ? 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800' :
+                                  'text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-900/20 border-gray-200 dark:border-gray-800'
+                          }`}>
+                            {healthData.status === 'healthy' ? (t('dashboard.general_status.healthy') || 'Sistema Saludable') :
+                              healthData.status === 'warning' ? (t('dashboard.general_status.warning') || 'Sistema con Advertencias') :
+                                healthData.status === 'critical' ? (t('dashboard.general_status.critical') || 'Sistema Crítico') :
+                                  (t('dashboard.general_status.unknown') || 'Estado Desconocido')}
                           </div>
                         </div>
+                        {healthData.timestamp && (
+                          <div className="flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400">
+                            <span className="text-lg">🕒</span>
+                            <span>{(t('dashboard.general_status.last_update_prefix') || 'Última actualización:')}</span>
+                            <time dateTime={new Date(healthData.timestamp).toISOString()}>{new Date(healthData.timestamp).toLocaleString()}</time>
+                          </div>
+                        )}
                       </div>
-                      {healthData.timestamp && (
-                        <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-                          <span className="text-lg">🕒</span>
-           {(t('dashboard.general_status.last_update_prefix') || 'Última actualización:')} {new Date(healthData.timestamp).toLocaleString()}
-                        </div>
-                      )}
                     </CardBody>
                   </Card>
 
@@ -256,7 +255,15 @@ const Dashboard = ({ isOpen, onClose }) => {
                                     {checkData.name === 'system_resources' && '🖥️'}
                                     {checkData.name === 'application_metrics' && '📊'}
                                   </span>
-                                  {checkData.name.replace(/_/g, ' ')}
+                                  {/* Translate known check names; fallback to formatted name */}
+                                  {(
+                                    checkData.name === 'database' ? (t('dashboard.checks.names.database') || 'Database') :
+                                    checkData.name === 'brou_api' ? (t('dashboard.checks.names.brou_api') || 'Brou Api') :
+                                    checkData.name === 'bcu_api' ? (t('dashboard.checks.names.bcu_api') || 'Bcu Api') :
+                                    checkData.name === 'system_resources' ? (t('dashboard.checks.names.system_resources') || 'System Resources') :
+                                    checkData.name === 'application_metrics' ? (t('dashboard.checks.names.application_metrics') || 'Application Metrics') :
+                                    checkData.name.replace(/_/g, ' ')
+                                  )}
                                 </h4>
                                 <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(checkData.status)}`}>
                                   {getStatusIcon(checkData.status)} {checkData.status}
@@ -340,34 +347,24 @@ const Dashboard = ({ isOpen, onClose }) => {
                                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
                                   <div className="text-center p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
                                     <div className="text-xl font-bold text-blue-600 dark:text-blue-400">{checkData.details.total_requests?.toLocaleString()}</div>
-                                    <div className="text-xs text-gray-500 dark:text-gray-400">Total Requests</div>
+                                    <div className="text-xs text-gray-500 dark:text-gray-400">{t('dashboard.application_metrics.total_requests') || 'Total Requests'}</div>
                                   </div>
                                   <div className="text-center p-2 bg-red-50 dark:bg-red-900/20 rounded-lg">
                                     <div className="text-xl font-bold text-red-600 dark:text-red-400">{checkData.details.error_rate_percent?.toFixed(1)}%</div>
-                                    <div className="text-xs text-gray-500 dark:text-gray-400">Error Rate</div>
+                                    <div className="text-xs text-gray-500 dark:text-gray-400">{t('dashboard.application_metrics.error_rate') || 'Error Rate'}</div>
                                   </div>
                                   <div className="text-center p-2 bg-green-50 dark:bg-green-900/20 rounded-lg">
                                     <div className="text-lg font-bold text-green-600 dark:text-green-400">{checkData.details.avg_response_time_ms?.toFixed(0)}ms</div>
-                                    <div className="text-xs text-gray-500 dark:text-gray-400">Avg Response</div>
+                                    <div className="text-xs text-gray-500 dark:text-gray-400">{t('dashboard.application_metrics.avg_response') || 'Avg Response'}</div>
                                   </div>
                                   <div className="text-center p-2 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
                                     <div className="text-lg font-bold text-purple-600 dark:text-purple-400">{Math.floor(checkData.details.uptime_seconds / 3600)}h</div>
-                                    <div className="text-xs text-gray-500 dark:text-gray-400">Uptime</div>
+                                    <div className="text-xs text-gray-500 dark:text-gray-400">{t('dashboard.application_metrics.uptime') || 'Uptime'}</div>
                                   </div>
                                 </div>
                               )}
 
-                              {/* Raw JSON for debugging (collapsed by default) */}
-                              {checkData.details && Object.keys(checkData.details).length > 0 && (
-                                <details className="mt-3">
-                                  <summary className="text-xs text-gray-500 dark:text-gray-400 cursor-pointer hover:text-gray-700 dark:hover:text-gray-300">
-                                    {t('dashboard.checks.show_technical_data') || 'Ver datos técnicos'}
-                                  </summary>
-                                  <pre className="mt-2 text-xs text-gray-600 dark:text-gray-300 whitespace-pre-wrap bg-gray-50 dark:bg-gray-800 p-2 rounded overflow-x-auto">
-                                    {JSON.stringify(checkData.details, null, 2)}
-                                  </pre>
-                                </details>
-                              )}
+                              {/* Removed technical data details panel for compactness */}
                             </CardBody>
                           </Card>
                         ))}

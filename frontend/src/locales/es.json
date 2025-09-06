@@ -361,8 +361,14 @@
       "total_records": "Total",
       "currencies": "Monedas",
       "state": "Estado",
-      "source": "Fuente",
-      "show_technical_data": "Ver datos técnicos"
+  "source": "Fuente",
+      "names": {
+        "database": "Base de Datos",
+        "brou_api": "API BROU",
+        "bcu_api": "API BCU",
+        "system_resources": "Recursos del Sistema",
+        "application_metrics": "Métricas de Aplicación"
+      }
     },
     "labels": {
       "live": "Live",
@@ -423,6 +429,12 @@
       "healthy": "Saludables",
       "warning": "Advertencias",
       "critical": "Críticos"
+    },
+    "application_metrics": {
+      "total_requests": "Total de Solicitudes",
+      "error_rate": "Tasa de Error",
+      "avg_response": "Promedio Respuesta",
+      "uptime": "Uptime"
     },
     "actions": {
       "close": "Cerrar",

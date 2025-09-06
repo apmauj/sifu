@@ -352,8 +352,7 @@
       "total_records": "Total",
       "currencies": "Currencies",
       "state": "State",
-      "source": "Source",
-      "show_technical_data": "Show technical data"
+  "source": "Source"
     },
     "labels": {
       "live": "Live",

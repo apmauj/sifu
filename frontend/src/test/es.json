@@ -331,8 +331,7 @@
       "total_records": "Total",
       "currencies": "Monedas",
       "state": "Estado",
-      "source": "Fuente",
-      "show_technical_data": "Ver datos técnicos"
+  "source": "Fuente"
     },
     "system_info": {
       "title": "Información del Sistema",
