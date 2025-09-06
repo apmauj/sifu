@@ -158,9 +158,20 @@ const Dashboard = ({ isOpen, onClose }) => {
     }
   };
   const baseLocale = detectLocale();
+  // Helper: parse naive ISO (without timezone) as UTC to avoid local misinterpretation
+  const parseUTCNaive = (val) => {
+    if (!val) return null;
+    if (typeof val === 'string') {
+      // If ends without Z or explicit offset, assume UTC and append Z
+      if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(val) && !/[Zz]|[+-]\d{2}:?\d{2}$/.test(val)) {
+        return new Date(val + 'Z');
+      }
+    }
+    return new Date(val);
+  };
   const formatDateTime = (value) => {
     if (!value) return '-';
-    const d = new Date(value);
+    const d = parseUTCNaive(value);
     if (isNaN(d.getTime())) return '-';
     return d.toLocaleString(baseLocale, {
       hour12: false,
@@ -175,7 +186,7 @@ const Dashboard = ({ isOpen, onClose }) => {
   };
   const formatTime = (value) => {
     if (!value) return '-';
-    const d = new Date(value);
+    const d = parseUTCNaive(value);
     if (isNaN(d.getTime())) return '-';
     return d.toLocaleTimeString(baseLocale, {
       hour12: false,
@@ -287,8 +298,24 @@ const Dashboard = ({ isOpen, onClose }) => {
                   </Card>
                   {/* Panel de edad de cachés BROU/BCU */}
                   {(() => {
-                    const brou = healthData.checks?.find(c => c.name === 'brou_cache');
-                    const bcu = healthData.checks?.find(c => c.name === 'bcu_cache');
+                    let brou = healthData.checks?.find(c => c.name === 'brou_cache');
+                    let bcu = healthData.checks?.find(c => c.name === 'bcu_cache');
+                    // Fallback: if bcu cache check not present yet (older backend), synthesize minimal row from bcu_api
+                    if (!bcu) {
+                      const bcuApi = healthData.checks?.find(c => c.name === 'bcu_api');
+                      if (bcuApi) {
+                        bcu = {
+                          ...bcuApi,
+                          name: 'bcu_cache',
+                          // Minimal details to fit table shape
+                          details: {
+                            data_count: bcuApi.details?.currencies_count,
+                            age_minutes: undefined,
+                            last_updated: undefined
+                          }
+                        };
+                      }
+                    }
                     if (!brou && !bcu) return null;
                     const formatAge = (age) => {
                       if (age == null) return '-';
@@ -343,8 +370,8 @@ const Dashboard = ({ isOpen, onClose }) => {
                       </h3>
                       <div className="grid gap-4">
                         {healthData.checks
-                          // Omitimos checks de caché ya resumidos en panel compacto
-                          .filter(c => !['brou_cache', 'bcu_cache'].includes(c.name))
+                          // Omitimos checks de caché y APIs (si panel compacto presente) para reducir ruido
+                          .filter(c => !['brou_cache', 'bcu_cache', 'brou_api', 'bcu_api'].includes(c.name))
                           .map((checkData, index) => (
                           <Card key={index}>
                             <CardBody>
