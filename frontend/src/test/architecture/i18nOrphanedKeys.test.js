@@ -65,6 +65,17 @@ const ALLOW_ORPHANED = new Set([
   'backend_messages.ui_value_retrieved',
   'backend_messages.ur_value_retrieved',
   'backend_messages.ur_values_retrieved',
+  // Nuevos mensajes de salud / cache backend (se traducen dinámicamente desde mensajes del servidor)
+  'backend_messages.bcu_api_responding',
+  'backend_messages.bcu_api_cached',
+  'backend_messages.bcu_api_not_responding',
+  'backend_messages.brou_api_responding',
+  'backend_messages.brou_api_cached',
+  'backend_messages.brou_api_not_responding',
+  'backend_messages.brou_cache_very_stale',
+  'backend_messages.brou_cache_stale',
+  'backend_messages.brou_cache_fresh',
+  'backend_messages.system_resources_ok',
 
   // BCU - funcionalidades implementadas
   'bcu.error',
