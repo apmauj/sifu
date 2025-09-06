@@ -4,6 +4,13 @@ import performanceService from '../services/performanceService';
 import Card, { CardBody } from './ui/Card';
 import { useI18n } from '../contexts/I18nContext';
 
+// Literal map of status translation keys so architecture orphan tests detect their usage
+const STATUS_I18N_KEYS = {
+  healthy: 'dashboard.status.healthy',
+  warning: 'dashboard.status.warning',
+  critical: 'dashboard.status.critical'
+};
+
 const Dashboard = ({ isOpen, onClose }) => {
   const { t, translateBackendMessage } = useI18n();
   const [healthData, setHealthData] = useState(null);
@@ -287,7 +294,7 @@ const Dashboard = ({ isOpen, onClose }) => {
                                   >ℹ️</span>
                                 </h4>
                                 <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(checkData.status)}`} title={t('dashboard.tooltips.status_badge') || 'Estado actual del check'}>
-                                  {getStatusIcon(checkData.status)} {t(`dashboard.status.${checkData.status}`) || checkData.status}
+                                  {getStatusIcon(checkData.status)} {(STATUS_I18N_KEYS[checkData.status?.toLowerCase?.()] && t(STATUS_I18N_KEYS[checkData.status.toLowerCase()])) || checkData.status}
                                 </div>
                               </div>
 

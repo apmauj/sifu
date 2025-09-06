@@ -24,6 +24,38 @@
 - ✅ **0 warnings** críticos en test suite
 - ✅ **Cobertura completa** de casos edge en manejo de fechas
 
+### ✅ Completado - Modernización Dashboard & I18n (2025-09-06)
+
+#### Alcance
+- Refactor completo de internacionalización en Dashboard (eliminación de cadenas hardcodeadas)
+- Integración de patrón de traducción dinámica para mensajes backend (salud, cachés BCU/BROU, recursos del sistema)
+- Fusión profunda (deep merge) de locales embebidos + remotos con modo determinista para tests (`forceEmbedded`)
+- Capitalización y normalización de estados (Healthy/Warning/Critical) con nuevas keys `dashboard.status.*`
+- Adición de tooltips explicativos (ℹ️) para secciones y cada check (`dashboard.tooltips.*`)
+- Nuevo nombre y soporte visual para `brou_cache` en checks
+- Localización de mensaje de éxito de base de datos (`database_ok`)
+- Eliminación de panel redundante de “datos técnicos” y limpieza de claves huérfanas
+- Layout compacto: estado general + última actualización en línea y grid responsivo
+- Traducciones sincronizadas en `src/locales/*` y `public/i18n/*` manteniendo paridad y sin orphans
+
+#### Archivos Clave Modificados
+- `frontend/src/components/Dashboard.jsx`
+- `frontend/src/contexts/I18nContext.jsx` (previa sesión, soporte patrones backend)
+- `frontend/src/locales/{es,en,pt}.json` + `frontend/public/i18n/{es,en,pt}.json`
+- Tests de arquitectura i18n (sin cambios funcionales, siguen pasando)
+
+#### Resultados
+- ✅ 100% de textos del Dashboard localizables
+- ✅ Tooltips semánticos añadidos sin dependencias extras
+- ✅ Sin claves huérfanas (tests de orphans/consistency green)
+- ✅ Compatibilidad mantenida (sin ruptura de respuestas backend)
+- ✅ Preparado para extender a otras vistas reutilizando patrón de tooltips
+
+#### Próximas Oportunidades Relacionadas (No ejecutadas aún)
+- Añadir monitoreo de latencia por check y exponer thresholds en UI
+- Internacionalizar mensajes en otros paneles menores (si quedan rezagos)
+- Generar documentación automática de claves i18n críticas para QA
+
 ## 🚀 Próximos Pasos Priorizados
 
 ### **Fase 1: Automatización de Infraestructura**
@@ -74,7 +106,7 @@
 ## 📊 Métricas de Seguimiento
 
 ### **Testing Quality**
-- **Test Suite Health**: 598/598 ✅
+- **Test Suite Health**: 600/600 ✅ (incluye nuevas claves i18n y refactor Dashboard)
 - **Warning Elimination**: 100% ✅
 - **Date Error Handling**: Robusto ✅
 - **Component Test Coverage**: Completo ✅
@@ -115,9 +147,10 @@
 
 1. **Completar automatización de túnel** (2-3 horas)
 2. **Implementar workflow de monitoreo** (2-3 horas)
-3. **Actualizar panel BROU frontend** (3-4 horas)
-4. **Extender health checks** (1-2 horas)
-5. **Revisar documentación exchange** (1-2 horas)
+3. **Actualizar panel BROU frontend** (3-4 horas) – incorporar frescura cache y reutilizar tooltips
+4. **Extender health checks** (1-2 horas) – agregar métricas brou_cache_age_seconds si no están expuestas
+5. **Revisar documentación exchange** (1-2 horas) – reflejar nuevos estados y naming unificado
+6. (Opcional) **Generar script de auditoría i18n** que liste claves sin uso y diferencias entre src/public
 
 ## 📝 Notas para Continuidad
 
@@ -129,6 +162,6 @@
 
 ---
 
-**Última actualización**: 2025-09-06
+**Última actualización**: 2025-09-06 (post Dashboard/i18n modernization)
 **Suite de Tests**: ✅ 600/600 pasando
-**Estado General**: 🟢 Saludable y listo para incorporar 2FA
+**Estado General**: 🟢 Saludable y listo para seguir con automatización & 2FA
