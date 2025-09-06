@@ -553,13 +553,19 @@ class URExcelProcessor:
             # Save to database
             saved_count = self.save_to_database(db, records)
 
-            # Detect if current month missing (not published yet)
+            # Detect if current month value is not yet published.
+            # Previous implementation compared tuples (max_year, max_month) < (current_year, current_month)
+            # which incorrectly flagged datasets whose latest record belonged to a prior year (e.g., 2023 vs 2025)
+            # as a "pending current month" scenario. We only want the special
+            # message when we already have data for the current year and are simply
+            # waiting for the current (in‑progress) month to appear.
             try:
                 from datetime import datetime as _dt
                 now = _dt.utcnow()
                 current_year, current_month = now.year, now.month
                 max_year, max_month = max((y, m) for y, m, _ in records)
-                missing_current = (max_year, max_month) < (current_year, current_month)
+                # Only mark missing_current when latest data is from this year and not yet this month
+                missing_current = max_year == current_year and max_month < current_month
             except Exception:  # pragma: no cover - defensive
                 missing_current = False
 
