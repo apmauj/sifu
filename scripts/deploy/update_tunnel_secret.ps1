@@ -16,7 +16,8 @@ Requisitos:
 param(
   [string]$Repo = 'apmauj/sifu',
   [int]$TimeoutSeconds = 90,
-  [switch]$TriggerDeploy
+  [switch]$TriggerDeploy,
+  [switch]$SkipIfUnchanged
 )
 
 function Info($m){ Write-Host "[INFO] $m" -ForegroundColor Cyan }
@@ -59,15 +60,33 @@ if(-not $url){ Err 'No se obtuvo URL del túnel'; docker logs --tail 120 sifu-tu
 Info "URL túnel: $url"
 
 $apiUrl = "$url/api"
-Info "Actualizando secret VITE_PUBLIC_API_URL => $apiUrl"
-Write-Output $apiUrl | gh secret set VITE_PUBLIC_API_URL -R $Repo | Out-Null
-if($LASTEXITCODE -ne 0){ Err 'Fallo actualizando secret'; exit 1 }
-Info 'Secret actualizado.'
+$stateFile = Join-Path $PSScriptRoot '..' '..' '.tunnel_last_url.txt'
+try { $prev = (Get-Content $stateFile -ErrorAction SilentlyContinue).Trim() } catch { $prev = $null }
+
+if($SkipIfUnchanged -and $prev -and $prev -eq $apiUrl){
+  if($TriggerDeploy){
+    Info "URL sin cambios ($apiUrl). Saltando actualización de secret pero igualmente disparando redeploy (porque -TriggerDeploy)."
+    $skipSecretUpdate = $true
+  } else {
+    Info "URL sin cambios ($apiUrl). Nada que hacer (no se solicitó redeploy)."
+    exit 0
+  }
+}
+
+if(-not $skipSecretUpdate){
+  Info "Actualizando secret VITE_PUBLIC_API_URL => $apiUrl"
+  Write-Output $apiUrl | gh secret set VITE_PUBLIC_API_URL -R $Repo | Out-Null
+  if($LASTEXITCODE -ne 0){ Err 'Fallo actualizando secret'; exit 1 }
+  Info 'Secret actualizado.'
+  try { $apiUrl | Out-File -FilePath $stateFile -Encoding UTF8 -Force } catch { Write-Warning "No se pudo guardar state file: $_" }
+} else {
+  Info 'Saltando actualización de secret (sin cambios)'
+}
 
 if($TriggerDeploy){
-  Info 'Disparando workflow deploy-frontend.yml'
-  gh workflow run deploy-frontend.yml -R $Repo | Out-Null
-  if($LASTEXITCODE -ne 0){ Err 'Fallo disparando workflow' } else { Info 'Redeploy solicitado.' }
+  Info 'Disparando workflow unificado ci-cd (force_frontend_deploy=true)'
+  gh workflow run .github/workflows/ci-cd.yml -R $Repo -f force_frontend_deploy=true | Out-Null
+  if($LASTEXITCODE -ne 0){ Err 'Fallo disparando workflow ci-cd.yml' } else { Info 'Redeploy solicitado (CI/CD).' }
 }
 
 Write-Host "Listo. Nueva URL: $apiUrl" -ForegroundColor Green

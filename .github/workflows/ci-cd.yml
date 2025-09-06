@@ -179,6 +179,14 @@ jobs:
         working-directory: frontend
     steps:
       - uses: actions/checkout@v4
+      - name: (Optional) Mostrar host actual del secret
+        run: |
+          if [ -n "${{ secrets.VITE_PUBLIC_API_URL }}" ]; then
+            host=$(echo "${{ secrets.VITE_PUBLIC_API_URL }}" | sed -E 's#https?://([^/]+)/?.*#\1#')
+            echo "Host API (secret): $host" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "Secret VITE_PUBLIC_API_URL vacío" >> $GITHUB_STEP_SUMMARY
+          fi
       - name: Resolve API URL (secret)
         id: resolve_api
         env:
