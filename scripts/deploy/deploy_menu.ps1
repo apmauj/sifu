@@ -1,10 +1,11 @@
 $ErrorActionPreference="Stop"
 Write-Host "=== Menu Deploy ===" -ForegroundColor Cyan
-Write-Host "1) Frontend"
-Write-Host "2) Backend (pull) + Frontend"
-Write-Host "3) Backend (build) + Frontend"
+Write-Host "1) Frontend (deploy Pages con force_frontend_deploy=true)"
+Write-Host "2) Backend (pull) + Frontend (redeploy)"
+Write-Host "3) Backend (build imagen CI/CD) + Frontend"
 Write-Host "4) Refresh Exchange (INE histórico)"
-Write-Host "5) Salir"
+Write-Host "5) Frontend sólo (sin esperar)"
+Write-Host "6) Salir"
 $choice = Read-Host "Opción"
 switch ($choice) {
   "1" { & "$PSScriptRoot\deploy_frontend.ps1" -Wait }
@@ -88,5 +89,6 @@ switch ($choice) {
           Write-Host "FALLO: " $status.message -ForegroundColor Red
         }
       }
+  "5" { & "$PSScriptRoot\deploy_frontend.ps1" }
   default { Write-Host "Salir" }
 }

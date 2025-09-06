@@ -12,45 +12,130 @@ on:
   pull_request:
     branches: [ master ]
   workflow_dispatch:
+    inputs:
+      force_image:
+        description: 'Forzar build & push de imagen backend'
+        required: false
+        default: 'false'
+        type: choice
+        options: ['false','true']
+      force_frontend_deploy:
+        description: 'Forzar deploy frontend (Pages)'
+        required: false
+        default: 'false'
+        type: choice
+        options: ['false','true']
 
 permissions:
   contents: read
-  packages: write   # for Docker Hub push
-  pages: write      # for Pages deploy
-  id-token: write   # for Pages OIDC
+  packages: write   # Docker Hub push
+  pages: write      # Pages deploy
+  id-token: write   # Pages OIDC
 
 concurrency:
   group: ci-cd-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  tests:
-    name: Backend & Frontend Tests
+  security-backend:
+    name: Security Audit Backend
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 8
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
           cache: pip
+      - name: Install deps
+        run: |
+          python -m pip install --upgrade pip 'setuptools>=78.1.1'
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          if [ -f requirements-dev.txt ]; then pip install -r requirements-dev.txt; fi
+          pip install --upgrade pip-audit
+      - name: pip-audit
+        id: audit
+        run: |
+          set +e
+          pip-audit -r requirements.txt -f json > pip_audit_backend.json 2>/dev/null
+          code=$?
+          echo "exit_code=$code" >> $GITHUB_OUTPUT
+          # Contar vulnerabilidades high/critical
+          if command -v jq >/dev/null 2>&1; then
+            HC=$(jq '[ .[] | .vulns[]? | select((.severity.value // .severity) | ascii_downcase | IN("high","critical")) ] | length' pip_audit_backend.json 2>/dev/null || echo 0)
+          else
+            HC=0
+          fi
+          echo "hc=$HC" >> $GITHUB_OUTPUT
+          if [ "${HC:-0}" -gt 0 ]; then
+            echo "High/Critical vulns: $HC" >> $GITHUB_STEP_SUMMARY
+            exit 1
+          fi
+          echo "Backend audit PASS sin High/Critical" >> $GITHUB_STEP_SUMMARY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: backend-audit
+          path: pip_audit_backend.json
 
-      - name: Install Python dependencies
+  security-frontend:
+    name: Security Audit Frontend
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci --no-audit
+      - name: npm audit prod
+        id: audit
+        run: |
+          set +e
+            npm audit --omit=dev --json > audit.prod.json 2>/dev/null || true
+          if command -v jq >/dev/null 2>&1; then
+            HC=$(jq '[ (.vulnerabilities // {}) | to_entries[] | select(.value.severity=="high" or .value.severity=="critical") ] | length' audit.prod.json 2>/dev/null || echo 0)
+          else
+            HC=0
+          fi
+          echo "hc=$HC" >> $GITHUB_OUTPUT
+          if [ "${HC:-0}" -gt 0 ]; then
+            echo "High/Critical vulns Frontend: $HC" >> $GITHUB_STEP_SUMMARY
+            exit 1
+          fi
+          echo "Frontend audit PASS sin High/Critical" >> $GITHUB_STEP_SUMMARY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: frontend-audit
+          path: frontend/audit.prod.json
+
+  backend-tests:
+    name: Backend Tests
+    needs: [ security-backend ]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+      - name: Install deps
         run: |
           python -m pip install --upgrade pip
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
           if [ -f requirements-dev.txt ]; then pip install -r requirements-dev.txt; fi
           pip install ruff
-
       - name: Lint (ruff)
         run: ruff check .
-
       - name: Static message duplication check
         run: python scripts/util/check_messages.py
-
       - name: Run backend tests
         env:
           PYTHONUNBUFFERED: '1'
@@ -58,19 +143,24 @@ jobs:
           PYTEST_DISABLE_PLUGIN_AUTOLOAD: '1'
         run: pytest -q --maxfail=1 --disable-warnings --tb=short
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+  frontend-tests:
+    name: Frontend Tests
+    needs: [ security-frontend ]
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'npm'
-          cache-dependency-path: 'frontend/package.json'
-
-      - name: Install Frontend deps
-        working-directory: frontend
+          cache: npm
+          cache-dependency-path: frontend/package.json
+      - name: Install deps
         run: npm ci
-
-      - name: Lint & Test Frontend
-        working-directory: frontend
+      - name: Lint & Tests
         run: |
           npm run lint
           npm test -- --run --reporter=verbose
@@ -78,7 +168,8 @@ jobs:
   build-frontend:
     name: Build Frontend (artifact)
     runs-on: ubuntu-latest
-    needs: tests
+    needs: [ frontend-tests ]
+    if: (github.event_name == 'push' && github.ref == 'refs/heads/master') || (github.event_name == 'workflow_dispatch' && inputs.force_frontend_deploy == 'true')
     permissions:
       contents: read
       pages: write
@@ -87,9 +178,7 @@ jobs:
       run:
         working-directory: frontend
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
+      - uses: actions/checkout@v4
       - name: Resolve API URL (secret)
         id: resolve_api
         env:
@@ -103,25 +192,19 @@ jobs:
           API_URL=$(echo "$API_URL" | sed -E 's#(/api)?/?$##')
           API_URL="$API_URL/api"
           echo "VITE_PUBLIC_API_URL=$API_URL" >> $GITHUB_ENV
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'npm'
-          cache-dependency-path: 'frontend/package.json'
-
+          cache: npm
+          cache-dependency-path: frontend/package.json
       - name: Install deps
         run: npm ci
-
       - name: Build
         env:
           NODE_ENV: production
         run: npm run build --silent
-
       - name: Prepare SPA 404 redirect
         run: cp dist/index.html dist/404.html
-
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
@@ -130,24 +213,18 @@ jobs:
   publish-backend-image:
     name: Build & Push Backend Image
     runs-on: ubuntu-latest
-    needs: tests
-    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    needs: [ backend-tests ]
+    if: (github.event_name == 'push' && github.ref == 'refs/heads/master') || (github.event_name == 'workflow_dispatch' && inputs.force_image == 'true')
     permissions:
       contents: read
       packages: write
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Login to Docker Hub
-        uses: docker/login-action@v3
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-
       - name: Extract metadata (tags, labels)
         id: meta
         uses: docker/metadata-action@v5
@@ -158,7 +235,6 @@ jobs:
             type=sha
             type=raw,value={{date '2006-01-02'}}
             type=raw,value={{date '20060102'}}
-
       - name: Build and push
         uses: docker/build-push-action@v5
         with:
@@ -173,8 +249,8 @@ jobs:
   deploy-frontend:
     name: Deploy Frontend to GitHub Pages
     runs-on: ubuntu-latest
-    needs: build-frontend
-    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    needs: [ build-frontend ]
+    if: (github.event_name == 'push' && github.ref == 'refs/heads/master') || (github.event_name == 'workflow_dispatch' && inputs.force_frontend_deploy == 'true')
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
@@ -185,3 +261,36 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+  summary:
+    name: Pipeline Summary
+    runs-on: ubuntu-latest
+    if: always()
+    needs:
+      - security-backend
+      - security-frontend
+      - backend-tests
+      - frontend-tests
+      - publish-backend-image
+      - build-frontend
+      - deploy-frontend
+    steps:
+      - name: Build summary
+        run: |
+          echo "### CI/CD Summary" >> $GITHUB_STEP_SUMMARY
+          echo "| Job | Result |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| security-backend | ${{ needs.security-backend.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| security-frontend | ${{ needs.security-frontend.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| backend-tests | ${{ needs.backend-tests.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| frontend-tests | ${{ needs.frontend-tests.result }} |" >> $GITHUB_STEP_SUMMARY
+          if [ '${{ needs.publish-backend-image.result }}' != '' ]; then echo "| publish-backend-image | ${{ needs.publish-backend-image.result }} |" >> $GITHUB_STEP_SUMMARY; fi
+          if [ '${{ needs.build-frontend.result }}' != '' ]; then echo "| build-frontend | ${{ needs.build-frontend.result }} |" >> $GITHUB_STEP_SUMMARY; fi
+          if [ '${{ needs.deploy-frontend.result }}' != '' ]; then echo "| deploy-frontend | ${{ needs.deploy-frontend.result }} |" >> $GITHUB_STEP_SUMMARY; fi
+          echo "" >> $GITHUB_STEP_SUMMARY
+          overall=success
+          for r in ${{ needs.security-backend.result }} ${{ needs.security-frontend.result }} ${{ needs.backend-tests.result }} ${{ needs.frontend-tests.result }}; do
+            if [ "$r" != "success" ]; then overall=failure; fi
+          done
+          echo "Overall core result: $overall" >> $GITHUB_STEP_SUMMARY
+          if [ "$overall" != "success" ]; then exit 1; fi

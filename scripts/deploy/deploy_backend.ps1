@@ -119,11 +119,31 @@ function WaitWF {
   }
 }
 
-if ($BuildImage) {
-  $dispatchOut = gh workflow run "Publish Backend Image" -r $Branch 2>$null
+if ($BuildImage -or ($RedeployFrontend -and -not $BuildImage)) {
+  # Un sólo dispatch: si se construye imagen y además se quiere redeploy frontend, aprovechar un solo run
+  $ciWorkflowFile = '.github/workflows/ci-cd.yml'
+  $forceImg = if ($BuildImage) { 'true' } else { 'false' }
+  $forceFront = if ($RedeployFrontend) { 'true' } else { 'false' }
+  $dispatchOut = gh workflow run $ciWorkflowFile -r $Branch -f force_image=$forceImg -f force_frontend_deploy=$forceFront 2>&1
+  if ($LASTEXITCODE -ne 0) {
+    if ($BuildImage) {
+      Write-Warning "Fallo ci-cd.yml. Intentando workflow viejo de imagen como fallback..."
+      $fallback = 'publish-backend-image.yml'
+      $dispatchOut = gh workflow run $fallback -r $Branch 2>&1
+      if ($LASTEXITCODE -ne 0) { throw "No se pudo despachar ni ci-cd.yml ni $fallback" }
+      $selectedWorkflow = 'Publish Backend Image (deprecated)'
+    } elseif ($RedeployFrontend) {
+      Write-Warning "Fallo ci-cd.yml para frontend; intentando workflow viejo de frontend..."
+      $fallbackFront = 'deploy-frontend.yml'
+      $dispatchOut = gh workflow run $fallbackFront -r $Branch 2>&1
+      if ($LASTEXITCODE -ne 0) { throw "No se pudo despachar ni ci-cd.yml ni $fallbackFront" }
+      $selectedWorkflow = 'Deploy Frontend to GitHub Pages (deprecated)'
+    }
+  } else { $selectedWorkflow = 'CI/CD' }
+  Write-Host "[INFO] Workflow dispatch enviado ($selectedWorkflow) force_image=$forceImg force_frontend_deploy=$forceFront" -ForegroundColor DarkCyan
   $runId = $null
   if ($dispatchOut -match 'runs/(\d+)') { $runId = $Matches[1] }
-  WaitWF -WorkflowName "Publish Backend Image" -RunId $runId
+  WaitWF -WorkflowName $selectedWorkflow -RunId $runId
 }
 docker pull apmauj/sifu-backend:latest | Out-Null
 docker compose up -d --force-recreate --remove-orphans --no-deps backend
@@ -153,6 +173,5 @@ switch ($StartupProbe) {
   }
   'None' { }
 }
-if($RedeployFrontend){
-  & "$PSScriptRoot\deploy_frontend.ps1" -Branch $Branch -Wait:$WaitWorkflows
-}
+## Nota: ya no se llama a deploy_frontend.ps1 porque la lógica se integró en el dispatch anterior
+## (si $RedeployFrontend fue true). Mantener fallback manual si se desea en el futuro.

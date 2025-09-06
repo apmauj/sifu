@@ -7,8 +7,9 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
-$wfName = "Deploy Frontend to GitHub Pages"
-Write-Host "[INFO] Workflow: $wfName (branch=$Branch)" -ForegroundColor Cyan
+# Ahora usamos workflow unificado CI/CD con input force_frontend_deploy
+$wfName = "CI/CD"
+Write-Host "[INFO] Workflow (unificado): $wfName (branch=$Branch force_frontend_deploy=true)" -ForegroundColor Cyan
 
 if (-not $SkipTunnel) {
   $update = Join-Path $PSScriptRoot "update_tunnel_secret.ps1"
@@ -20,16 +21,17 @@ if (-not $SkipTunnel) {
   }
 }
 
-# Baseline de runs existentes
-$baselineJson = gh run list --workflow "$wfName" --limit 5 --json databaseId,createdAt,status,conclusion 2>$null
+# Baseline de runs existentes (por nombre CI/CD)
+$baselineJson = gh run list --workflow "$wfName" --limit 8 --json databaseId,createdAt,status,conclusion 2>$null
 $baseline = @()
 if ($baselineJson) { $baseline = ($baselineJson | ConvertFrom-Json).databaseId }
 
 $triggerTime = Get-Date
 # Write-Host "[DEBUG] Runs previos: $($baseline -join ',')" -ForegroundColor DarkGray
 
-gh workflow run "$wfName" -r $Branch | Out-Null
-Write-Host "[INFO] Workflow dispatch enviado."
+# Dispatch usando el archivo + input para forzar deploy frontend
+gh workflow run .github/workflows/ci-cd.yml -r $Branch -f force_frontend_deploy=true 2>$null
+Write-Host "[INFO] Workflow dispatch (ci-cd.yml) enviado (force_frontend_deploy=true)."
 
 if (-not $Wait) { return }
 
@@ -40,7 +42,7 @@ $attempt = 0
 
 function Get-NewRun {
   param($Name,$BaselineIds,$Since)
-  $json = gh run list --workflow "$Name" --limit 5 --json databaseId,createdAt,status,conclusion,headBranch 2>$null
+  $json = gh run list --workflow "$Name" --limit 8 --json databaseId,createdAt,status,conclusion,headBranch 2>$null
   if (-not $json) { return $null }
   $items = $json | ConvertFrom-Json
   $candidates = $items |
