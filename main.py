@@ -98,9 +98,13 @@ from constants import (
     SCHEDULER_BUSINESS_DAY_ONLY,
     SCHEDULER_HOLIDAYS,
     CRON_EXCHANGE_HOURLY_CHECK,
+    CRON_DATA_GUARD,
     EXCHANGE_HOURLY_CHECK_ENABLED,
     EXCHANGE_HOURLY_CHECK_START_HOUR,
-    EXCHANGE_HOURLY_CHECK_END_HOUR
+    EXCHANGE_HOURLY_CHECK_END_HOUR,
+    DATA_GUARD_UI_COOLDOWN_MIN,
+    DATA_GUARD_UR_COOLDOWN_MIN,
+    DATA_GUARD_EXCHANGE_COOLDOWN_MIN
 )
 
 # APScheduler (background jobs)
@@ -472,12 +476,103 @@ def _add_jobs(_scheduler):
         minute, hour, day, month, dow = parts
         return CronTrigger(minute=minute, hour=hour, day=day, month=month, day_of_week=dow, timezone=tz)
 
+    # Data freshness guard (every few minutes) - forces refresh if expected new data missing
+    _data_guard_last_attempt: dict[str, datetime] = {}
+
+    def job_data_freshness_guard():
+        now_local = datetime.now(tz)
+        from database import SessionLocal
+        db = None
+        try:
+            db = SessionLocal()
+            # UI: daily value expected on business days after 02:30 local
+            try:
+                ui_service = UIService(db)
+                latest_ui = ui_service.get_latest_ui()
+                today = now_local.date()
+                need_ui = False
+                if latest_ui is None:
+                    need_ui = True
+                else:
+                    if latest_ui.date < today and now_local.hour >= 2 and now_local.minute >= 30 and now_local.weekday() < 5:
+                        need_ui = True
+                if need_ui:
+                    last_try = _data_guard_last_attempt.get('ui')
+                    if not last_try or (now_local - last_try).total_seconds()/60 >= DATA_GUARD_UI_COOLDOWN_MIN:
+                        logger.info("[DataGuard][UI] Forcing refresh (latest=%s)" % (latest_ui.date if latest_ui else 'None'))
+                        excel_processor.refresh_data(db)
+                        _data_guard_last_attempt['ui'] = now_local
+            except Exception as e:  # noqa: BLE001
+                logger.error(f"[DataGuard][UI] error: {e}")
+
+            # UR: monthly value expected at month change (first business day after day 1) after 08:00
+            try:
+                ur_service = URService(db)
+                latest_ur = ur_service.get_latest_ur()
+                year = now_local.year
+                month = now_local.month
+                def _first_business_day(y, m):
+                    for d in range(1,8):
+                        dt = date(y,m,d)
+                        if dt.weekday() < 5:  # Mon-Fri
+                            return dt
+                    return date(y,m,1)
+                first_bd = _first_business_day(year, month)
+                need_ur = False
+                if latest_ur is None:
+                    need_ur = True
+                else:
+                    # Compare tuples (year, month)
+                    if (latest_ur.year, latest_ur.month) < (year, month) and now_local.date() >= first_bd and now_local.hour >= 8:
+                        need_ur = True
+                if need_ur:
+                    last_try = _data_guard_last_attempt.get('ur')
+                    if not last_try or (now_local - last_try).total_seconds()/60 >= DATA_GUARD_UR_COOLDOWN_MIN:
+                        logger.info("[DataGuard][UR] Forcing refresh (latest=%s-%s)" % ((latest_ur.year, latest_ur.month) if latest_ur else ('None','')))
+                        ur_excel_processor.refresh_data(db)
+                        _data_guard_last_attempt['ur'] = now_local
+            except Exception as e:  # noqa: BLE001
+                logger.error(f"[DataGuard][UR] error: {e}")
+
+            # Exchange historical daily (similar to existing daily job) – if latest date < today after 11:00
+            try:
+                ex_service = ExchangeRateService(db)
+                _min, ex_max = ex_service.get_date_range_available()
+                today = now_local.date()
+                need_ex = False
+                if ex_max is None:
+                    need_ex = True
+                else:
+                    if ex_max < today and now_local.hour >= 11:
+                        need_ex = True
+                if need_ex:
+                    last_try = _data_guard_last_attempt.get('exchange')
+                    if not last_try or (now_local - last_try).total_seconds()/60 >= DATA_GUARD_EXCHANGE_COOLDOWN_MIN:
+                        logger.info(f"[DataGuard][EXCHANGE] Forcing refresh (latest={ex_max})")
+                        exchange_rate_excel_processor.refresh_data(db)
+                        _data_guard_last_attempt['exchange'] = now_local
+            except Exception as e:  # noqa: BLE001
+                logger.error(f"[DataGuard][EXCHANGE] error: {e}")
+        except Exception as e:  # noqa: BLE001
+            logger.error(f"[DataGuard] unexpected error: {e}")
+        finally:
+            try:
+                if db:
+                    db.close()
+            except Exception:
+                pass
+
     _scheduler.add_job(job_ui_refresh, _cron(CRON_UI_REFRESH), id="ui_refresh", replace_existing=True)
     _scheduler.add_job(job_exchange_refresh, _cron(CRON_EXCHANGE_REFRESH), id="exchange_refresh", replace_existing=True)
     _scheduler.add_job(job_ur_refresh, _cron(CRON_UR_REFRESH), id="ur_refresh", replace_existing=True)
+    # Data guard job (every few minutes)
+    try:
+        _scheduler.add_job(job_data_freshness_guard, _cron(CRON_DATA_GUARD), id="data_guard", replace_existing=True)
+    except Exception as e:  # noqa: BLE001
+        logger.error(f"[Scheduler] Could not schedule data_guard: {e}")
     if EXCHANGE_HOURLY_CHECK_ENABLED:
         _scheduler.add_job(job_exchange_hourly_check, _cron(CRON_EXCHANGE_HOURLY_CHECK), id="exchange_hourly_check", replace_existing=True)
-    logger.info("[Scheduler] Jobs scheduled: ui_refresh, exchange_refresh, ur_refresh" + (", exchange_hourly_check" if EXCHANGE_HOURLY_CHECK_ENABLED else ""))
+    logger.info("[Scheduler] Jobs scheduled: ui_refresh, exchange_refresh, ur_refresh, data_guard" + (", exchange_hourly_check" if EXCHANGE_HOURLY_CHECK_ENABLED else ""))
 
 # Excel processor instance
 excel_processor = ExcelProcessor()

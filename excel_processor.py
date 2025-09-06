@@ -26,11 +26,16 @@ from constants import (
     LOG_DOWNLOADING_EXCEL_INE,
     LOG_DOWNLOADING_EXCEL_BHU,
     URL_BHU_UR,
+    URL_BHU_UR_TEMPLATE,
+    UR_URL_MONTHS_BACK,
     URL_INE_UI,
     LOG_RECORDS_SAVED,
     LOG_RECORDS_PARSED,
     DATE_FORMATS,
-    LOG_EXCEL_DOWNLOADED
+    LOG_EXCEL_DOWNLOADED,
+    LOG_TRYING_BHU_URL,
+    LOG_USING_BHU_URL,
+    LOG_ALL_BHU_URLS_FAILED,
 )
 
 
@@ -43,7 +48,8 @@ logger = logging.getLogger(__name__)
 
 class ExcelProcessor:
     def __init__(self):
-        self.url = URL_INE_UI
+        # Start with legacy static URL; dynamic resolution will update before download
+        self.url = URL_BHU_UR
         self.timeout = HTTP_TIMEOUT
     
     def download_excel(self) -> Optional[pd.DataFrame]:
@@ -52,13 +58,19 @@ class ExcelProcessor:
             logger.warning("pandas not available; skipping UI Excel download")
             return None
         try:
-            logger.info(LOG_DOWNLOADING_EXCEL_INE)
+            logger.info(LOG_DOWNLOADING_EXCEL_BHU)
+            # Resolve dynamic URL candidates (current month backwards)
+            resolved_url = self._resolve_dynamic_bhu_url()
+            if resolved_url:
+                self.url = resolved_url
             headers = {
                 'User-Agent': HTTP_USER_AGENT
             }
-
-            # Use circuit breaker to protect INE API calls
-            cb = get_circuit_breaker("INE_API")
+            # Use circuit breaker to protect BHU API calls
+            cb = get_circuit_breaker("BHU_API")
+            with cb:
+                response = requests.get(self.url, timeout=self.timeout, headers=headers)
+                response.raise_for_status()
             with cb:
                 response = requests.get(self.url, timeout=self.timeout, headers=headers)
                 response.raise_for_status()
@@ -232,6 +244,53 @@ class URExcelProcessor:
         except Exception as e:
             logger.error(f"Error processing UR Excel file: {e}")
             return None
+
+    def _resolve_dynamic_bhu_url(self) -> Optional[str]:
+        """Attempt to find the most recent available BHU UR Excel URL.
+
+        Strategy:
+        - Build candidate URLs using template for current month going backwards
+          up to UR_URL_MONTHS_BACK months.
+        - On first successful HTTP 200, return that URL.
+        - Fallback to legacy URL_BHU_UR if no candidate works.
+        Returns selected URL or None if all fail.
+        """
+        try:
+            from dateutil.relativedelta import relativedelta  # lightweight, may already be present
+        except Exception:  # pragma: no cover - avoid hard dep if missing
+            relativedelta = None
+
+        now = datetime.utcnow().date().replace(day=1)
+        candidates = []
+        for i in range(UR_URL_MONTHS_BACK):
+            if relativedelta:
+                dt = now - relativedelta(months=i)
+            else:  # simple fallback manual month decrement
+                year = now.year
+                month = now.month - i
+                while month <= 0:
+                    month += 12
+                    year -= 1
+                dt = now.replace(year=year, month=month)
+            candidates.append(URL_BHU_UR_TEMPLATE.format(year=dt.year, month=dt.month))
+
+        # Ensure legacy static URL is tried last if not already included
+        if URL_BHU_UR not in candidates:
+            candidates.append(URL_BHU_UR)
+
+        for url in candidates:
+            try:
+                logger.info(LOG_TRYING_BHU_URL.format(url=url))
+                headers = {'User-Agent': HTTP_USER_AGENT}
+                resp = requests.head(url, timeout=min(10, self.timeout), headers=headers, allow_redirects=True)
+                if resp.status_code == 200 and int(resp.headers.get('Content-Length', '1')) > 0:
+                    logger.info(LOG_USING_BHU_URL.format(url=url))
+                    return url
+            except Exception as e:  # noqa: BLE001
+                logger.debug(f"HEAD failed for {url}: {e}")
+                continue
+        logger.warning(LOG_ALL_BHU_URLS_FAILED)
+        return None
 
     def parse_excel_data(self, excel_data: pd.DataFrame) -> List[Tuple[int, int, float]]:
         """

@@ -1,11 +1,44 @@
 $ErrorActionPreference="Stop"
+
+function Wait-CiCdFrontend {
+  param(
+    [int]$TimeoutSeconds = 900,
+    [int]$PollSeconds = 10
+  )
+  Write-Host "[INFO] Esperando workflow ci-cd.yml (force_frontend_deploy) ..." -ForegroundColor Cyan
+  $start = Get-Date
+  while((Get-Date)-$start -lt [TimeSpan]::FromSeconds($TimeoutSeconds)){
+    $runsJson = gh run list --workflow "ci-cd.yml" --limit 3 --json databaseId,displayTitle,headBranch,status,conclusion,createdAt 2>$null
+    if($runsJson){
+      $runs = $runsJson | ConvertFrom-Json
+      $latest = $runs | Where-Object { $_.headBranch -eq 'master' } | Select-Object -First 1
+      if($latest){
+        Write-Host ("[WAIT] status={0} conclusion={1} started={2}" -f $latest.status,$latest.conclusion,$latest.createdAt) -ForegroundColor DarkCyan
+        if($latest.status -eq 'completed'){
+          if($latest.conclusion -eq 'success'){
+            Write-Host "[OK] Workflow finalizado con éxito." -ForegroundColor Green
+            return $true
+          } else {
+            Write-Host "[ERR] Workflow finalizado con conclusión $($latest.conclusion)" -ForegroundColor Red
+            return $false
+          }
+        }
+      }
+    }
+    Start-Sleep -Seconds $PollSeconds
+  }
+  Write-Host "[ERR] Timeout esperando workflow" -ForegroundColor Red
+  return $false
+}
+
 Write-Host "=== Menu Deploy ===" -ForegroundColor Cyan
 Write-Host "1) Frontend (deploy Pages con force_frontend_deploy=true)"
 Write-Host "2) Backend (pull) + Frontend (redeploy)"
 Write-Host "3) Backend (build imagen CI/CD) + Frontend"
 Write-Host "4) Refresh Exchange (INE histórico)"
 Write-Host "5) Frontend sólo (sin esperar)"
-Write-Host "6) Salir"
+Write-Host "6) Actualizar túnel + redeploy Frontend (wait)"
+Write-Host "7) Salir"
 $choice = Read-Host "Opción"
 switch ($choice) {
   "1" { & "$PSScriptRoot\deploy_frontend.ps1" -Wait }
@@ -90,5 +123,26 @@ switch ($choice) {
         }
       }
   "5" { & "$PSScriptRoot\deploy_frontend.ps1" }
-  default { Write-Host "Salir" }
+  "6" {
+        Write-Host "[INFO] Actualizando túnel y disparando redeploy (si corresponde)..." -ForegroundColor Cyan
+        $logFile = Join-Path $PSScriptRoot 'recent-dispatch-run.log'
+        if(Test-Path $logFile){ Remove-Item $logFile -Force -ErrorAction SilentlyContinue }
+        try {
+          pwsh -File "$PSScriptRoot\update_tunnel_secret.ps1" -TriggerDeploy -SkipIfUnchanged 2>&1 | Tee-Object -FilePath $logFile | Write-Host
+          $dispatched = Select-String -Path $logFile -Pattern 'Redeploy solicitado' -Quiet
+          if($dispatched){
+            Write-Host "[INFO] Workflow disparado. Esperando finalización..." -ForegroundColor Cyan
+            $ok = Wait-CiCdFrontend
+            if(-not $ok){ Write-Host "[WARN] Verifica manualmente en GitHub Actions." -ForegroundColor Yellow }
+          } else {
+            Write-Host "[INFO] No se disparó workflow (URL sin cambios)." -ForegroundColor Yellow
+          }
+        } catch {
+          Write-Host "[ERR] Falló actualización del túnel: $($_.Exception.Message)" -ForegroundColor Red
+        } finally {
+          if(Test-Path $logFile){ Remove-Item $logFile -Force -ErrorAction SilentlyContinue }
+        }
+      }
+  "7" { Write-Host "Salir"; exit 0 }
+  default { Write-Host "Opción inválida" -ForegroundColor Yellow }
 }

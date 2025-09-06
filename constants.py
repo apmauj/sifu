@@ -85,6 +85,13 @@ CRON_UI_REFRESH = os.getenv("CRON_UI_REFRESH", "0 2 * * *")
 CRON_EXCHANGE_REFRESH = os.getenv("CRON_EXCHANGE_REFRESH", "0 3 * * *")
 # Monthly UR refresh on day 1 at 04:00
 CRON_UR_REFRESH = os.getenv("CRON_UR_REFRESH", "0 4 1 * *")
+# Data freshness guard (every 5 minutes by default)
+CRON_DATA_GUARD = os.getenv("CRON_DATA_GUARD", "*/5 * * * *")
+
+# Cooldowns (minutes) to avoid hammering external sources when forcing refresh via guard
+DATA_GUARD_UI_COOLDOWN_MIN = int(os.getenv("DATA_GUARD_UI_COOLDOWN_MIN", "60"))
+DATA_GUARD_UR_COOLDOWN_MIN = int(os.getenv("DATA_GUARD_UR_COOLDOWN_MIN", "180"))
+DATA_GUARD_EXCHANGE_COOLDOWN_MIN = int(os.getenv("DATA_GUARD_EXCHANGE_COOLDOWN_MIN", "60"))
 
 # Hourly health/check cron for Exchange (verifica y refresca si falta el día actual)
 CRON_EXCHANGE_HOURLY_CHECK = os.getenv("CRON_EXCHANGE_HOURLY_CHECK", "0 * * * *")  # top of every hour
@@ -183,6 +190,16 @@ DATA_SOURCE_INE = "Instituto Nacional de Estadística - Uruguay"
 # URLs
 URL_INE_UI = "https://www5.ine.gub.uy/documents/Estad%C3%ADsticasecon%C3%B3micas/SERIES%20Y%20OTROS/UI/Unidad%20Indexada.xls"
 URL_BHU_UR = "https://bhu.com.uy/sites/default/files/2024-01/historico-ur.xls"
+"""Legacy BHU UR Excel URL (kept for backwards compatibility / bootstrap)."""
+URL_BHU_UR_TEMPLATE = os.getenv(
+    "URL_BHU_UR_TEMPLATE",
+    "https://bhu.com.uy/sites/default/files/{year}-{month:02d}/historico-ur.xls",
+)
+"""Template to construct monthly BHU UR Excel URLs. The site organizes the historical
+file inside date-based folders (e.g. 2025-09). We attempt the current month backward
+several months until a valid file is found. Overridable via env URL_BHU_UR_TEMPLATE."""
+UR_URL_MONTHS_BACK = int(os.getenv("UR_URL_MONTHS_BACK", "8"))
+"""How many previous months (including current) to attempt when resolving BHU UR Excel."""
 URL_INE_EXCHANGE_RATES = "https://www5.ine.gub.uy/documents/Estadísticaseconómicas/SERIES%20Y%20OTROS/Cotización%20monedas/Cotización%20monedas.xlsx"  # INE Historical Exchange rates
 URL_BCU_EXCHANGE_RATES = "https://www.bcu.gub.uy/Estadisticas-e-Indicadores/Paginas/Cotizaciones.aspx"  # BCU Current rates
 
@@ -239,6 +256,9 @@ LOG_EXCEL_DOWNLOADED = "Archivo descargado exitosamente. Filas: {count}"
 LOG_EXCEL_UR_DOWNLOADED = "Archivo UR descargado exitosamente. Filas: {count}"
 LOG_RECORDS_PARSED = "Parseados {count} registros válidos"
 LOG_RECORDS_SAVED = "Guardados/actualizados {count} registros en la base de datos"
+LOG_TRYING_BHU_URL = "Probando URL BHU UR: {url}"
+LOG_USING_BHU_URL = "Usando URL BHU UR encontrada: {url}"
+LOG_ALL_BHU_URLS_FAILED = "No se pudo descargar UR desde ninguna URL candidata"
 
 # =============================================================================
 # RESPONSE FIELD NAMES
