@@ -51,6 +51,15 @@
 - ✅ Compatibilidad mantenida (sin ruptura de respuestas backend)
 - ✅ Preparado para extender a otras vistas reutilizando patrón de tooltips
 
+#### Mejora Adicional (Post refinamiento cache panel - 2025-09-06)
+Implementadas optimizaciones puntuales tras la modernización principal:
+- Panel unificado de cachés BROU + BCU (eliminando cards duplicadas y ruído visual)
+- Cabeceras totalmente internacionalizadas (`dashboard.cache_panel.headers.*`)
+- Edad de caché mostrada en formato relativo localizado (`dashboard.cache_panel.age_relative`) sin exponer TTL duro
+- Formato horario 24h forzado en zona América/Montevideo (UTC‑3) para coherencia operativa
+- Limpieza de claves huérfanas heredadas de paneles previos (suite vuelve a verde 600/600)
+- Base preparada para eventualmente añadir métrica backend explícita de edad si se requiere (actualmente calculado en frontend)
+
 #### Próximas Oportunidades Relacionadas (No ejecutadas aún)
 - Añadir monitoreo de latencia por check y exponer thresholds en UI
 - Internacionalizar mensajes en otros paneles menores (si quedan rezagos)
@@ -69,16 +78,16 @@
    - Alertar si `data.length == 0` o antigüedad excede X minutos
    - Implementar notificaciones automáticas (Slack/Discord)
 
-### **Fase 2: Mejoras en Frontend BROU**
-3. **Integración de Panel BROU Completo**
-   - Usar parámetro `?full=true` en llamadas al backend
-   - Mostrar timestamp y mensaje de respuesta en UI
-   - Implementar indicadores visuales de frescura de datos
+### **Fase 2: Mejoras en Frontend BROU / Cache**
+3. **Detalle BROU Full (pendiente)**
+   - Consumir `?full=true` (solo se usa modo compacto actualmente)
+   - Mostrar metadata adicional (fuente / mensaje backend si aplica)
+   - Opcional: badge diferenciando origen (cache vs fresh fetch)
 
-4. **Health Check Extendido**
-   - Agregar métricas de frescura de caché BROU al endpoint `/health`
-   - Implementar `brou_cache_age_seconds` para monitoreo
-   - Crear dashboard de estado de servicios
+4. **Métricas de Edad de Caché (parcial)**
+   - FRONTEND: Edad relativa ya implementada ✅
+   - BACKEND: Exponer `brou_cache_age_seconds` y `bcu_cache_age_seconds` en `/api/metrics` (pendiente)
+   - Health: confirmar si freshness ya cacheada 30s cubre necesidad o añadir warning thresholds configurables
 
 ### **Fase 3: Calidad y Documentación**
 5. **Unificación de Terminología Exchange**
@@ -148,7 +157,7 @@
 1. **Completar automatización de túnel** (2-3 horas)
 2. **Implementar workflow de monitoreo** (2-3 horas)
 3. **Actualizar panel BROU frontend** (3-4 horas) – incorporar frescura cache y reutilizar tooltips
-4. **Extender health checks** (1-2 horas) – agregar métricas brou_cache_age_seconds si no están expuestas
+4. **Exponer métricas edad caché** (1-2 horas) – `*_cache_age_seconds` en `/api/metrics` y usar thresholds para color de estado
 5. **Revisar documentación exchange** (1-2 horas) – reflejar nuevos estados y naming unificado
 6. (Opcional) **Generar script de auditoría i18n** que liste claves sin uso y diferencias entre src/public
 

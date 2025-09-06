@@ -142,6 +142,50 @@ const Dashboard = ({ isOpen, onClose }) => {
     }
   };
 
+  // Util: formato consistente 24h Montevideo (-03) respetando idioma base
+  const localeMap = {
+    es: 'es-UY',
+    en: 'en-US',
+    pt: 'pt-BR'
+  };
+  const detectLocale = () => {
+    try {
+      // I18n provider almacena en localStorage; fallback es
+      const lang = localStorage.getItem('sifu-language') || 'es';
+      return localeMap[lang] || 'es-UY';
+    } catch {
+      return 'es-UY';
+    }
+  };
+  const baseLocale = detectLocale();
+  const formatDateTime = (value) => {
+    if (!value) return '-';
+    const d = new Date(value);
+    if (isNaN(d.getTime())) return '-';
+    return d.toLocaleString(baseLocale, {
+      hour12: false,
+      timeZone: 'America/Montevideo',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    });
+  };
+  const formatTime = (value) => {
+    if (!value) return '-';
+    const d = new Date(value);
+    if (isNaN(d.getTime())) return '-';
+    return d.toLocaleTimeString(baseLocale, {
+      hour12: false,
+      timeZone: 'America/Montevideo',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    });
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -235,7 +279,7 @@ const Dashboard = ({ isOpen, onClose }) => {
                           <div className="flex md:justify-end items-center gap-1 text-sm text-gray-500 dark:text-gray-400 md:text-right">
                             <span className="text-lg">🕒</span>
                             <span className="whitespace-nowrap">{(t('dashboard.general_status.last_update_prefix') || 'Última actualización:')}</span>
-                            <time className="truncate" dateTime={new Date(healthData.timestamp).toISOString()}>{new Date(healthData.timestamp).toLocaleString()}</time>
+                            <time className="truncate" dateTime={new Date(healthData.timestamp).toISOString()}>{formatDateTime(healthData.timestamp)}</time>
                           </div>
                         )}
                       </div>
@@ -246,15 +290,22 @@ const Dashboard = ({ isOpen, onClose }) => {
                     const brou = healthData.checks?.find(c => c.name === 'brou_cache');
                     const bcu = healthData.checks?.find(c => c.name === 'bcu_cache');
                     if (!brou && !bcu) return null;
+                    const formatAge = (age) => {
+                      if (age == null) return '-';
+                      const display = (typeof age === 'number') ? (age % 1 === 0 ? age : age.toFixed(1)) : age;
+                      // i18n pattern e.g. es: "hace {value}m", en: "{value}m ago"
+                      const rel = t('dashboard.cache_panel.age_relative', { value: display });
+                      return rel && rel !== 'dashboard.cache_panel.age_relative' ? rel : `${display}m`;
+                    };
                     const renderRow = (c, label) => (
                       <tr key={c.name} className="border-t border-gray-200 dark:border-gray-700">
                         <td className="py-2 px-2 font-medium text-gray-700 dark:text-gray-200">{label}</td>
                         <td className="py-2 px-2 text-xs">
                           <span className={`inline-block px-2 py-1 rounded border ${getStatusColor(c.status)}`}>{getStatusIcon(c.status)} {c.status}</span>
                         </td>
-                        <td className="py-2 px-2 text-gray-600 dark:text-gray-300 text-sm">{c.details?.age_minutes != null ? `${c.details.age_minutes}m` : '-'}</td>
+                        <td className="py-2 px-2 text-gray-600 dark:text-gray-300 text-sm">{formatAge(c.details?.age_minutes)}</td>
                         <td className="py-2 px-2 text-xs text-gray-500 dark:text-gray-400">{c.details?.data_count ?? '-'}</td>
-                        <td className="py-2 px-2 text-xs text-gray-500 dark:text-gray-400">{c.details?.last_updated ? new Date(c.details.last_updated).toLocaleTimeString() : '-'}</td>
+                        <td className="py-2 px-2 text-xs text-gray-500 dark:text-gray-400">{c.details?.last_updated ? formatTime(c.details.last_updated) : '-'}</td>
                       </tr>
                     );
                     return (
@@ -265,11 +316,11 @@ const Dashboard = ({ isOpen, onClose }) => {
                             <table className="w-full text-left text-sm">
                               <thead>
                                 <tr className="text-gray-500 dark:text-gray-400 text-xs uppercase">
-                                  <th className="py-2 px-2">Cache</th>
-                                  <th className="py-2 px-2">Estado</th>
-                                  <th className="py-2 px-2">Edad</th>
-                                  <th className="py-2 px-2">Items</th>
-                                  <th className="py-2 px-2">Última actualización</th>
+                                  <th className="py-2 px-2">{t('dashboard.cache_panel.headers.cache') || 'Cache'}</th>
+                                  <th className="py-2 px-2">{t('dashboard.cache_panel.headers.status') || 'Estado'}</th>
+                                  <th className="py-2 px-2">{t('dashboard.cache_panel.headers.age') || 'Edad'}</th>
+                                  <th className="py-2 px-2">{t('dashboard.cache_panel.headers.items') || 'Items'}</th>
+                                  <th className="py-2 px-2">{t('dashboard.cache_panel.headers.last_updated') || 'Última actualización'}</th>
                                 </tr>
                               </thead>
                               <tbody>
@@ -291,7 +342,10 @@ const Dashboard = ({ isOpen, onClose }) => {
                         <span className="text-xs text-gray-400 cursor-help" title={t('dashboard.tooltips.checks_section') || 'Listado detallado de verificaciones individuales'}>ℹ️</span>
                       </h3>
                       <div className="grid gap-4">
-                        {healthData.checks.map((checkData, index) => (
+                        {healthData.checks
+                          // Omitimos checks de caché ya resumidos en panel compacto
+                          .filter(c => !['brou_cache', 'bcu_cache'].includes(c.name))
+                          .map((checkData, index) => (
                           <Card key={index}>
                             <CardBody>
                               <div className="flex items-center justify-between mb-3">
@@ -302,7 +356,6 @@ const Dashboard = ({ isOpen, onClose }) => {
                                     {checkData.name === 'bcu_api' && '🏦'}
                                     {checkData.name === 'system_resources' && '🖥️'}
                                     {checkData.name === 'application_metrics' && '📊'}
-                                    {checkData.name === 'brou_cache' && '🗄️'}
                                   </span>
                                   {/* Translate known check names; fallback to formatted name */}
                                   {(
@@ -311,7 +364,6 @@ const Dashboard = ({ isOpen, onClose }) => {
                                     checkData.name === 'bcu_api' ? (t('dashboard.checks.names.bcu_api') || 'Bcu Api') :
                                     checkData.name === 'system_resources' ? (t('dashboard.checks.names.system_resources') || 'System Resources') :
                                     checkData.name === 'application_metrics' ? (t('dashboard.checks.names.application_metrics') || 'Application Metrics') :
-                                    checkData.name === 'brou_cache' ? (t('dashboard.checks.names.brou_cache') || 'Brou Cache') :
                                     checkData.name.replace(/_/g, ' ')
                                   )}
                                   <span
@@ -320,7 +372,6 @@ const Dashboard = ({ isOpen, onClose }) => {
                                       (checkData.name === 'database' && (t('dashboard.tooltips.database_check') || 'Conexión y conteos de registros')) ||
                                       (checkData.name === 'brou_api' && (t('dashboard.tooltips.brou_api_check') || 'Disponibilidad de API BROU')) ||
                                       (checkData.name === 'bcu_api' && (t('dashboard.tooltips.bcu_api_check') || 'Disponibilidad de API BCU')) ||
-                                      (checkData.name === 'brou_cache' && (t('dashboard.tooltips.brou_cache_check') || 'Estado de frescura de caché BROU')) ||
                                       (checkData.name === 'system_resources' && (t('dashboard.tooltips.system_resources_check') || 'Uso de CPU y memoria')) ||
                                       (checkData.name === 'application_metrics' && (t('dashboard.tooltips.application_metrics_check') || 'Métricas internas de la app')) ||
                                       undefined

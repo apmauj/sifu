@@ -342,6 +342,16 @@
   "exchange_refresh_timeout": "Timeout esperando finalización de la actualización de cotizaciones"
   },
   "dashboard": {
+    "cache_panel": {
+      "headers": {
+        "cache": "Caché",
+        "status": "Estado",
+        "age": "Edad",
+        "items": "Items",
+        "last_updated": "Última actualización"
+      },
+      "age_relative": "hace {value}"
+    },
     "title": "Dashboard de Monitoreo",
     "tab_health": "Salud del Sistema",
     "tab_performance": "Presupuestos de Rendimiento",
@@ -368,7 +378,6 @@
         "database": "Base de Datos",
         "brou_api": "API BROU",
         "bcu_api": "API BCU",
-  "brou_cache": "Caché BROU",
         "system_resources": "Recursos del Sistema",
         "application_metrics": "Métricas de Aplicación"
       }
@@ -445,7 +454,6 @@
       "database_check": "Conectividad y conteos principales de tablas UI/UR/BROU",
       "brou_api_check": "Disponibilidad y frescura de datos de la API BROU",
       "bcu_api_check": "Disponibilidad y modo (live/caché) de la API BCU",
-      "brou_cache_check": "Edad y estado de la caché interna de cotizaciones BROU",
       "system_resources_check": "Uso actual de CPU y memoria del servidor",
       "application_metrics_check": "Métricas internas de la aplicación (requests, errores, uptime)",
       "status_badge": "Estado evaluado de la verificación",

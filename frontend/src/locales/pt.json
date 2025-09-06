@@ -342,6 +342,16 @@
   "exchange_refresh_timeout": "Tempo excedido aguardando a atualização das cotações"
   },
   "dashboard": {
+    "cache_panel": {
+      "headers": {
+        "cache": "Cache",
+        "status": "Status",
+        "age": "Idade",
+        "items": "Itens",
+        "last_updated": "Última atualização"
+      },
+      "age_relative": "{value} atrás"
+    },
     "title": "Dashboard de Monitoramento",
     "tab_health": "Saúde do Sistema",
     "tab_performance": "Orçamentos de Desempenho",
@@ -368,7 +378,6 @@
         "database": "Banco de Dados",
         "brou_api": "API BROU",
         "bcu_api": "API BCU",
-  "brou_cache": "Cache BROU",
         "system_resources": "Recursos do Sistema",
         "application_metrics": "Métricas da Aplicação"
       }
@@ -445,7 +454,6 @@
       "database_check": "Conectividade e contagens principais das tabelas UI/UR/BROU",
       "brou_api_check": "Disponibilidade e frescor dos dados da API BROU",
       "bcu_api_check": "Disponibilidade e modo (live/cache) da API BCU",
-      "brou_cache_check": "Idade e estado do cache interno de cotações BROU",
       "system_resources_check": "Uso atual de CPU e memória do servidor",
       "application_metrics_check": "Métricas internas da aplicação (requisições, erros, uptime)",
       "status_badge": "Estado avaliado da verificação",
