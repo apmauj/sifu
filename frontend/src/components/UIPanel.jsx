@@ -70,7 +70,18 @@ const UIPanel = ({ refreshKey }) => {
           setResults(null);
           setSearchType('single');
           const todayISO = new Date().toISOString().slice(0, 10);
-          const response = await uiService.getByDate(todayISO);
+          const latestISO = uiInfo?.latest_ui?.date;
+          const minISO = uiInfo?.date_range?.min_date;
+          const maxISO = uiInfo?.date_range?.max_date;
+          // Regla: si hoy > max (o no hay dato para hoy), usar latest.
+          // Si hoy < min (caso histórico), usar min.
+            let targetDate = todayISO;
+            if (maxISO && todayISO > maxISO && latestISO) {
+              targetDate = latestISO;
+            } else if (minISO && todayISO < minISO) {
+              targetDate = minISO;
+            }
+          const response = await uiService.getByDate(targetDate);
           setResults(response);
         } catch (err) {
           console.error('Error loading today UI value:', err);
