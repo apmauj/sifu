@@ -111,6 +111,30 @@ class UIService:
             logger.error(f"Error getting date range: {e}")
             return None, None
 
+    def purge_future_records(self, ref_date: date | None = None) -> int:
+        """Eliminar registros UI con fecha futura (sanidad de datos).
+
+        Args:
+            ref_date: fecha de referencia (default = hoy UTC).
+        Returns:
+            Cantidad de filas eliminadas.
+        """
+        try:
+            ref = ref_date or date.today()
+            q = self.db.query(UIRecord).filter(UIRecord.date > ref)
+            count = q.count()
+            if count:
+                q.delete(synchronize_session=False)
+                self.db.commit()
+                logger.warning(
+                    f"Purged {count} future UI records (> {ref.isoformat()})"
+                )
+            return count
+        except Exception as e:  # noqa: BLE001
+            logger.error(f"Error purging future UI records: {e}")
+            self.db.rollback()
+            return 0
+
 
 class URService:
     def __init__(self, db: Session):

@@ -11,6 +11,7 @@ from sqlalchemy import text
 from database import get_db
 from brou_processor import BROUProcessor
 from excel_processor import ExchangeRateBCUProcessor
+from services import UIService  # For UI freshness check
 
 try:
     import psutil
@@ -544,6 +545,99 @@ def check_bcu_cache_freshness() -> HealthCheckResult:
         )
 
 
+def check_ui_freshness() -> HealthCheckResult:
+    """Check freshness of latest UI (Unidad Indexada) value.
+
+    Reglas (heurística alineada a data_guard):
+    - Saludable (healthy): existe registro y corresponde al día de hoy.
+    - Antes de la ventana de publicación (<=03:00 local) se tolera que último sea ayer => healthy.
+    - WARNING: falta valor de hoy después de la ventana de publicación (>=03:00) y último es exactamente ayer.
+    - CRITICAL: gap de 2+ días o no hay ningún registro.
+
+    Detalles expuestos: fecha_ultima, dias_gap, publication_window_passed, gap_detected, age_seconds.
+    """
+    start_time = time.time()
+    try:
+        from database import SessionLocal  # local import para evitar ciclos en tests ligeros
+        from datetime import timezone as _tz
+        import os
+        import pytz  # type: ignore
+
+        session = SessionLocal()
+        try:
+            ui_service = UIService(session)
+            latest = ui_service.get_latest_ui()
+        finally:
+            session.close()
+
+        if not latest:
+            return HealthCheckResult(
+                name="ui_freshness",
+                status=HealthStatus.CRITICAL,
+                message="Sin registros UI en la base",
+                details={"gap_detected": True, "dias_gap": None},
+                response_time=time.time() - start_time,
+            )
+
+        # Timezone (usa SCHEDULER_TIMEZONE si existe, default UTC)
+        tz_name = os.getenv("SCHEDULER_TIMEZONE", "UTC")
+        try:
+            tz = pytz.timezone(tz_name)
+        except Exception:
+            tz = pytz.UTC
+        now_local = datetime.now(tz)
+        publication_window_passed = (now_local.hour, now_local.minute) >= (3, 0)
+
+        today = now_local.date()
+        latest_date = latest.date
+        dias_gap_raw = (today - latest_date).days  # negativo => fecha futura
+
+        dias_ahead = None
+        dias_gap = dias_gap_raw if dias_gap_raw >= 0 else 0
+        future = dias_gap_raw < 0
+
+        if future:
+            dias_ahead = -dias_gap_raw
+            status = HealthStatus.HEALTHY
+            msg = f"UI incluye fechas futuras (+{dias_ahead} días)"
+        elif dias_gap == 0:
+            status = HealthStatus.HEALTHY
+            msg = "UI al día"
+        elif dias_gap == 1 and not publication_window_passed:
+            status = HealthStatus.HEALTHY
+            msg = "UI de hoy aún no esperado (ventana publicación no vencida)"
+        elif dias_gap == 1:
+            status = HealthStatus.WARNING
+            msg = "Falta valor UI de hoy"
+        else:  # dias_gap >= 2 (gap real pasado)
+            status = HealthStatus.CRITICAL
+            msg = f"Gap de {dias_gap} días en UI"
+
+        return HealthCheckResult(
+            name="ui_freshness",
+            status=status,
+            message=msg,
+            details={
+                "latest_date": latest_date.isoformat(),
+                "dias_gap": dias_gap if dias_gap_raw >= 0 else 0,
+                "gap_detected": (dias_gap >= 2) and not future,
+                "publication_window_passed": publication_window_passed,
+                "age_seconds": dias_gap * 86400,
+                "future": future,
+                "dias_ahead": dias_ahead,
+                "timezone": tz_name,
+            },
+            response_time=time.time() - start_time,
+        )
+    except Exception as e:  # noqa: BLE001
+        return HealthCheckResult(
+            name="ui_freshness",
+            status=HealthStatus.WARNING,
+            message=f"Error evaluando frescura UI: {str(e)}",
+            response_time=time.time() - start_time,
+        )
+
+
 # Global health checker instance
 health_checker = HealthChecker()
 
@@ -554,6 +648,7 @@ health_checker.add_check(check_bcu_api)
 health_checker.add_check(check_brou_cache_freshness)
 health_checker.add_check(check_bcu_cache_freshness)
 health_checker.add_check(check_system_resources)
+health_checker.add_check(check_ui_freshness)
 
 
 # Health check endpoints

@@ -363,6 +363,66 @@ const Dashboard = ({ isOpen, onClose }) => {
                     );
                   })()}
 
+                  {/* Panel Frescura UI */}
+                  {(() => {
+                    const uiFresh = healthData.checks?.find(c => c.name === 'ui_freshness');
+                    if (!uiFresh) return null;
+                    const d = uiFresh.details || {};
+                    const formatDateOnly = (iso) => {
+                      if (!iso) return '-';
+                      try {
+                        const date = new Date(iso + (/(T|Z)/.test(iso) ? '' : 'T00:00:00Z'));
+                        if (isNaN(date.getTime())) return '-';
+                        return date.toLocaleDateString(baseLocale, { timeZone: 'America/Montevideo' });
+                      } catch { return '-'; }
+                    };
+                    return (
+                      <Card>
+                        <CardBody>
+                          <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white flex items-center gap-2">
+                            <span className="text-lg">📅</span>
+                            {t('dashboard.ui_freshness_panel.title') || t('dashboard.checks.names.ui_freshness') || 'Frescura UI'}
+                            <span className="text-xs text-gray-400 cursor-help" title={t('dashboard.tooltips.ui_freshness') || 'Verifica valor de hoy o gaps antiguos; fechas futuras permitidas.'}>ℹ️</span>
+                          </h3>
+                          <div className="overflow-x-auto">
+                            <table className="w-full text-left text-sm">
+                              <thead>
+                                <tr className="text-gray-500 dark:text-gray-400 text-xs uppercase">
+                                  <th className="py-2 px-2">{t('dashboard.ui_freshness_panel.headers.source') || 'Fuente'}</th>
+                                  <th className="py-2 px-2">{t('dashboard.ui_freshness_panel.headers.status') || 'Estado'}</th>
+                                  <th className="py-2 px-2">{t('dashboard.ui_freshness_panel.headers.latest_date') || 'Última Fecha'}</th>
+                                  <th className="py-2 px-2">{t('dashboard.ui_freshness_panel.headers.gap_days') || 'Gap (días)'}</th>
+                                  <th className="py-2 px-2">{t('dashboard.ui_freshness_panel.headers.future_days') || 'Días Futuro'}</th>
+                                  <th className="py-2 px-2">{t('dashboard.ui_freshness_panel.headers.window_passed') || 'Ventana Pub Pasada'}</th>
+                                  <th className="py-2 px-2">Msg</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                <tr className="border-t border-gray-200 dark:border-gray-700">
+                                  <td className="py-2 px-2 font-medium text-gray-700 dark:text-gray-200">UI</td>
+                                  <td className="py-2 px-2 text-xs">
+                                    <span className={`inline-block px-2 py-1 rounded border ${getStatusColor(uiFresh.status)}`}>
+                                      {getStatusIcon(uiFresh.status)} {(
+                                        uiFresh.status?.toLowerCase?.() === 'healthy' ? (t('dashboard.status.healthy') || 'Healthy') :
+                                        uiFresh.status?.toLowerCase?.() === 'warning' ? (t('dashboard.status.warning') || 'Warning') :
+                                        uiFresh.status?.toLowerCase?.() === 'critical' ? (t('dashboard.status.critical') || 'Critical') : uiFresh.status
+                                      )}
+                                    </span>
+                                  </td>
+                                  <td className="py-2 px-2 text-gray-600 dark:text-gray-300 text-sm">{formatDateOnly(d.latest_date)}</td>
+                                  <td className="py-2 px-2 text-gray-600 dark:text-gray-300 text-sm">{d.dias_gap ?? '-'}</td>
+                                  <td className="py-2 px-2 text-gray-600 dark:text-gray-300 text-sm">{d.future ? (`+${d.dias_ahead}`) : '-'}</td>
+                                  <td className="py-2 px-2 text-gray-600 dark:text-gray-300 text-sm">{d.publication_window_passed ? '✔' : '✖'}</td>
+                                  <td className="py-2 px-2 text-xs text-gray-500 dark:text-gray-400 max-w-[200px] truncate" title={uiFresh.message}>{uiFresh.message}</td>
+                                </tr>
+                              </tbody>
+                            </table>
+                          </div>
+                        </CardBody>
+                      </Card>
+                    );
+                  })()}
+
                   {/* Detalles de Checks */}
                   {healthData.checks && Array.isArray(healthData.checks) && (
                     <div>
@@ -374,6 +434,7 @@ const Dashboard = ({ isOpen, onClose }) => {
                         {healthData.checks
                           // Omitimos checks de caché y APIs (si panel compacto presente) para reducir ruido
                           .filter(c => !['brou_cache', 'bcu_cache', 'brou_api', 'bcu_api'].includes(c.name))
+                          .filter(c => !['ui_freshness'].includes(c.name))
                           .map((checkData, index) => (
                           <Card key={index}>
                             <CardBody>

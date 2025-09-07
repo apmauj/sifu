@@ -380,7 +380,8 @@
         "brou_api": "API BROU",
         "bcu_api": "API BCU",
         "system_resources": "Recursos del Sistema",
-        "application_metrics": "Métricas de Aplicación"
+        "application_metrics": "Métricas de Aplicación",
+        "ui_freshness": "Frescura UI"
       }
   ,"database_ok": "Conexión a base de datos exitosa"
     },
@@ -449,6 +450,17 @@
       "warning": "Advertencia",
       "critical": "Crítico"
     },
+    "ui_freshness_panel": {
+      "title": "Frescura UI",
+      "headers": {
+        "source": "Fuente",
+        "status": "Estado",
+        "latest_date": "Última Fecha",
+        "gap_days": "Gap (días)",
+        "future_days": "Días Futuro",
+        "window_passed": "Ventana Pub Pasada"
+      }
+    },
     "tooltips": {
       "general_status": "Resumen agregado del estado de todos los checks ejecutados",
       "checks_section": "Listado detallado de cada verificación de salud",
@@ -461,7 +473,15 @@
       "performance_metrics": "Métricas de rendimiento agregadas (respuesta, uptime, tráfico)",
       "performance_budgets": "Objetivos con umbrales para mantener la salud del sistema",
       "throughput_metrics": "Indicadores recientes de volumen y latencia",
-      "status_summary": "Conteo de presupuestos según su estado"
+      "status_summary": "Conteo de presupuestos según su estado",
+      "ui_freshness": "Verifica valor de hoy o gaps antiguos; fechas futuras permitidas.",
+      "database": "Conectividad y conteo básico de tablas.",
+      "brou_api": "Estado de la API BROU (live vs caché).",
+      "bcu_api": "Estado de la API BCU (live vs fallback).",
+      "system_resources": "Uso de CPU, memoria y disco.",
+      "application_metrics": "Errores recientes y latencia agregada.",
+      "brou_cache": "Frescura y tamaño caché BROU.",
+      "bcu_cache": "Frescura y tamaño caché BCU."
     },
     "application_metrics": {
       "total_requests": "Total de Solicitudes",

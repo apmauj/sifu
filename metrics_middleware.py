@@ -92,7 +92,7 @@ class MetricsMiddleware(BaseHTTPMiddleware):
 # Metrics endpoints
 async def get_metrics():
     """Get comprehensive metrics data"""
-    return {
+    base = {
         "global_stats": metrics_collector.get_global_stats(),
         "endpoint_stats": metrics_collector.get_endpoint_stats(),
         "recent_requests": [
@@ -108,6 +108,59 @@ async def get_metrics():
             for req in metrics_collector.get_recent_requests(50)
         ],
     }
+
+    # UI freshness metrics (roadmap task) - lightweight query
+    try:
+        from database import SessionLocal
+        from services import UIService
+        from datetime import datetime
+        import os, pytz  # type: ignore
+
+        session = SessionLocal()
+        try:
+            ui_service = UIService(session)
+            latest = ui_service.get_latest_ui()
+        finally:
+            session.close()
+
+        if latest:
+            tz_name = os.getenv("SCHEDULER_TIMEZONE", "UTC")
+            try:
+                tz = pytz.timezone(tz_name)
+            except Exception:
+                tz = pytz.UTC
+            now_local = datetime.now(tz)
+            dias_gap_raw = (now_local.date() - latest.date).days
+            if dias_gap_raw < 0:  # futuro
+                dias_ahead = -dias_gap_raw
+                base["ui_freshness"] = {
+                    "ui_latest_date": latest.date.isoformat(),
+                    "ui_dias_gap": 0,
+                    "ui_latest_age_seconds": 0,
+                    "ui_gap_detected": False,
+                    "future": True,
+                    "ui_dias_ahead": dias_ahead,
+                }
+            else:
+                base["ui_freshness"] = {
+                    "ui_latest_date": latest.date.isoformat(),
+                    "ui_dias_gap": dias_gap_raw,
+                    "ui_latest_age_seconds": dias_gap_raw * 86400,
+                    "ui_gap_detected": dias_gap_raw >= 2,
+                    "future": False,
+                }
+        else:
+            base["ui_freshness"] = {
+                "ui_latest_date": None,
+                "ui_dias_gap": None,
+                "ui_latest_age_seconds": None,
+                "ui_gap_detected": True,
+                "error": "no_ui_records",
+            }
+    except Exception as e:  # noqa: BLE001
+        base["ui_freshness"] = {"error": f"ui_metrics_failed: {e}"}
+
+    return base
 
 
 async def get_health():

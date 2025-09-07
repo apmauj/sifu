@@ -380,7 +380,8 @@
         "brou_api": "BROU API",
         "bcu_api": "BCU API",
         "system_resources": "System Resources",
-        "application_metrics": "Application Metrics"
+        "application_metrics": "Application Metrics",
+        "ui_freshness": "UI Freshness"
       }
   ,"database_ok": "Database connection successful"
     },
@@ -449,6 +450,17 @@
       "warning": "Warning",
       "critical": "Critical"
     },
+    "ui_freshness_panel": {
+      "title": "UI Freshness",
+      "headers": {
+        "source": "Source",
+        "status": "Status",
+        "latest_date": "Latest Date",
+        "gap_days": "Gap (days)",
+        "future_days": "Future Days",
+        "window_passed": "Pub Window Passed"
+      }
+    },
     "tooltips": {
       "general_status": "Aggregated summary status of all executed checks",
       "checks_section": "Detailed list of each health verification",
@@ -461,7 +473,15 @@
       "performance_metrics": "Aggregated performance metrics (latency, uptime, traffic)",
       "performance_budgets": "Targets with thresholds to keep system healthy",
       "throughput_metrics": "Recent throughput and latency indicators",
-      "status_summary": "Count of budgets by status"
+      "status_summary": "Count of budgets by status",
+      "ui_freshness": "Ensures today's UI exists or flags past gaps; future dates allowed.",
+      "database": "Connectivity and basic table counts.",
+      "brou_api": "BROU rates fetch status (live vs cache).",
+      "bcu_api": "BCU rates fetch status (live vs fallback).",
+      "system_resources": "CPU, memory and disk usage.",
+      "application_metrics": "Recent errors and aggregated latency.",
+      "brou_cache": "Freshness and size of BROU cache.",
+      "bcu_cache": "Freshness and size of BCU cache."
     },
     "application_metrics": {
       "total_requests": "Total Requests",
