@@ -1,9 +1,9 @@
+from typing import Any
 try:
     import pandas as pd  # type: ignore
 except Exception:  # pragma: no cover
     pd = None  # noqa: N816
     import warnings
-
     warnings.warn(
         "pandas no disponible; operaciones de Excel serán omitidas en este entorno"
     )
@@ -58,7 +58,7 @@ class ExcelProcessor:
         self.url = URL_INE_UI
         self.timeout = HTTP_TIMEOUT
 
-    def download_excel(self) -> Optional[pd.DataFrame]:
+    def download_excel(self) -> Optional[Any]:
         """Download Excel file from INE URL"""
         if pd is None:
             logger.warning("pandas not available; skipping UI Excel download")
@@ -88,13 +88,14 @@ class ExcelProcessor:
             logger.error(f"Error processing Excel file: {e}")
             return None
 
-    def parse_excel_data(self, excel_data: pd.DataFrame) -> List[Tuple[date, float]]:
+    def parse_excel_data(self, excel_data: Any) -> List[Tuple[date, float]]:
         """Parse Excel data and return a list of tuples (date, value)"""
         if pd is None:
             logger.warning("pandas not available; cannot parse UI Excel data")
             return []
         try:
             records = []
+            skipped_rows = 0
 
             # Find date and value columns
             # Assuming first column is date and second is value
@@ -128,8 +129,26 @@ class ExcelProcessor:
 
                     # Convert value
                     try:
-                        parsed_value = float(value_raw)
+                        # Handle string values with comma decimal or thousand separators
+                        if isinstance(value_raw, str):
+                            raw = value_raw.strip()
+                            if raw == "":
+                                skipped_rows += 1
+                                continue
+                            # European decimal: 6,3655 -> 6.3655
+                            # Remove spaces; if both '.' and ',' appear assume '.' thousands separator
+                            if "," in raw:
+                                if "." in raw:
+                                    # 1.234,56 -> 1234.56
+                                    raw = raw.replace(".", "").replace(",", ".")
+                                else:
+                                    # 1234,56 -> 1234.56
+                                    raw = raw.replace(",", ".")
+                            parsed_value = float(raw)
+                        else:
+                            parsed_value = float(value_raw)
                     except (ValueError, TypeError):
+                        skipped_rows += 1
                         continue
 
                     records.append((parsed_date, parsed_value))
@@ -139,6 +158,10 @@ class ExcelProcessor:
                     continue
 
             logger.info(LOG_RECORDS_PARSED.format(count=len(records)))
+            if skipped_rows:
+                logger.info(
+                    f"UI parser skipped {skipped_rows} rows due to value parsing issues (likely comma decimal format before fix)"
+                )
             return records
 
         except Exception as e:
@@ -217,7 +240,7 @@ class URExcelProcessor:
         self.url = URL_BHU_UR
         self.timeout = HTTP_TIMEOUT
 
-    def download_excel(self) -> Optional[pd.DataFrame]:
+    def download_excel(self) -> Optional[Any]:
         """Download UR Excel file from BHU URL"""
         if pd is None:
             logger.warning("pandas not available; skipping UR Excel download")
@@ -307,7 +330,7 @@ class URExcelProcessor:
         return None
 
     def parse_excel_data(
-        self, excel_data: pd.DataFrame
+        self, excel_data: Any
     ) -> List[Tuple[int, int, float]]:
         """
         Parse UR Excel data with matrix format:
@@ -593,7 +616,7 @@ class ExchangeRateExcelProcessor:
         self.url = URL_INE_EXCHANGE_RATES
         self.timeout = HTTP_TIMEOUT
 
-    def download_excel(self) -> Optional[pd.DataFrame]:
+    def download_excel(self) -> Optional[Any]:
         """Download Exchange Rate Excel file from INE URL"""
         if pd is None:
             logger.warning("pandas not available; skipping Exchange Excel download")
@@ -626,7 +649,7 @@ class ExchangeRateExcelProcessor:
             return None
 
     def parse_excel_data(
-        self, excel_data: pd.DataFrame
+        self, excel_data: Any
     ) -> List[Tuple[date, str, float, float, Optional[float]]]:
         """
         Parse INE Exchange Rate Excel data
