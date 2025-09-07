@@ -441,9 +441,6 @@ def _add_jobs(_scheduler):
     # UI daily refresh
     def job_ui_refresh():
         try:
-            if not _is_business_day():
-                logger.info("[Scheduler][UI] Skipped (non-business day)")
-                return
             from database import SessionLocal
 
             db = SessionLocal()
@@ -559,11 +556,11 @@ def _add_jobs(_scheduler):
                 if latest_ui is None:
                     need_ui = True
                 else:
+                    # UI values are published daily (including weekends); trigger if latest date < today after 02:30 local
                     if (
                         latest_ui.date < today
                         and now_local.hour >= 2
                         and now_local.minute >= 30
-                        and now_local.weekday() < 5
                     ):
                         need_ui = True
                 if need_ui:

@@ -8,8 +8,10 @@ services:
     #   context: .
     #   dockerfile: Dockerfile
     container_name: sifu-backend
+    # Exponer solo a loopback para que no sea accesible desde otras máquinas.
+    # Si se necesita acceso externo temporal, cambiar a "${BACKEND_PORT:-8000}:8000".
     ports:
-      - "${BACKEND_PORT:-8000}:8000"
+      - "127.0.0.1:${BACKEND_PORT:-8000}:8000"
     volumes:
       # Volumen para persistir la base de datos
       - ./data:/app/data
