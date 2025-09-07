@@ -171,6 +171,33 @@ Implementadas optimizaciones puntuales tras la modernización principal:
 
 ---
 
-**Última actualización**: 2025-09-06 (post Dashboard/i18n modernization)
+### ✅ Completado - Ingesta Continua Fines de Semana + Corrección Datos Faltantes (2025-09-07)
+
+#### Alcance
+- Ajuste de `job_ui_refresh` eliminando restricción de días hábiles (antes se salteaban sábados/domingos generando huecos)
+- Ajuste de `data_guard` para considerar fines de semana (si `latest_ui.date < today` después de 02:30 se fuerza refresh)
+- Verificación manual de Excel INE: presencia de filas 2025-09-05..08 (valores existentes no insertados previamente)
+- Script interno ejecutado dentro del contenedor para refrescar e insertar registros faltantes (30 nuevos registros procesados)
+- Confirmada persistencia de 2025-09-06, 2025-09-07 y 2025-09-08 tras refresh manual
+- Revisión de por qué curl externo fallaba: puerto 8000 no estaba publicado; se decidió mantener aislamiento local
+
+#### Cambios Clave
+- `main.py`: eliminado early-return por non-business-day en `job_ui_refresh`
+- `main.py`: remoción de condición `weekday() < 5` en data guard UI
+- `docker-compose.yml`: binding de backend limitado a loopback `127.0.0.1:8000` para evitar acceso externo accidental
+
+#### Resultado
+- Gaps de fines de semana eliminados (ingesta futura cubrirá sábados y domingos)
+- Base lista para mostrar siempre valor de “hoy” si publicado por INE aun en fin de semana
+- Riesgo de inconsistencia entre entorno local y producción reducido (documentado el ajuste necesario para imagen publicada)
+
+### 📌 Ajustes Pendientes / Nueva Prioridad (Rebalanceado 2025-09-07)
+1. Externalizar validación de continuidad de fechas UI (script que alerta si falta un día dentro de últimos 14) – priorizar Fase 1.1
+2. Añadir métrica `ui_latest_age_seconds` y `ui_gap_detected` a `/api/metrics` para dashboards futuros
+3. Endpoint debug opcional `/api/ui/gaps/recent` (solo si se detectan huecos) – detrás de flag
+
+---
+
+**Última actualización**: 2025-09-07 (post corrección fines de semana & aislamiento puerto)
 **Suite de Tests**: ✅ 600/600 pasando
-**Estado General**: 🟢 Saludable y listo para seguir con automatización & 2FA
+**Estado General**: 🟢 Saludable; siguiente foco: automatización túnel + monitoreo + métricas de frescura

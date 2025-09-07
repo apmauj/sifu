@@ -90,83 +90,28 @@ exchange_rate_records (23,051+ registros históricos + actuales)
 UIService:
 - Búsqueda por fecha/rango
 - Fecha más cercana (smart fallback)
-- Cálculo de variaciones
-- Estadísticas y metadatos
-
-URService:  
-- Búsqueda por año/mes/rango
-- Mes más cercano disponible
-- Análisis de tendencias anuales
 - Información de disponibilidad
 
-ExchangeRateService (REWORK):
-- Sistema dual: Histórico (INE) + Tiempo Real (BCU)
-- Múltiples monedas simultáneas
-- 23+ años de datos históricos
-- Panel tiempo real con auto-refresh
 - Rangos de fechas complejos
 - Estadísticas por moneda
-- Fallback automático a datos de muestra
-```
-
-#### 5. **API Layer (FastAPI)**
-```python
-# 24 endpoints RESTful organizados
 Sistema:        /api/health, /api/info
 UI (4 endpoints):     /api/ui/*
-UR (6 endpoints):     /api/ur/*
-Exchange (8 endpoints): /api/exchange-rate/* (incluye /current)
-Refresh (3 endpoints): POST refresh endpoints
-
-# Características avanzadas
 - Validación automática (Pydantic)
 - Documentación interactiva (Swagger)
-- Manejo de errores estandarizado
-- Response models optimizados
-```
-
-## 📊 Estadísticas de Datos
 
 ### **Volumen de Información**
-- **UI Records**: ~8,436 registros (2002-2025)
-- **UR Records**: ~676 registros (1969-2025)
-- **Exchange Rates**: 23,051 registros históricos (2001-2025) + tiempo real
 - **Total**: ~32,163+ registros financieros
-
-### **Cobertura Temporal**
-- **UI**: 23 años de datos diarios (2002-2025)
-- **UR**: 56 años de datos mensuales (1969-2025)
-- **Exchange**: 24 años históricos (2001-2025) + tiempo real BCU
 
 ### **Monedas Soportadas**
 
-**Histórico (INE):**
-- 🇺🇸 USD (Dólar Estadounidense) - 23+ años
-- 🇪🇺 EUR (Euro) - 23+ años
-- 🇦🇷 ARS (Peso Argentino) - 23+ años
-- 🇧🇷 BRL (Real Brasileño) - 23+ años
 
 **Tiempo Real (BCU Panel):**
 - 🇺🇸 USD, 🇪🇺 EUR, 🇦🇷 ARS, 🇧🇷 BRL, 🇨🇱 CLP
 
-## 🔧 Stack Tecnológico
-
-### **Backend (Python)**
-```python
 # Core Framework
 FastAPI 0.104+          # Web framework moderno
-SQLAlchemy 2.0+         # ORM avanzado
-Pydantic 2.0+           # Validación de datos
-
-# Data Processing
 pandas 2.0+             # Análisis de datos
 beautifulsoup4 4.13+    # Web scraping HTML
-requests 2.31+          # HTTP client
-openpyxl 3.1+           # Excel processing
-
-# Database
-sqlite3                 # Base de datos embebida
-```
 
 ### **Frontend (Planned)**
 ```javascript
@@ -182,10 +127,6 @@ React Hook Form         // Form handling
 Recharts               // Data visualization
 React Router DOM       // Navigation
 ```
-
-### **DevOps & Deployment**
-```yaml
-# Containerization
 Docker 24+              # Containerization
 Docker Compose 2+       # Orchestration
 
@@ -199,19 +140,8 @@ Node.js 18+             # Frontend tooling
 ```
 
 ## 🚀 Capacidades Implementadas
-
-### **Funcionalidades Core**
-- ✅ **Consultas Avanzadas**: Fecha específica, rangos, búsqueda inteligente
-- ✅ **Actualización Automática**: Refresh desde fuentes oficiales
-- ✅ **Múltiples Formatos**: Excel, HTML, JSON API responses
 - ✅ **Validación Robusta**: Pydantic models, error handling
 - ✅ **Caché Inteligente**: SQLite + fallback mechanisms
-
-### **Características Técnicas**
-- ✅ **RESTful API**: 23 endpoints documentados
-- ✅ **Clean Architecture**: Separación clara de responsabilidades
-- ✅ **Error Handling**: Manejo robusto de errores
-- ✅ **Data Validation**: Validación automática de entrada/salida
 - ✅ **Flexible Queries**: Consultas complejas optimizadas
 
 ### **Optimizaciones**
@@ -221,11 +151,9 @@ Node.js 18+             # Frontend tooling
 - ✅ **Response Caching**: Optimización de respuestas repetitivas
 
 ## 🧪 Testing & Quality
-
 ### **Cobertura de Testing**
 - ✅ **Unit Tests**: Servicios y procesadores
 - ✅ **Integration Tests**: Flujos completos
-- ✅ **API Testing**: Todos los endpoints
 - ✅ **Data Validation**: Integridad de datos
 
 ### **Quality Metrics**
