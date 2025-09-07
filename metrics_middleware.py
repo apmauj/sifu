@@ -114,7 +114,8 @@ async def get_metrics():
         from database import SessionLocal
         from services import UIService
         from datetime import datetime
-        import os, pytz  # type: ignore
+        import os
+        import pytz  # type: ignore
 
         session = SessionLocal()
         try:

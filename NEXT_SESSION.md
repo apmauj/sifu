@@ -201,3 +201,38 @@ Implementadas optimizaciones puntuales tras la modernización principal:
 **Última actualización**: 2025-09-07 (post corrección fines de semana & aislamiento puerto)
 **Suite de Tests**: ✅ 600/600 pasando
 **Estado General**: 🟢 Saludable; siguiente foco: automatización túnel + monitoreo + métricas de frescura
+
+---
+
+### ✅ Completado - Monitoreo de Frescura UI (2025-09-07)
+
+#### Alcance
+- Nuevo health check `ui_freshness` en backend (`health_checks.py`) con reglas:
+   - Healthy: valor de hoy presente, o valor de ayer antes de ventana 03:00 local, o fechas futuras (permitidas).
+   - Warning: falta valor de hoy pasada la ventana (gap = 1 día).
+   - Critical: gap de 2+ días o sin registros.
+- Métricas añadidas en `/api/metrics`: bloque `ui_freshness` (`ui_latest_date`, `ui_dias_gap`, `ui_latest_age_seconds`, `ui_gap_detected`, `future`, `ui_dias_ahead`).
+- Panel frontend dedicado “Frescura UI” (tabla compacta) en `Dashboard.jsx` reutilizando estilos de paneles de caché.
+- Traducciones e i18n: claves añadidas `dashboard.checks.names.ui_freshness`, `dashboard.tooltips.ui_freshness`, y bloque `dashboard.ui_freshness_panel.*` en `es/en/pt`.
+- Exclusión del check `ui_freshness` de la lista genérica de “Detalles” para evitar duplicación visual.
+- Política final: cualquier fecha futura se considera válida (no warning) y se expone `dias_ahead`.
+
+#### Cambios Clave
+- `health_checks.py`: función `check_ui_freshness` + registro en `health_checker`.
+- `metrics_middleware.py`: agregado bloque UI freshness lightweight.
+- `frontend/src/components/Dashboard.jsx`: nuevo panel y filtrado del check en detalles.
+- `frontend/src/locales/{es,en,pt}.json`: nuevas claves de nombre, tooltips y encabezados panel.
+
+#### Resultados
+- Observabilidad directa de frescura UI sin sobrecargar panel principal.
+- Compatible con datasets que publican valores futuros (no genera falsos positivos).
+- Base lista para extender a frescura UR / Exchange en panel conjunto futuro.
+
+#### Próximas Extensiones (No ejecutadas aún)
+1. Añadir checks análogos para UR y Exchange consolidando “Panel Fuentes Planillas”.
+2. Endpoint opcional `/api/ui/gaps/recent` (solo si se detectan huecos) para soporte.
+3. Alerting ligero: script o workflow que lea `/api/metrics` y notifique si `ui_gap_detected=true`.
+
+---
+
+**Última actualización**: 2025-09-07 (tras inclusión monitoreo frescura UI)

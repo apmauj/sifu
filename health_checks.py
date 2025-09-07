@@ -559,7 +559,6 @@ def check_ui_freshness() -> HealthCheckResult:
     start_time = time.time()
     try:
         from database import SessionLocal  # local import para evitar ciclos en tests ligeros
-        from datetime import timezone as _tz
         import os
         import pytz  # type: ignore
 
