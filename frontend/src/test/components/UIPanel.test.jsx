@@ -36,23 +36,23 @@ describe('UIPanel', () => {
     getByDateMock.mockReset();
   });
 
-  it('shows loading then renders status + latest value', async () => {
+  it('shows loading then fetches today date value (not necessarily latest future)', async () => {
+    const todayISO = new Date().toISOString().slice(0,10);
     getInfoMock.mockResolvedValue({
       total_records: 10,
       date_range: { min_date: '2024-01-01', max_date: '2024-02-01' },
       latest_ui: { value: 123.4567, date: '2024-02-01' }
     });
-    getByDateMock.mockResolvedValue({ success: true, value: 123.4567 });
+    getByDateMock.mockResolvedValue({ success: true, value: 123.4567, date: todayISO });
 
     render(<UIPanel />);
     expect(screen.getByText('Cargando información...')).toBeInTheDocument();
     await waitFor(() => expect(screen.getByText(/Estado de los datos UI/)).toBeInTheDocument());
+    // Verificaciones básicas de info
     expect(screen.getByText(/10/)).toBeInTheDocument();
     expect(screen.getByText(/2024-01-01/)).toBeInTheDocument();
-  // Date appears twice (period end and latest value line)
-  expect(screen.getAllByText(/2024-02-01/).length).toBeGreaterThanOrEqual(1);
-  // Wait for the async effect that loads the latest value to trigger the service call
-  await waitFor(() => expect(getByDateMock).toHaveBeenCalledWith('2024-02-01'));
+    // Llamada realizada para la fecha de hoy
+    await waitFor(() => expect(getByDateMock).toHaveBeenCalledWith(todayISO));
   });
 
   it('renders error state when info missing', async () => {

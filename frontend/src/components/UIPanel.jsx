@@ -59,33 +59,35 @@ const UIPanel = ({ refreshKey }) => {
     fetchUIInfo();
   }, [t, currentLanguage, refreshKey]);
 
-  // Cargar automáticamente los últimos valores de UI al inicializar
-  const loadedLatestRef = React.useRef(false);
+  // Cargar automáticamente el valor correspondiente al día de hoy (o el más cercano previo)
+  // en lugar de forzar siempre el último valor futuro disponible.
+  const loadedTodayRef = React.useRef(false);
   React.useEffect(() => {
-    const loadLatestUI = async () => {
-      if (!uiInfoLoading && uiInfo.latest_ui && !loadedLatestRef.current) {
+    const loadTodayUI = async () => {
+      if (!uiInfoLoading && uiInfo && !loadedTodayRef.current) {
         try {
           setSearchLoading(true);
           setResults(null);
           setSearchType('single');
-          const response = await uiService.getByDate(uiInfo.latest_ui.date);
+          const todayISO = new Date().toISOString().slice(0, 10);
+          const response = await uiService.getByDate(todayISO);
           setResults(response);
         } catch (err) {
-          console.error('Error loading latest UI:', err);
+          console.error('Error loading today UI value:', err);
           setResults({
             success: false,
-            message: t('errors.search_data_error') || 'Error al cargar últimos valores de UI'
+            message: t('errors.search_data_error') || 'Error al cargar valor de hoy'
           });
         } finally {
           setSearchLoading(false);
-          loadedLatestRef.current = true;
+          loadedTodayRef.current = true;
         }
       }
     };
     if (refreshKey) {
-      loadedLatestRef.current = false; // permitir recarga tras refresh manual
+      loadedTodayRef.current = false; // permitir recarga tras refresh manual
     }
-    loadLatestUI();
+    loadTodayUI();
   }, [uiInfo, uiInfoLoading, t, refreshKey]);
 
   // Función para buscar valores de UI

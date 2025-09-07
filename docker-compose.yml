@@ -1,11 +1,12 @@
 services:
   # Backend - FastAPI
   backend:
-    # Usar build local para desarrollo con autenticación
-    build:
-      context: .
-      dockerfile: Dockerfile
-    # image: apmauj/sifu-backend:latest
+    # Producción: usar imagen publicada en Docker Hub (evita drift con CI)
+    image: apmauj/sifu-backend:latest
+    # Desarrollo local: usar archivo docker-compose.dev.yml con bloque build (ver añadido).
+    # build:
+    #   context: .
+    #   dockerfile: Dockerfile
     container_name: sifu-backend
     ports:
       - "${BACKEND_PORT:-8000}:8000"
