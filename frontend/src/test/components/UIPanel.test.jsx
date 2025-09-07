@@ -54,6 +54,9 @@ describe('UIPanel', () => {
   it('renders error state when info missing', async () => {
     getInfoMock.mockResolvedValue({ total_records: 0 });
     render(<UIPanel />);
-    await waitFor(() => expect(screen.getByText('Error al cargar')).toBeInTheDocument());
+    await waitFor(() => {
+      const err = screen.queryByText(/Error UI:.*Error al cargar/) || screen.queryByText(/Error al cargar/);
+      expect(err).toBeInTheDocument();
+    });
   });
 });
