@@ -64,40 +64,32 @@ const UIPanel = ({ refreshKey }) => {
   const loadedTodayRef = React.useRef(false);
   React.useEffect(() => {
     const loadTodayUI = async () => {
-      if (!uiInfoLoading && uiInfo && !loadedTodayRef.current) {
-        try {
-          setSearchLoading(true);
-          setResults(null);
-          setSearchType('single');
-          const todayISO = new Date().toISOString().slice(0, 10);
-          const latestISO = uiInfo?.latest_ui?.date;
-          const minISO = uiInfo?.date_range?.min_date;
-          const maxISO = uiInfo?.date_range?.max_date;
-          // Regla: si hoy > max (o no hay dato para hoy), usar latest.
-          // Si hoy < min (caso histórico), usar min.
-            let targetDate = todayISO;
-            if (maxISO && todayISO > maxISO && latestISO) {
-              targetDate = latestISO;
-            } else if (minISO && todayISO < minISO) {
-              targetDate = minISO;
-            }
-          const response = await uiService.getByDate(targetDate);
-          setResults(response);
-        } catch (err) {
-          console.error('Error loading today UI value:', err);
-          setResults({
-            success: false,
-            message: t('errors.search_data_error') || 'Error al cargar valor de hoy'
-          });
-        } finally {
-          setSearchLoading(false);
-          loadedTodayRef.current = true;
-        }
+      // Requisitos: no cargando, no ejecutado antes, info básica disponible
+      if (uiInfoLoading || loadedTodayRef.current) return;
+      const hasRange = !!uiInfo?.date_range?.min_date && !!uiInfo?.date_range?.max_date;
+      const hasLatest = !!uiInfo?.latest_ui?.date;
+      if (!hasRange || !hasLatest) return; // evita llamadas en estado de error / info incompleta
+      try {
+        setSearchLoading(true);
+        setResults(null);
+        setSearchType('single');
+        const todayISO = new Date().toISOString().slice(0, 10);
+        const latestISO = uiInfo.latest_ui.date;
+        const minISO = uiInfo.date_range.min_date;
+        const maxISO = uiInfo.date_range.max_date;
+        let targetDate = todayISO;
+        if (todayISO > maxISO) targetDate = latestISO; else if (todayISO < minISO) targetDate = minISO;
+        const response = await uiService.getByDate(targetDate);
+        setResults(response);
+      } catch (err) {
+        console.error('Error loading today UI value:', err);
+        setResults({ success: false, message: t('errors.search_data_error') || 'Error al cargar valor de hoy' });
+      } finally {
+        setSearchLoading(false);
+        loadedTodayRef.current = true;
       }
     };
-    if (refreshKey) {
-      loadedTodayRef.current = false; // permitir recarga tras refresh manual
-    }
+    if (refreshKey) loadedTodayRef.current = false; // permitir recarga tras refresh manual
     loadTodayUI();
   }, [uiInfo, uiInfoLoading, t, refreshKey]);
 
@@ -129,7 +121,7 @@ const UIPanel = ({ refreshKey }) => {
         {uiInfoLoading ? (
           <span className="text-blue-700 text-sm">{t('common.loading') || 'Cargando información...'}</span>
         ) : uiInfoError ? (
-          <span className="text-red-600 text-sm">{uiInfoError}</span>
+          <span className="text-red-600 text-sm">Error UI: {uiInfoError}</span>
         ) : (
           <div className="flex items-center justify-between">
             <div>
