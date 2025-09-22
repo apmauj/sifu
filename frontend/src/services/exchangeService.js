@@ -65,75 +65,83 @@ const setupInterceptors = (apiInstance) => {
 setupInterceptors(api);
 setupInterceptors(directApi);
 
-// Servicios de Exchange Rates API
+// Servicios de Exchange Rates API - Terminología Unificada (Punto 5)
 const exchangeService = {
-  // Obtener cotizaciones actuales del BCU (tiempo real)
+  // Obtener cotizaciones actuales (tiempo real) - Unificado
+  getCurrent: async (source = null) => {
+    const params = source ? { source } : {};
+    return makeRequest((apiInstance) => 
+      apiInstance.get('/exchange/current', { params })
+    );
+  },
+
+  // Obtener cotizaciones actuales del BCU (tiempo real) - Legacy
   getCurrentRates: async () => {
     return makeRequest((apiInstance) => apiInstance.get('/exchange-rate/current'));
   },
 
-  // Obtener últimas cotizaciones (todas las monedas o una específica)
+  // Obtener últimas cotizaciones (todas las monedas o una específica) - Unificado
   getLatest: async (currency = null) => {
     const params = currency ? { currencies: currency } : {};
     return makeRequest((apiInstance) => 
-      apiInstance.get('/exchange-rate/latest', { params })
+      apiInstance.get('/exchange/latest', { params })
     );
   },
 
-  // Obtener información general de cotizaciones
+  // Obtener información general de cotizaciones - Unificado
   getInfo: async () => {
-    return makeRequest((apiInstance) => apiInstance.get('/exchange-rate/info'));
+    return makeRequest((apiInstance) => apiInstance.get('/exchange/info'));
   },
 
-  // Obtener historial por moneda específica
+  // Obtener historial por moneda específica - Unificado
   getCurrencyHistory: async (currency, limit = 30) => {
     return makeRequest((apiInstance) => 
-      apiInstance.get(`/exchange-rate/currency/${currency}`, { 
+      apiInstance.get(`/exchange/currency/${currency}`, { 
         params: { limit } 
       })
     );
   },
 
-  // Obtener cotizaciones por fecha específica
+  // Obtener cotizaciones por fecha específica - Unificado
   getByDate: async (date, currency = null) => {
     const params = currency ? { currency } : {};
     return makeRequest((apiInstance) => 
-      apiInstance.get(`/exchange-rate/${date}`, { params })
+      apiInstance.get(`/exchange/${date}`, { params })
     );
   },
 
-  // Obtener cotización específica (fecha + moneda)
+  // Obtener cotización específica (fecha + moneda) - Unificado
   getSpecificRate: async (date, currency) => {
     return makeRequest((apiInstance) => 
-      apiInstance.get(`/exchange-rate/${date}/${currency}`)
+      apiInstance.get(`/exchange/${date}/${currency}`)
     );
   },
 
-  // Obtener cotizaciones por rango de fechas
+  // Obtener cotizaciones por rango de fechas - Unificado
   getByDateRange: async (startDate, endDate, currency = null) => {
     const params = currency ? { currency } : {};
     return makeRequest((apiInstance) => 
-      apiInstance.get(`/exchange-rate/range/${startDate}/${endDate}`, { params })
+      apiInstance.get(`/exchange/range/${startDate}/${endDate}`, { params })
     );
   },
 
-  // Actualizar datos desde el BCU
+  // Actualizar datos - Unificado
   refresh: async (useSampleData = false) => {
     // Mantener endpoint síncrono legado (podría retirarse en el futuro)
     const params = useSampleData ? { use_sample_data: true } : {};
     return makeRequest((apiInstance) =>
-      apiInstance.post('/exchange-rate/refresh', {}, { params })
+      apiInstance.post('/exchange/refresh', {}, { params })
     );
   },
 
-  // Iniciar refresh histórico asíncrono (202 Accepted)
+  // Iniciar refresh histórico asíncrono (202 Accepted) - Legacy
   startAsyncHistoricalRefresh: async () => {
     return makeRequest((apiInstance) => 
       apiInstance.post('/exchange-rate/refresh-async')
     );
   },
 
-  // Obtener estado de un job
+  // Obtener estado de un job - Legacy
   getJobStatus: async (jobId) => {
     if (!jobId) throw new Error('jobId requerido');
     return makeRequest((apiInstance) => 
@@ -162,24 +170,64 @@ const exchangeService = {
   },
 };
 
-// Constantes para monedas soportadas
+// Constantes para monedas soportadas - Terminología Unificada (Punto 5)
 export const SUPPORTED_CURRENCIES = [
-  { code: 'USD', flag: '🇺🇸' },
-  { code: 'EUR', flag: '🇪🇺' },
-  { code: 'ARS', flag: '🇦🇷' },
-  { code: 'BRL', flag: '🇧🇷' },
+  { code: 'USD', name: 'Dólar Estadounidense', flag: '🇺🇸' },
+  { code: 'USD_EBROU', name: 'Dólar eBROU', flag: '🇺🇸' },
+  { code: 'EUR', name: 'Euro', flag: '🇪🇺' },
+  { code: 'ARS', name: 'Peso Argentino', flag: '🇦🇷' },
+  { code: 'BRL', name: 'Real Brasileño', flag: '🇧🇷' },
+  { code: 'CLP', name: 'Peso Chileno', flag: '🇨🇱' },
 ];
 
 export const CURRENCY_SYMBOLS = {
   USD: 'US$',
+  USD_EBROU: 'US$',
   EUR: '€',
   ARS: '$',
   BRL: 'R$',
+  CLP: '$',
+};
+
+// Fuentes de datos unificadas
+export const EXCHANGE_SOURCES = {
+  BCU: {
+    code: 'BCU',
+    name: 'Banco Central del Uruguay',
+    description: 'Datos en tiempo real del BCU'
+  },
+  INE: {
+    code: 'INE',
+    name: 'Instituto Nacional de Estadística',
+    description: 'Datos históricos del INE'
+  },
+  BROU: {
+    code: 'BROU',
+    name: 'Banco República del Uruguay',
+    description: 'Cotizaciones bancarias del BROU'
+  }
+};
+
+// Tipos de fuente unificados
+export const SOURCE_TYPES = {
+  LIVE: 'live',
+  HISTORICAL: 'historical',
+  SAMPLE: 'sample',
+  PERSISTED: 'persisted'
 };
 
 // Helper para obtener información de una moneda
 export const getCurrencyInfo = (currencyCode) => {
   return SUPPORTED_CURRENCIES.find(currency => currency.code === currencyCode);
+};
+
+// Helper para obtener información de una fuente
+export const getSourceInfo = (sourceCode) => {
+  return EXCHANGE_SOURCES[sourceCode] || {
+    code: sourceCode,
+    name: sourceCode,
+    description: `Fuente: ${sourceCode}`
+  };
 };
 
 // Helper para formatear tasas de cambio
@@ -189,6 +237,43 @@ export const formatExchangeRate = (rate, decimals = 2) => {
     minimumFractionDigits: decimals,
     maximumFractionDigits: decimals,
   }).format(rate);
+};
+
+// Helper para formatear datos de exchange unificados
+export const formatExchangeData = (data) => {
+  if (!data || !Array.isArray(data)) return [];
+  
+  return data.map(item => ({
+    currency: item.currency,
+    currencyName: getCurrencyInfo(item.currency)?.name || item.currency,
+    buyRate: item.buy_rate,
+    sellRate: item.sell_rate,
+    averageRate: item.average_rate,
+    date: item.date,
+    source: item.source,
+    sourceType: item.source_type,
+    timestamp: item.timestamp,
+    isPreferential: item.is_preferential || false,
+    arbitrageBuy: item.arbitrage_buy,
+    arbitrageSell: item.arbitrage_sell
+  }));
+};
+
+// Helper para obtener metadatos de exchange
+export const getExchangeMetadata = (response) => {
+  if (!response || !response.metadata) return null;
+  
+  return {
+    totalRecords: response.metadata.total_records,
+    source: response.metadata.source,
+    sourceType: response.metadata.source_type,
+    sourceDescription: response.metadata.source_description,
+    timestamp: response.metadata.timestamp,
+    currencyNames: response.metadata.currency_names,
+    dataAgeMinutes: response.metadata.data_age_minutes,
+    isFresh: response.metadata.is_fresh,
+    status: response.metadata.status
+  };
 };
 
 export default exchangeService; 

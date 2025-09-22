@@ -90,6 +90,51 @@ class MetricsMiddleware(BaseHTTPMiddleware):
 
 
 # Metrics endpoints
+def _get_cache_age_metrics():
+    """Get cache age metrics for BROU and BCU caches"""
+    cache_metrics = {}
+    
+    try:
+        from main import brou_cache, bcu_cache, _cache_lock
+        
+        # BROU Cache Age
+        with _cache_lock:
+            brou_cached = brou_cache
+        
+        if brou_cached and brou_cached.get("updated_at"):
+            brou_age = (datetime.utcnow() - brou_cached["updated_at"]).total_seconds()
+            cache_metrics["brou_cache_age_seconds"] = round(brou_age, 1)
+            cache_metrics["brou_cache_age_minutes"] = round(brou_age / 60, 1)
+            cache_metrics["brou_cache_status"] = "available"
+        else:
+            cache_metrics["brou_cache_age_seconds"] = None
+            cache_metrics["brou_cache_age_minutes"] = None
+            cache_metrics["brou_cache_status"] = "empty" if brou_cached is None else "no_timestamp"
+        
+        # BCU Cache Age
+        with _cache_lock:
+            bcu_cached = bcu_cache
+        
+        if bcu_cached and bcu_cached.get("updated_at"):
+            bcu_age = (datetime.utcnow() - bcu_cached["updated_at"]).total_seconds()
+            cache_metrics["bcu_cache_age_seconds"] = round(bcu_age, 1)
+            cache_metrics["bcu_cache_age_minutes"] = round(bcu_age / 60, 1)
+            cache_metrics["bcu_cache_status"] = "available"
+        else:
+            cache_metrics["bcu_cache_age_seconds"] = None
+            cache_metrics["bcu_cache_age_minutes"] = None
+            cache_metrics["bcu_cache_status"] = "empty" if bcu_cached is None else "no_timestamp"
+            
+    except Exception as e:
+        cache_metrics["cache_metrics_error"] = str(e)
+        cache_metrics["brou_cache_age_seconds"] = None
+        cache_metrics["bcu_cache_age_seconds"] = None
+        cache_metrics["brou_cache_status"] = "error"
+        cache_metrics["bcu_cache_status"] = "error"
+    
+    return cache_metrics
+
+
 async def get_metrics():
     """Get comprehensive metrics data"""
     base = {
@@ -160,6 +205,52 @@ async def get_metrics():
             }
     except Exception as e:  # noqa: BLE001
         base["ui_freshness"] = {"error": f"ui_metrics_failed: {e}"}
+
+    # Cache age metrics (Punto 4: Métricas de Edad de Caché)
+    try:
+        cache_metrics = _get_cache_age_metrics()
+        base["cache_metrics"] = cache_metrics
+        
+        # Add cache age warnings based on configurable thresholds
+        cache_warnings = []
+        try:
+            from constants import CACHE_WARNING_THRESHOLD_MINUTES, CACHE_CRITICAL_THRESHOLD_MINUTES
+            
+            if cache_metrics.get("brou_cache_age_seconds") is not None:
+                brou_age_minutes = cache_metrics["brou_cache_age_minutes"]
+                if brou_age_minutes > CACHE_CRITICAL_THRESHOLD_MINUTES:
+                    cache_warnings.append(f"BROU cache critical: {brou_age_minutes:.1f} minutes (threshold: {CACHE_CRITICAL_THRESHOLD_MINUTES})")
+                elif brou_age_minutes > CACHE_WARNING_THRESHOLD_MINUTES:
+                    cache_warnings.append(f"BROU cache stale: {brou_age_minutes:.1f} minutes (threshold: {CACHE_WARNING_THRESHOLD_MINUTES})")
+            
+            if cache_metrics.get("bcu_cache_age_seconds") is not None:
+                bcu_age_minutes = cache_metrics["bcu_cache_age_minutes"]
+                if bcu_age_minutes > CACHE_CRITICAL_THRESHOLD_MINUTES:
+                    cache_warnings.append(f"BCU cache critical: {bcu_age_minutes:.1f} minutes (threshold: {CACHE_CRITICAL_THRESHOLD_MINUTES})")
+                elif bcu_age_minutes > CACHE_WARNING_THRESHOLD_MINUTES:
+                    cache_warnings.append(f"BCU cache stale: {bcu_age_minutes:.1f} minutes (threshold: {CACHE_WARNING_THRESHOLD_MINUTES})")
+        except ImportError:
+            # Fallback to hardcoded values if constants import fails
+            if cache_metrics.get("brou_cache_age_seconds") is not None:
+                brou_age_minutes = cache_metrics["brou_cache_age_minutes"]
+                if brou_age_minutes > 120:  # 2 hours
+                    cache_warnings.append(f"BROU cache critical: {brou_age_minutes:.1f} minutes")
+                elif brou_age_minutes > 60:  # 1 hour
+                    cache_warnings.append(f"BROU cache stale: {brou_age_minutes:.1f} minutes")
+            
+            if cache_metrics.get("bcu_cache_age_seconds") is not None:
+                bcu_age_minutes = cache_metrics["bcu_cache_age_minutes"]
+                if bcu_age_minutes > 120:  # 2 hours
+                    cache_warnings.append(f"BCU cache critical: {bcu_age_minutes:.1f} minutes")
+                elif bcu_age_minutes > 60:  # 1 hour
+                    cache_warnings.append(f"BCU cache stale: {bcu_age_minutes:.1f} minutes")
+        
+        if cache_warnings:
+            base["cache_warnings"] = cache_warnings
+            
+    except Exception as e:
+        logger.warning(f"Cache metrics failed: {e}")
+        base["cache_metrics"] = {"error": str(e)}
 
     return base
 

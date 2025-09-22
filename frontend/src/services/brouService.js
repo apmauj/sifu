@@ -2,8 +2,9 @@ import { makeRequest } from './api';
 
 const brouService = {
   getCurrent: async (opts = {}) => {
-    // En el futuro podemos activar '?full=true' para metadatos; por ahora simple.
-    const query = opts.full ? '?full=true' : '';
+    // Usar modo completo por defecto para obtener metadata adicional
+    // Opcional: usar opts.full = false para modo compacto (compatibilidad)
+    const query = opts.full !== false ? '?full=true' : '';
     return makeRequest(api => api.get(`/brou/current${query}`));
   }
 };

@@ -256,19 +256,68 @@ UR_MONTH_NAMES = [
 MIN_VALID_YEAR = 1900
 MAX_VALID_YEAR = 2100
 
-# Exchange Rate Configuration
+# Exchange Rate Configuration - Unificada (Punto 5)
 SUPPORTED_CURRENCIES = [
     "USD",
     "EUR",
     "ARS",
     "BRL",
+    "CLP",  # Solo BCU
 ]  # Main currencies (available in INE and BCU)
 DEFAULT_CURRENCY = "USD"
 
 # Exchange Rate Validation
 MIN_EXCHANGE_RATE = 0.0001
 MAX_EXCHANGE_RATE = 1000000
-VALID_CURRENCY_CODES = ["USD", "EUR", "ARS", "BRL", "PYG", "UYU"]
+VALID_CURRENCY_CODES = ["USD", "USD_EBROU", "EUR", "ARS", "BRL", "CLP", "PYG", "UYU"]
+
+# =============================================================================
+# EXCHANGE TERMINOLOGY - UNIFICADA (Punto 5)
+# =============================================================================
+
+# Nombres de campos estandarizados
+EXCHANGE_FIELD_CURRENCY = "currency"
+EXCHANGE_FIELD_BUY_RATE = "buy_rate"
+EXCHANGE_FIELD_SELL_RATE = "sell_rate"
+EXCHANGE_FIELD_AVERAGE_RATE = "average_rate"
+EXCHANGE_FIELD_DATE = "date"
+EXCHANGE_FIELD_SOURCE = "source"
+EXCHANGE_FIELD_SOURCE_TYPE = "source_type"
+EXCHANGE_FIELD_TIMESTAMP = "timestamp"
+
+# Tipos de fuente estandarizados
+EXCHANGE_SOURCE_TYPE_LIVE = "live"
+EXCHANGE_SOURCE_TYPE_HISTORICAL = "historical"
+EXCHANGE_SOURCE_TYPE_SAMPLE = "sample"
+EXCHANGE_SOURCE_TYPE_PERSISTED = "persisted"
+
+# Fuentes de datos
+EXCHANGE_SOURCE_BCU = "BCU"
+EXCHANGE_SOURCE_INE = "INE"
+EXCHANGE_SOURCE_BROU = "BROU"
+EXCHANGE_SOURCE_BROU_SAMPLE = "BROU_SAMPLE"
+EXCHANGE_SOURCE_BROU_PERSISTED = "BROU_PERSISTED"
+
+# Nombres de monedas unificados
+CURRENCY_NAMES = {
+    "USD": "Dólar Estadounidense",
+    "USD_EBROU": "Dólar eBROU",
+    "EUR": "Euro",
+    "ARS": "Peso Argentino",
+    "BRL": "Real Brasileño",
+    "CLP": "Peso Chileno",
+    "PYG": "Guaraní Paraguayo",
+    "UYU": "Peso Uruguayo"
+}
+
+# Descripciones de fuentes
+SOURCE_DESCRIPTIONS = {
+    EXCHANGE_SOURCE_BCU: "Banco Central del Uruguay",
+    EXCHANGE_SOURCE_INE: "Instituto Nacional de Estadística",
+    EXCHANGE_SOURCE_BROU: "Banco República del Uruguay",
+    EXCHANGE_SOURCE_BROU_SAMPLE: "Banco República (Datos de Muestra)",
+    EXCHANGE_SOURCE_BROU_PERSISTED: "Banco República (Datos Históricos)"
+}
 
 # =============================================================================
 # SCHEDULER CONFIGURATION
@@ -365,3 +414,22 @@ _holidays_env = os.getenv("SCHEDULER_HOLIDAYS", "").strip()
 SCHEDULER_HOLIDAYS = set(
     [h for h in (x.strip() for x in _holidays_env.split(",")) if h]
 )
+
+# =============================================================================
+# CACHE CONFIGURATION
+# =============================================================================
+# Cache age thresholds for warnings (in minutes)
+CACHE_WARNING_THRESHOLD_MINUTES = int(
+    os.getenv("CACHE_WARNING_THRESHOLD_MINUTES", "60")
+)  # 1 hour warning
+CACHE_CRITICAL_THRESHOLD_MINUTES = int(
+    os.getenv("CACHE_CRITICAL_THRESHOLD_MINUTES", "120")
+)  # 2 hours critical
+
+# Cache refresh intervals (in minutes)
+CACHE_BROU_REFRESH_INTERVAL_MINUTES = int(
+    os.getenv("CACHE_BROU_REFRESH_INTERVAL_MINUTES", "55")
+)  # Refresh every 55 minutes
+CACHE_BCU_REFRESH_INTERVAL_MINUTES = int(
+    os.getenv("CACHE_BCU_REFRESH_INTERVAL_MINUTES", "55")
+)  # Refresh every 55 minutes

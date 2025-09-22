@@ -14,6 +14,7 @@ const BROUPanel = () => {
   const [rates, setRates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [metadata, setMetadata] = useState(null);
   const { showSuccess, showError } = useToast();
 
   // Centralized currency info (panel-specific overrides handled in helper)
@@ -25,16 +26,33 @@ const BROUPanel = () => {
       setLoading(true);
       setError(null);
       
-      const data = await brouService.getCurrent();
-      // Backend puede devolver lista directa (compat anterior) o objeto { success, data }
-      const list = Array.isArray(data) ? data : (Array.isArray(data?.data) ? data.data : []);
-      if (list.length > 0) {
-        setRates(list);
+      const response = await brouService.getCurrent({ full: true });
+      
+      // Manejar nueva estructura de respuesta con metadata
+      if (response.success && response.data && Array.isArray(response.data)) {
+        setRates(response.data);
+        setMetadata({
+          source: response.source,
+          sourceType: response.source_type,
+          status: response.status,
+          timestamp: response.timestamp,
+          dataAge: response.data_age_minutes,
+          isFresh: response.is_fresh,
+          frontendDisplay: response.frontend_display
+        });
+        
+        if (rates.length) {
+          showSuccess(t('brou.updated') || 'Cotizaciones BROU actualizadas');
+        }
+      } else if (Array.isArray(response)) {
+        // Compatibilidad con respuesta antigua (lista directa)
+        setRates(response);
+        setMetadata(null);
         if (rates.length) {
           showSuccess(t('brou.updated') || 'Cotizaciones BROU actualizadas');
         }
       } else {
-        const msg = (data && data.message) || t('brou.error_loading') || 'Error obteniendo cotizaciones BROU';
+        const msg = response.message || t('brou.error_loading') || 'Error obteniendo cotizaciones BROU';
         showError(msg);
         throw new Error(msg);
       }
@@ -74,6 +92,62 @@ const BROUPanel = () => {
       return `${baseLight} ${baseDark} bg-blue-50 dark:bg-blue-900/20 border-blue-100 dark:border-blue-800`;
     }
     return `${baseLight} ${baseDark}`;
+  };
+
+  // Componente para badge de estado
+  const StatusBadge = ({ metadata }) => {
+    if (!metadata || !metadata.frontendDisplay) return null;
+    
+    const colorClasses = {
+      green: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
+      yellow: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
+      red: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
+      gray: 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
+    };
+    
+    return (
+      <span className={`ml-2 px-2 py-1 rounded-full text-xs font-medium ${colorClasses[metadata.status.color] || colorClasses.gray}`}>
+        {metadata.frontendDisplay.status_label}
+      </span>
+    );
+  };
+
+  // Componente para información de frescura
+  const FreshnessInfo = ({ metadata }) => {
+    if (!metadata) return null;
+    
+    const formatTimestamp = (timestamp) => {
+      if (!timestamp) return '';
+      try {
+        return new Date(timestamp).toLocaleTimeString();
+      } catch {
+        return '';
+      }
+    };
+    
+    return (
+      <div className="text-xs text-gray-500 dark:text-gray-400">
+        {metadata.isFresh ? '✅' : '⚠️'} 
+        {metadata.dataAge ? `${metadata.dataAge.toFixed(1)} min` : 'Sin datos'}
+        {formatTimestamp(metadata.timestamp) && ` • ${formatTimestamp(metadata.timestamp)}`}
+      </div>
+    );
+  };
+
+  // Componente para mensaje de advertencia
+  const WarningMessage = ({ metadata }) => {
+    if (!metadata?.frontendDisplay?.warning_message) return null;
+    
+    return (
+      <div className="mb-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-lg">
+        <div className="flex items-center">
+          <span className="text-yellow-600 dark:text-yellow-400">⚠️</span>
+          <span className="ml-2 text-yellow-800 dark:text-yellow-200 text-sm">
+            {metadata.frontendDisplay.warning_message}
+          </span>
+        </div>
+      </div>
+    );
   };
 
   if (loading && Array.isArray(rates) && rates.length === 0) {
@@ -129,9 +203,15 @@ const BROUPanel = () => {
           <span className="ml-2 text-sm font-normal text-gray-500">
             {t('brou.bank_name') || 'Banco República'}
           </span>
+          <StatusBadge metadata={metadata} />
         </h2>
-        {/* Manual refresh button removed (auto hourly updates + retry only on error) */}
+        <div className="text-right">
+          <FreshnessInfo metadata={metadata} />
+        </div>
       </div>
+
+      {/* Mensaje de advertencia si es necesario */}
+      <WarningMessage metadata={metadata} />
 
       {/* Desktop View */}
       <div className="hidden md:block">

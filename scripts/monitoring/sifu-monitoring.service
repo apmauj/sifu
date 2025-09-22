@@ -1,0 +1,21 @@
+[Unit]
+Description=SIFU Tunnel Monitoring Service
+After=network.target
+Wants=network.target
+
+[Service]
+Type=simple
+User=apmauj
+Group=apmauj
+WorkingDirectory=/home/apmauj/repos/sifu
+ExecStart=/usr/bin/python3 /home/apmauj/repos/sifu/scripts/monitoring/tunnel_monitor.py --check-interval 5
+Restart=always
+RestartSec=60
+StandardOutput=journal
+StandardError=journal
+
+# Variables de entorno
+Environment=PYTHONPATH=/home/apmauj/repos/sifu
+
+[Install]
+WantedBy=multi-user.target
