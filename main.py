@@ -14,9 +14,6 @@ import time
 import os
 from dotenv import load_dotenv
 
-# Load environment variables from .env file
-load_dotenv()
-
 from threading import Lock
 from threading import Lock as ThreadLock
 from bootstrap import perform_bootstrap
@@ -151,6 +148,9 @@ from correlation_middleware import (
 # Alert and dashboard services
 from alerts import alert_manager
 from dashboard import dashboard_service
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Configure correlation logging
 setup_correlation_logging()
