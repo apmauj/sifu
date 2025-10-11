@@ -4,10 +4,12 @@ FROM python:3.11-slim
 # Establecer el directorio de trabajo
 WORKDIR /app
 
-# Instalar dependencias del sistema
+# Instalar dependencias del sistema y certificados CA actualizados
 RUN apt-get update && apt-get install -y \
     wget \
     curl \
+    ca-certificates \
+    && update-ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
 # Copiar todos los archivos de dependencias (requirements.txt incluye -r requirements-core.txt y -r requirements-excel.txt)
