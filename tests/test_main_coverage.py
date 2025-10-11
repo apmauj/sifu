@@ -25,7 +25,7 @@ sys.path.insert(0, os.getcwd())
 from unittest.mock import patch, Mock
 with patch('uvicorn.run') as mock_run:
     # Execute main.py content with __name__ == "__main__"
-    with open('main.py', 'r') as f:
+    with open('main.py', 'r', encoding='utf-8') as f:
         main_content = f.read()
     
     # Execute with __name__ set to "__main__"
@@ -71,7 +71,7 @@ print("SUCCESS: __main__ block executed and tested")
         """Test __main__ block by simulating direct import"""
         with patch("uvicorn.run") as mock_uvicorn:
             # Read main.py and execute it with __name__ == "__main__"
-            with open("main.py", "r") as f:
+            with open("main.py", "r", encoding="utf-8") as f:
                 main_code = f.read()
 
             # Create execution environment

@@ -18,20 +18,29 @@ logger = logging.getLogger(__name__)
 audit_logger = logging.getLogger("totp_audit")
 audit_logger.setLevel(logging.INFO)
 
-# Ensure logs directory exists
-logs_dir = Path("logs")
-logs_dir.mkdir(exist_ok=True)
-
-# Add file handler for audit logs if not already present
-if not audit_logger.handlers:
-    audit_file_handler = logging.FileHandler("logs/totp_audit.log")
-    audit_file_handler.setLevel(logging.INFO)
-    audit_formatter = logging.Formatter(
-        "%(asctime)s | %(levelname)s | %(message)s",
-        datefmt="%Y-%m-%d %H:%M:%S"
-    )
-    audit_file_handler.setFormatter(audit_formatter)
-    audit_logger.addHandler(audit_file_handler)
+# Ensure logs directory exists (skip if in test mode)
+try:
+    logs_dir = Path("logs")
+    logs_dir.mkdir(exist_ok=True)
+    
+    # Add file handler for audit logs if not already present
+    if not audit_logger.handlers:
+        audit_file_handler = logging.FileHandler("logs/totp_audit.log")
+        audit_file_handler.setLevel(logging.INFO)
+        audit_formatter = logging.Formatter(
+            "%(asctime)s | %(levelname)s | %(message)s",
+            datefmt="%Y-%m-%d %H:%M:%S"
+        )
+        audit_file_handler.setFormatter(audit_formatter)
+        audit_logger.addHandler(audit_file_handler)
+except (OSError, PermissionError) as e:
+    # If we can't create log file (e.g., in CI without permissions),
+    # just log to console instead
+    logger.warning(f"Could not create audit log file: {e}. Using console logging.")
+    if not audit_logger.handlers:
+        console_handler = logging.StreamHandler()
+        console_handler.setLevel(logging.INFO)
+        audit_logger.addHandler(console_handler)
 
 
 class SimpleTOTP:
