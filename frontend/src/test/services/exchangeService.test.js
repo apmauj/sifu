@@ -77,7 +77,7 @@ describe('Exchange Service', () => {
         
         const result = await exchangeService.getLatest();
         
-        expect(mockAxiosInstance.get).toHaveBeenCalledWith('/exchange/latest', { params: {} });
+        expect(mockAxiosInstance.get).toHaveBeenCalledWith('/exchange-rate/latest', { params: {} });
         expect(result).toEqual(mockData);
       });
 
@@ -87,7 +87,7 @@ describe('Exchange Service', () => {
         
         const result = await exchangeService.getLatest('USD');
         
-        expect(mockAxiosInstance.get).toHaveBeenCalledWith('/exchange/latest', { params: { currencies: 'USD' } });
+        expect(mockAxiosInstance.get).toHaveBeenCalledWith('/exchange-rate/latest', { params: { currencies: 'USD' } });
         expect(result).toEqual(mockData);
       });
     });
@@ -99,7 +99,7 @@ describe('Exchange Service', () => {
         
         const result = await exchangeService.getInfo();
         
-        expect(mockAxiosInstance.get).toHaveBeenCalledWith('/exchange/info');
+        expect(mockAxiosInstance.get).toHaveBeenCalledWith('/exchange-rate/info');
         expect(result).toEqual(mockData);
       });
     });
@@ -111,7 +111,7 @@ describe('Exchange Service', () => {
         
         const result = await exchangeService.getCurrencyHistory('USD');
         
-        expect(mockAxiosInstance.get).toHaveBeenCalledWith('/exchange/currency/USD', { params: { limit: 30 } });
+        expect(mockAxiosInstance.get).toHaveBeenCalledWith('/exchange-rate/currency/USD', { params: { limit: 30 } });
         expect(result).toEqual(mockData);
       });
 
@@ -121,7 +121,7 @@ describe('Exchange Service', () => {
         
         const result = await exchangeService.getCurrencyHistory('EUR', 50);
         
-        expect(mockAxiosInstance.get).toHaveBeenCalledWith('/exchange/currency/EUR', { params: { limit: 50 } });
+        expect(mockAxiosInstance.get).toHaveBeenCalledWith('/exchange-rate/currency/EUR', { params: { limit: 50 } });
         expect(result).toEqual(mockData);
       });
     });
@@ -133,7 +133,7 @@ describe('Exchange Service', () => {
         
         const result = await exchangeService.getByDate('2024-01-01');
         
-        expect(mockAxiosInstance.get).toHaveBeenCalledWith('/exchange/2024-01-01', { params: {} });
+        expect(mockAxiosInstance.get).toHaveBeenCalledWith('/exchange-rate/2024-01-01', { params: {} });
         expect(result).toEqual(mockData);
       });
 
@@ -143,7 +143,7 @@ describe('Exchange Service', () => {
         
         const result = await exchangeService.getByDate('2024-01-01', 'USD');
         
-        expect(mockAxiosInstance.get).toHaveBeenCalledWith('/exchange/2024-01-01', { params: { currency: 'USD' } });
+        expect(mockAxiosInstance.get).toHaveBeenCalledWith('/exchange-rate/2024-01-01', { params: { currency: 'USD' } });
         expect(result).toEqual(mockData);
       });
     });
@@ -155,7 +155,7 @@ describe('Exchange Service', () => {
         
         const result = await exchangeService.getSpecificRate('2024-01-01', 'USD');
         
-        expect(mockAxiosInstance.get).toHaveBeenCalledWith('/exchange/2024-01-01/USD');
+        expect(mockAxiosInstance.get).toHaveBeenCalledWith('/exchange-rate/2024-01-01/USD');
         expect(result).toEqual(mockData);
       });
     });
@@ -167,7 +167,7 @@ describe('Exchange Service', () => {
         
         const result = await exchangeService.getByDateRange('2024-01-01', '2024-01-31');
         
-        expect(mockAxiosInstance.get).toHaveBeenCalledWith('/exchange/range/2024-01-01/2024-01-31', { params: {} });
+        expect(mockAxiosInstance.get).toHaveBeenCalledWith('/exchange-rate/range/2024-01-01/2024-01-31', { params: {} });
         expect(result).toEqual(mockData);
       });
 
@@ -177,7 +177,7 @@ describe('Exchange Service', () => {
         
         const result = await exchangeService.getByDateRange('2024-01-01', '2024-01-31', 'EUR');
         
-        expect(mockAxiosInstance.get).toHaveBeenCalledWith('/exchange/range/2024-01-01/2024-01-31', { params: { currency: 'EUR' } });
+        expect(mockAxiosInstance.get).toHaveBeenCalledWith('/exchange-rate/range/2024-01-01/2024-01-31', { params: { currency: 'EUR' } });
         expect(result).toEqual(mockData);
       });
     });
@@ -189,7 +189,7 @@ describe('Exchange Service', () => {
         
         const result = await exchangeService.refresh();
         
-        expect(mockAxiosInstance.post).toHaveBeenCalledWith('/exchange/refresh', {}, { params: {} });
+        expect(mockAxiosInstance.post).toHaveBeenCalledWith('/exchange-rate/refresh', {}, { params: {} });
         expect(result).toEqual(mockData);
       });
 
@@ -199,7 +199,7 @@ describe('Exchange Service', () => {
         
         const result = await exchangeService.refresh(true);
         
-        expect(mockAxiosInstance.post).toHaveBeenCalledWith('/exchange/refresh', {}, { params: { use_sample_data: true } });
+        expect(mockAxiosInstance.post).toHaveBeenCalledWith('/exchange-rate/refresh', {}, { params: { use_sample_data: true } });
         expect(result).toEqual(mockData);
       });
     });

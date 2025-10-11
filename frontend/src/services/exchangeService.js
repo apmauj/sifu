@@ -71,7 +71,7 @@ const exchangeService = {
   getCurrent: async (source = null) => {
     const params = source ? { source } : {};
     return makeRequest((apiInstance) => 
-      apiInstance.get('/exchange/current', { params })
+      apiInstance.get('/exchange-rate/current', { params })
     );
   },
 
@@ -84,19 +84,19 @@ const exchangeService = {
   getLatest: async (currency = null) => {
     const params = currency ? { currencies: currency } : {};
     return makeRequest((apiInstance) => 
-      apiInstance.get('/exchange/latest', { params })
+      apiInstance.get('/exchange-rate/latest', { params })
     );
   },
 
   // Obtener información general de cotizaciones - Unificado
   getInfo: async () => {
-    return makeRequest((apiInstance) => apiInstance.get('/exchange/info'));
+    return makeRequest((apiInstance) => apiInstance.get('/exchange-rate/info'));
   },
 
   // Obtener historial por moneda específica - Unificado
   getCurrencyHistory: async (currency, limit = 30) => {
     return makeRequest((apiInstance) => 
-      apiInstance.get(`/exchange/currency/${currency}`, { 
+      apiInstance.get(`/exchange-rate/currency/${currency}`, { 
         params: { limit } 
       })
     );
@@ -106,14 +106,14 @@ const exchangeService = {
   getByDate: async (date, currency = null) => {
     const params = currency ? { currency } : {};
     return makeRequest((apiInstance) => 
-      apiInstance.get(`/exchange/${date}`, { params })
+      apiInstance.get(`/exchange-rate/${date}`, { params })
     );
   },
 
   // Obtener cotización específica (fecha + moneda) - Unificado
   getSpecificRate: async (date, currency) => {
     return makeRequest((apiInstance) => 
-      apiInstance.get(`/exchange/${date}/${currency}`)
+      apiInstance.get(`/exchange-rate/${date}/${currency}`)
     );
   },
 
@@ -121,7 +121,7 @@ const exchangeService = {
   getByDateRange: async (startDate, endDate, currency = null) => {
     const params = currency ? { currency } : {};
     return makeRequest((apiInstance) => 
-      apiInstance.get(`/exchange/range/${startDate}/${endDate}`, { params })
+      apiInstance.get(`/exchange-rate/range/${startDate}/${endDate}`, { params })
     );
   },
 
@@ -130,7 +130,7 @@ const exchangeService = {
     // Mantener endpoint síncrono legado (podría retirarse en el futuro)
     const params = useSampleData ? { use_sample_data: true } : {};
     return makeRequest((apiInstance) =>
-      apiInstance.post('/exchange/refresh', {}, { params })
+      apiInstance.post('/exchange-rate/refresh', {}, { params })
     );
   },
 
