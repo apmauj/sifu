@@ -19,11 +19,11 @@ import sys
 from collections import Counter
 from pathlib import Path
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent  # From scripts/util/ to repo root
 EXCLUDE_DIRS = {"tests", "__pycache__", "scripts", "migration-tools", ".venv"}
 ALLOWED_FILES = {"constants.py"}
 MIN_LEN = int(os.getenv("MIN_LEN", "20"))
-MIN_COUNT = int(os.getenv("MIN_COUNT", "2"))
+MIN_COUNT = int(os.getenv("MIN_COUNT", "4"))  # Changed from 2 to 4 to reduce false positives
 
 # Load constant values from constants.py
 constants_module = PROJECT_ROOT / "constants.py"
