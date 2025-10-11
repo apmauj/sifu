@@ -15,6 +15,9 @@ services:
       - PYTHONUNBUFFERED=1
       - DATABASE_PATH=/app/data/ui_data.db
       - ENV=production
+      - ENVIRONMENT=production
+      - MONITORING_TOTP_SECRET=${MONITORING_TOTP_SECRET}
+      - MONITORING_SESSION_HOURS=${MONITORING_SESSION_HOURS:-1}
     networks:
       - sifu-network
     restart: unless-stopped

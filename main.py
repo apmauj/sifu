@@ -30,6 +30,7 @@ from excel_processor import (
 from brou_processor import BROUProcessor
 from security_utils import SecurityValidator, InputValidator
 from pydantic_models import URRangeRequestModel
+from simple_totp import totp_service
 
 # HTTPS Security Middleware
 from https_middleware import HTTPSRedirectMiddleware, SSLHeadersMiddleware
@@ -1963,6 +1964,154 @@ async def resolve_alert(alert_id: str):
     if success:
         return {"message": f"Alert {alert_id} resolved"}
     raise HTTPException(status_code=404, detail="Alert not found")
+
+
+# =============================================================================
+# MONITORING TOTP ENDPOINTS
+# =============================================================================
+
+
+@app.post("/api/monitoring/verify", tags=["Monitoring"])
+async def verify_monitoring_access(
+    request: Request, code: str, rate_limiter: RateLimitMiddleware = Depends()
+):
+    """
+    Verify TOTP code and grant access to monitoring dashboard.
+    Returns a session token valid for 1 hour.
+    """
+    # Apply rate limiting (max 5 attempts per minute per IP)
+    await rate_limiter.check_rate_limit(request, max_requests=5, window_seconds=60)
+
+    # Validate code format
+    if not code or len(code) != 6 or not code.isdigit():
+        raise HTTPException(
+            status_code=400, detail="Invalid code format. Must be 6 digits."
+        )
+
+    # Generate unique session ID
+    session_id = str(uuid.uuid4())
+
+    # Verify TOTP code
+    if totp_service.verify_code(code, session_id):
+        return {
+            "access": "granted",
+            "session_token": session_id,
+            "expires_in": totp_service.session_duration_hours * 3600,
+            "message": "Access granted to monitoring dashboard",
+        }
+
+    # Invalid code
+    raise HTTPException(status_code=401, detail="Invalid or expired TOTP code")
+
+
+@app.get("/api/monitoring/session", tags=["Monitoring"])
+async def check_monitoring_session(session_token: Optional[str] = None):
+    """
+    Check if a monitoring session is still valid.
+    Returns session status and remaining time.
+    """
+    if not session_token:
+        raise HTTPException(status_code=401, detail="No session token provided")
+
+    is_valid = totp_service.is_session_valid(session_token)
+
+    if is_valid:
+        return {
+            "valid": True,
+            "message": "Session is active",
+            "session_duration_hours": totp_service.session_duration_hours,
+        }
+
+    return {"valid": False, "message": "Session expired or invalid"}
+
+
+@app.delete("/api/monitoring/session", tags=["Monitoring"])
+async def logout_monitoring_session(session_token: Optional[str] = None):
+    """
+    Logout from monitoring dashboard by invalidating session.
+    """
+    if not session_token:
+        raise HTTPException(status_code=401, detail="No session token provided")
+
+    totp_service.invalidate_session(session_token)
+    return {"message": "Session invalidated successfully"}
+
+
+@app.get("/api/monitoring/status", tags=["Monitoring"])
+async def get_monitoring_dashboard(session_token: Optional[str] = None):
+    """
+    Get comprehensive monitoring dashboard data.
+    Requires valid session token from TOTP verification.
+    """
+    # Verify session
+    if not session_token or not totp_service.is_session_valid(session_token):
+        raise HTTPException(
+            status_code=401, detail="Unauthorized. Please verify TOTP code first."
+        )
+
+    # Return comprehensive monitoring data
+    return {
+        "dashboard": dashboard_service.get_dashboard_data(),
+        "metrics": await get_metrics(),
+        "health": await get_advanced_health(),
+        "alerts": alert_manager.get_active_alerts(),
+        "circuit_breakers": get_all_circuit_breakers(),
+        "session_info": totp_service.get_session_info(),
+    }
+
+
+@app.get("/api/monitoring/setup", tags=["Monitoring"])
+async def setup_totp_qr():
+    """
+    Generate QR code URI for TOTP setup.
+    ⚠️ ONLY FOR INITIAL SETUP - Should be disabled in production!
+    """
+    # Only allow in development environment
+    environment = os.getenv("ENVIRONMENT", "production")
+    if environment.lower() != "development":
+        raise HTTPException(
+            status_code=404, detail="Endpoint not available in production"
+        )
+
+    # Get provisioning URI
+    uri = totp_service.get_provisioning_uri()
+
+    # Generate QR code
+    try:
+        import qrcode
+        import io
+        import base64
+
+        qr = qrcode.QRCode(version=1, box_size=10, border=5)
+        qr.add_data(uri)
+        qr.make(fit=True)
+
+        img = qr.make_image(fill_color="black", back_color="white")
+
+        # Convert to base64
+        buffer = io.BytesIO()
+        img.save(buffer, format="PNG")
+        img_str = base64.b64encode(buffer.getvalue()).decode()
+
+        return {
+            "uri": uri,
+            "qr_code": f"data:image/png;base64,{img_str}",
+            "secret": totp_service.secret,
+            "warning": "Save this secret securely! Add to .env as MONITORING_TOTP_SECRET",
+            "setup_instructions": [
+                "1. Scan QR code with Google Authenticator or Authy",
+                "2. Or manually enter the secret in your authenticator app",
+                "3. Save the secret to .env file: MONITORING_TOTP_SECRET=<secret>",
+                "4. Disable this endpoint in production (set ENVIRONMENT=production)",
+            ],
+        }
+    except ImportError:
+        # Fallback if qrcode not available
+        return {
+            "uri": uri,
+            "secret": totp_service.secret,
+            "warning": "Install qrcode[pil] to generate QR image",
+        }
 
 
 # =============================================================================

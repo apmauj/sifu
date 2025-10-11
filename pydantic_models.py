@@ -104,3 +104,24 @@ class PaginatedResponse(BaseModel):
     total_count: Optional[int] = Field(None, ge=0)
     page: Optional[int] = Field(None, ge=1)
     page_size: Optional[int] = Field(None, ge=1, le=1000)
+
+
+class TOTPVerifyRequest(BaseModel):
+    """Request model for TOTP code verification"""
+
+    code: str = Field(min_length=6, max_length=6, pattern=r"^\d{6}$")
+
+    @validator("code")
+    def validate_code_format(cls, v):
+        if not v.isdigit():
+            raise ValueError("TOTP code must contain only digits")
+        return v
+
+
+class TOTPVerifyResponse(BaseModel):
+    """Response model for successful TOTP verification"""
+
+    access: str = "granted"
+    session_token: str
+    expires_in: int
+    message: str = "Access granted to monitoring dashboard"
