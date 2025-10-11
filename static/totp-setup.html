@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TOTP Setup - SIFU Monitoring</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            border-radius: 12px;
+            padding: 40px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #1a1a1a;
+            margin-top: 0;
+        }
+        .qr-container {
+            text-align: center;
+            margin: 30px 0;
+            padding: 20px;
+            background: #fafafa;
+            border-radius: 8px;
+        }
+        #qrCode {
+            max-width: 300px;
+            border: 4px solid white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .secret-box {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .secret-text {
+            font-family: 'Courier New', monospace;
+            font-size: 18px;
+            font-weight: bold;
+            color: #856404;
+            word-break: break-all;
+            text-align: center;
+        }
+        .instructions {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .instructions ol {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        .instructions li {
+            margin: 10px 0;
+            line-height: 1.6;
+        }
+        .warning {
+            background: #ffebee;
+            border-left: 4px solid #f44336;
+            padding: 15px;
+            margin: 20px 0;
+            color: #c62828;
+        }
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        .error {
+            background: #ffebee;
+            color: #c62828;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        button {
+            background: #2196f3;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background: #1976d2;
+        }
+        .copy-btn {
+            background: #4caf50;
+        }
+        .copy-btn:hover {
+            background: #388e3c;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 TOTP Setup - SIFU Monitoring</h1>
+        
+        <div id="content" class="loading">
+            Loading setup information...
+        </div>
+    </div>
+
+    <script>
+        async function loadSetup() {
+            const contentDiv = document.getElementById('content');
+            
+            try {
+                const response = await fetch('/api/monitoring/setup');
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                
+                contentDiv.innerHTML = `
+                    <div class="qr-container">
+                        <h2>1. Scan QR Code</h2>
+                        <img id="qrCode" src="${data.qr_code}" alt="TOTP QR Code" />
+                    </div>
+                    
+                    <div class="secret-box">
+                        <h3>2. Or Enter Secret Manually</h3>
+                        <div class="secret-text" id="secretText">${data.secret}</div>
+                        <button class="copy-btn" onclick="copySecret()">📋 Copy Secret</button>
+                    </div>
+                    
+                    <div class="instructions">
+                        <h3>📱 Setup Instructions</h3>
+                        <ol>
+                            ${data.setup_instructions.map(inst => `<li>${inst}</li>`).join('')}
+                        </ol>
+                    </div>
+                    
+                    <div class="warning">
+                        <strong>⚠️ Warning:</strong> ${data.warning}
+                    </div>
+                    
+                    <div style="text-align: center; margin-top: 30px;">
+                        <button onclick="testCode()">🧪 Test Your Code</button>
+                        <button onclick="window.location.href='http://localhost:3000'">🏠 Go to Dashboard</button>
+                    </div>
+                    
+                    <div id="testResult" style="margin-top: 20px;"></div>
+                `;
+            } catch (error) {
+                contentDiv.innerHTML = `
+                    <div class="error">
+                        <h3>❌ Error Loading Setup</h3>
+                        <p>${error.message}</p>
+                        <p>Make sure:</p>
+                        <ul>
+                            <li>Backend is running on port 8000</li>
+                            <li>ENVIRONMENT=development in your .env</li>
+                            <li>You're accessing from http://localhost:8000</li>
+                        </ul>
+                        <button onclick="location.reload()">🔄 Retry</button>
+                    </div>
+                `;
+            }
+        }
+        
+        function copySecret() {
+            const secretText = document.getElementById('secretText').textContent;
+            navigator.clipboard.writeText(secretText).then(() => {
+                alert('✅ Secret copied to clipboard!');
+            }).catch(err => {
+                alert('❌ Failed to copy: ' + err);
+            });
+        }
+        
+        async function testCode() {
+            const code = prompt('Enter the 6-digit code from your authenticator app:');
+            
+            if (!code) {
+                alert('❌ Code is required');
+                return;
+            }
+            
+            // Trim whitespace and validate format
+            const cleanCode = code.trim();
+            if (!/^\d{6}$/.test(cleanCode)) {
+                alert('❌ Invalid code format. Must be exactly 6 digits.');
+                return;
+            }
+            
+            const testResultDiv = document.getElementById('testResult');
+            testResultDiv.innerHTML = '<div class="loading">Testing code...</div>';
+            
+            try {
+                const response = await fetch(`/api/monitoring/verify?code=${encodeURIComponent(cleanCode)}`, {
+                    method: 'POST'
+                });
+                
+                let result;
+                let errorMessage = 'Unknown error occurred';
+                
+                try {
+                    result = await response.json();
+                    // Extract error message from various possible formats
+                    if (result.detail) {
+                        if (typeof result.detail === 'string') {
+                            errorMessage = result.detail;
+                        } else if (Array.isArray(result.detail)) {
+                            // FastAPI validation errors
+                            errorMessage = result.detail.map(err => err.msg || JSON.stringify(err)).join(', ');
+                        } else if (typeof result.detail === 'object') {
+                            errorMessage = JSON.stringify(result.detail);
+                        }
+                    } else if (result.message) {
+                        errorMessage = result.message;
+                    }
+                } catch (e) {
+                    errorMessage = `HTTP ${response.status} ${response.statusText}`;
+                }
+                
+                if (response.ok) {
+                    testResultDiv.innerHTML = `
+                        <div style="background: #e8f5e9; border-left: 4px solid #4caf50; padding: 20px; border-radius: 8px;">
+                            <h3>✅ Success!</h3>
+                            <p><strong>Access:</strong> ${result.access}</p>
+                            <p><strong>Session Token:</strong> <code style="word-break: break-all;">${result.session_token}</code></p>
+                            <p><strong>Expires in:</strong> ${result.expires_in} seconds (${result.expires_in / 3600} hour)</p>
+                            <p style="margin-top: 15px;">
+                                Your TOTP is configured correctly! 🎉
+                            </p>
+                        </div>
+                    `;
+                } else {
+                    testResultDiv.innerHTML = `
+                        <div class="error">
+                            <h3>❌ Verification Failed</h3>
+                            <p>${errorMessage}</p>
+                            <p style="margin-top: 10px; font-size: 0.9em; color: #666;">
+                                ${response.status === 422 ? 'Validation error - check the code format' : 
+                                  response.status === 401 ? 'Invalid or expired code (changes every 30 seconds)' : 
+                                  response.status === 429 ? 'Too many attempts - wait a minute and try again' : 
+                                  'Make sure the code is current'}
+                            </p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                testResultDiv.innerHTML = `
+                    <div class="error">
+                        <h3>❌ Error Testing Code</h3>
+                        <p>${error.message || 'Network error or server not responding'}</p>
+                    </div>
+                `;
+            }
+        }
+        
+        // Load setup on page load
+        loadSetup();
+    </script>
+</body>
+</html>

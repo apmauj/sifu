@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-from fastapi import FastAPI, HTTPException, Depends, BackgroundTasks, Request
+from fastapi import FastAPI, HTTPException, Depends, BackgroundTasks, Request, Query
 from contextlib import asynccontextmanager
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -12,6 +12,10 @@ from typing import Optional
 import uuid
 import time
 import os
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 from threading import Lock
 from threading import Lock as ThreadLock
@@ -1973,14 +1977,19 @@ async def resolve_alert(alert_id: str):
 
 @app.post("/api/monitoring/verify", tags=["Monitoring"])
 async def verify_monitoring_access(
-    request: Request, code: str, rate_limiter: RateLimitMiddleware = Depends()
+    request: Request,
+    code: str = Query(..., description="6-digit TOTP code")
 ):
     """
     Verify TOTP code and grant access to monitoring dashboard.
     Returns a session token valid for 1 hour.
+    
+    Rate limiting: Max 5 attempts per minute per IP (handled by middleware).
     """
-    # Apply rate limiting (max 5 attempts per minute per IP)
-    await rate_limiter.check_rate_limit(request, max_requests=5, window_seconds=60)
+    # Note: Rate limiting is already applied by RateLimitMiddleware globally
+
+    # Get client IP for audit logging
+    client_ip = request.client.host if request.client else "unknown"
 
     # Validate code format
     if not code or len(code) != 6 or not code.isdigit():
@@ -1991,8 +2000,8 @@ async def verify_monitoring_access(
     # Generate unique session ID
     session_id = str(uuid.uuid4())
 
-    # Verify TOTP code
-    if totp_service.verify_code(code, session_id):
+    # Verify TOTP code with IP for audit logging
+    if totp_service.verify_code(code, session_id, client_ip):
         return {
             "access": "granted",
             "session_token": session_id,
@@ -2026,14 +2035,19 @@ async def check_monitoring_session(session_token: Optional[str] = None):
 
 
 @app.delete("/api/monitoring/session", tags=["Monitoring"])
-async def logout_monitoring_session(session_token: Optional[str] = None):
+async def logout_monitoring_session(
+    request: Request, session_token: Optional[str] = None
+):
     """
     Logout from monitoring dashboard by invalidating session.
     """
     if not session_token:
         raise HTTPException(status_code=401, detail="No session token provided")
 
-    totp_service.invalidate_session(session_token)
+    # Get client IP for audit logging
+    client_ip = request.client.host if request.client else "unknown"
+
+    totp_service.invalidate_session(session_token, client_ip)
     return {"message": "Session invalidated successfully"}
 
 
@@ -2061,10 +2075,13 @@ async def get_monitoring_dashboard(session_token: Optional[str] = None):
 
 
 @app.get("/api/monitoring/setup", tags=["Monitoring"])
-async def setup_totp_qr():
+async def setup_totp_qr(format: str = "json"):
     """
     Generate QR code URI for TOTP setup.
     ⚠️ ONLY FOR INITIAL SETUP - Should be disabled in production!
+    
+    Args:
+        format: "json" (default) o "html" para modal interactivo
     """
     # Only allow in development environment
     environment = os.getenv("ENVIRONMENT", "production")
@@ -2112,6 +2129,15 @@ async def setup_totp_qr():
             "secret": totp_service.secret,
             "warning": "Install qrcode[pil] to generate QR image",
         }
+
+
+@app.get("/api/monitoring/metrics", tags=["Monitoring"])
+async def get_monitoring_metrics():
+    """
+    Get TOTP authentication metrics.
+    Returns statistics about authentication attempts and failures.
+    """
+    return totp_service.get_metrics()
 
 
 # =============================================================================

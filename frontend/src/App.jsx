@@ -10,6 +10,7 @@ import ExchangeResultsDisplay from './components/ExchangeResultsDisplay';
 import ExchangeDataStatusPanel from './components/ExchangeDataStatusPanel';
 import BROUPanel from './components/BROUPanel';
 import Dashboard from './components/Dashboard';
+import MonitoringAccess from './components/MonitoringAccess';
 import exchangeService from './services/exchangeService';
 import uiService from './services/api';
 import urService from './services/urService';
@@ -93,6 +94,39 @@ function App() {
 
   // Dashboard state
   const [isDashboardOpen, setIsDashboardOpen] = useState(false);
+  const [showMonitoringAuth, setShowMonitoringAuth] = useState(false);
+
+  // Check if user has valid monitoring session
+  const checkMonitoringAccess = () => {
+    const sessionToken = sessionStorage.getItem('monitoring_session_token');
+    const expiresAt = sessionStorage.getItem('monitoring_session_expires');
+    
+    if (sessionToken && expiresAt) {
+      const now = Date.now();
+      if (now < parseInt(expiresAt)) {
+        // Session is still valid
+        return true;
+      }
+    }
+    return false;
+  };
+
+  // Handle monitoring access click (heart icon)
+  const handleMonitoringClick = () => {
+    if (checkMonitoringAccess()) {
+      // User already authenticated, open dashboard
+      setIsDashboardOpen(true);
+    } else {
+      // Show TOTP modal
+      setShowMonitoringAuth(true);
+    }
+  };
+
+  // Handle successful TOTP verification
+  const handleMonitoringAccessGranted = () => {
+    setShowMonitoringAuth(false);
+    setIsDashboardOpen(true);
+  };
 
     // Load initial information when component mounts
   // Helper seguro de traducción que cae a fallback si todavía retorna la key
@@ -489,8 +523,8 @@ function App() {
               <p className="text-xs">
                 <span 
                   className="cursor-pointer hover:text-red-500 transition-colors" 
-                  onClick={() => setIsDashboardOpen(true)}
-                  title="Abrir Dashboard de Monitoreo"
+                  onClick={handleMonitoringClick}
+                  title="Abrir Dashboard de Monitoreo (requiere 2FA)"
                 >
                   {t('footer.developed_with_love') || 'Desarrollado con ❤️ usando React, FastAPI y Python'}
                 </span>
@@ -507,6 +541,13 @@ function App() {
         <Dashboard 
           isOpen={isDashboardOpen} 
           onClose={() => setIsDashboardOpen(false)} 
+        />
+
+        {/* TOTP Authentication Modal */}
+        <MonitoringAccess
+          isOpen={showMonitoringAuth}
+          onClose={() => setShowMonitoringAuth(false)}
+          onAccessGranted={handleMonitoringAccessGranted}
         />
       </div>
     </ErrorBoundary>

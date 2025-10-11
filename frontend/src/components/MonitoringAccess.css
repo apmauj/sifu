@@ -27,10 +27,34 @@
   background: white;
   border-radius: 12px;
   padding: 2rem;
-  max-width: 500px;
+  max-width: 600px;
   width: 90%;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
   animation: slideUp 0.3s ease-out;
+  position: relative;
+}
+
+.monitoring-access-close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: transparent;
+  border: none;
+  font-size: 2rem;
+  line-height: 1;
+  cursor: pointer;
+  color: #999;
+  transition: color 0.2s ease;
+  padding: 0.5rem;
+  width: 2.5rem;
+  height: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.monitoring-access-close:hover {
+  color: #333;
 }
 
 @keyframes slideUp {

@@ -1,13 +1,13 @@
 import { useState } from 'react';
-import { useTranslation } from 'react-i18n';
+import { useI18n } from '../contexts/I18nContext';
 import './MonitoringAccess.css';
 
 /**
  * Monitoring Access Component
  * Provides TOTP-based authentication for accessing monitoring dashboard
  */
-const MonitoringAccess = ({ onAccessGranted, apiUrl }) => {
-  const { t } = useTranslation();
+const MonitoringAccess = ({ isOpen, onClose, onAccessGranted }) => {
+  const { t } = useI18n();
   const [code, setCode] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -34,8 +34,8 @@ const MonitoringAccess = ({ onAccessGranted, apiUrl }) => {
     setError('');
 
     try {
-      const baseUrl = apiUrl || import.meta.env.VITE_PUBLIC_API_URL || '';
-      const response = await fetch(`${baseUrl}/api/monitoring/verify?code=${code}`, {
+      const baseUrl = import.meta.env.VITE_PUBLIC_API_URL || '';
+      const response = await fetch(`${baseUrl}/api/monitoring/verify?code=${encodeURIComponent(code)}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -45,10 +45,10 @@ const MonitoringAccess = ({ onAccessGranted, apiUrl }) => {
       if (response.ok) {
         const data = await response.json();
         
-        // Store session token
-        sessionStorage.setItem('monitoring_token', data.session_token);
-        sessionStorage.setItem('monitoring_token_expires', 
-          Date.now() + (data.expires_in * 1000)
+        // Store session token (matching App.jsx expectations)
+        sessionStorage.setItem('monitoring_session_token', data.session_token);
+        sessionStorage.setItem('monitoring_session_expires', 
+          String(Date.now() + (data.expires_in * 1000))
         );
         
         // Call success callback
@@ -92,9 +92,22 @@ const MonitoringAccess = ({ onAccessGranted, apiUrl }) => {
     }
   };
 
+  // Don't render if not open
+  if (!isOpen) {
+    return null;
+  }
+
   return (
-    <div className="monitoring-access-overlay">
-      <div className="monitoring-access-modal">
+    <div className="monitoring-access-overlay" onClick={onClose}>
+      <div className="monitoring-access-modal" onClick={(e) => e.stopPropagation()}>
+        <button 
+          className="monitoring-access-close" 
+          onClick={onClose}
+          aria-label="Close"
+        >
+          ×
+        </button>
+        
         <div className="monitoring-access-header">
           <h2>{t('monitoring.title', 'Monitoring Access')}</h2>
           <p className="monitoring-access-subtitle">
@@ -119,7 +132,7 @@ const MonitoringAccess = ({ onAccessGranted, apiUrl }) => {
               aria-label="TOTP Code"
             />
             <div className="totp-input-hint">
-              {code.length}/6 digits
+              {t('monitoring.digitCounter', `${code.length}/6 digits`, { current: code.length, total: 6 })}
             </div>
           </div>
 
@@ -132,7 +145,7 @@ const MonitoringAccess = ({ onAccessGranted, apiUrl }) => {
 
           {attemptsLeft < 5 && attemptsLeft > 0 && (
             <div className="monitoring-access-warning">
-              {t('monitoring.attemptsLeft', `${attemptsLeft} attempts remaining`)}
+              {t('monitoring.attemptsLeft', `${attemptsLeft} attempts remaining`, { count: attemptsLeft })}
             </div>
           )}
 

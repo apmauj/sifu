@@ -486,5 +486,27 @@
       "close": "Close",
       "refresh": "Refresh"
     }
+  },
+  "monitoring": {
+    "title": "Monitoring Access",
+    "subtitle": "Enter the 6-digit code from your authenticator app",
+    "digitCounter": "{current}/6 digits",
+    "verify": "Verify Code",
+    "verifying": "Verifying...",
+    "attemptsLeft": "{count} attempts remaining",
+    "help": {
+      "title": "Need help?",
+      "step1": "Open your authenticator app (Google Authenticator, Authy, etc.)",
+      "step2": "Find the 'SIFU Monitoring' account",
+      "step3": "Enter the 6-digit code (refreshes every 30 seconds)"
+    },
+    "errors": {
+      "invalidCodeFormat": "Code must be 6 digits",
+      "invalidCode": "Invalid or expired code. Please try again.",
+      "rateLimitExceeded": "Too many attempts. Please wait a minute.",
+      "verificationFailed": "Verification failed. Please try again.",
+      "networkError": "Network error. Please check your connection."
+    },
+    "locked": "Too many failed attempts. Please wait 60 seconds and reload the page."
   }
 }

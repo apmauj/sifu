@@ -95,10 +95,42 @@ Implementadas optimizaciones puntuales tras la modernización principal:
    - Estandarizar términos entre INE/BCU/BROU
    - Actualizar ejemplos de API con casos reales
 
-### **Fase 4: Seguridad y Autenticación Avanzada** (nuevo)
-6. **Implementación de 2FA (TOTP + Recovery Codes)**
-   - Backend: endpoints para generar secreto (QR/otpauth), activar/desactivar y validar token
-   - Almacenar secreto cifrado (KDF + pepper) y códigos de recuperación hash (bcrypt / argon2)
+### **Fase 4: Seguridad y Autenticación Avanzada**
+
+#### ✅ **6. Implementación de 2FA (TOTP) - COMPLETADO (2025-10-11)**
+   
+   **Alcance Implementado:**
+   - ✅ Backend SimpleTOTP: verificación de códigos de 6 dígitos con ventana de 30s
+   - ✅ 5 endpoints REST: `/api/monitoring/verify`, `/api/monitoring/status`, `/api/monitoring/setup`, `/api/monitoring/health`, `/api/monitoring/session`
+   - ✅ Gestión de sesiones en memoria (UUID tokens, 1 hora de duración configurable)
+   - ✅ 20 tests backend pasando (verificación, sesiones, rate limiting)
+   - ✅ Frontend: Modal `MonitoringAccess` integrado con click en ❤️ del footer
+   - ✅ i18n completo: traducciones en ES/EN/PT para modal y mensajes
+   - ✅ Página de setup estática: `/static/totp-setup.html` con QR code y prueba de códigos
+   - ✅ Protección producción: endpoint `/setup` solo disponible en `ENVIRONMENT=development`
+   - ✅ Documentación completa: `TOTP_SETUP.md` con instrucciones dev/prod, configuración Authy/Google Authenticator
+   - ✅ Session storage: tokens persisten 1 hora en cliente, verificación automática antes de mostrar dashboard
+   
+   **Enfoque Simplificado:**
+   - Sin base de datos de usuarios (authentication sin autorización granular)
+   - Secret único compartido (apropiado para uso personal/admin único)
+   - Rate limiting mediante middleware existente (no específico TOTP)
+   
+   **Archivos Clave:**
+   - Backend: `simple_totp.py` (198 líneas), endpoints en `main.py` (líneas 1978-2094)
+   - Frontend: `MonitoringAccess.jsx` + `MonitoringAccess.css`, integración en `App.jsx`
+   - Tests: `tests/test_simple_totp.py` (20 tests)
+   - Docs: `TOTP_SETUP.md`, secrets en `.env` y `.env.docker`
+   - i18n: `frontend/src/locales/{es,en,pt}.json` (sección `monitoring`)
+   
+   **Pendiente (Opcional):**
+   - Recovery codes (no implementado por simplicidad del caso de uso)
+   - Tests frontend para `MonitoringAccess` component
+   - Almacenamiento persistente de sesiones (actualmente en memoria, se pierden al restart)
+   
+   **Referencias:**
+   - Documentación setup: `TOTP_SETUP.md`
+   - Dependencias: `pyotp==2.9.0`, `qrcode[pil]==7.4.2` en `requirements-core.txt`
    - Métricas: usuarios con 2FA habilitado, intentos fallidos, uso de recovery codes
    - Rate limiting específico en verificación de TOTP (reusar middlewares existentes)
 7. **Gestión de Códigos de Recuperación**

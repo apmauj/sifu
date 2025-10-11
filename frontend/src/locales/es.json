@@ -366,6 +366,18 @@
       "unknown": "Estado Desconocido",
       "last_update_prefix": "Última actualización:"
     },
+    "tab_health": "Salud del Sistema",
+    "tab_performance": "Presupuestos de Rendimiento",
+    "error_loading_health": "Error al cargar datos de salud",
+    "loading_health": "Cargando datos de salud...",
+    "general_status": {
+      "title": "Estado General del Sistema",
+      "healthy": "Sistema Saludable",
+      "warning": "Sistema con Advertencias",
+      "critical": "Sistema Crítico",
+      "unknown": "Estado Desconocido",
+      "last_update_prefix": "Última actualización:"
+    },
     "checks": {
       "details_title": "Detalles de Verificaciones",
       "ui_records": "Registros UI",
@@ -486,5 +498,27 @@
       "close": "Cerrar",
       "refresh": "Actualizar"
     }
+  },
+  "monitoring": {
+    "title": "Acceso al Monitoreo",
+    "subtitle": "Ingresa el código de 6 dígitos de tu app de autenticación",
+    "digitCounter": "{current}/6 dígitos",
+    "verify": "Verificar Código",
+    "verifying": "Verificando...",
+    "attemptsLeft": "{count} intentos restantes",
+    "help": {
+      "title": "¿Necesitas ayuda?",
+      "step1": "Abre tu app de autenticación (Google Authenticator, Authy, etc.)",
+      "step2": "Busca la cuenta 'SIFU Monitoring'",
+      "step3": "Ingresa el código de 6 dígitos (se actualiza cada 30 segundos)"
+    },
+    "errors": {
+      "invalidCodeFormat": "El código debe tener 6 dígitos",
+      "invalidCode": "Código inválido o expirado. Por favor, intenta nuevamente.",
+      "rateLimitExceeded": "Demasiados intentos. Por favor, espera un minuto.",
+      "verificationFailed": "Verificación fallida. Por favor, intenta nuevamente.",
+      "networkError": "Error de red. Por favor, verifica tu conexión."
+    },
+    "locked": "Demasiados intentos fallidos. Por favor, espera 60 segundos y recarga la página."
   }
 }

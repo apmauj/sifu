@@ -84,7 +84,7 @@ npm --prefix frontend exec npx serve -s dist -l 5174
 
 Ver documentación interactiva en `/docs`.
 
-Principales:
+### Principales:
 - `GET /api/ui/latest` – Última UI
 - `GET /api/ur/latest` – Última UR
 - `GET /api/brou/current` – Cotizaciones actuales BROU (lista simple por defecto). `?full=true` añade `{ message, timestamp }`.
@@ -92,10 +92,69 @@ Principales:
 - `GET /api/exchange-rate/history` – Históricos por moneda/rango
 - `POST /api/refresh/*` – Forzar actualización (UI, UR, exchange)
 
-Notas BROU:
+### Monitoreo (protegido con 2FA):
+- `POST /api/monitoring/verify` – Verificar código TOTP de 6 dígitos
+- `GET /api/monitoring/status` – Dashboard de monitoreo (requiere sesión)
+- `GET /api/monitoring/setup` – Generar QR para configurar autenticador (solo development)
+- `GET /api/monitoring/health` – Estado de autenticación actual
+- `GET /api/monitoring/metrics` – Métricas de autenticación (intentos, éxitos, fallos por IP)
+- `DELETE /api/monitoring/session` – Cerrar sesión
+
+**Notas BROU:**
 - Siempre retorna lista si no se pide `full` (retro‑compatible).
 - Campo `preferential` marca `USD_EBROU` cuando existe.
 - Fallback automático con datos de muestra si la fuente real falla (evita lista vacía).
+
+## 🔐 Autenticación 2FA (TOTP)
+
+El acceso al dashboard de monitoreo está protegido con autenticación de dos factores (TOTP).
+
+### Setup Rápido:
+
+1. **En Development:**
+   ```bash
+   # Acceder a la página de setup
+   http://localhost:8000/static/totp-setup.html
+   
+   # Escanear el QR code con tu app de autenticación
+   # (Google Authenticator, Authy, etc.)
+   ```
+
+2. **Configurar secret en `.env`:**
+   ```bash
+   MONITORING_TOTP_SECRET=tu-secret-aqui
+   ENVIRONMENT=development  # 'production' en prod
+   ```
+
+3. **Acceder al dashboard:**
+   - Hacer click en el **❤️** del footer del sitio
+   - Ingresar código de 6 dígitos de tu app de autenticación
+   - Sesión válida por 1 hora
+
+### Features Incluidas:
+
+- ✅ **Auditoría completa:** Todos los intentos de autenticación se registran en `logs/totp_audit.log`
+- ✅ **Métricas en tiempo real:** `/api/monitoring/metrics` expone estadísticas de éxito/fallo
+- ✅ **Detección de ataques:** Trackeo de intentos fallidos por IP
+- ✅ **Tests comprehensivos:** 20 tests backend + 40 tests frontend
+- ✅ **i18n completo:** Soporte para ES/EN/PT
+- ✅ **Sesiones temporales:** 1 hora de duración (configurable)
+
+### Documentación Completa:
+
+Ver **[TOTP_SETUP.md](TOTP_SETUP.md)** para:
+- Instrucciones detalladas de configuración
+- Setup en producción
+- Configuración de Authy/Google Authenticator
+- Troubleshooting
+- Regeneración de secrets
+
+**Características:**
+- ✅ Códigos TOTP de 6 dígitos (cambian cada 30 segundos)
+- ✅ Sesiones de 1 hora (configurable)
+- ✅ Endpoint de setup desactivado automáticamente en producción
+- ✅ Rate limiting integrado
+- ✅ Sin base de datos de usuarios (simplificado para admin único)
 
 ## 🔧 Scripts Útiles
 
