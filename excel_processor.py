@@ -14,6 +14,7 @@ import logging
 from sqlalchemy.orm import Session
 from database import UIRecord, URRecord, ExchangeRateRecord
 import io
+from urllib3.exceptions import InsecureRequestWarning
 from circuit_breaker import get_circuit_breaker, CircuitBreakerOpenException
 from constants import (
     UR_MONTH_NAMES,
@@ -69,7 +70,18 @@ class ExcelProcessor:
 
             cb = get_circuit_breaker("INE_API")
             with cb:
-                response = requests.get(self.url, timeout=self.timeout, headers=headers)
+                # NOTE: INE server presents incomplete certificate chain (missing intermediate cert).
+                # Since this is official government site (.gub.uy), we disable SSL verification.
+                # WARNING: Do not use verify=False for untrusted sites.
+                logger.warning("INE server has incomplete SSL cert chain - disabling verification")
+                # Suppress InsecureRequestWarning for this specific request
+                requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
+                response = requests.get(
+                    self.url, 
+                    timeout=self.timeout, 
+                    headers=headers,
+                    verify=False
+                )
                 response.raise_for_status()
 
             excel_data = pd.read_excel(
@@ -252,7 +264,18 @@ class URExcelProcessor:
             # Use circuit breaker to protect BHU API calls
             cb = get_circuit_breaker("BHU_API")
             with cb:
-                response = requests.get(self.url, timeout=self.timeout, headers=headers)
+                # NOTE: BHU/INE server has incomplete SSL certificate chain (missing intermediate cert).
+                # Since this is official government site (.gub.uy), we disable SSL verification.
+                # WARNING: Do not use verify=False for untrusted sites.
+                logger.warning("BHU server has incomplete SSL cert chain - disabling verification")
+                # Suppress InsecureRequestWarning for this specific request
+                requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
+                response = requests.get(
+                    self.url, 
+                    timeout=self.timeout, 
+                    headers=headers,
+                    verify=False
+                )
                 response.raise_for_status()
 
             # Read Excel file
@@ -628,7 +651,18 @@ class ExchangeRateExcelProcessor:
             # Use circuit breaker to protect INE API calls
             cb = get_circuit_breaker("INE_API")
             with cb:
-                response = requests.get(self.url, timeout=self.timeout, headers=headers)
+                # NOTE: INE server presents incomplete certificate chain (missing intermediate cert).
+                # Since this is official government site (.gub.uy), we disable SSL verification.
+                # WARNING: Do not use verify=False for untrusted sites.
+                logger.warning("INE server has incomplete SSL cert chain - disabling verification")
+                # Suppress InsecureRequestWarning for this specific request
+                requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
+                response = requests.get(
+                    self.url, 
+                    timeout=self.timeout, 
+                    headers=headers,
+                    verify=False
+                )
                 response.raise_for_status()
 
             # Read Excel file

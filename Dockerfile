@@ -15,8 +15,9 @@ RUN apt-get update && apt-get install -y \
 # Copiar todos los archivos de dependencias (requirements.txt incluye -r requirements-core.txt y -r requirements-excel.txt)
 COPY requirements*.txt ./
 
-# Instalar dependencias de Python
-RUN pip install --no-cache-dir -r requirements.txt
+# Instalar dependencias de Python y actualizar certifi para certificados SSL recientes
+RUN pip install --no-cache-dir -r requirements.txt && \
+    pip install --no-cache-dir --upgrade certifi
 
 # Copiar código fuente
 COPY *.py ./
@@ -36,6 +37,8 @@ EXPOSE 8000
 # Variables de entorno
 ENV PYTHONPATH=/app
 ENV PYTHONUNBUFFERED=1
+ENV REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
+ENV SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt
 
 # Comando para ejecutar la aplicación
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
