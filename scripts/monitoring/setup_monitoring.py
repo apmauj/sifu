@@ -183,7 +183,7 @@ def install_dependencies():
     
     try:
         # Verificar si requests está instalado
-        import requests
+        __import__('requests')
         print("✅ requests ya está instalado")
     except ImportError:
         print("📥 Instalando requests...")

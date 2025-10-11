@@ -11,7 +11,7 @@ import time
 import logging
 import argparse
 import subprocess
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Dict, List, Optional, Any
 from dataclasses import dataclass, asdict
 

@@ -256,7 +256,7 @@ class IntegratedWorkflow:
         check_interval = self.config["monitoring"]["check_interval"]
         consecutive_failures = 0
         max_restart_attempts = self.config["workflow"]["max_restart_attempts"]
-        restart_delay = self.config["workflow"]["restart_delay"]
+        # restart_delay configured but not currently used
         
         while True:
             try:

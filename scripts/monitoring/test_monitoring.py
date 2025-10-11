@@ -9,7 +9,6 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from scripts.monitoring.tunnel_monitor import TunnelMonitor, MonitoringConfig
-import time
 
 def test_monitoring_system():
     print("🧪 Probando sistema de monitoreo de SIFU")

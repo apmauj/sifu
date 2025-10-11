@@ -4,11 +4,10 @@ Demo del sistema de monitoreo de SIFU
 Simula el comportamiento del sistema para demostrar las funcionalidades
 """
 
-import json
 import time
 import sys
 from datetime import datetime, timedelta
-from typing import Dict, Any, List
+from typing import Dict, Any
 
 
 class MockResponse:
@@ -19,7 +18,7 @@ class MockResponse:
         self._data = data
         self.elapsed = type('obj', (object,), {'total_seconds': lambda: 0.5})()
     
-    def json(self):
+    def to_json(self):
         return self._data
 
 

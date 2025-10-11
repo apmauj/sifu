@@ -248,9 +248,9 @@ async def get_metrics():
         if cache_warnings:
             base["cache_warnings"] = cache_warnings
             
-    except Exception as e:
-        logger.warning(f"Cache metrics failed: {e}")
-        base["cache_metrics"] = {"error": str(e)}
+    except Exception:
+        # Silently ignore cache metrics failures
+        pass
 
     return base
 

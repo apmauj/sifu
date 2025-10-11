@@ -16,12 +16,31 @@ Requisitos:
 param(
   [string]$Repo = 'apmauj/sifu',
   [int]$TimeoutSeconds = 90,
+  [int]$RetryCount = 3,
+  [int]$RetryDelaySeconds = 5,
+  [double]$BackoffFactor = 2,
+  [int]$MaxRetryDelaySeconds = 40,
+  [switch]$JsonLogs,
   [switch]$TriggerDeploy,
   [switch]$SkipIfUnchanged
 )
 
-function Info($m){ Write-Host "[INFO] $m" -ForegroundColor Cyan }
-function Err($m){ Write-Host "[ERROR] $m" -ForegroundColor Red }
+function Info($m){ if($JsonLogs){ Write-JsonLog -Level 'INFO' -Message $m } else { Write-Host "[INFO] $m" -ForegroundColor Cyan } }
+function Err($m){ if($JsonLogs){ Write-JsonLog -Level 'ERROR' -Message $m } else { Write-Host "[ERROR] $m" -ForegroundColor Red } }
+function Write-JsonLog {
+  param(
+    [string]$Level,
+    [string]$Message,
+    [string]$Event,
+    [int]$Attempt,
+    [string]$Url
+  )
+  $obj = [ordered]@{ ts = (Get-Date).ToString('o'); level = $Level; message = $Message }
+  if($Event){ $obj.event = $Event }
+  if($Attempt){ $obj.attempt = $Attempt }
+  if($Url){ $obj.url = $Url }
+  $obj | ConvertTo-Json -Compress | Write-Host
+}
 
 if(-not (Get-Command gh -ErrorAction SilentlyContinue)){ Err 'gh CLI no encontrado'; exit 1 }
 
@@ -38,25 +57,49 @@ if($LASTEXITCODE -ne 0){
   exit 1
 }
 
-# 1. Levantar/forzar recreación del túnel
-if(Test-Path './docker-compose.tunnel.yml'){
+# 1. Intentar obtener URL con reintentos (problemas intermitentes Cloudflare Quick Tunnel)
+if(-not (Test-Path './docker-compose.tunnel.yml')){ Err 'docker-compose.tunnel.yml no encontrado'; exit 1 }
+
+$regex = 'https://[a-zA-Z0-9-]+\.trycloudflare\.com'
+$url = $null
+
+for($attempt=1; $attempt -le $RetryCount -and -not $url; $attempt++){
+  if($attempt -gt 1){ Info "Reintento $attempt/$RetryCount (reiniciando contenedor túnel)" }
   Info 'Levantando túnel con docker-compose.tunnel.yml'
   docker compose -f docker-compose.tunnel.yml up -d --force-recreate --remove-orphans tunnel | Out-Null
-} else {
-  Err 'docker-compose.tunnel.yml no encontrado'; exit 1
+  $start = Get-Date
+  while((Get-Date)-$start -lt [TimeSpan]::FromSeconds($TimeoutSeconds)){
+    $logs = docker logs --tail 160 sifu-tunnel 2>&1
+    if($logs -match 'Error unmarshaling QuickTunnel response'){
+      Err 'Cloudflare devolvió respuesta inválida (HTML). Se reintentará.'
+      break
+    }
+    if($logs -match 'cf-error-code">(\d+)<'){ $cfCode=$Matches[1]; Err "Código Cloudflare detectado: $cfCode" }
+    $m = Select-String -InputObject $logs -Pattern $regex -AllMatches | Select-Object -First 1
+    if($m){
+      $url = $m.Matches[0].Value
+      if($JsonLogs){ Write-JsonLog -Level 'INFO' -Message 'URL detectada' -Event 'tunnel_url_found' -Attempt $attempt -Url $url }
+      break
+    }
+    Start-Sleep 2
+  }
+  if(-not $url -and $attempt -lt $RetryCount){
+    # Exponential backoff con cap
+    $delay = [Math]::Min($RetryDelaySeconds * [Math]::Pow($BackoffFactor, ($attempt-1)), $MaxRetryDelaySeconds)
+    Info "Esperando $([int]$delay)s antes del próximo intento"
+    Start-Sleep -Seconds ([int]$delay)
+  }
 }
 
-# 2. Esperar URL
-$regex = 'https://[a-zA-Z0-9-]+\.trycloudflare\.com'
-$start = Get-Date
-$url = $null
-while((Get-Date)-$start -lt [TimeSpan]::FromSeconds($TimeoutSeconds)){
-  $logs = docker logs --tail 80 sifu-tunnel 2>&1
-  $m = Select-String -InputObject $logs -Pattern $regex -AllMatches | Select-Object -First 1
-  if($m){ $url = $m.Matches[0].Value; break }
-  Start-Sleep 2
+if(-not $url){
+  Err 'No se obtuvo URL del túnel tras reintentos.'
+  docker logs --tail 200 sifu-tunnel | Out-String | Write-Host
+  Write-Host 'Sugerencias:' -ForegroundColor Yellow
+  Write-Host '  - Esperar 1-2 minutos y reintentar (rate limit temporal o error 1101)' -ForegroundColor DarkYellow
+  Write-Host '  - Probar script alternativo: scripts/deploy/local_run_tunnel_backend.ps1 -TunnelProvider ngrok' -ForegroundColor DarkYellow
+  Write-Host '  - Considerar un túnel nombrado con cuenta Cloudflare para mayor estabilidad' -ForegroundColor DarkYellow
+  exit 1
 }
-if(-not $url){ Err 'No se obtuvo URL del túnel'; docker logs --tail 120 sifu-tunnel; exit 1 }
 Info "URL túnel: $url"
 
 $apiUrl = "$url/api"
