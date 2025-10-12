@@ -239,6 +239,317 @@ export default {
 
 ---
 
+## 🧩 Sistema Semántico de Colores (Phase 1)
+
+### Arquitectura Centralizada
+**Archivo**: `frontend/src/theme/colors.js`
+
+Sistema que mapea **intenciones de diseño** → **colores de paleta**, permitiendo cambios globales desde un único punto.
+
+### Categorías Semánticas
+
+#### 1. **Status** - Estados del Sistema
+```javascript
+semanticColors.status = {
+  success: 'success',  // Operaciones exitosas, datos actualizados
+  error: 'error',      // Errores, fallos, validaciones
+  warning: 'secondary', // Advertencias, atención requerida
+  info: 'accent',      // Información neutral, tips
+  neutral: 'gray',     // Estados sin connotación especial
+}
+```
+
+#### 2. **Data** - Visualización de Datos Financieros
+```javascript
+semanticColors.data = {
+  buy: 'success',      // Compra, valores positivos (+)
+  sell: 'error',       // Venta, valores negativos (-)
+  highlight: 'primary', // Valores destacados, actual
+  neutral: 'gray',     // Sin cambio, neutro
+  arbitrage: 'accent', // Oportunidades, diferencias
+}
+```
+
+#### 3. **Freshness** - Frescura de Datos
+```javascript
+semanticColors.freshness = {
+  fresh: 'success',    // < 5 min
+  stale: 'secondary',  // 5-30 min
+  outdated: 'error',   // > 30 min
+  unknown: 'gray',     // Sin timestamp
+}
+```
+
+#### 4. **Interactive** - Elementos Interactivos
+```javascript
+semanticColors.interactive = {
+  primary: 'primary',   // Acción principal
+  secondary: 'secondary', // Acción secundaria
+  danger: 'error',      // Acción destructiva
+  neutral: 'gray',      // Acción neutral
+  ghost: 'transparent', // Sin fondo
+}
+```
+
+### Helpers de Uso
+
+#### `getSemanticClass(intent, type, shade)`
+Genera clases Tailwind dinámicamente:
+
+```javascript
+import { getSemanticClass } from '@/theme/colors';
+
+// Fondo de estado success
+getSemanticClass('success', 'bg', 100);
+// → 'bg-success-100'
+
+// Texto de estado error
+getSemanticClass('error', 'text', 700);
+// → 'text-error-700'
+
+// Borde de datos buy
+getSemanticClass('buy', 'border', 300, 'data');
+// → 'border-success-300'
+```
+
+#### `getComponentVariant(component, variant)`
+Retorna clases completas predefinidas para componentes:
+
+```javascript
+import { getComponentVariant } from '@/theme/colors';
+
+// Badge success completo
+getComponentVariant('badge', 'success');
+// → 'bg-success-100 text-success-800 dark:bg-success-900/30 dark:text-success-300'
+
+// Button primary completo
+getComponentVariant('button', 'primary');
+// → 'bg-primary-600 hover:bg-primary-700 text-white ...'
+```
+
+### Componentes UI Reutilizables
+
+#### **Badge** (`components/ui/Badge.jsx`)
+Etiquetas inline para estados, categorías, contadores.
+
+**Variantes**: `success` | `error` | `warning` | `info` | `neutral` | `primary`
+
+```jsx
+import Badge, { BadgeWithIcon, CountBadge, StatusBadge } from '@/components/ui/Badge';
+
+// Badge básico
+<Badge variant="success">Actualizado</Badge>
+
+// Con icono
+<BadgeWithIcon variant="error" icon={<AlertIcon />}>
+  Error crítico
+</BadgeWithIcon>
+
+// Contador
+<CountBadge variant="primary" count={42} max={99} />
+
+// Con indicador animado
+<StatusBadge variant="success" animated>
+  En línea
+</StatusBadge>
+```
+
+**Props**:
+- `variant`: Variante de color
+- `size`: `'sm' | 'md' | 'lg'` (default: `'sm'`)
+- `rounded`: `boolean` - Esquinas redondeadas vs pill
+- `className`: Clases adicionales
+
+#### **Alert** (`components/ui/Alert.jsx`)
+Mensajes de notificación, errores, advertencias.
+
+**Variantes**: `success` | `error` | `warning` | `info`
+
+```jsx
+import Alert, { CompactAlert, ListAlert, LoadingAlert } from '@/components/ui/Alert';
+
+// Alert básico
+<Alert variant="success" title="Éxito">
+  Operación completada correctamente
+</Alert>
+
+// Con cierre
+<Alert 
+  variant="error" 
+  onClose={() => setAlert(null)}
+>
+  Error al procesar la solicitud
+</Alert>
+
+// Compacto (inline)
+<CompactAlert variant="warning">
+  Datos desactualizados
+</CompactAlert>
+
+// Lista de mensajes
+<ListAlert variant="info" messages={[
+  'Paso 1 completado',
+  'Paso 2 en progreso...'
+]} />
+
+// Con loading
+<LoadingAlert variant="info">
+  Procesando datos...
+</LoadingAlert>
+```
+
+**Props**:
+- `variant`: Variante de color
+- `title`: Título opcional
+- `icon`: Icono custom (default: auto por variante)
+- `onClose`: Callback para cerrar
+- `children`: Contenido del mensaje
+
+#### **Button** (`components/ui/Button.jsx`)
+Botones con estados y variantes consistentes.
+
+**Variantes**: `primary` | `secondary` | `danger` | `ghost` | `success`
+
+```jsx
+import Button, { ButtonGroup, IconButton, LinkButton } from '@/components/ui/Button';
+
+// Button básico
+<Button variant="primary" onClick={handleSubmit}>
+  Guardar
+</Button>
+
+// Con loading
+<Button variant="success" loading disabled>
+  Guardando...
+</Button>
+
+// Con iconos
+<Button 
+  variant="secondary" 
+  leftIcon={<SearchIcon />}
+  rightIcon={<ArrowIcon />}
+>
+  Buscar
+</Button>
+
+// Grupo de botones conectados
+<ButtonGroup>
+  <Button variant="primary">Opción 1</Button>
+  <Button variant="secondary">Opción 2</Button>
+  <Button variant="ghost">Opción 3</Button>
+</ButtonGroup>
+
+// Icono solo
+<IconButton variant="danger" icon={<TrashIcon />} />
+
+// Estilo link
+<LinkButton variant="primary" href="/docs">
+  Ver documentación
+</LinkButton>
+```
+
+**Props**:
+- `variant`: Variante de color
+- `size`: `'sm' | 'md' | 'lg'` (default: `'md'`)
+- `loading`: Muestra spinner y deshabilita
+- `disabled`: Deshabilitar botón
+- `fullWidth`: Ancho completo
+- `leftIcon` / `rightIcon`: Iconos laterales
+- `onClick`: Handler de click
+
+#### **Spinner** (`components/ui/Spinner.jsx`)
+Indicadores de carga consistentes.
+
+**Variantes**: `primary` | `secondary` | `white` | `gray`
+
+```jsx
+import Spinner, { 
+  FullPageSpinner, 
+  InlineSpinner, 
+  SpinnerOverlay,
+  PulseSpinner,
+  DotsSpinner 
+} from '@/components/ui/Spinner';
+
+// Spinner básico
+<Spinner variant="primary" size="md" />
+
+// Con etiqueta
+<Spinner 
+  variant="primary" 
+  size="lg" 
+  label="Cargando datos..."
+/>
+
+// Centrado en contenedor
+<Spinner center size="xl" label="Procesando..." />
+
+// Full page overlay
+<FullPageSpinner 
+  variant="primary" 
+  label="Cargando aplicación..."
+  blur
+/>
+
+// Inline en texto
+<p>Cargando <InlineSpinner variant="primary" /> datos...</p>
+
+// Overlay sobre contenedor (posición relativa)
+<div className="relative">
+  <DataTable />
+  <SpinnerOverlay variant="primary" label="Actualizando..." />
+</div>
+
+// Animación de pulso
+<PulseSpinner variant="primary" size="lg" />
+
+// Tres puntos animados
+<DotsSpinner variant="secondary" size="md" />
+```
+
+**Props**:
+- `variant`: Variante de color
+- `size`: `'xs' | 'sm' | 'md' | 'lg' | 'xl'` (default: `'md'`)
+- `label`: Texto descriptivo
+- `center`: Centrar en contenedor
+- `className`: Clases adicionales
+
+### Ejemplo de Migración
+
+**❌ Antes (hardcoded)**:
+```jsx
+<div className="bg-green-100 border border-green-200 text-green-800 px-3 py-2 rounded-lg">
+  <span className="font-semibold">✓</span> Actualizado hace 2 minutos
+</div>
+
+<button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md disabled:opacity-50">
+  Guardar
+</button>
+```
+
+**✅ Después (semántico)**:
+```jsx
+import Alert from '@/components/ui/Alert';
+import Button from '@/components/ui/Button';
+
+<Alert variant="success">
+  Actualizado hace 2 minutos
+</Alert>
+
+<Button variant="primary">
+  Guardar
+</Button>
+```
+
+**Beneficios**:
+- ✅ Cambio global de tema desde `theme/colors.js`
+- ✅ Dark mode automático
+- ✅ Consistencia visual garantizada
+- ✅ Menos código repetitivo
+- ✅ Accesibilidad incorporada (focus, ARIA)
+
+---
+
 ## 🎯 Guía de Aplicación
 
 ### 1. Elementos de UI Base
@@ -318,27 +629,43 @@ export default {
 
 ## 🔄 Migración Gradual
 
-### Fase 1: Infraestructura ✅
+### Fase 1: Infraestructura ✅ (COMPLETADA)
 - [x] Definir paleta en tailwind.config.js
 - [x] Documentar variables CSS
-- [ ] Agregar ThemeContext (ya existe toggle, extender)
+- [x] Crear sistema semántico (`theme/colors.js`)
+- [x] Badge component con 6 variantes
+- [x] Alert component con 4 variantes
+- [x] Button component con 5 variantes
+- [x] Spinner component con 4 variantes
+- [x] Documentar sistema semántico en THEMING.md
+- [x] ThemeContext (ya existe toggle, extendido)
 
-### Fase 2: Componentes Base
+### Fase 2: Panels Principales (En Progreso)
+- [ ] **BROUPanel** (~35-40 replacements)
+  - Migrar badges inline → `<Badge variant="...">`
+  - Migrar alerts inline → `<Alert variant="...">`
+  - Migrar botones → `<Button variant="...">`
+  - Migrar spinners → `<Spinner variant="...">`
+- [ ] **ExchangeRatePanel** (~15-20 replacements)
+  - Badges de freshness
+  - Highlights de datos
+  - Botones de acción
+
+### Fase 3: Data Panels (Pendiente)
+- [ ] **UIPanel** (~10-15 replacements)
+- [ ] **URPanel** (~10-15 replacements)
+- [ ] **Dashboard** (~20-25 replacements)
+
+### Fase 4: Componentes Menores (Pendiente)
+- [ ] Header
+- [ ] SearchForm
 - [ ] Card, CardHeader, CardBody
-- [ ] Button variants (primary/secondary)
-- [ ] Input, Select, Form controls
-
-### Fase 3: Panels
-- [ ] UIPanel
-- [ ] URPanel
-- [ ] ExchangeRatePanel
-- [ ] BROUPanel
-
-### Fase 4: Features
-- [ ] Dashboard
 - [ ] MonitoringAccess
 - [ ] Toast notifications
 - [ ] Error boundaries
+- [ ] Formularios (Input, Select)
+
+**Progreso Total**: 5 / 20 archivos (~25%)
 
 ---
 
@@ -362,5 +689,6 @@ export default {
 
 ---
 
-**Última actualización**: 2025-10-12  
-**Versión**: 1.0.0
+**Última actualización**: 2025-01-14  
+**Versión**: 2.0.0 - Sistema Semántico Completo  
+**Phase**: 1/4 Completada ✅
