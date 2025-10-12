@@ -6,8 +6,10 @@ import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import uiService from '../services/api';
 import QuickSelectors from './QuickSelectors';
+import Button from './ui/Button';
 import { useI18n } from '../contexts/I18nContext';
 import { getTodayLocal, getDaysAgoLocal } from '../utils/dateUtils';
+import { getSemanticClass } from '../theme/colors';
 
 const SearchForm = ({ onSearch, isLoading }) => {
   const { t } = useI18n();
@@ -179,7 +181,7 @@ const SearchForm = ({ onSearch, isLoading }) => {
               )}
             />
             {errors.fecha && (
-              <p className="mt-1 text-sm text-red-600">{errors.fecha.message}</p>
+              <p className={`mt-1 text-sm ${getSemanticClass('error', 'text', 600)}`}>{errors.fecha.message}</p>
             )}
             {/* Enhanced quick selectors */}
             <_QuickSelectors
@@ -239,7 +241,7 @@ const SearchForm = ({ onSearch, isLoading }) => {
                 )}
               />
               {errors.fechaInicio && (
-                <p className="mt-1 text-sm text-red-600">{errors.fechaInicio.message}</p>
+                <p className={`mt-1 text-sm ${getSemanticClass('error', 'text', 600)}`}>{errors.fechaInicio.message}</p>
               )}
             </div>
             <div>
@@ -290,7 +292,7 @@ const SearchForm = ({ onSearch, isLoading }) => {
                 )}
               />
               {errors.fechaFin && (
-                <p className="mt-1 text-sm text-red-600">{errors.fechaFin.message}</p>
+                <p className={`mt-1 text-sm ${getSemanticClass('error', 'text', 600)}`}>{errors.fechaFin.message}</p>
               )}
             </div>
             {/* Enhanced range quick selectors */}
@@ -305,20 +307,15 @@ const SearchForm = ({ onSearch, isLoading }) => {
           </div>
         )}
         <div className="flex space-x-3 pt-4">
-          <button
+          <Button
             type="submit"
-            id="submit-btn"
-            name="submit"
+            variant="primary"
             disabled={isLoading}
-            className={`flex items-center space-x-2 px-6 py-2 rounded-lg font-medium transition-colors duration-200 ${
-              isLoading
-                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                : 'bg-uruguay-blue text-white hover:bg-blue-700'
-            }`}
+            id="submit-btn"
           >
             <_MagnifyingGlassIcon className="w-4 h-4" />
             <span>{isLoading ? (t('common.loading') || 'Consultando...') : (t('common.search') || 'Consultar')}</span>
-          </button>
+          </Button>
           <button
             type="button"
             id="reset-btn"
