@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react';
 import healthService from '../services/healthService';
 import performanceService from '../services/performanceService';
 import Card, { CardBody } from './ui/Card';
+import Badge from './ui/Badge';
+import Spinner from './ui/Spinner';
+import { getSemanticClass } from '../theme/colors';
 import { useI18n } from '../contexts/I18nContext';
 
 const Dashboard = ({ isOpen, onClose }) => {
@@ -116,16 +119,16 @@ const Dashboard = ({ isOpen, onClose }) => {
     }
   };
 
-  const getStatusColor = (status) => {
+  const getStatusVariant = (status) => {
     switch (status?.toLowerCase()) {
       case 'healthy':
-        return 'text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800';
+        return 'success';
       case 'warning':
-        return 'text-yellow-600 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800';
+        return 'warning';
       case 'critical':
-        return 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800';
+        return 'error';
       default:
-        return 'text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-900/20 border-gray-200 dark:border-gray-800';
+        return 'default';
     }
   };
 
@@ -242,9 +245,8 @@ const Dashboard = ({ isOpen, onClose }) => {
           {activeTab === 'health' && (
             <>
         {loading && (
-                <div className="text-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 dark:border-blue-400 mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-300">{t('dashboard.loading_health') || 'Cargando datos de salud...'}</p>
+                <div className="py-8">
+                  <Spinner center size="lg" label={t('dashboard.loading_health') || 'Cargando datos de salud...'} />
                 </div>
               )}
 
@@ -269,17 +271,12 @@ const Dashboard = ({ isOpen, onClose }) => {
                       </h3>
                       <div className="mb-4 grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
                         <div className="flex items-center gap-3 flex-wrap">
-                          <div className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-medium border ${
-                            healthData.status === 'healthy' ? 'text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800' :
-                              healthData.status === 'warning' ? 'text-yellow-600 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800' :
-                                healthData.status === 'critical' ? 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800' :
-                                  'text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-900/20 border-gray-200 dark:border-gray-800'
-                          }`}>
+                          <Badge variant={getStatusVariant(healthData.status)} size="lg">
                             {healthData.status === 'healthy' ? (t('dashboard.general_status.healthy') || 'Sistema Saludable') :
                               healthData.status === 'warning' ? (t('dashboard.general_status.warning') || 'Sistema con Advertencias') :
                                 healthData.status === 'critical' ? (t('dashboard.general_status.critical') || 'Sistema Crítico') :
                                   (t('dashboard.general_status.unknown') || 'Estado Desconocido')}
-                          </div>
+                          </Badge>
                         </div>
                         {healthData.timestamp && (
                           <div className="flex md:justify-end items-center gap-1 text-sm text-gray-500 dark:text-gray-400 md:text-right">
@@ -324,13 +321,13 @@ const Dashboard = ({ isOpen, onClose }) => {
                       <tr key={c.name} className="border-t border-gray-200 dark:border-gray-700">
                         <td className="py-2 px-2 font-medium text-gray-700 dark:text-gray-200">{label}</td>
                         <td className="py-2 px-2 text-xs">
-                          <span className={`inline-block px-2 py-1 rounded border ${getStatusColor(c.status)}`}>
+                          <Badge variant={getStatusVariant(c.status)} size="sm">
                             {getStatusIcon(c.status)} {(
                               c.status?.toLowerCase?.() === 'healthy' ? (t('dashboard.status.healthy') || 'Healthy') :
                               c.status?.toLowerCase?.() === 'warning' ? (t('dashboard.status.warning') || 'Warning') :
                               c.status?.toLowerCase?.() === 'critical' ? (t('dashboard.status.critical') || 'Critical') : c.status
                             )}
-                          </span>
+                          </Badge>
                         </td>
                         <td className="py-2 px-2 text-gray-600 dark:text-gray-300 text-sm">{formatAge(c.details?.age_minutes)}</td>
                         <td className="py-2 px-2 text-xs text-gray-500 dark:text-gray-400">{c.details?.data_count ?? '-'}</td>
@@ -401,13 +398,13 @@ const Dashboard = ({ isOpen, onClose }) => {
                                 <tr className="border-t border-gray-200 dark:border-gray-700">
                                   <td className="py-2 px-2 font-medium text-gray-700 dark:text-gray-200">UI</td>
                                   <td className="py-2 px-2 text-xs">
-                                    <span className={`inline-block px-2 py-1 rounded border ${getStatusColor(uiFresh.status)}`}>
+                                    <Badge variant={getStatusVariant(uiFresh.status)} size="sm">
                                       {getStatusIcon(uiFresh.status)} {(
                                         uiFresh.status?.toLowerCase?.() === 'healthy' ? (t('dashboard.status.healthy') || 'Healthy') :
                                         uiFresh.status?.toLowerCase?.() === 'warning' ? (t('dashboard.status.warning') || 'Warning') :
                                         uiFresh.status?.toLowerCase?.() === 'critical' ? (t('dashboard.status.critical') || 'Critical') : uiFresh.status
                                       )}
-                                    </span>
+                                    </Badge>
                                   </td>
                                   <td className="py-2 px-2 text-gray-600 dark:text-gray-300 text-sm">{formatDateOnly(d.latest_date)}</td>
                                   <td className="py-2 px-2 text-gray-600 dark:text-gray-300 text-sm">{d.dias_gap ?? '-'}</td>
@@ -468,14 +465,18 @@ const Dashboard = ({ isOpen, onClose }) => {
                                     }
                                   >ℹ️</span>
                                 </h4>
-                                <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(checkData.status)}`} title={t('dashboard.tooltips.status_badge') || 'Estado actual del check'}>
+                                <Badge 
+                                  variant={getStatusVariant(checkData.status)} 
+                                  size="sm"
+                                  title={t('dashboard.tooltips.status_badge') || 'Estado actual del check'}
+                                >
                                   {getStatusIcon(checkData.status)} {(
                                     checkData.status?.toLowerCase?.() === 'healthy' ? (t('dashboard.status.healthy') || 'Healthy') :
                                     checkData.status?.toLowerCase?.() === 'warning' ? (t('dashboard.status.warning') || 'Warning') :
                                     checkData.status?.toLowerCase?.() === 'critical' ? (t('dashboard.status.critical') || 'Critical') :
                                     checkData.status
                                   )}
-                                </div>
+                                </Badge>
                               </div>
 
                               {checkData.message && (
@@ -773,17 +774,12 @@ const Dashboard = ({ isOpen, onClose }) => {
                                 </span>
                                 {budget.name.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
                               </h4>
-                              <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${
-                                budget.status === 'healthy' ? 'text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800' :
-                                budget.status === 'warning' ? 'text-yellow-600 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800' :
-                                budget.status === 'critical' ? 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800' :
-                                'text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-900/20 border-gray-200 dark:border-gray-800'
-                              }`}>
+                              <Badge variant={getStatusVariant(budget.status)} size="sm">
                                 {budget.status === 'healthy' ? (t('dashboard.performance_budgets.status.healthy') || '✅ Saludable') :
                                  budget.status === 'warning' ? (t('dashboard.performance_budgets.status.warning') || '⚠️ Advertencia') :
                                  budget.status === 'critical' ? (t('dashboard.performance_budgets.status.critical') || '❌ Crítico') :
                                  (t('dashboard.performance_budgets.status.unknown') || '❓ Desconocido')}
-                              </div>
+                              </Badge>
                             </div>
 
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">

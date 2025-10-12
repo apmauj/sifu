@@ -4,6 +4,9 @@ import URResultsDisplay from './URResultsDisplay';
 import urService from '../services/urService';
 import { useI18n } from '../contexts/I18nContext';
 import Card, { CardBody } from './ui/Card';
+import Spinner from './ui/Spinner';
+import Alert from './ui/Alert';
+import { getSemanticClass } from '../theme/colors';
 import { CURRENCY, CURRENCY_LOCALE } from '../constants';
 
 const URPanel = ({ refreshKey }) => {
@@ -130,19 +133,26 @@ const URPanel = ({ refreshKey }) => {
 
   return (
     <div>
-      {/* Panel azul de estado de datos UR */}
-  <div className="mb-6 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-xl p-4">
+      {/* Panel de estado de datos UR */}
+      <div className={`mb-6 border rounded-xl p-4 ${getSemanticClass('info', 'bg', 50)} dark:${getSemanticClass('info', 'bg', 950)} ${getSemanticClass('info', 'border', 200)} dark:${getSemanticClass('info', 'border', 800)}`}>
         {urInfoLoading ? (
-          <span className="text-blue-700 text-sm">{t('common.loading') || 'Cargando información...'}</span>
+          <div className="flex items-center gap-2">
+            <Spinner size="sm" variant="primary" />
+            <span className={`text-sm ${getSemanticClass('info', 'text', 700)}`}>
+              {t('common.loading') || 'Cargando información...'}
+            </span>
+          </div>
         ) : urInfoError ? (
-          <span className="text-red-600 text-sm">{urInfoError}</span>
+          <Alert variant="error">
+            {urInfoError}
+          </Alert>
         ) : (
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-sm font-medium text-blue-900 dark:text-blue-100">
+              <h2 className={`text-sm font-medium ${getSemanticClass('info', 'text', 900)} dark:${getSemanticClass('info', 'text', 100)}`}>
                 📊 Estado de los datos UR
               </h2>
-              <p className="text-sm text-blue-800 dark:text-blue-100/90">
+              <p className={`text-sm ${getSemanticClass('info', 'text', 800)} dark:${getSemanticClass('info', 'text', 100)}/90`}>
                 {urInfo && urInfo.total_records ? urInfo.total_records.toLocaleString() : 'N/D'} {t('ur.records') || 'registros'} disponibles
                 {urInfo && urInfo.year_range && (
                   <span> • {t('common.period') || 'Período'}: {urInfo.year_range.min_year} a {urInfo.year_range.max_year}</span>
@@ -151,8 +161,10 @@ const URPanel = ({ refreshKey }) => {
             </div>
             {urInfo && urInfo.latest_value && (
               <div className="text-right">
-                <div className="text-sm text-blue-700 dark:text-blue-100">{t('ur.latest_value') || 'Último valor disponible'}:</div>
-                <div className="text-lg font-semibold text-blue-900 dark:text-white">
+                <div className={`text-sm ${getSemanticClass('info', 'text', 700)} dark:${getSemanticClass('info', 'text', 100)}`}>
+                  {t('ur.latest_value') || 'Último valor disponible'}:
+                </div>
+                <div className={`text-lg font-semibold ${getSemanticClass('info', 'text', 900)} dark:text-white`}>
                   {formatURValue(urInfo.latest_value.value)} • {formatPeriod(urInfo.latest_value.year, urInfo.latest_value.month)}
                 </div>
               </div>

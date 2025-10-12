@@ -5,6 +5,9 @@ import uiService from '../services/api';
 import { useI18n } from '../contexts/I18nContext';
 import Card, { CardBody } from './ui/Card';
 import { CURRENCY, CURRENCY_LOCALE } from '../constants';
+import Spinner from './ui/Spinner';
+import Alert from './ui/Alert';
+import { getSemanticClass } from '../theme/colors';
 
 const UIPanel = ({ refreshKey }) => {
   const { t, currentLanguage } = useI18n();
@@ -116,19 +119,26 @@ const UIPanel = ({ refreshKey }) => {
 
   return (
     <div>
-      {/* Panel azul de estado de datos UI */}
-  <div className="mb-6 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-xl p-4">
+      {/* Panel de estado de datos UI */}
+      <div className={`mb-6 border rounded-xl p-4 ${getSemanticClass('info', 'bg', 50)} dark:${getSemanticClass('info', 'bg', 950)} ${getSemanticClass('info', 'border', 200)} dark:${getSemanticClass('info', 'border', 800)}`}>
         {uiInfoLoading ? (
-          <span className="text-blue-700 text-sm">{t('common.loading') || 'Cargando información...'}</span>
+          <div className="flex items-center gap-2">
+            <Spinner size="sm" variant="primary" />
+            <span className={`text-sm ${getSemanticClass('info', 'text', 700)}`}>
+              {t('common.loading') || 'Cargando información...'}
+            </span>
+          </div>
         ) : uiInfoError ? (
-          <span className="text-red-600 text-sm">Error UI: {uiInfoError}</span>
+          <Alert variant="error">
+            {uiInfoError}
+          </Alert>
         ) : (
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-sm font-medium text-blue-900 dark:text-blue-100">
+              <h2 className={`text-sm font-medium ${getSemanticClass('info', 'text', 900)} dark:${getSemanticClass('info', 'text', 100)}`}>
                 📊 {t('ui.data_status') || 'Estado de los datos UI'}
               </h2>
-              <p className="text-sm text-blue-800 dark:text-blue-100/90">
+              <p className={`text-sm ${getSemanticClass('info', 'text', 800)} dark:${getSemanticClass('info', 'text', 100)}/90`}>
                 {uiInfo && uiInfo.total_records ? uiInfo.total_records.toLocaleString() : 'N/D'} {t('common.records') || 'registros'} {t('ui.available') || 'disponibles'}
                 {uiInfo && uiInfo.date_range && (
                   <span> • {t('common.period') || 'Período'}: {uiInfo.date_range.min_date} a {uiInfo.date_range.max_date}</span>
@@ -137,8 +147,10 @@ const UIPanel = ({ refreshKey }) => {
             </div>
             {uiInfo && uiInfo.latest_ui && (
               <div className="text-right">
-                <div className="text-sm text-blue-700 dark:text-blue-100">{t('ui.latest_value') || 'Último valor disponible'}:</div>
-                <div className="text-lg font-semibold text-blue-900 dark:text-white">
+                <div className={`text-sm ${getSemanticClass('info', 'text', 700)} dark:${getSemanticClass('info', 'text', 100)}`}>
+                  {t('ui.latest_value') || 'Último valor disponible'}:
+                </div>
+                <div className={`text-lg font-semibold ${getSemanticClass('info', 'text', 900)} dark:text-white`}>
                   {formatUIValue(uiInfo.latest_ui.value)} • {uiInfo.latest_ui.date}
                 </div>
               </div>
