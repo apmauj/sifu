@@ -91,12 +91,11 @@ const BROUPanel = () => {
 
   const getCurrencyRowClass = (currency) => {
     // Better contrast in dark mode; subtle highlight for USD_EBROU
-    const baseLight = "border-b border-neutral-100 hover:bg-neutral-50 transition-colors";
-    const baseDark = "dark:border-neutral-700 dark:hover:bg-neutral-700/30";
+    const baseLight = "border-b border-neutral-100 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700/30 transition-colors";
     if (currency === 'USD_EBROU') {
-      return `${baseLight} ${baseDark} bg-primary-50 dark:bg-primary-950/30 border-primary-100 dark:border-primary-800`;
+      return `${baseLight} bg-primary-50 dark:bg-primary-950/30 border-primary-100 dark:border-primary-800`;
     }
-    return `${baseLight} ${baseDark}`;
+    return baseLight;
   };
 
   // Componente para badge de estado
