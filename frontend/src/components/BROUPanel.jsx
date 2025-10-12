@@ -8,6 +8,11 @@ import { OpenMojiIcon } from '../icons/openmoji/index.jsx';
 import { Flag } from '../icons/flags.jsx';
 import { RetryIcon } from '../components/icons/SimpleIcons.jsx';
 import { getCurrencyDisplayMap } from '../utils/currencyDisplay.js';
+import Badge from './ui/Badge';
+import Alert from './ui/Alert';
+import Button from './ui/Button';
+import Spinner from './ui/Spinner';
+import { getSemanticClass } from '../theme/colors';
 
 const BROUPanel = () => {
   const { t } = useI18n();
@@ -98,17 +103,19 @@ const BROUPanel = () => {
   const StatusBadge = ({ metadata }) => {
     if (!metadata || !metadata.frontendDisplay) return null;
     
-    const colorClasses = {
-      green: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
-      yellow: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
-      red: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
-      gray: 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
+    const variantMap = {
+      green: 'success',
+      yellow: 'warning',
+      red: 'error',
+      gray: 'neutral'
     };
     
+    const variant = variantMap[metadata.status.color] || 'neutral';
+    
     return (
-      <span className={`ml-2 px-2 py-1 rounded-full text-xs font-medium ${colorClasses[metadata.status.color] || colorClasses.gray}`}>
+      <Badge variant={variant} size="sm" className="ml-2">
         {metadata.frontendDisplay.status_label}
-      </span>
+      </Badge>
     );
   };
 
@@ -139,55 +146,48 @@ const BROUPanel = () => {
     if (!metadata?.frontendDisplay?.warning_message) return null;
     
     return (
-      <div className="mb-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-lg">
-        <div className="flex items-center">
-          <span className="text-yellow-600 dark:text-yellow-400">⚠️</span>
-          <span className="ml-2 text-yellow-800 dark:text-yellow-200 text-sm">
-            {metadata.frontendDisplay.warning_message}
-          </span>
-        </div>
+      <div className="mb-4">
+        <Alert variant="warning">
+          {metadata.frontendDisplay.warning_message}
+        </Alert>
       </div>
     );
   };
 
   if (loading && Array.isArray(rates) && rates.length === 0) {
     return (
-              <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-md p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center">
-              <OpenMojiIcon name="bank" size={32} className="mr-3" />
-              {t('brou.title') || 'BROU'}
-            </h2>
-          </div>
-          <div className="flex justify-center items-center h-32">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-            <span className="ml-2 text-gray-600">{t('brou.loading') || 'Cargando cotizaciones...'}</span>
-          </div>
+      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-md p-6">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center">
+            <OpenMojiIcon name="bank" size={32} className="mr-3" />
+            {t('brou.title') || 'BROU'}
+          </h2>
         </div>
+        <Spinner center size="lg" label={t('brou.loading') || 'Cargando cotizaciones...'} />
+      </div>
     );
   }
 
   if (error) {
     return (
-              <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-md p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center">
-              <OpenMojiIcon name="bank" size={32} className="mr-3" />
-              {t('brou.title') || 'BROU'}
-            </h2>
-            <button
-              onClick={fetchBROURates}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
-            >
-              <RetryIcon className="w-4 h-4 mr-2" />
-              {t('brou.retry') || 'Reintentar'}
-            </button>
-          </div>
-          <div className="text-center text-red-600 bg-red-50 p-4 rounded">
-            <p className="font-medium">{t('brou.error_loading') || 'Error al cargar cotizaciones'}</p>
-            <p className="text-sm mt-1">{error}</p>
-          </div>
+      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-md p-6">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center">
+            <OpenMojiIcon name="bank" size={32} className="mr-3" />
+            {t('brou.title') || 'BROU'}
+          </h2>
+          <Button
+            onClick={fetchBROURates}
+            variant="primary"
+            leftIcon={<RetryIcon className="w-4 h-4" />}
+          >
+            {t('brou.retry') || 'Reintentar'}
+          </Button>
         </div>
+        <Alert variant="error" title={t('brou.error_loading') || 'Error al cargar cotizaciones'}>
+          {error}
+        </Alert>
+      </div>
     );
   }
 
@@ -240,31 +240,31 @@ const BROUPanel = () => {
           <div className="font-medium text-gray-900 dark:text-gray-100 flex items-center">
                             {display.name}
                             {display.special && (
-                              <span className="ml-2 px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
+                              <Badge variant="info" size="sm" className="ml-2">
                                 {t('brou.preferential') || 'Preferencial'}
-                              </span>
+                              </Badge>
                             )}
                           </div>
                         </div>
                       </div>
                     </td>
                     <td className="text-center py-3 px-2">
-                      <span className="font-mono text-green-600 font-medium">
+                      <span className={`font-mono font-medium ${getSemanticClass('buy', 'text', 600, 'data')}`}>
                         {display.symbol}{formatRate(rate.buy_rate)}
                       </span>
                     </td>
                     <td className="text-center py-3 px-2">
-                      <span className="font-mono text-red-600 font-medium">
+                      <span className={`font-mono font-medium ${getSemanticClass('sell', 'text', 600, 'data')}`}>
                         {display.symbol}{formatRate(rate.sell_rate)}
                       </span>
                     </td>
                     <td className="text-center py-3 px-2">
-                      <span className="font-mono text-blue-600 text-sm">
+                      <span className={`font-mono text-sm ${getSemanticClass('highlight', 'text', 600, 'data')}`}>
                         {formatArbitrage(rate.arbitrage_buy)}
                       </span>
                     </td>
                     <td className="text-center py-3 px-2">
-                      <span className="font-mono text-blue-600 text-sm">
+                      <span className={`font-mono text-sm ${getSemanticClass('highlight', 'text', 600, 'data')}`}>
                         {formatArbitrage(rate.arbitrage_sell)}
                       </span>
                     </td>
@@ -295,9 +295,9 @@ const BROUPanel = () => {
                     <div className="font-medium text-gray-900 dark:text-gray-100 flex items-center">
                       {display.name}
                       {display.special && (
-                                              <span className="ml-2 px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
-                        {t('brou.preferential') || 'Preferencial'}
-                      </span>
+                        <Badge variant="info" size="sm" className="ml-2">
+                          {t('brou.preferential') || 'Preferencial'}
+                        </Badge>
                       )}
                     </div>
                   </div>
@@ -307,13 +307,13 @@ const BROUPanel = () => {
                               <div className="grid grid-cols-2 gap-3 text-sm">
                   <div className="text-center">
                     <div className="text-gray-600 dark:text-gray-300 mb-1">{t('brou.buy') || 'Compra'}</div>
-                    <div className="font-mono text-green-600 font-medium">
+                    <div className={`font-mono font-medium ${getSemanticClass('buy', 'text', 600, 'data')}`}>
                       {display.symbol}{formatRate(rate.buy_rate)}
                     </div>
                   </div>
                   <div className="text-center">
                     <div className="text-gray-600 dark:text-gray-300 mb-1">{t('brou.sell') || 'Venta'}</div>
-                    <div className="font-mono text-red-600 font-medium">
+                    <div className={`font-mono font-medium ${getSemanticClass('sell', 'text', 600, 'data')}`}>
                       {display.symbol}{formatRate(rate.sell_rate)}
                     </div>
                   </div>
@@ -322,13 +322,13 @@ const BROUPanel = () => {
                                       <>
                       <div className="text-center">
                         <div className="text-gray-600 dark:text-gray-300 mb-1">{t('brou.arbitrage_buy') || 'Arb. Compra'}</div>
-                        <div className="font-mono text-blue-600 text-sm">
+                        <div className={`font-mono text-sm ${getSemanticClass('highlight', 'text', 600, 'data')}`}>
                           {formatArbitrage(rate.arbitrage_buy)}
                         </div>
                       </div>
                       <div className="text-center">
                         <div className="text-gray-600 dark:text-gray-300 mb-1">{t('brou.arbitrage_sell') || 'Arb. Venta'}</div>
-                        <div className="font-mono text-blue-600 text-sm">
+                        <div className={`font-mono text-sm ${getSemanticClass('highlight', 'text', 600, 'data')}`}>
                           {formatArbitrage(rate.arbitrage_sell)}
                         </div>
                       </div>

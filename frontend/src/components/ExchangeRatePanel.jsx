@@ -10,6 +10,9 @@ import { OpenMojiIcon } from '../icons/openmoji/index.jsx';
 import { Flag } from '../icons/flags.jsx';
 import { LoadingIcon } from '../components/icons/SimpleIcons.jsx';
 import { getCurrencyDisplayMap } from '../utils/currencyDisplay.js';
+import Spinner, { InlineSpinner } from './ui/Spinner';
+import Alert from './ui/Alert';
+import { getSemanticClass } from '../theme/colors';
 
 const ExchangeRatePanel = () => {
   const [glow, setGlow] = useState(false);
@@ -99,9 +102,9 @@ const ExchangeRatePanel = () => {
       <div className="px-4">
         <div className="max-w-7xl mx-auto">
           <div className="bg-gray-800 text-white py-2 px-4 rounded-xl shadow-sm">
-            <div className="text-center">
-              <span className="text-sm flex items-center justify-center">
-                <LoadingIcon className="w-4 h-4 mr-2 text-blue-400" />
+            <div className="text-center flex items-center justify-center gap-2">
+              <InlineSpinner variant="white" />
+              <span className="text-sm">
                 {t('bcu.loading') || 'Cargando cotizaciones...'}
               </span>
             </div>
@@ -115,12 +118,9 @@ const ExchangeRatePanel = () => {
     return (
       <div className="px-4">
         <div className="max-w-7xl mx-auto">
-          <div className="bg-red-600 text-white py-2 px-4 rounded-xl shadow-sm">
-            <div className="text-center">
-              <span className="text-sm">❌ {error}</span>
-              {/* Retry button removed: automatic hourly sync / potential future auto retry */}
-            </div>
-          </div>
+          <Alert variant="error">
+            {error}
+          </Alert>
         </div>
       </div>
     );
@@ -151,12 +151,12 @@ const ExchangeRatePanel = () => {
                       <span className="font-medium">{rate.currency}</span>
                       <span className="text-blue-200">|</span>
                       {rate.buy_rate === rate.sell_rate ? (
-                        <span className="text-yellow-300 font-medium">{display.symbol}{formatRate(rate.average_rate)}</span>
+                        <span className={`font-medium ${getSemanticClass('highlight', 'text', 300, 'data')}`}>{display.symbol}{formatRate(rate.average_rate)}</span>
                       ) : (
                         <>
-                          <span className="text-green-300">{display.symbol}{formatRate(rate.buy_rate)}</span>
+                          <span className={getSemanticClass('buy', 'text', 300, 'data')}>{display.symbol}{formatRate(rate.buy_rate)}</span>
                           <span className="text-blue-200">-</span>
-                          <span className="text-red-300">{display.symbol}{formatRate(rate.sell_rate)}</span>
+                          <span className={getSemanticClass('sell', 'text', 300, 'data')}>{display.symbol}{formatRate(rate.sell_rate)}</span>
                         </>
                       )}
                     </div>
@@ -213,12 +213,12 @@ const ExchangeRatePanel = () => {
                     <span className="font-medium">{rate.currency}</span>
                     <span className="text-blue-200">|</span>
                     {rate.buy_rate === rate.sell_rate ? (
-                      <span className="text-yellow-300 font-medium">{display.symbol}{formatRate(rate.average_rate)}</span>
+                      <span className={`font-medium ${getSemanticClass('highlight', 'text', 300, 'data')}`}>{display.symbol}{formatRate(rate.average_rate)}</span>
                     ) : (
                       <>
-                        <span className="text-green-300">{display.symbol}{formatRate(rate.buy_rate)}</span>
+                        <span className={getSemanticClass('buy', 'text', 300, 'data')}>{display.symbol}{formatRate(rate.buy_rate)}</span>
                         <span className="text-blue-200">-</span>
-                        <span className="text-red-300">{display.symbol}{formatRate(rate.sell_rate)}</span>
+                        <span className={getSemanticClass('sell', 'text', 300, 'data')}>{display.symbol}{formatRate(rate.sell_rate)}</span>
                       </>
                     )}
                   </div>
@@ -260,12 +260,12 @@ const ExchangeRatePanel = () => {
                     <span className="font-medium">{rate.currency}</span>
                     <span className="text-blue-200">|</span>
                     {rate.buy_rate === rate.sell_rate ? (
-                      <span className="text-yellow-300 font-medium">{display.symbol}{formatRate(rate.average_rate)}</span>
+                      <span className={`font-medium ${getSemanticClass('highlight', 'text', 300, 'data')}`}>{display.symbol}{formatRate(rate.average_rate)}</span>
                     ) : (
                       <>
-                        <span className="text-green-300">{display.symbol}{formatRate(rate.buy_rate)}</span>
+                        <span className={getSemanticClass('buy', 'text', 300, 'data')}>{display.symbol}{formatRate(rate.buy_rate)}</span>
                         <span className="text-blue-200">-</span>
-                        <span className="text-red-300">{display.symbol}{formatRate(rate.sell_rate)}</span>
+                        <span className={getSemanticClass('sell', 'text', 300, 'data')}>{display.symbol}{formatRate(rate.sell_rate)}</span>
                       </>
                     )}
                   </div>
