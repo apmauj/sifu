@@ -11,6 +11,8 @@ services:
       ALLOW_ORIGINS: "https://apmauj.github.io"
       SCHEDULER_ENABLED: "true"
       SCHEDULER_TIMEZONE: America/Montevideo
+      MONITORING_TOTP_SECRET: ${MONITORING_TOTP_SECRET:-}
+      MONITORING_SESSION_HOURS: ${MONITORING_SESSION_HOURS:-1}
     volumes:
       - ./data:/app/data
       - .:/app  # comentar en producción si no querés hot-reload de código
