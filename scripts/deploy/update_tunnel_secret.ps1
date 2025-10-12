@@ -102,7 +102,8 @@ if(-not $url){
 }
 Info "URL túnel: $url"
 
-$apiUrl = "$url/api"
+# El workflow CI/CD normaliza y agrega /api automáticamente, así que el secret es solo la URL base
+$apiUrl = "$url"
 $stateFile = Join-Path $PSScriptRoot '..' '..' '.tunnel_last_url.txt'
 try { $prev = (Get-Content $stateFile -ErrorAction SilentlyContinue).Trim() } catch { $prev = $null }
 
