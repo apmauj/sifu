@@ -133,7 +133,7 @@ const MonitoringAccess = ({ isOpen, onClose, onAccessGranted }) => {
               aria-label="TOTP Code"
             />
             <div className="totp-input-hint">
-              {t('monitoring.digitCounter', { current: code.length, total: 6 })}
+              {code.length}/6 {t('monitoring.digits', 'dígitos')}
             </div>
           </div>
 

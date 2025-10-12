@@ -502,7 +502,7 @@
   "monitoring": {
     "title": "Acceso al Monitoreo",
     "subtitle": "Ingresa el código de 6 dígitos de tu app de autenticación",
-    "digitCounter": "{current}/6 dígitos",
+    "digits": "dígitos",
     "verify": "Verificar Código",
     "verifying": "Verificando...",
     "attemptsLeft": "{count} intentos restantes",

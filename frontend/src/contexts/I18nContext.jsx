@@ -203,7 +203,7 @@ export const I18nProvider = ({ children, forceEmbedded = false }) => {
     // Replace parameters if any
     if (typeof value === 'string' && Object.keys(params).length > 0) {
       return value.replace(/\{(\w+)\}/g, (match, param) => {
-        return params[param] || match;
+        return params[param] !== undefined ? params[param] : match;
       });
     }
     

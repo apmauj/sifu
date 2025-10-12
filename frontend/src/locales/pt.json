@@ -489,8 +489,8 @@
   },
   "monitoring": {
     "title": "Acesso ao Monitoramento",
-    "subtitle": "Insira o código de 6 dígitos do seu aplicativo de autenticação",
-    "digitCounter": "{current}/6 dígitos",
+    "subtitle": "Digite o código de 6 dígitos do seu aplicativo de autenticação",
+    "digits": "dígitos",
     "verify": "Verificar Código",
     "verifying": "Verificando...",
     "attemptsLeft": "{count} tentativas restantes",
