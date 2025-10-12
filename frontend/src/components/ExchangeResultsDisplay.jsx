@@ -141,16 +141,16 @@ const ExchangeResultsDisplay = ({ results, searchType, isLoading, error }) => {
   // Si no hay datos después del filtrado, mostrar mensaje
   if (filteredData.length === 0 && data.length > 0) {
     return (
-      <div className="bg-white rounded-lg shadow-md p-6">
+      <div className="bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg shadow-md p-6">
         <div className="text-center py-12">
           <span className="text-6xl mb-4 block">💱</span>
-          <h3 className="text-lg font-medium text-neutral-900 mb-2">
+          <h3 className="text-lg font-medium text-neutral-900 dark:text-neutral-100 mb-2">
             {t('exchange.no_supported_currencies') || 'No hay monedas soportadas'}
           </h3>
-          <p className="text-neutral-600 mb-4">
+          <p className="text-neutral-600 dark:text-neutral-400 mb-4">
             {t('exchange.no_supported_currencies_description') || 'Los datos contienen monedas que no están en nuestra lista de monedas soportadas.'}
           </p>
-          <p className="text-sm text-neutral-500">
+          <p className="text-sm text-neutral-500 dark:text-neutral-400">
             {t('exchange.supported_currencies_list') || 'Monedas soportadas'}: USD, EUR, ARS, BRL
           </p>
         </div>
