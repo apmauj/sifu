@@ -71,4 +71,14 @@ Concise rules so AI assistants produce changes consistent with this repo.
 - Si el nombre se pasa sin ruta y termina en `.log` o `.txt`, confirmar que no se requiere fuera de `logs/`; si sí, documentar la excepción en el PR.
 - No versionar artefactos de runtime: mantener ignorados en `.gitignore` (solo agregar patrones si aparece necesidad de exclusión específica).
 
+## 16. Theming y Colores Frontend
+- **Sistema de 3 capas**: Definiciones (`themes.js`) → CSS Variables (`tailwind.config.js`) → Helpers semánticos (`colors.js`).
+- **Colores neutral-X**: Usar para UI estructural (backgrounds, borders, text). NUNCA usar `gray-X` directamente (grays son parte del tema activo).
+- **Colores primary-X**: Automáticamente adapta al tema seleccionado (Uruguay Blue / Warm Sunset / Ocean Teal).
+- **Colores decorativos hardcoded** (blue/red/green/etc): Solo para elementos que DEBEN mantener color fijo independiente del tema (Dashboard metrics, badges específicos, alerts).
+- **Helpers**: Usar `getNeutralClass(type, shade)` y `getNeutralClassWithDark(type, lightShade, darkShade)` en lugar de construir clases manualmente.
+- **Nuevos componentes**: Preferir neutral-X para estructura + primary-X para accents. Hardcodear solo si semánticamente necesario (ej: red para error crítico).
+- **Testing**: Cualquier cambio a `themes.js`, `themeUtils.js` o `ThemeContext` debe verificar que todos los tests pasen (634 tests actuales).
+- **Documentación**: Ver `THEMING_V2_PROPOSAL.md` para arquitectura completa del sistema de theming.
+
 Si una regla parece faltar o un patrón no se deduce del código, abstenerse y preguntar en PR en lugar de inventar.
