@@ -91,8 +91,8 @@ const BROUPanel = () => {
 
   const getCurrencyRowClass = (currency) => {
     // Better contrast in dark mode; subtle highlight for USD_EBROU
-    const baseLight = "border-b border-gray-100 hover:bg-gray-50 transition-colors";
-    const baseDark = "dark:border-gray-700 dark:hover:bg-gray-700/30";
+    const baseLight = "border-b border-neutral-100 hover:bg-neutral-50 transition-colors";
+    const baseDark = "dark:border-neutral-700 dark:hover:bg-neutral-700/30";
     if (currency === 'USD_EBROU') {
       return `${baseLight} ${baseDark} bg-primary-50 dark:bg-primary-950/30 border-primary-100 dark:border-primary-800`;
     }
@@ -133,7 +133,7 @@ const BROUPanel = () => {
     };
     
     return (
-      <div className="text-xs text-gray-500 dark:text-gray-400">
+      <div className="text-xs text-neutral-500 dark:text-neutral-400">
         {metadata.isFresh ? '✅' : '⚠️'} 
         {metadata.dataAge ? `${metadata.dataAge.toFixed(1)} min` : 'Sin datos'}
         {formatTimestamp(metadata.timestamp) && ` • ${formatTimestamp(metadata.timestamp)}`}
@@ -156,9 +156,9 @@ const BROUPanel = () => {
 
   if (loading && Array.isArray(rates) && rates.length === 0) {
     return (
-      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-md p-6">
+      <div className="bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg shadow-md p-6">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center">
+          <h2 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100 flex items-center">
             <OpenMojiIcon name="bank" size={32} className="mr-3" />
             {t('brou.title') || 'BROU'}
           </h2>
@@ -170,9 +170,9 @@ const BROUPanel = () => {
 
   if (error) {
     return (
-      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-md p-6">
+      <div className="bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg shadow-md p-6">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center">
+          <h2 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100 flex items-center">
             <OpenMojiIcon name="bank" size={32} className="mr-3" />
             {t('brou.title') || 'BROU'}
           </h2>
@@ -194,13 +194,13 @@ const BROUPanel = () => {
   const safeRates = Array.isArray(rates) ? rates : [];
 
   return (
-    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-md p-6">
+    <div className="bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg shadow-md p-6">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center">
+        <h2 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100 flex items-center">
           <OpenMojiIcon name="bank" size={32} className="mr-3" />
           {t('brou.title') || 'BROU'}
-          <span className="ml-2 text-sm font-normal text-gray-500">
+          <span className="ml-2 text-sm font-normal text-neutral-500">
             {t('brou.bank_name') || 'Banco República'}
           </span>
           <StatusBadge metadata={metadata} />
@@ -218,12 +218,12 @@ const BROUPanel = () => {
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="border-b-2 border-gray-200 dark:border-gray-700">
-                <th className="text-left py-2 px-2 font-semibold text-gray-700 dark:text-gray-300">{t('brou.currency') || 'Moneda'}</th>
-                <th className="text-center py-2 px-2 font-semibold text-gray-700 dark:text-gray-300">{t('brou.buy') || 'Compra'}</th>
-                <th className="text-center py-2 px-2 font-semibold text-gray-700 dark:text-gray-300">{t('brou.sell') || 'Venta'}</th>
-                <th className="text-center py-2 px-2 font-semibold text-gray-700 dark:text-gray-300">{t('brou.arbitrage_buy') || 'Arbitraje Compra'}</th>
-                <th className="text-center py-2 px-2 font-semibold text-gray-700 dark:text-gray-300">{t('brou.arbitrage_sell') || 'Arbitraje Venta'}</th>
+              <tr className="border-b-2 border-neutral-200 dark:border-neutral-700">
+                <th className="text-left py-2 px-2 font-semibold text-neutral-700 dark:text-neutral-300">{t('brou.currency') || 'Moneda'}</th>
+                <th className="text-center py-2 px-2 font-semibold text-neutral-700 dark:text-neutral-300">{t('brou.buy') || 'Compra'}</th>
+                <th className="text-center py-2 px-2 font-semibold text-neutral-700 dark:text-neutral-300">{t('brou.sell') || 'Venta'}</th>
+                <th className="text-center py-2 px-2 font-semibold text-neutral-700 dark:text-neutral-300">{t('brou.arbitrage_buy') || 'Arbitraje Compra'}</th>
+                <th className="text-center py-2 px-2 font-semibold text-neutral-700 dark:text-neutral-300">{t('brou.arbitrage_sell') || 'Arbitraje Venta'}</th>
               </tr>
             </thead>
             <tbody>
@@ -237,7 +237,7 @@ const BROUPanel = () => {
                       <div className="flex items-center">
                         <Flag code={display.flag} className="flag-icon mr-2" />
                         <div>
-          <div className="font-medium text-gray-900 dark:text-gray-100 flex items-center">
+          <div className="font-medium text-neutral-900 dark:text-neutral-100 flex items-center">
                             {display.name}
                             {display.special && (
                               <Badge variant="info" size="sm" className="ml-2">
@@ -286,13 +286,13 @@ const BROUPanel = () => {
             <div key={rate.currency} className={`p-4 rounded-lg border ${
               rate.currency === 'USD_EBROU' 
                 ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800' 
-                : 'bg-gray-50 dark:bg-gray-700/40 border-gray-200 dark:border-gray-700'
+                : 'bg-neutral-50 dark:bg-neutral-700/40 border-neutral-200 dark:border-neutral-700'
             }`}>
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center">
                   <Flag code={display.flag} className="flag-icon mr-2" />
                   <div>
-                    <div className="font-medium text-gray-900 dark:text-gray-100 flex items-center">
+                    <div className="font-medium text-neutral-900 dark:text-neutral-100 flex items-center">
                       {display.name}
                       {display.special && (
                         <Badge variant="info" size="sm" className="ml-2">
@@ -306,13 +306,13 @@ const BROUPanel = () => {
               
                               <div className="grid grid-cols-2 gap-3 text-sm">
                   <div className="text-center">
-                    <div className="text-gray-600 dark:text-gray-300 mb-1">{t('brou.buy') || 'Compra'}</div>
+                    <div className="text-neutral-600 dark:text-neutral-300 mb-1">{t('brou.buy') || 'Compra'}</div>
                     <div className={`font-mono font-medium ${getSemanticClass('buy', 'text', 600, 'data')}`}>
                       {display.symbol}{formatRate(rate.buy_rate)}
                     </div>
                   </div>
                   <div className="text-center">
-                    <div className="text-gray-600 dark:text-gray-300 mb-1">{t('brou.sell') || 'Venta'}</div>
+                    <div className="text-neutral-600 dark:text-neutral-300 mb-1">{t('brou.sell') || 'Venta'}</div>
                     <div className={`font-mono font-medium ${getSemanticClass('sell', 'text', 600, 'data')}`}>
                       {display.symbol}{formatRate(rate.sell_rate)}
                     </div>
@@ -321,13 +321,13 @@ const BROUPanel = () => {
                 {(rate.arbitrage_buy !== null || rate.arbitrage_sell !== null) && (
                                       <>
                       <div className="text-center">
-                        <div className="text-gray-600 dark:text-gray-300 mb-1">{t('brou.arbitrage_buy') || 'Arb. Compra'}</div>
+                        <div className="text-neutral-600 dark:text-neutral-300 mb-1">{t('brou.arbitrage_buy') || 'Arb. Compra'}</div>
                         <div className={`font-mono text-sm ${getSemanticClass('highlight', 'text', 600, 'data')}`}>
                           {formatArbitrage(rate.arbitrage_buy)}
                         </div>
                       </div>
                       <div className="text-center">
-                        <div className="text-gray-600 dark:text-gray-300 mb-1">{t('brou.arbitrage_sell') || 'Arb. Venta'}</div>
+                        <div className="text-neutral-600 dark:text-neutral-300 mb-1">{t('brou.arbitrage_sell') || 'Arb. Venta'}</div>
                         <div className={`font-mono text-sm ${getSemanticClass('highlight', 'text', 600, 'data')}`}>
                           {formatArbitrage(rate.arbitrage_sell)}
                         </div>
@@ -341,8 +341,8 @@ const BROUPanel = () => {
       </div>
 
       {/* Footer */}
-      <div className="mt-4 pt-3 border-t border-gray-200">
-        <div className="flex items-center justify-between text-xs text-gray-500">
+      <div className="mt-4 pt-3 border-t border-neutral-200">
+        <div className="flex items-center justify-between text-xs text-neutral-500">
           <span>{t('brou.source_footer') || t('brou.source') || 'Fuente: BROU • Actualización cada hora'}</span>
           <span>{t('brou.arbitrage_footer') || 'Arbitrajes calculados vs USD'}</span>
         </div>

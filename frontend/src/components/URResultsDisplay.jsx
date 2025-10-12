@@ -169,7 +169,7 @@ const URResultsDisplay = ({ results, searchType, isLoading, error, pendingCurren
       case 'down':
         return <_ArrowDownIcon className="w-4 h-4 text-red-600" />;
       default:
-        return <_MinusIcon className="w-4 h-4 text-gray-400" />;
+        return <_MinusIcon className="w-4 h-4 text-neutral-400" />;
     }
   };
 
@@ -179,7 +179,7 @@ const URResultsDisplay = ({ results, searchType, isLoading, error, pendingCurren
       <div className="card">
         <div className="flex items-center justify-center py-8">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500 mr-3"></div>
-          <span className="text-gray-600 dark:text-gray-300">{t('common.loading') || 'Cargando...'}</span>
+          <span className="text-neutral-600 dark:text-neutral-300">{t('common.loading') || 'Cargando...'}</span>
         </div>
       </div>
     );
@@ -190,8 +190,8 @@ const URResultsDisplay = ({ results, searchType, isLoading, error, pendingCurren
       <div className="card">
         <div className="text-center py-8">
           <_ExclamationTriangleIcon className="w-12 h-12 text-red-500 dark:text-red-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">{t('common.error') || 'Error'}</h3>
-          <p className="text-gray-600 dark:text-gray-300">{error}</p>
+          <h3 className="text-lg font-medium text-neutral-900 dark:text-neutral-100 mb-2">{t('common.error') || 'Error'}</h3>
+          <p className="text-neutral-600 dark:text-neutral-300">{error}</p>
         </div>
       </div>
     );
@@ -201,11 +201,11 @@ const URResultsDisplay = ({ results, searchType, isLoading, error, pendingCurren
     return (
       <div className="card">
         <div className="text-center py-8">
-          <_MagnifyingGlassIcon className="w-12 h-12 text-gray-400 dark:text-gray-500 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
+          <_MagnifyingGlassIcon className="w-12 h-12 text-neutral-400 dark:text-neutral-500 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-neutral-900 dark:text-neutral-100 mb-2">
             {t('ur.no_results') || 'No se encontraron valores de UR'}
           </h3>
-          <p className="text-gray-600 dark:text-gray-300">
+          <p className="text-neutral-600 dark:text-neutral-300">
             {t('ur.no_results_hint') || 'Intenta con otro período o usa los selectores rápidos'}
           </p>
         </div>
@@ -220,17 +220,17 @@ const URResultsDisplay = ({ results, searchType, isLoading, error, pendingCurren
       {/* Summary Card */}
       {searchType === 'single' && data.length === 1 ? (
         // Single value view styled like UI panel
-        <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6 fade-in">
+        <div className="rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 p-6 fade-in">
           <div className="text-center">
             <div className="flex justify-center mb-4"><_IconCircle><_OpenMojiIcon name="exchange" size={32} /></_IconCircle></div>
-            <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">
+            <h3 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100 mb-2">
               {t('ur.ur_value') || 'Valor UR'}
             </h3>
-            <div className="bg-gray-50 dark:bg-gray-700/60 rounded-lg p-6 mb-4">
+            <div className="bg-neutral-50 dark:bg-neutral-700/60 rounded-lg p-6 mb-4">
               <div className="text-3xl font-bold text-uruguay-blue dark:text-blue-300 mb-2">
                 {formatURValue(data[0].value)}
               </div>
-              <div className="flex flex-col items-center justify-center text-gray-600 dark:text-gray-300">
+              <div className="flex flex-col items-center justify-center text-neutral-600 dark:text-neutral-300">
                 <div className="flex items-center">
                   <_CalendarIcon className="w-4 h-4 mr-2" />
                   {formatPeriod(data[0].year, data[0].month)}
@@ -254,41 +254,41 @@ const URResultsDisplay = ({ results, searchType, isLoading, error, pendingCurren
                 )}
               </div>
             </div>
-            <div className="text-sm text-gray-500 dark:text-gray-400">
+            <div className="text-sm text-neutral-500 dark:text-neutral-400">
               {t('ur.data_source') || 'Fuente: Banco Hipotecario del Uruguay (BHU)'}
             </div>
           </div>
         </div>
       ) : (
-        <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6 fade-in">
+        <div className="rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 p-6 fade-in">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">
+            <h3 className="text-xl font-bold text-neutral-900 dark:text-neutral-100">
               {t('ur.period_summary') || t('ui.period_summary') || 'Resumen del Período'}
             </h3>
-            <div className="text-sm text-gray-500 dark:text-gray-400">
+            <div className="text-sm text-neutral-500 dark:text-neutral-400">
               {data.length} {data.length === 1 ? (t('common.record') || 'registro') : (t('common.records') || 'registros')}
             </div>
           </div>
           {stats && data.length > 1 && (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="bg-gray-50 dark:bg-gray-700/60 rounded-lg p-4">
-                <div className="text-sm text-gray-600 dark:text-gray-300 mb-1">{t('ur.initial_value') || 'Valor inicial'}</div>
-                <div className="text-lg font-semibold text-gray-900 dark:text-gray-100">{formatURValue(stats.initialValue)}</div>
+              <div className="bg-neutral-50 dark:bg-neutral-700/60 rounded-lg p-4">
+                <div className="text-sm text-neutral-600 dark:text-neutral-300 mb-1">{t('ur.initial_value') || 'Valor inicial'}</div>
+                <div className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">{formatURValue(stats.initialValue)}</div>
               </div>
-              <div className="bg-gray-50 dark:bg-gray-700/60 rounded-lg p-4">
-                <div className="text-sm text-gray-600 dark:text-gray-300 mb-1">{t('ur.final_value') || 'Valor final'}</div>
-                <div className="text-lg font-semibold text-gray-900 dark:text-gray-100">{formatURValue(stats.finalValue)}</div>
+              <div className="bg-neutral-50 dark:bg-neutral-700/60 rounded-lg p-4">
+                <div className="text-sm text-neutral-600 dark:text-neutral-300 mb-1">{t('ur.final_value') || 'Valor final'}</div>
+                <div className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">{formatURValue(stats.finalValue)}</div>
               </div>
               {getVariationInfo && (
-                <div className="bg-gray-50 dark:bg-gray-700/60 rounded-lg p-4">
-                  <div className="text-sm text-gray-600 dark:text-gray-300 mb-1">{t('common.variation') || 'Variación'}</div>
+                <div className="bg-neutral-50 dark:bg-neutral-700/60 rounded-lg p-4">
+                  <div className="text-sm text-neutral-600 dark:text-neutral-300 mb-1">{t('common.variation') || 'Variación'}</div>
                   <div className={`text-lg font-semibold flex items-center ${
-                    getVariationInfo.trend === 'up' ? 'text-green-600' : getVariationInfo.trend === 'down' ? 'text-red-600' : 'text-gray-900 dark:text-gray-100'
+                    getVariationInfo.trend === 'up' ? 'text-green-600' : getVariationInfo.trend === 'down' ? 'text-red-600' : 'text-neutral-900 dark:text-neutral-100'
                   }`}>
                     {renderTrendIcon(getVariationInfo.trend)}
                     <span className="ml-1">{getVariationInfo.percentage.toFixed(2)}%</span>
                   </div>
-                  <div className="text-xs text-gray-500 dark:text-gray-400">{formatURValue(Math.abs(getVariationInfo.absolute))}</div>
+                  <div className="text-xs text-neutral-500 dark:text-neutral-400">{formatURValue(Math.abs(getVariationInfo.absolute))}</div>
                 </div>
               )}
             </div>
@@ -300,7 +300,7 @@ const URResultsDisplay = ({ results, searchType, isLoading, error, pendingCurren
       {data.length > 1 && (
         <>
           <div className="card">
-            <h4 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
+            <h4 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-4">
               {t('ur.ur_evolution') || 'Evolución de la UR'}
             </h4>
             <div className="h-64">
@@ -317,7 +317,7 @@ const URResultsDisplay = ({ results, searchType, isLoading, error, pendingCurren
           </div>
           {dataWithVariations.length > 1 && (
             <div className="card">
-              <h4 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
+              <h4 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-4">
                 {t('ur.monthly_percentage_variation') || 'Variación Porcentual Mensual'}
               </h4>
               <div className="h-64">
@@ -331,7 +331,7 @@ const URResultsDisplay = ({ results, searchType, isLoading, error, pendingCurren
                   </_BarChart>
                 </_ResponsiveContainer>
               </div>
-              <p className="text-sm text-gray-600 dark:text-gray-300 mt-2">
+              <p className="text-sm text-neutral-600 dark:text-neutral-300 mt-2">
                 {t('ur.variation_note') || 'Muestra el cambio porcentual respecto al mes anterior'}
               </p>
             </div>
@@ -342,33 +342,33 @@ const URResultsDisplay = ({ results, searchType, isLoading, error, pendingCurren
       {/* Data Table only when more than one result */}
       {data.length > 1 && (
         <div className="card">
-          <h4 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
+          <h4 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-4">
             {t('ur.period_information') || 'Información del Período'}
           </h4>
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-600">
-              <thead className="bg-gray-50 dark:bg-gray-700/60">
+            <table className="min-w-full divide-y divide-neutral-200 dark:divide-neutral-600">
+              <thead className="bg-neutral-50 dark:bg-neutral-700/60">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-300 uppercase tracking-wider">
                     {t('common.period') || 'Período'}
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-300 uppercase tracking-wider">
                     {t('ur.ur_value') || 'Valor UR'}
                   </th>
                   {dataWithVariations.length > 1 && (
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-300 uppercase tracking-wider">
                       {t('ur.variation_percentage') || 'Variación %'}
                     </th>
                   )}
                 </tr>
               </thead>
-              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+              <tbody className="bg-white dark:bg-neutral-800 divide-y divide-neutral-200 dark:divide-neutral-700">
                 {(dataWithVariations.length > 1 ? paginatedData : paginatedData).map((item, index) => (
-                  <tr key={`${item.year}-${item.month}`} className={index % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50 dark:bg-gray-700/40'}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">
+                  <tr key={`${item.year}-${item.month}`} className={index % 2 === 0 ? 'bg-white dark:bg-neutral-800' : 'bg-neutral-50 dark:bg-neutral-700/40'}>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-neutral-900 dark:text-neutral-100">
                       {formatPeriod(item.year, item.month)}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900 dark:text-neutral-100">
                       {formatURValue(item.value)}
                     </td>
                     {dataWithVariations.length > 1 && (
@@ -378,7 +378,7 @@ const URResultsDisplay = ({ results, searchType, isLoading, error, pendingCurren
                             {formatPercentage(item.variation)}
                           </span>
                         ) : (
-                          <span className="text-gray-400 dark:text-gray-500">-</span>
+                          <span className="text-neutral-400 dark:text-neutral-500">-</span>
                         )}
                       </td>
                     )}
@@ -392,17 +392,17 @@ const URResultsDisplay = ({ results, searchType, isLoading, error, pendingCurren
               <button
                 onClick={() => setPage(p => Math.max(0, p - 1))}
                 disabled={page === 0}
-                className={`px-3 py-1 rounded ${page === 0 ? 'bg-gray-200 text-gray-400 dark:bg-gray-700 dark:text-gray-500 cursor-not-allowed' : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600'}`}
+                className={`px-3 py-1 rounded ${page === 0 ? 'bg-neutral-200 text-neutral-400 dark:bg-neutral-700 dark:text-neutral-500 cursor-not-allowed' : 'bg-neutral-100 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-200 hover:bg-neutral-200 dark:hover:bg-neutral-600'}`}
               >
                 {t('common.previous') || 'Anterior'}
               </button>
-              <div className="text-gray-600 dark:text-gray-300">
+              <div className="text-neutral-600 dark:text-neutral-300">
                 {t('common.page') || 'Página'} {page + 1} / {totalPages}
               </div>
               <button
                 onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
                 disabled={page >= totalPages - 1}
-                className={`px-3 py-1 rounded ${page >= totalPages - 1 ? 'bg-gray-200 text-gray-400 dark:bg-gray-700 dark:text-gray-500 cursor-not-allowed' : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600'}`}
+                className={`px-3 py-1 rounded ${page >= totalPages - 1 ? 'bg-neutral-200 text-neutral-400 dark:bg-neutral-700 dark:text-neutral-500 cursor-not-allowed' : 'bg-neutral-100 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-200 hover:bg-neutral-200 dark:hover:bg-neutral-600'}`}
               >
                 {t('common.next') || 'Siguiente'}
               </button>
@@ -413,7 +413,7 @@ const URResultsDisplay = ({ results, searchType, isLoading, error, pendingCurren
 
       {/* Data Source (range view only) */}
       {!(searchType === 'single' && data.length === 1) && (
-        <div className="mt-2 text-center text-sm text-gray-500 dark:text-gray-400">
+        <div className="mt-2 text-center text-sm text-neutral-500 dark:text-neutral-400">
           {t('ur.data_source') || 'Fuente: Banco Hipotecario del Uruguay (BHU)'}
         </div>
       )}

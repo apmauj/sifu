@@ -204,12 +204,12 @@ const Dashboard = ({ isOpen, onClose }) => {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 dark:bg-black dark:bg-opacity-70 flex items-center justify-center z-50">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-        <div className="flex justify-between items-center p-6 border-b border-gray-200 dark:border-gray-700">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{t('dashboard.title') || 'Dashboard de Monitoreo'}</h2>
+      <div className="bg-white dark:bg-neutral-800 rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+        <div className="flex justify-between items-center p-6 border-b border-neutral-200 dark:border-neutral-700">
+          <h2 className="text-2xl font-bold text-neutral-900 dark:text-white">{t('dashboard.title') || 'Dashboard de Monitoreo'}</h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 dark:text-gray-300 dark:hover:text-gray-100 text-2xl"
+            className="text-neutral-400 hover:text-neutral-600 dark:text-neutral-300 dark:hover:text-neutral-100 text-2xl"
           >
             ×
           </button>
@@ -217,13 +217,13 @@ const Dashboard = ({ isOpen, onClose }) => {
 
         {/* Tab Navigation */}
         <div className="px-6 pt-4">
-          <div className="flex space-x-1 bg-gray-100 dark:bg-gray-800 p-1 rounded-lg">
+          <div className="flex space-x-1 bg-neutral-100 dark:bg-neutral-800 p-1 rounded-lg">
             <button
               onClick={() => setActiveTab('health')}
               className={`flex-1 py-2 px-4 text-sm font-medium rounded-md transition-colors ${
                 activeTab === 'health'
-                  ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm'
-                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+                  ? 'bg-white dark:bg-neutral-700 text-neutral-900 dark:text-white shadow-sm'
+                  : 'text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-300'
               }`}
             >
               🏥 {t('dashboard.tab_health') || 'Salud del Sistema'}
@@ -232,8 +232,8 @@ const Dashboard = ({ isOpen, onClose }) => {
               onClick={() => setActiveTab('performance')}
               className={`flex-1 py-2 px-4 text-sm font-medium rounded-md transition-colors ${
                 activeTab === 'performance'
-                  ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm'
-                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+                  ? 'bg-white dark:bg-neutral-700 text-neutral-900 dark:text-white shadow-sm'
+                  : 'text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-300'
               }`}
             >
               📊 {t('dashboard.tab_performance') || 'Presupuestos de Rendimiento'}
@@ -261,11 +261,11 @@ const Dashboard = ({ isOpen, onClose }) => {
                   {/* Estado General */}
                   <Card>
                     <CardBody>
-                      <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white flex items-center gap-2">
+                      <h3 className="text-lg font-semibold mb-4 text-neutral-900 dark:text-white flex items-center gap-2">
                         <span className="text-lg">🚀</span>
                         {t('dashboard.general_status.title') || 'Estado General del Sistema'}
                         <span
-                          className="text-xs text-gray-400 cursor-help"
+                          className="text-xs text-neutral-400 cursor-help"
                           title={t('dashboard.tooltips.general_status') || 'Resumen agregado del estado actual de todos los checks'}
                         >ℹ️</span>
                       </h3>
@@ -279,7 +279,7 @@ const Dashboard = ({ isOpen, onClose }) => {
                           </Badge>
                         </div>
                         {healthData.timestamp && (
-                          <div className="flex md:justify-end items-center gap-1 text-sm text-gray-500 dark:text-gray-400 md:text-right">
+                          <div className="flex md:justify-end items-center gap-1 text-sm text-neutral-500 dark:text-neutral-400 md:text-right">
                             <span className="text-lg">🕒</span>
                             <span className="whitespace-nowrap">{(t('dashboard.general_status.last_update_prefix') || 'Última actualización:')}</span>
                             <time className="truncate" dateTime={new Date(healthData.timestamp).toISOString()}>{formatDateTime(healthData.timestamp)}</time>
@@ -318,8 +318,8 @@ const Dashboard = ({ isOpen, onClose }) => {
                       return rel && rel !== 'dashboard.cache_panel.age_relative' ? rel : `${display}${minutesLabel}`;
                     };
                     const renderRow = (c, label) => (
-                      <tr key={c.name} className="border-t border-gray-200 dark:border-gray-700">
-                        <td className="py-2 px-2 font-medium text-gray-700 dark:text-gray-200">{label}</td>
+                      <tr key={c.name} className="border-t border-neutral-200 dark:border-neutral-700">
+                        <td className="py-2 px-2 font-medium text-neutral-700 dark:text-neutral-200">{label}</td>
                         <td className="py-2 px-2 text-xs">
                           <Badge variant={getStatusVariant(c.status)} size="sm">
                             {getStatusIcon(c.status)} {(
@@ -329,19 +329,19 @@ const Dashboard = ({ isOpen, onClose }) => {
                             )}
                           </Badge>
                         </td>
-                        <td className="py-2 px-2 text-gray-600 dark:text-gray-300 text-sm">{formatAge(c.details?.age_minutes)}</td>
-                        <td className="py-2 px-2 text-xs text-gray-500 dark:text-gray-400">{c.details?.data_count ?? '-'}</td>
-                        <td className="py-2 px-2 text-xs text-gray-500 dark:text-gray-400">{c.details?.last_updated ? formatTime(c.details.last_updated) : '-'}</td>
+                        <td className="py-2 px-2 text-neutral-600 dark:text-neutral-300 text-sm">{formatAge(c.details?.age_minutes)}</td>
+                        <td className="py-2 px-2 text-xs text-neutral-500 dark:text-neutral-400">{c.details?.data_count ?? '-'}</td>
+                        <td className="py-2 px-2 text-xs text-neutral-500 dark:text-neutral-400">{c.details?.last_updated ? formatTime(c.details.last_updated) : '-'}</td>
                       </tr>
                     );
                     return (
                       <Card>
                         <CardBody>
-                          <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white flex items-center gap-2">🗄️ Cachés de Cotizaciones</h3>
+                          <h3 className="text-lg font-semibold mb-4 text-neutral-900 dark:text-white flex items-center gap-2">🗄️ Cachés de Cotizaciones</h3>
                           <div className="overflow-x-auto">
                             <table className="w-full text-left text-sm">
                               <thead>
-                                <tr className="text-gray-500 dark:text-gray-400 text-xs uppercase">
+                                <tr className="text-neutral-500 dark:text-neutral-400 text-xs uppercase">
                                   <th className="py-2 px-2">{t('dashboard.cache_panel.headers.cache') || 'Cache'}</th>
                                   <th className="py-2 px-2">{t('dashboard.cache_panel.headers.status') || 'Estado'}</th>
                                   <th className="py-2 px-2">{t('dashboard.cache_panel.headers.age') || 'Edad'}</th>
@@ -376,15 +376,15 @@ const Dashboard = ({ isOpen, onClose }) => {
                     return (
                       <Card>
                         <CardBody>
-                          <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white flex items-center gap-2">
+                          <h3 className="text-lg font-semibold mb-4 text-neutral-900 dark:text-white flex items-center gap-2">
                             <span className="text-lg">📅</span>
                             {t('dashboard.ui_freshness_panel.title') || t('dashboard.checks.names.ui_freshness') || 'Frescura UI'}
-                            <span className="text-xs text-gray-400 cursor-help" title={t('dashboard.tooltips.ui_freshness') || 'Verifica valor de hoy o gaps antiguos; fechas futuras permitidas.'}>ℹ️</span>
+                            <span className="text-xs text-neutral-400 cursor-help" title={t('dashboard.tooltips.ui_freshness') || 'Verifica valor de hoy o gaps antiguos; fechas futuras permitidas.'}>ℹ️</span>
                           </h3>
                           <div className="overflow-x-auto">
                             <table className="w-full text-left text-sm">
                               <thead>
-                                <tr className="text-gray-500 dark:text-gray-400 text-xs uppercase">
+                                <tr className="text-neutral-500 dark:text-neutral-400 text-xs uppercase">
                                   <th className="py-2 px-2">{t('dashboard.ui_freshness_panel.headers.source') || 'Fuente'}</th>
                                   <th className="py-2 px-2">{t('dashboard.ui_freshness_panel.headers.status') || 'Estado'}</th>
                                   <th className="py-2 px-2">{t('dashboard.ui_freshness_panel.headers.latest_date') || 'Última Fecha'}</th>
@@ -395,8 +395,8 @@ const Dashboard = ({ isOpen, onClose }) => {
                                 </tr>
                               </thead>
                               <tbody>
-                                <tr className="border-t border-gray-200 dark:border-gray-700">
-                                  <td className="py-2 px-2 font-medium text-gray-700 dark:text-gray-200">UI</td>
+                                <tr className="border-t border-neutral-200 dark:border-neutral-700">
+                                  <td className="py-2 px-2 font-medium text-neutral-700 dark:text-neutral-200">UI</td>
                                   <td className="py-2 px-2 text-xs">
                                     <Badge variant={getStatusVariant(uiFresh.status)} size="sm">
                                       {getStatusIcon(uiFresh.status)} {(
@@ -406,11 +406,11 @@ const Dashboard = ({ isOpen, onClose }) => {
                                       )}
                                     </Badge>
                                   </td>
-                                  <td className="py-2 px-2 text-gray-600 dark:text-gray-300 text-sm">{formatDateOnly(d.latest_date)}</td>
-                                  <td className="py-2 px-2 text-gray-600 dark:text-gray-300 text-sm">{d.dias_gap ?? '-'}</td>
-                                  <td className="py-2 px-2 text-gray-600 dark:text-gray-300 text-sm">{d.future ? (`+${d.dias_ahead}`) : '-'}</td>
-                                  <td className="py-2 px-2 text-gray-600 dark:text-gray-300 text-sm">{d.publication_window_passed ? '✔' : '✖'}</td>
-                                  <td className="py-2 px-2 text-xs text-gray-500 dark:text-gray-400 max-w-[200px] truncate" title={uiFresh.message}>{uiFresh.message}</td>
+                                  <td className="py-2 px-2 text-neutral-600 dark:text-neutral-300 text-sm">{formatDateOnly(d.latest_date)}</td>
+                                  <td className="py-2 px-2 text-neutral-600 dark:text-neutral-300 text-sm">{d.dias_gap ?? '-'}</td>
+                                  <td className="py-2 px-2 text-neutral-600 dark:text-neutral-300 text-sm">{d.future ? (`+${d.dias_ahead}`) : '-'}</td>
+                                  <td className="py-2 px-2 text-neutral-600 dark:text-neutral-300 text-sm">{d.publication_window_passed ? '✔' : '✖'}</td>
+                                  <td className="py-2 px-2 text-xs text-neutral-500 dark:text-neutral-400 max-w-[200px] truncate" title={uiFresh.message}>{uiFresh.message}</td>
                                 </tr>
                               </tbody>
                             </table>
@@ -423,9 +423,9 @@ const Dashboard = ({ isOpen, onClose }) => {
                   {/* Detalles de Checks */}
                   {healthData.checks && Array.isArray(healthData.checks) && (
                     <div>
-                      <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white flex items-center gap-2">
+                      <h3 className="text-lg font-semibold mb-4 text-neutral-900 dark:text-white flex items-center gap-2">
                         <span>{t('dashboard.checks.details_title') || 'Detalles de Verificaciones'}</span>
-                        <span className="text-xs text-gray-400 cursor-help" title={t('dashboard.tooltips.checks_section') || 'Listado detallado de verificaciones individuales'}>ℹ️</span>
+                        <span className="text-xs text-neutral-400 cursor-help" title={t('dashboard.tooltips.checks_section') || 'Listado detallado de verificaciones individuales'}>ℹ️</span>
                       </h3>
                       <div className="grid gap-4">
                         {healthData.checks
@@ -436,7 +436,7 @@ const Dashboard = ({ isOpen, onClose }) => {
                           <Card key={index}>
                             <CardBody>
                               <div className="flex items-center justify-between mb-3">
-                                <h4 className="font-medium capitalize text-gray-900 dark:text-white flex items-center gap-2">
+                                <h4 className="font-medium capitalize text-neutral-900 dark:text-white flex items-center gap-2">
                                   <span className="text-lg">
                                     {checkData.name === 'database' && '🗄️'}
                                     {checkData.name === 'brou_api' && '💰'}
@@ -454,7 +454,7 @@ const Dashboard = ({ isOpen, onClose }) => {
                                     checkData.name.replace(/_/g, ' ')
                                   )}
                                   <span
-                                    className="text-[10px] text-gray-400 cursor-help"
+                                    className="text-[10px] text-neutral-400 cursor-help"
                                     title={
                                       (checkData.name === 'database' && (t('dashboard.tooltips.database_check') || 'Conexión y conteos de registros')) ||
                                       (checkData.name === 'brou_api' && (t('dashboard.tooltips.brou_api_check') || 'Disponibilidad de API BROU')) ||
@@ -480,7 +480,7 @@ const Dashboard = ({ isOpen, onClose }) => {
                               </div>
 
                               {checkData.message && (
-                                <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">{translateBackendMessage(checkData.message) === checkData.message && checkData.message === 'Database connection successful'
+                                <p className="text-sm text-neutral-600 dark:text-neutral-300 mb-3">{translateBackendMessage(checkData.message) === checkData.message && checkData.message === 'Database connection successful'
                                   ? (t('dashboard.checks.database_ok') || 'Conexión a base de datos exitosa')
                                   : translateBackendMessage(checkData.message)}</p>
                               )}
@@ -490,19 +490,19 @@ const Dashboard = ({ isOpen, onClose }) => {
                                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
                                   <div className="text-center p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
                                     <div className="text-xl font-bold text-blue-600 dark:text-blue-400">{checkData.details.ui_records?.toLocaleString()}</div>
-                                    <div className="text-xs text-gray-500 dark:text-gray-400">{t('dashboard.checks.ui_records') || 'UI Records'}</div>
+                                    <div className="text-xs text-neutral-500 dark:text-neutral-400">{t('dashboard.checks.ui_records') || 'UI Records'}</div>
                                   </div>
                                   <div className="text-center p-2 bg-green-50 dark:bg-green-900/20 rounded-lg">
                                     <div className="text-xl font-bold text-green-600 dark:text-green-400">{checkData.details.ur_records?.toLocaleString()}</div>
-                                    <div className="text-xs text-gray-500 dark:text-gray-400">{t('dashboard.checks.ur_records') || 'UR Records'}</div>
+                                    <div className="text-xs text-neutral-500 dark:text-neutral-400">{t('dashboard.checks.ur_records') || 'UR Records'}</div>
                                   </div>
                                   <div className="text-center p-2 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
                                     <div className="text-xl font-bold text-purple-600 dark:text-purple-400">{checkData.details.brou_records?.toLocaleString()}</div>
-                                    <div className="text-xs text-gray-500 dark:text-gray-400">{t('dashboard.checks.brou_records') || 'BROU Records'}</div>
+                                    <div className="text-xs text-neutral-500 dark:text-neutral-400">{t('dashboard.checks.brou_records') || 'BROU Records'}</div>
                                   </div>
                                   <div className="text-center p-2 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
                                     <div className="text-xl font-bold text-orange-600 dark:text-orange-400">{checkData.details.total_records?.toLocaleString()}</div>
-                                    <div className="text-xs text-gray-500 dark:text-gray-400">{t('dashboard.checks.total_records') || 'Total'}</div>
+                                    <div className="text-xs text-neutral-500 dark:text-neutral-400">{t('dashboard.checks.total_records') || 'Total'}</div>
                                   </div>
                                 </div>
                               )}
@@ -512,20 +512,20 @@ const Dashboard = ({ isOpen, onClose }) => {
                                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-3">
                                   <div className="text-center p-2 bg-green-50 dark:bg-green-900/20 rounded-lg">
                                     <div className="text-xl font-bold text-green-600 dark:text-green-400">{checkData.details.currencies_count}</div>
-                                    <div className="text-xs text-gray-500 dark:text-gray-400">{t('dashboard.checks.currencies') || 'Monedas'}</div>
+                                    <div className="text-xs text-neutral-500 dark:text-neutral-400">{t('dashboard.checks.currencies') || 'Monedas'}</div>
                                   </div>
                                   <div className="text-center p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
                                     <div className="text-lg font-bold text-blue-600 dark:text-blue-400">
                                       {checkData.details.is_live ? `🟢 ${t('dashboard.labels.live') || 'Live'}` : `🟡 ${t('dashboard.labels.cache') || 'Cache'}`}
                                     </div>
-                                    <div className="text-xs text-gray-500 dark:text-gray-400">{t('dashboard.checks.state') || 'Estado'}</div>
+                                    <div className="text-xs text-neutral-500 dark:text-neutral-400">{t('dashboard.checks.state') || 'Estado'}</div>
                                   </div>
                                   {checkData.details.source_type && (
                                     <div className="text-center p-2 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
                                       <div className="text-sm font-bold text-purple-600 dark:text-purple-400 capitalize">
                                         {checkData.details.source_type}
                                       </div>
-                                      <div className="text-xs text-gray-500 dark:text-gray-400">{t('dashboard.checks.source') || 'Fuente'}</div>
+                                      <div className="text-xs text-neutral-500 dark:text-neutral-400">{t('dashboard.checks.source') || 'Fuente'}</div>
                                     </div>
                                   )}
                                 </div>
@@ -536,19 +536,19 @@ const Dashboard = ({ isOpen, onClose }) => {
                                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
                                   <div className="text-center p-2 bg-red-50 dark:bg-red-900/20 rounded-lg">
                                     <div className="text-xl font-bold text-red-600 dark:text-red-400">{checkData.details.cpu_percent?.toFixed(1)}%</div>
-                                    <div className="text-xs text-gray-500 dark:text-gray-400">{t('dashboard.system_info.cpu') || 'CPU'}</div>
+                                    <div className="text-xs text-neutral-500 dark:text-neutral-400">{t('dashboard.system_info.cpu') || 'CPU'}</div>
                                   </div>
                                   <div className="text-center p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
                                     <div className="text-xl font-bold text-blue-600 dark:text-blue-400">{checkData.details.memory_percent?.toFixed(1)}%</div>
-                                    <div className="text-xs text-gray-500 dark:text-gray-400">{t('dashboard.system_info.memory') || 'Memoria'}</div>
+                                    <div className="text-xs text-neutral-500 dark:text-neutral-400">{t('dashboard.system_info.memory') || 'Memoria'}</div>
                                   </div>
                                   <div className="text-center p-2 bg-green-50 dark:bg-green-900/20 rounded-lg">
                                     <div className="text-lg font-bold text-green-600 dark:text-green-400">{(checkData.details.memory_used_mb / 1024)?.toFixed(1)} GB</div>
-                                    <div className="text-xs text-gray-500 dark:text-gray-400">{t('dashboard.system_info.used') || 'Usada'}</div>
+                                    <div className="text-xs text-neutral-500 dark:text-neutral-400">{t('dashboard.system_info.used') || 'Usada'}</div>
                                   </div>
                                   <div className="text-center p-2 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
                                     <div className="text-lg font-bold text-purple-600 dark:text-purple-400">{(checkData.details.memory_total_mb / 1024)?.toFixed(1)} GB</div>
-                                    <div className="text-xs text-gray-500 dark:text-gray-400">{t('dashboard.system_info.total') || 'Total'}</div>
+                                    <div className="text-xs text-neutral-500 dark:text-neutral-400">{t('dashboard.system_info.total') || 'Total'}</div>
                                   </div>
                                 </div>
                               )}
@@ -558,19 +558,19 @@ const Dashboard = ({ isOpen, onClose }) => {
                                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
                                   <div className="text-center p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
                                     <div className="text-xl font-bold text-blue-600 dark:text-blue-400">{checkData.details.total_requests?.toLocaleString()}</div>
-                                    <div className="text-xs text-gray-500 dark:text-gray-400">{t('dashboard.application_metrics.total_requests') || 'Total Requests'}</div>
+                                    <div className="text-xs text-neutral-500 dark:text-neutral-400">{t('dashboard.application_metrics.total_requests') || 'Total Requests'}</div>
                                   </div>
                                   <div className="text-center p-2 bg-red-50 dark:bg-red-900/20 rounded-lg">
                                     <div className="text-xl font-bold text-red-600 dark:text-red-400">{checkData.details.error_rate_percent?.toFixed(1)}%</div>
-                                    <div className="text-xs text-gray-500 dark:text-gray-400">{t('dashboard.application_metrics.error_rate') || 'Error Rate'}</div>
+                                    <div className="text-xs text-neutral-500 dark:text-neutral-400">{t('dashboard.application_metrics.error_rate') || 'Error Rate'}</div>
                                   </div>
                                   <div className="text-center p-2 bg-green-50 dark:bg-green-900/20 rounded-lg">
                                     <div className="text-lg font-bold text-green-600 dark:text-green-400">{checkData.details.avg_response_time_ms?.toFixed(0)}ms</div>
-                                    <div className="text-xs text-gray-500 dark:text-gray-400">{t('dashboard.application_metrics.avg_response') || 'Avg Response'}</div>
+                                    <div className="text-xs text-neutral-500 dark:text-neutral-400">{t('dashboard.application_metrics.avg_response') || 'Avg Response'}</div>
                                   </div>
                                   <div className="text-center p-2 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
                                     <div className="text-lg font-bold text-purple-600 dark:text-purple-400">{Math.floor(checkData.details.uptime_seconds / 3600)}h</div>
-                                    <div className="text-xs text-gray-500 dark:text-gray-400">{t('dashboard.application_metrics.uptime') || 'Uptime'}</div>
+                                    <div className="text-xs text-neutral-500 dark:text-neutral-400">{t('dashboard.application_metrics.uptime') || 'Uptime'}</div>
                                   </div>
                                 </div>
                               )}
@@ -587,19 +587,19 @@ const Dashboard = ({ isOpen, onClose }) => {
                   {healthData.system_info && (
                     <Card>
                       <CardBody>
-                        <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white flex items-center gap-2">
+                        <h3 className="text-lg font-semibold mb-4 text-neutral-900 dark:text-white flex items-center gap-2">
                           <span className="text-lg">🖥️</span>
                           {t('dashboard.system_info.title') || 'Información del Sistema'}
-                          <span className="text-xs text-gray-400 cursor-help" title={t('dashboard.tooltips.system_resources_check') || 'Uso de recursos del servidor'}>ℹ️</span>
+                          <span className="text-xs text-neutral-400 cursor-help" title={t('dashboard.tooltips.system_resources_check') || 'Uso de recursos del servidor'}>ℹ️</span>
                         </h3>
 
                         {healthData.system_info.error ? (
                           <div className="text-center py-6">
                             <div className="text-yellow-600 dark:text-yellow-400 mb-2 text-2xl">⚠️</div>
-                            <p className="text-sm text-gray-600 dark:text-gray-300 font-medium">
+                            <p className="text-sm text-neutral-600 dark:text-neutral-300 font-medium">
                               {t('dashboard.system_info.unavailable') || 'Monitoreo de recursos no disponible'}
                             </p>
-                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                            <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
                               {healthData.system_info.error}
                             </p>
                           </div>
@@ -609,11 +609,11 @@ const Dashboard = ({ isOpen, onClose }) => {
                               <div className="text-2xl font-bold text-red-600 dark:text-red-400 mb-1">
                                 {healthData.system_info.cpu_percent?.toFixed(1)}%
                               </div>
-                              <div className="text-sm text-gray-500 dark:text-gray-400 flex items-center justify-center gap-1 mb-2">
+                              <div className="text-sm text-neutral-500 dark:text-neutral-400 flex items-center justify-center gap-1 mb-2">
                                 <span className="text-lg">🔥</span>
                                 {t('dashboard.system_info.cpu_usage') || 'CPU Usage'}
                               </div>
-                              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                              <div className="w-full bg-neutral-200 dark:bg-neutral-700 rounded-full h-2">
                                 <div
                                   className="bg-red-600 dark:bg-red-400 h-2 rounded-full transition-all duration-300"
                                   style={{ width: `${Math.min(healthData.system_info.cpu_percent, 100)}%` }}
@@ -625,11 +625,11 @@ const Dashboard = ({ isOpen, onClose }) => {
                               <div className="text-2xl font-bold text-blue-600 dark:text-blue-400 mb-1">
                                 {healthData.system_info.memory_percent?.toFixed(1)}%
                               </div>
-                              <div className="text-sm text-gray-500 dark:text-gray-400 flex items-center justify-center gap-1 mb-2">
+                              <div className="text-sm text-neutral-500 dark:text-neutral-400 flex items-center justify-center gap-1 mb-2">
                                 <span className="text-lg">💾</span>
                                 {t('dashboard.system_info.memory_usage') || 'Memory Usage'}
                               </div>
-                              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                              <div className="w-full bg-neutral-200 dark:bg-neutral-700 rounded-full h-2">
                                 <div
                                   className="bg-blue-600 dark:bg-blue-400 h-2 rounded-full transition-all duration-300"
                                   style={{ width: `${healthData.system_info.memory_percent}%` }}
@@ -641,7 +641,7 @@ const Dashboard = ({ isOpen, onClose }) => {
                               <div className="text-xl font-bold text-green-600 dark:text-green-400 mb-1">
                                 {(healthData.system_info.memory_used_mb / 1024)?.toFixed(1)} GB
                               </div>
-                              <div className="text-sm text-gray-500 dark:text-gray-400 flex items-center justify-center gap-1">
+                              <div className="text-sm text-neutral-500 dark:text-neutral-400 flex items-center justify-center gap-1">
                                 <span className="text-lg">📈</span>
                                 {t('dashboard.system_info.memory_used') || 'Memory Used'}
                               </div>
@@ -651,7 +651,7 @@ const Dashboard = ({ isOpen, onClose }) => {
                               <div className="text-xl font-bold text-purple-600 dark:text-purple-400 mb-1">
                                 {(healthData.system_info.memory_total_mb / 1024)?.toFixed(1)} GB
                               </div>
-                              <div className="text-sm text-gray-500 dark:text-gray-400 flex items-center justify-center gap-1">
+                              <div className="text-sm text-neutral-500 dark:text-neutral-400 flex items-center justify-center gap-1">
                                 <span className="text-lg">💿</span>
                                 {t('dashboard.system_info.memory_total') || 'Memory Total'}
                               </div>
@@ -666,17 +666,17 @@ const Dashboard = ({ isOpen, onClose }) => {
                   {healthData.uptime_seconds && (
                     <Card>
                       <CardBody>
-                        <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white flex items-center gap-2">
+                        <h3 className="text-lg font-semibold mb-4 text-neutral-900 dark:text-white flex items-center gap-2">
                           <span className="text-lg">⚡</span>
                           {t('dashboard.performance_metrics.title') || 'Métricas de Rendimiento'}
-                          <span className="text-xs text-gray-400 cursor-help" title={t('dashboard.tooltips.performance_metrics') || 'Métricas agregadas de rendimiento'}>ℹ️</span>
+                          <span className="text-xs text-neutral-400 cursor-help" title={t('dashboard.tooltips.performance_metrics') || 'Métricas agregadas de rendimiento'}>ℹ️</span>
                         </h3>
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                           <div className="text-center p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg border border-indigo-200 dark:border-indigo-800">
                             <div className="text-2xl font-bold text-indigo-600 dark:text-indigo-400 mb-1">
                               {Math.floor(healthData.uptime_seconds / 86400)}d {Math.floor((healthData.uptime_seconds % 86400) / 3600)}h
                             </div>
-                            <div className="text-sm text-gray-500 dark:text-gray-400 flex items-center justify-center gap-1">
+                            <div className="text-sm text-neutral-500 dark:text-neutral-400 flex items-center justify-center gap-1">
                               <span className="text-lg">⏱️</span>
                               {t('dashboard.performance_metrics.uptime_total') || 'Uptime Total'}
                             </div>
@@ -685,7 +685,7 @@ const Dashboard = ({ isOpen, onClose }) => {
                             <div className="text-2xl font-bold text-teal-600 dark:text-teal-400 mb-1">
                               {healthData.avg_response_time_ms?.toFixed(0) || 'N/A'}ms
                             </div>
-                            <div className="text-sm text-gray-500 dark:text-gray-400 flex items-center justify-center gap-1">
+                            <div className="text-sm text-neutral-500 dark:text-neutral-400 flex items-center justify-center gap-1">
                               <span className="text-lg">🚀</span>
                               {t('dashboard.performance_metrics.response_time') || 'Tiempo de Respuesta'}
                             </div>
@@ -694,7 +694,7 @@ const Dashboard = ({ isOpen, onClose }) => {
                             <div className="text-2xl font-bold text-orange-600 dark:text-orange-400 mb-1">
                               {healthData.total_requests?.toLocaleString() || 'N/A'}
                             </div>
-                            <div className="text-sm text-gray-500 dark:text-gray-400 flex items-center justify-center gap-1">
+                            <div className="text-sm text-neutral-500 dark:text-neutral-400 flex items-center justify-center gap-1">
                               <span className="text-lg">📊</span>
                               {t('dashboard.performance_metrics.total_requests') || 'Total de Solicitudes'}
                             </div>
@@ -707,35 +707,35 @@ const Dashboard = ({ isOpen, onClose }) => {
                   {/* Estadísticas Generales */}
                   <Card>
                     <CardBody>
-                      <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white flex items-center gap-2">
+                      <h3 className="text-lg font-semibold mb-4 text-neutral-900 dark:text-white flex items-center gap-2">
                         <span className="text-lg">📊</span>
                         {t('dashboard.statistics.title') || 'Estadísticas Generales'}
                       </h3>
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <div className="text-center p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-                          <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1">{healthData.total_checks}</div>
-                          <div className="text-sm text-gray-500 dark:text-gray-400 flex items-center justify-center gap-1">
+                        <div className="text-center p-4 bg-neutral-50 dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700">
+                          <div className="text-3xl font-bold text-neutral-900 dark:text-white mb-1">{healthData.total_checks}</div>
+                          <div className="text-sm text-neutral-500 dark:text-neutral-400 flex items-center justify-center gap-1">
                             <span className="text-lg">🔍</span>
                             {t('dashboard.statistics.total_checks') || 'Total de verificaciones'}
                           </div>
                         </div>
                         <div className="text-center p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
                           <div className="text-3xl font-bold text-green-600 dark:text-green-400 mb-1">{healthData.healthy_checks}</div>
-                          <div className="text-sm text-gray-500 dark:text-gray-400 flex items-center justify-center gap-1">
+                          <div className="text-sm text-neutral-500 dark:text-neutral-400 flex items-center justify-center gap-1">
                             <span className="text-lg">✅</span>
                             {t('dashboard.statistics.healthy_checks') || 'Verificaciones saludables'}
                           </div>
                         </div>
                         <div className="text-center p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
                           <div className="text-3xl font-bold text-yellow-600 dark:text-yellow-400 mb-1">{healthData.warning_checks}</div>
-                          <div className="text-sm text-gray-500 dark:text-gray-400 flex items-center justify-center gap-1">
+                          <div className="text-sm text-neutral-500 dark:text-neutral-400 flex items-center justify-center gap-1">
                             <span className="text-lg">⚠️</span>
                             {t('dashboard.statistics.warning_checks') || 'Verificaciones con advertencia'}
                           </div>
                         </div>
                         <div className="text-center p-4 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
                           <div className="text-3xl font-bold text-red-600 dark:text-red-400 mb-1">{healthData.critical_checks}</div>
-                          <div className="text-sm text-gray-500 dark:text-gray-400 flex items-center justify-center gap-1">
+                          <div className="text-sm text-neutral-500 dark:text-neutral-400 flex items-center justify-center gap-1">
                             <span className="text-lg">❌</span>
                             {t('dashboard.statistics.critical_checks') || 'Verificaciones críticas'}
                           </div>
@@ -753,10 +753,10 @@ const Dashboard = ({ isOpen, onClose }) => {
               {/* Performance Budgets Overview */}
               <Card>
                 <CardBody>
-                    <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white flex items-center gap-2">
+                    <h3 className="text-lg font-semibold mb-4 text-neutral-900 dark:text-white flex items-center gap-2">
                       <span className="text-lg">📊</span>
                       {t('dashboard.performance_budgets.title') || 'Presupuestos de Rendimiento'}
-                      <span className="text-xs text-gray-400 cursor-help" title={t('dashboard.tooltips.performance_budgets') || 'Objetivos y umbrales de salud para métricas clave'}>ℹ️</span>
+                      <span className="text-xs text-neutral-400 cursor-help" title={t('dashboard.tooltips.performance_budgets') || 'Objetivos y umbrales de salud para métricas clave'}>ℹ️</span>
                     </h3>
                   
                   {performanceData?.budgets && performanceData.budgets.length > 0 ? (
@@ -765,7 +765,7 @@ const Dashboard = ({ isOpen, onClose }) => {
                         <Card key={index} className="border-l-4 border-blue-500">
                           <CardBody>
                             <div className="flex items-center justify-between mb-3">
-                              <h4 className="font-medium text-gray-900 dark:text-white flex items-center gap-2">
+                              <h4 className="font-medium text-neutral-900 dark:text-white flex items-center gap-2">
                                 <span className="text-lg">
                                   {budget.name === 'api_latency_budget' && '⚡'}
                                   {budget.name === 'throughput_budget' && '🚀'}
@@ -785,24 +785,24 @@ const Dashboard = ({ isOpen, onClose }) => {
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
                               <div className="text-center p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
                                 <div className="text-lg font-bold text-blue-600 dark:text-blue-400">{budget.target}</div>
-                                <div className="text-xs text-gray-500 dark:text-gray-400">{t('dashboard.performance_budgets.labels.target') || 'Objetivo'}</div>
+                                <div className="text-xs text-neutral-500 dark:text-neutral-400">{t('dashboard.performance_budgets.labels.target') || 'Objetivo'}</div>
                               </div>
                               <div className="text-center p-2 bg-green-50 dark:bg-green-900/20 rounded-lg">
                                 <div className="text-lg font-bold text-green-600 dark:text-green-400">{budget.warning_threshold}</div>
-                                <div className="text-xs text-gray-500 dark:text-gray-400">{t('dashboard.performance_budgets.labels.warning_threshold') || 'Advertencia'}</div>
+                                <div className="text-xs text-neutral-500 dark:text-neutral-400">{t('dashboard.performance_budgets.labels.warning_threshold') || 'Advertencia'}</div>
                               </div>
                               <div className="text-center p-2 bg-red-50 dark:bg-red-900/20 rounded-lg">
                                 <div className="text-lg font-bold text-red-600 dark:text-red-400">{budget.critical_threshold}</div>
-                                <div className="text-xs text-gray-500 dark:text-gray-400">{t('dashboard.performance_budgets.labels.critical_threshold') || 'Crítico'}</div>
+                                <div className="text-xs text-neutral-500 dark:text-neutral-400">{t('dashboard.performance_budgets.labels.critical_threshold') || 'Crítico'}</div>
                               </div>
                               <div className="text-center p-2 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
                                 <div className="text-lg font-bold text-purple-600 dark:text-purple-400">{budget.current_value || 'N/A'}</div>
-                                <div className="text-xs text-gray-500 dark:text-gray-400">{t('dashboard.performance_budgets.labels.current') || 'Actual'}</div>
+                                <div className="text-xs text-neutral-500 dark:text-neutral-400">{t('dashboard.performance_budgets.labels.current') || 'Actual'}</div>
                               </div>
                             </div>
 
                             {budget.message && (
-                              <p className="text-sm text-gray-600 dark:text-gray-300">{budget.message}</p>
+                              <p className="text-sm text-neutral-600 dark:text-neutral-300">{budget.message}</p>
                             )}
                           </CardBody>
                         </Card>
@@ -810,10 +810,10 @@ const Dashboard = ({ isOpen, onClose }) => {
                     </div>
                   ) : (
                     <div className="text-center py-8">
-                        <div className="text-gray-400 dark:text-gray-500 mb-2 text-4xl">📊</div>
-                        <p className="text-gray-600 dark:text-gray-300 mb-2">{t('dashboard.performance_budgets.no_budgets') || 'No se encontraron presupuestos de rendimiento configurados'}</p>
+                        <div className="text-neutral-400 dark:text-neutral-500 mb-2 text-4xl">📊</div>
+                        <p className="text-neutral-600 dark:text-neutral-300 mb-2">{t('dashboard.performance_budgets.no_budgets') || 'No se encontraron presupuestos de rendimiento configurados'}</p>
                       {performanceData?.serviceStatus && (
-                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                        <p className="text-xs text-neutral-500 dark:text-neutral-400">
                           {(t('dashboard.performance_budgets.service_status_prefix') || 'Estado del servicio:')} {performanceData.serviceStatus.status}. {performanceData.serviceStatus.message}
                         </p>
                       )}
@@ -826,17 +826,17 @@ const Dashboard = ({ isOpen, onClose }) => {
               {performanceData?.throughput && (
                 <Card>
                   <CardBody>
-                    <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white flex items-center gap-2">
+                    <h3 className="text-lg font-semibold mb-4 text-neutral-900 dark:text-white flex items-center gap-2">
                       <span className="text-lg">🚀</span>
                       {t('dashboard.throughput_metrics.title') || 'Métricas de Throughput'}
-                      <span className="text-xs text-gray-400 cursor-help" title={t('dashboard.tooltips.throughput_metrics') || 'Rendimiento reciente de solicitudes'}>ℹ️</span>
+                      <span className="text-xs text-neutral-400 cursor-help" title={t('dashboard.tooltips.throughput_metrics') || 'Rendimiento reciente de solicitudes'}>ℹ️</span>
                     </h3>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                       <div className="text-center p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
                         <div className="text-2xl font-bold text-blue-600 dark:text-blue-400 mb-1">
                           {performanceData.throughput?.requests_per_minute ?? 'N/A'}
                         </div>
-                        <div className="text-sm text-gray-500 dark:text-gray-400 flex items-center justify-center gap-1">
+                        <div className="text-sm text-neutral-500 dark:text-neutral-400 flex items-center justify-center gap-1">
                           <span className="text-lg">📈</span>
                           {t('dashboard.throughput_metrics.requests_per_minute') || 'Solicitudes/min'}
                         </div>
@@ -845,7 +845,7 @@ const Dashboard = ({ isOpen, onClose }) => {
                         <div className="text-2xl font-bold text-green-600 dark:text-green-400 mb-1">
                           {performanceData.throughput?.avg_response_time_ms?.toFixed?.(0) ?? 'N/A'}ms
                         </div>
-                        <div className="text-sm text-gray-500 dark:text-gray-400 flex items-center justify-center gap-1">
+                        <div className="text-sm text-neutral-500 dark:text-neutral-400 flex items-center justify-center gap-1">
                           <span className="text-lg">⚡</span>
                           {t('dashboard.throughput_metrics.avg_response_time') || 'Tiempo de Respuesta'}
                         </div>
@@ -854,7 +854,7 @@ const Dashboard = ({ isOpen, onClose }) => {
                         <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400 mb-1">
                           {performanceData.throughput?.error_rate_percent?.toFixed?.(2) ?? 'N/A'}%
                         </div>
-                        <div className="text-sm text-gray-500 dark:text-gray-400 flex items-center justify-center gap-1">
+                        <div className="text-sm text-neutral-500 dark:text-neutral-400 flex items-center justify-center gap-1">
                           <span className="text-lg">⚠️</span>
                           {t('dashboard.throughput_metrics.error_rate') || 'Tasa de Error'}
                         </div>
@@ -863,7 +863,7 @@ const Dashboard = ({ isOpen, onClose }) => {
                         <div className="text-2xl font-bold text-purple-600 dark:text-purple-400 mb-1">
                           {performanceData.throughput?.uptime_percent?.toFixed?.(2) ?? 'N/A'}%
                         </div>
-                        <div className="text-sm text-gray-500 dark:text-gray-400 flex items-center justify-center gap-1">
+                        <div className="text-sm text-neutral-500 dark:text-neutral-400 flex items-center justify-center gap-1">
                           <span className="text-lg">🟢</span>
                           {t('dashboard.throughput_metrics.uptime') || 'Disponibilidad'}
                         </div>
@@ -877,17 +877,17 @@ const Dashboard = ({ isOpen, onClose }) => {
               {performanceData?.status && (
                 <Card>
                   <CardBody>
-                    <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white flex items-center gap-2">
+                    <h3 className="text-lg font-semibold mb-4 text-neutral-900 dark:text-white flex items-center gap-2">
                       <span className="text-lg">📋</span>
                       {t('dashboard.status_summary.title') || 'Resumen de Estado'}
-                      <span className="text-xs text-gray-400 cursor-help" title={t('dashboard.tooltips.status_summary') || 'Conteo de presupuestos por estado'}>ℹ️</span>
+                      <span className="text-xs text-neutral-400 cursor-help" title={t('dashboard.tooltips.status_summary') || 'Conteo de presupuestos por estado'}>ℹ️</span>
                     </h3>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                      <div className="text-center p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-                        <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1">
+                      <div className="text-center p-4 bg-neutral-50 dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700">
+                        <div className="text-3xl font-bold text-neutral-900 dark:text-white mb-1">
                           {performanceData.status.total_budgets || 0}
                         </div>
-                        <div className="text-sm text-gray-500 dark:text-gray-400 flex items-center justify-center gap-1">
+                        <div className="text-sm text-neutral-500 dark:text-neutral-400 flex items-center justify-center gap-1">
                           <span className="text-lg">📊</span>
                           {t('dashboard.status_summary.total_budgets') || 'Total Presupuestos'}
                         </div>
@@ -896,7 +896,7 @@ const Dashboard = ({ isOpen, onClose }) => {
                         <div className="text-3xl font-bold text-green-600 dark:text-green-400 mb-1">
                           {performanceData.status.healthy_budgets || 0}
                         </div>
-                        <div className="text-sm text-gray-500 dark:text-gray-400 flex items-center justify-center gap-1">
+                        <div className="text-sm text-neutral-500 dark:text-neutral-400 flex items-center justify-center gap-1">
                           <span className="text-lg">✅</span>
                           {t('dashboard.status_summary.healthy') || 'Saludables'}
                         </div>
@@ -905,7 +905,7 @@ const Dashboard = ({ isOpen, onClose }) => {
                         <div className="text-3xl font-bold text-yellow-600 dark:text-yellow-400 mb-1">
                           {performanceData.status.warning_budgets || 0}
                         </div>
-                        <div className="text-sm text-gray-500 dark:text-gray-400 flex items-center justify-center gap-1">
+                        <div className="text-sm text-neutral-500 dark:text-neutral-400 flex items-center justify-center gap-1">
                           <span className="text-lg">⚠️</span>
                           {t('dashboard.status_summary.warning') || 'Advertencias'}
                         </div>
@@ -914,7 +914,7 @@ const Dashboard = ({ isOpen, onClose }) => {
                         <div className="text-3xl font-bold text-red-600 dark:text-red-400 mb-1">
                           {performanceData.status.critical_budgets || 0}
                         </div>
-                        <div className="text-sm text-gray-500 dark:text-gray-400 flex items-center justify-center gap-1">
+                        <div className="text-sm text-neutral-500 dark:text-neutral-400 flex items-center justify-center gap-1">
                           <span className="text-lg">❌</span>
                           {t('dashboard.status_summary.critical') || 'Críticos'}
                         </div>
@@ -927,10 +927,10 @@ const Dashboard = ({ isOpen, onClose }) => {
           )}
         </div>
 
-        <div className="flex justify-end p-6 border-t border-gray-200 dark:border-gray-700">
+        <div className="flex justify-end p-6 border-t border-neutral-200 dark:border-neutral-700">
           <button
             onClick={onClose}
-            className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 mr-2"
+            className="px-4 py-2 bg-neutral-200 dark:bg-neutral-700 text-neutral-800 dark:text-neutral-200 rounded-lg hover:bg-neutral-300 dark:hover:bg-neutral-600 mr-2"
           >
             {t('dashboard.actions.close') || 'Cerrar'}
           </button>

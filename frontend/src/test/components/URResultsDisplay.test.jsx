@@ -429,7 +429,7 @@ describe('URResultsDisplay Component', () => {
       const rows = table.querySelectorAll('tbody tr');
       
       expect(rows[0]).toHaveClass('bg-white');
-      expect(rows[1]).toHaveClass('bg-gray-50');
+      expect(rows[1]).toHaveClass('bg-neutral-50');
       expect(rows[2]).toHaveClass('bg-white');
     });
   });

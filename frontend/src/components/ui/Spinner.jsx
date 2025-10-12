@@ -73,7 +73,7 @@ const Spinner = ({
     return (
       <div className={containerClasses}>
         {spinnerElement}
-        <span className="text-sm text-gray-600 dark:text-gray-400">
+        <span className="text-sm text-neutral-600 dark:text-neutral-400">
           {label}
         </span>
       </div>
@@ -106,13 +106,13 @@ export const FullPageSpinner = ({
       className={`
         fixed inset-0 z-50
         flex items-center justify-center
-        bg-white/80 dark:bg-gray-900/80
+        bg-white/80 dark:bg-neutral-900/80
         ${blur ? 'backdrop-blur-sm' : ''}
       `}
     >
       <div className="flex flex-col items-center gap-4">
         <Spinner variant={variant} size="xl" />
-        <p className="text-lg font-medium text-gray-700 dark:text-gray-300">
+        <p className="text-lg font-medium text-neutral-700 dark:text-neutral-300">
           {label}
         </p>
       </div>
@@ -151,7 +151,7 @@ export const SpinnerOverlay = ({
       className={`
         absolute inset-0 z-10
         flex items-center justify-center
-        bg-white/80 dark:bg-gray-800/80
+        bg-white/80 dark:bg-neutral-800/80
         ${blur ? 'backdrop-blur-sm' : ''}
         rounded-lg
       `}
@@ -159,7 +159,7 @@ export const SpinnerOverlay = ({
       <div className="flex flex-col items-center gap-3">
         <Spinner variant={variant} size="lg" />
         {label && (
-          <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+          <p className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
             {label}
           </p>
         )}
@@ -187,7 +187,7 @@ export const PulseSpinner = ({
     primary: 'bg-primary-600',
     secondary: 'bg-secondary-600',
     white: 'bg-white',
-    gray: 'bg-gray-600',
+    gray: 'bg-neutral-600',
   };
 
   return (
@@ -228,7 +228,7 @@ export const DotsSpinner = ({
     primary: 'bg-primary-600',
     secondary: 'bg-secondary-600',
     white: 'bg-white',
-    gray: 'bg-gray-600',
+    gray: 'bg-neutral-600',
   };
 
   return (

@@ -124,11 +124,12 @@ describe('Header Component', () => {
   // Props legacy tests removidos (props ya no usados)
 
   describe('Accessibility', () => {
-    it('should have accessible button', () => {
-  render(<Header />);
+    it('should have accessible buttons (theme selector + theme toggle)', () => {
+      render(<Header />);
 
-      const refreshButton = screen.getByRole('button');
-      expect(refreshButton).toBeInTheDocument();
+      // Theme selector buttons (3 buttons for theme colors)
+      const themeButtons = screen.getAllByRole('button');
+      expect(themeButtons.length).toBeGreaterThanOrEqual(3); // At least 3 theme buttons + theme toggle
     });
 
     it('should have accessible heading', () => {
@@ -139,10 +140,10 @@ describe('Header Component', () => {
     });
 
     it('should have proper button state for screen readers', () => {
-    render(<Header />);
-    // Theme toggle button debe ser operable
-    const themeBtn = screen.getByRole('button', { name: /Switch to (dark|light) mode/i });
-    expect(themeBtn).toBeInTheDocument();
+      render(<Header />);
+      // Theme toggle button debe ser operable
+      const themeBtn = screen.getByRole('button', { name: /Switch to (dark|light) mode/i });
+      expect(themeBtn).toBeInTheDocument();
     });
   });
   // Integration & edge tests para refresh eliminados

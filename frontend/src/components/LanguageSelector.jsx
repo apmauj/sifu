@@ -26,7 +26,7 @@ const LanguageSelector = () => {
       <select
         value={currentLanguage}
         onChange={handleLanguageChange}
-        className="text-sm border-gray-300 dark:border-gray-600 rounded-md focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
+        className="text-sm border-neutral-300 dark:border-neutral-600 rounded-md focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100"
         aria-label={t('common.select_language') || 'Seleccionar idioma'}
       >
         {supportedLanguages.map(lang => (

@@ -99,7 +99,7 @@ describe('QuickSelectors Component', () => {
       render(<QuickSelectors type="UI" mode="single" onSingleSelect={vi.fn()} />);
 
       const button = screen.getByText('Hoy');
-      expect(button).toHaveClass('text-xs', 'px-3', 'py-1', 'bg-gray-100', 'hover:bg-gray-200', 'rounded-full');
+      expect(button).toHaveClass('text-xs', 'px-3', 'py-1', 'bg-neutral-100', 'hover:bg-neutral-200', 'rounded-full');
     });
   });
 
@@ -410,7 +410,7 @@ describe('QuickSelectors Component', () => {
       render(<QuickSelectors type="UI" mode="single" onSingleSelect={vi.fn()} />);
 
       const button = screen.getByText('Hoy');
-      expect(button).toHaveClass('hover:bg-gray-200', 'hover:border-gray-400');
+      expect(button).toHaveClass('hover:bg-neutral-200', 'hover:border-neutral-400');
     });
 
     it('should have proper transition classes', () => {

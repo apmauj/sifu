@@ -101,7 +101,7 @@ const ExchangeRatePanel = () => {
     return (
       <div className="px-4">
         <div className="max-w-7xl mx-auto">
-          <div className="bg-gray-800 text-white py-2 px-4 rounded-xl shadow-sm">
+          <div className="bg-neutral-800 text-white py-2 px-4 rounded-xl shadow-sm">
             <div className="text-center flex items-center justify-center gap-2">
               <InlineSpinner variant="white" />
               <span className="text-sm">
@@ -168,12 +168,12 @@ const ExchangeRatePanel = () => {
             { !dotHidden && (
               <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center group">
                 <span
-                  className={`inline-block w-3 h-3 rounded-full ${dotActive ? 'bg-green-400' : 'bg-gray-400'} cursor-pointer ${dotActive && glow ? 'animate-glow' : ''}`}
+                  className={`inline-block w-3 h-3 rounded-full ${dotActive ? 'bg-green-400' : 'bg-neutral-400'} cursor-pointer ${dotActive && glow ? 'animate-glow' : ''}`}
                   style={{ boxShadow: dotActive ? (glow ? '0 0 8px 4px #22c55e' : '0 0 2px 1px #22c55e') : '0 0 2px 1px #888', transition: 'box-shadow 0.3s' }}
                   onClick={() => { setDotActive(false); setDotHidden(true); try { localStorage.setItem(DOT_HIDE_KEY, 'true'); } catch { /* Ignore localStorage errors */ } }}
                   title={lastUpdate ? `${t('bcu.last_update') || 'Actualizado'}: ${formatTime(lastUpdate)}` : t('bcu.no_update') || 'Sin actualización'}
                 />
-                <span className="absolute right-6 top-1/2 -translate-y-1/2 bg-gray-900 text-white text-xs rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10 shadow-lg border border-gray-700">
+                <span className="absolute right-6 top-1/2 -translate-y-1/2 bg-neutral-900 text-white text-xs rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10 shadow-lg border border-neutral-700">
                   {lastUpdate ? `${t('bcu.last_update') || 'Actualizado'}: ${formatTime(lastUpdate)}` : t('bcu.no_update') || 'Sin actualización'}
                 </span>
               </div>
@@ -191,12 +191,12 @@ const ExchangeRatePanel = () => {
               { !dotHidden && (
                 <span className="flex items-center group">
                   <span
-                    className={`inline-block w-3 h-3 rounded-full ${dotActive ? 'bg-green-400' : 'bg-gray-400'} cursor-pointer ${dotActive && glow ? 'animate-glow' : ''}`}
+                    className={`inline-block w-3 h-3 rounded-full ${dotActive ? 'bg-green-400' : 'bg-neutral-400'} cursor-pointer ${dotActive && glow ? 'animate-glow' : ''}`}
                     style={{ boxShadow: dotActive ? (glow ? '0 0 8px 4px #22c55e' : '0 0 2px 1px #22c55e') : '0 0 2px 1px #888', transition: 'box-shadow 0.3s' }}
                     onClick={() => { setDotActive(false); setDotHidden(true); try { localStorage.setItem(DOT_HIDE_KEY, 'true'); } catch { /* Ignore localStorage errors */ } }}
                     title={lastUpdate ? `${t('bcu.last_update') || 'Actualizado'}: ${formatTime(lastUpdate)}` : t('bcu.no_update') || 'Sin actualización'}
                   />
-                  <span className="ml-2 bg-gray-900 text-white text-xs rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10 shadow-lg border border-gray-700">
+                  <span className="ml-2 bg-neutral-900 text-white text-xs rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10 shadow-lg border border-neutral-700">
                     {lastUpdate ? `${t('bcu.last_update') || 'Actualizado'}: ${formatTime(lastUpdate)}` : t('bcu.no_update') || 'Sin actualización'}
                   </span>
                 </span>
@@ -238,12 +238,12 @@ const ExchangeRatePanel = () => {
               { !dotHidden && (
                 <span className="flex items-center group">
                   <span
-                    className={`inline-block w-3 h-3 rounded-full ${dotActive ? 'bg-green-400' : 'bg-gray-400'} cursor-pointer ${dotActive && glow ? 'animate-glow' : ''}`}
+                    className={`inline-block w-3 h-3 rounded-full ${dotActive ? 'bg-green-400' : 'bg-neutral-400'} cursor-pointer ${dotActive && glow ? 'animate-glow' : ''}`}
                     style={{ boxShadow: dotActive ? (glow ? '0 0 8px 4px #22c55e' : '0 0 2px 1px #22c55e') : '0 0 2px 1px #888', transition: 'box-shadow 0.3s' }}
                     onClick={() => { setDotActive(false); setDotHidden(true); try { localStorage.setItem(DOT_HIDE_KEY, 'true'); } catch { /* Ignore localStorage errors */ } }}
                     title={lastUpdate ? `${t('bcu.last_update') || 'Actualizado'}: ${formatTime(lastUpdate)}` : t('bcu.no_update') || 'Sin actualización'}
                   />
-                  <span className="ml-2 bg-gray-900 text-white text-xs rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10 shadow-lg border border-gray-700">
+                  <span className="ml-2 bg-neutral-900 text-white text-xs rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10 shadow-lg border border-neutral-700">
                     {lastUpdate ? `${t('bcu.last_update') || 'Actualizado'}: ${formatTime(lastUpdate)}` : t('bcu.no_update') || 'Sin actualización'}
                   </span>
                 </span>

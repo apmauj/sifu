@@ -206,7 +206,7 @@ const QuickSelectors = ({
             key={selector.key}
             type="button"
             onClick={() => type === 'UI' ? handleUIClick(selector) : handleURClick(selector)}
-            className="text-xs px-3 py-1 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 rounded-full transition-colors duration-200 border border-gray-300 hover:border-gray-400 dark:border-gray-600 dark:hover:border-gray-500 dark:text-gray-100 whitespace-nowrap"
+            className="text-xs px-3 py-1 bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-700 dark:hover:bg-neutral-600 rounded-full transition-colors duration-200 border border-neutral-300 hover:border-neutral-400 dark:border-neutral-600 dark:hover:border-neutral-500 dark:text-neutral-100 whitespace-nowrap"
             title={`${t('common.select') || 'Seleccionar'} ${translateLabel(selector).toLowerCase()}`}
           >
             {translateLabel(selector)}

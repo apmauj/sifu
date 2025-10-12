@@ -89,7 +89,7 @@ describe('ToastNotification Component', () => {
       render(<ToastNotification {...defaultProps} type="unknown" />);
 
       expect(screen.getByText('📢')).toBeInTheDocument();
-      const container = screen.getByText('Test message').closest('div[class*="bg-gray-50"]');
+      const container = screen.getByText('Test message').closest('div[class*="bg-neutral-50"]');
       expect(container).toBeInTheDocument();
     });
 
@@ -146,7 +146,7 @@ describe('ToastNotification Component', () => {
     it('should show gray progress bar for default', () => {
       render(<ToastNotification {...defaultProps} type="unknown" />);
 
-      const progressBar = document.querySelector('.bg-gray-400');
+      const progressBar = document.querySelector('.bg-neutral-400');
       expect(progressBar).toBeInTheDocument();
     });
   });

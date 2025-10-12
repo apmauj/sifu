@@ -81,7 +81,7 @@ describe('LanguageSelector Component', () => {
     it('should have correct CSS classes', () => {
       render(<LanguageSelector />);
       const select = screen.getByRole('combobox');
-      expect(select).toHaveClass('text-sm', 'border-gray-300', 'rounded-md');
+      expect(select).toHaveClass('text-sm', 'border-neutral-300', 'rounded-md');
     });
   });
 

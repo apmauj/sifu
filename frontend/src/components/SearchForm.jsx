@@ -107,7 +107,7 @@ const SearchForm = ({ onSearch, isLoading }) => {
   return (
     <div className="fade-in">
       <div className="mb-6">
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
+        <h2 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100 mb-4">
           {t('ui.search_title') || 'Consultar Valor de UI'}
         </h2>
         {/* Search type selector */}
@@ -122,7 +122,7 @@ const SearchForm = ({ onSearch, isLoading }) => {
               onChange={(e) => setSearchType(e.target.value)}
               className="mr-2 text-uruguay-blue focus:ring-uruguay-blue"
             />
-            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('ui.specific_date') || 'Fecha específica'}</span>
+            <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300">{t('ui.specific_date') || 'Fecha específica'}</span>
           </label>
           <label className="flex items-center" htmlFor="searchType-range">
             <input
@@ -134,7 +134,7 @@ const SearchForm = ({ onSearch, isLoading }) => {
               onChange={(e) => setSearchType(e.target.value)}
               className="mr-2 text-uruguay-blue focus:ring-uruguay-blue"
             />
-            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('ui.date_range') || 'Rango de fechas'}</span>
+            <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300">{t('ui.date_range') || 'Rango de fechas'}</span>
           </label>
         </div>
       </div>
@@ -142,7 +142,7 @@ const SearchForm = ({ onSearch, isLoading }) => {
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         {searchType === 'single' ? (
           <div>
-            <label htmlFor="fecha" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label htmlFor="fecha" className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
               <_CalendarIcon className="w-4 h-4 inline mr-1" />
               {t('common.date') || 'Fecha'}
             </label>
@@ -194,7 +194,7 @@ const SearchForm = ({ onSearch, isLoading }) => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label htmlFor="fechaInicio" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label htmlFor="fechaInicio" className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
                 <_CalendarIcon className="w-4 h-4 inline mr-1" />
                 {t('ui.start_date') || 'Fecha inicio'}
               </label>
@@ -245,7 +245,7 @@ const SearchForm = ({ onSearch, isLoading }) => {
               )}
             </div>
             <div>
-              <label htmlFor="fechaFin" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label htmlFor="fechaFin" className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
                 <_CalendarIcon className="w-4 h-4 inline mr-1" />
                 {t('ui.end_date') || 'Fecha fin'}
               </label>

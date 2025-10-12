@@ -44,7 +44,7 @@ class ErrorBoundary extends React.Component {
   render() {
     if (this.state.hasError) {
       return (
-        <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900 flex items-center justify-center">
           <div className="max-w-md mx-auto text-center">
             <div className="bg-error-50 dark:bg-error-950/30 
                             border border-error-200 dark:border-error-800 
@@ -379,12 +379,12 @@ function App() {
   // Show loading while translations are loading
   if (i18nLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+      <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 
                           border-b-2 border-primary-600 dark:border-primary-400 
                           mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">
+          <p className="text-neutral-600 dark:text-neutral-400">
             {safeT('common.loading', 'Cargando...')}
           </p>
         </div>
@@ -394,7 +394,7 @@ function App() {
 
   return (
     <ErrorBoundary>
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900" data-testid="app-component">
+      <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900" data-testid="app-component">
         <Header 
           onRefresh={handleRefresh} 
           isRefreshing={isRefreshing}
@@ -492,8 +492,8 @@ function App() {
           )}
 
           {/* Footer con información */}
-          <footer className="mt-12 border-t border-gray-200 pt-8">
-            <div className="text-center text-sm text-gray-500">
+          <footer className="mt-12 border-t border-neutral-200 pt-8">
+            <div className="text-center text-sm text-neutral-500">
               <p className="mb-2">
                 <strong>{t('footer.sifu_title') || 'SIFU'}</strong> - {t('footer.sifu_description') || 'Sistema de Índices Financieros del Uruguay 🇺🇾'}
               </p>

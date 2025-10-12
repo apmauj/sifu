@@ -150,6 +150,48 @@ export const getComponentVariant = (component, variant) => {
 };
 
 /**
+ * Genera clase Tailwind para colores neutrals del tema activo
+ * 
+ * Los neutrals (ex-grays) ahora varían según el tema:
+ * - Tema "Uruguay Blue": grays fríos (tinte azul)
+ * - Tema "Warm Sunset": grays cálidos (tinte sepia)
+ * - Tema "Ocean Teal": grays muy fríos (blue-gray)
+ * 
+ * @param {string} type - Tipo de clase ('bg', 'text', 'border', 'ring', 'divide')
+ * @param {number} shade - Shade del color (50-950)
+ * @returns {string} Clase Tailwind (ej: 'bg-neutral-600')
+ * 
+ * @example
+ * getNeutralClass('bg', 100) // → 'bg-neutral-100'
+ * getNeutralClass('text', 600) // → 'text-neutral-600'
+ * getNeutralClass('border', 200) // → 'border-neutral-200'
+ */
+export const getNeutralClass = (type, shade = 500) => {
+  return `${type}-neutral-${shade}`;
+};
+
+/**
+ * Genera clases Tailwind para neutrals con soporte dark mode
+ * 
+ * @param {string} type - Tipo de clase ('bg', 'text', 'border')
+ * @param {number} lightShade - Shade para modo claro (50-950)
+ * @param {number} darkShade - Shade para modo oscuro (50-950)
+ * @returns {string} Clases con dark mode
+ * 
+ * @example
+ * getNeutralClassWithDark('bg', 100, 800)
+ * // → 'bg-neutral-100 dark:bg-neutral-800'
+ * 
+ * getNeutralClassWithDark('text', 900, 50)
+ * // → 'text-neutral-900 dark:text-neutral-50'
+ */
+export const getNeutralClassWithDark = (type, lightShade = 100, darkShade = 800) => {
+  const base = getNeutralClass(type, lightShade);
+  const dark = getNeutralClass(type, darkShade);
+  return `${base} dark:${dark}`;
+};
+
+/**
  * Clases de texto semánticas predefinidas
  */
 export const textColors = {

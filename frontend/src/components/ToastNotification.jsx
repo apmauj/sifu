@@ -68,11 +68,11 @@ const ToastNotification = ({ message, type = 'success', duration = TOAST_DURATIO
         };
       default:
         return {
-          bg: 'bg-gray-50 border-gray-200',
-          text: 'text-gray-800',
+          bg: 'bg-neutral-50 border-neutral-200',
+          text: 'text-neutral-800',
           icon: '📢',
-          iconBg: 'bg-gray-100',
-          iconText: 'text-gray-600'
+          iconBg: 'bg-neutral-100',
+          iconText: 'text-neutral-600'
         };
     }
   };
@@ -82,7 +82,7 @@ const ToastNotification = ({ message, type = 'success', duration = TOAST_DURATIO
   const progressBarColor = type === 'success' ? 'bg-green-400' : 
     type === 'error' ? 'bg-red-400' :
     type === 'warning' ? 'bg-yellow-400' :
-    type === 'info' ? 'bg-blue-400' : 'bg-gray-400';
+    type === 'info' ? 'bg-blue-400' : 'bg-neutral-400';
 
   return (
     <div

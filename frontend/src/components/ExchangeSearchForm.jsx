@@ -192,8 +192,8 @@ const ExchangeSearchForm = ({ onSearch, isLoading }) => {
 
 
   return (
-  <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-md p-6">
-      <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6 flex items-center">
+  <div className="bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg shadow-md p-6">
+      <h2 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100 mb-6 flex items-center">
         <OpenMojiIcon name="chartUp" size={32} className="mr-3" />
         {t('exchange.search_title') || 'Consultar Cotizaciones'}
       </h2>
@@ -207,7 +207,7 @@ const ExchangeSearchForm = ({ onSearch, isLoading }) => {
 
       {/* Filtro de monedas: botón mundo (ALL) + toggles de banderas (single-select por ahora) */}
       <div className="mb-4">
-        <span className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+        <span className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
           {t('exchange.currency') || 'Moneda'}
         </span>
         <div className="flex items-center justify-center mb-2">
@@ -216,7 +216,7 @@ const ExchangeSearchForm = ({ onSearch, isLoading }) => {
             onClick={setAllCurrencies}
             aria-pressed={selectedCurrency === 'ALL'}
             aria-label={(t('exchange.all_currencies') || 'Todas las monedas') + (selectedCurrency === 'ALL' ? ' (activo)' : '')}
-            className={`px-4 py-2 rounded-md text-base flex items-center justify-center gap-2 border transition-colors font-semibold w-full ${selectedCurrency === 'ALL' ? 'bg-blue-600 text-white border-blue-600' : 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 border-gray-300 dark:border-gray-600 hover:bg-gray-300 dark:hover:bg-gray-600'}`}
+            className={`px-4 py-2 rounded-md text-base flex items-center justify-center gap-2 border transition-colors font-semibold w-full ${selectedCurrency === 'ALL' ? 'bg-blue-600 text-white border-blue-600' : 'bg-neutral-200 dark:bg-neutral-700 text-neutral-800 dark:text-neutral-200 border-neutral-300 dark:border-neutral-600 hover:bg-neutral-300 dark:hover:bg-neutral-600'}`}
             style={{width: '100%'}}>
             <span role="img" aria-hidden="true">🌍</span>
             {t('exchange.all_currencies') || 'Todas las monedas'}
@@ -230,7 +230,7 @@ const ExchangeSearchForm = ({ onSearch, isLoading }) => {
               onClick={() => toggleCurrency(c.code)}
               aria-pressed={selectedCurrency === c.code}
               aria-label={`${c.label} ${selectedCurrency === c.code ? '(activo)' : ''}`}
-              className={`px-3 md:px-4 py-2 rounded-md text-sm md:text-base flex items-center gap-2 border transition-colors font-semibold w-full ${selectedCurrency === c.code ? 'bg-blue-600 text-white border-blue-600' : 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 border-gray-300 dark:border-gray-600 hover:bg-gray-300 dark:hover:bg-gray-600'}`}
+              className={`px-3 md:px-4 py-2 rounded-md text-sm md:text-base flex items-center gap-2 border transition-colors font-semibold w-full ${selectedCurrency === c.code ? 'bg-blue-600 text-white border-blue-600' : 'bg-neutral-200 dark:bg-neutral-700 text-neutral-800 dark:text-neutral-200 border-neutral-300 dark:border-neutral-600 hover:bg-neutral-300 dark:hover:bg-neutral-600'}`}
               style={{justifyContent: 'center'}}>
               <Flag code={c.code} className="flag-icon" style={{verticalAlign: 'middle'}} />
               <span style={{verticalAlign: 'middle'}}>{c.code}</span>
@@ -241,7 +241,7 @@ const ExchangeSearchForm = ({ onSearch, isLoading }) => {
 
   {/* Botones de acción rápida */}
       <div className="mb-6">
-        <h3 className="text-sm font-medium text-gray-800 dark:text-gray-200 mb-3">
+        <h3 className="text-sm font-medium text-neutral-800 dark:text-neutral-200 mb-3">
           {t('common.quick_actions') || 'Acciones rápidas'}
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
@@ -279,7 +279,7 @@ const ExchangeSearchForm = ({ onSearch, isLoading }) => {
 
       {/* Selector de tipo de búsqueda (mismo estilo que acciones rápidas) */}
       <div className="mb-6">
-        <h3 className="text-sm font-medium text-gray-800 dark:text-gray-200 mb-3">
+        <h3 className="text-sm font-medium text-neutral-800 dark:text-neutral-200 mb-3">
           {t('exchange.search_type') || 'Tipo de consulta'}
         </h3>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
@@ -296,7 +296,7 @@ const ExchangeSearchForm = ({ onSearch, isLoading }) => {
               className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                 searchType === btn.key
                   ? 'bg-blue-600 text-white'
-                  : 'bg-gray-200 text-gray-800 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600'
+                  : 'bg-neutral-200 text-neutral-800 hover:bg-neutral-300 dark:bg-neutral-700 dark:text-neutral-100 dark:hover:bg-neutral-600'
               }`}
             >
               {btn.label}
@@ -309,14 +309,14 @@ const ExchangeSearchForm = ({ onSearch, isLoading }) => {
 
         {searchType === 'date' && (
           <div className="mb-4">
-            <label htmlFor="date" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label htmlFor="date" className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
               {t('exchange.date') || 'Fecha'}
             </label>
             <input
               type="date"
               id="date"
               ref={dateRef}
-              className="w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              className="w-full rounded-md border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 shadow-sm focus:border-blue-500 focus:ring-blue-500"
               value={searchDate}
               onChange={(e) => setSearchDate(e.target.value)}
               max={getTodayLocal()}
@@ -326,7 +326,7 @@ const ExchangeSearchForm = ({ onSearch, isLoading }) => {
 
         {searchType === 'range' && (
           <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
               {t('exchange.date_range') || 'Rango de fechas'}
             </label>
             <div className="flex items-center gap-2">
@@ -335,18 +335,18 @@ const ExchangeSearchForm = ({ onSearch, isLoading }) => {
                 id="startDate"
                 aria-label={t('exchange.start_date') || 'Fecha de inicio'}
                 ref={startDateRef}
-                className="flex-1 rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                className="flex-1 rounded-md border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
                 max={getTodayLocal()}
               />
-              <span className="text-gray-500 dark:text-gray-400">→</span>
+              <span className="text-neutral-500 dark:text-neutral-400">→</span>
               <input
                 type="date"
                 id="endDate"
                 aria-label={t('exchange.end_date') || 'Fecha de fin'}
                 ref={endDateRef}
-                className="flex-1 rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                className="flex-1 rounded-md border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
                 max={getTodayLocal()}
@@ -359,14 +359,14 @@ const ExchangeSearchForm = ({ onSearch, isLoading }) => {
           <div className="mb-4">
             <label
               htmlFor="limit"
-              className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+              className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1"
             >
               {t('exchange.history_limit') || 'Cantidad de registros'}
             </label>
             <input
               type="number"
               id="limit"
-              className="w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500 placeholder-gray-400 dark:placeholder-gray-500"
+              className="w-full rounded-md border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 shadow-sm focus:border-blue-500 focus:ring-blue-500 placeholder-gray-400 dark:placeholder-gray-500"
               value={historyLimit}
               onChange={(e) => setHistoryLimit(e.target.value)}
               min="1"

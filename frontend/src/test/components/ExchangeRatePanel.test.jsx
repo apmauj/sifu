@@ -76,8 +76,8 @@ describe('ExchangeRatePanel', () => {
       await renderAsync(<ExchangeRatePanel />);
       const loadingElement = screen.getByText('Cargando cotizaciones...');
       expect(loadingElement).toBeInTheDocument();
-      const parentDiv = loadingElement.closest('.bg-gray-800');
-      expect(parentDiv).toHaveClass('bg-gray-800', 'text-white');
+      const parentDiv = loadingElement.closest('.bg-neutral-800');
+      expect(parentDiv).toHaveClass('bg-neutral-800', 'text-white');
     });
 
     it('should not show loading when data is already present', async () => {
