@@ -85,7 +85,7 @@ describe('Header Component', () => {
 
     it('renders theme toggle button', () => {
       render(<Header />);
-      expect(screen.getByRole('button', { name: /toggle theme/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /Switch to (dark|light) mode/i })).toBeInTheDocument();
     });
 
     it('does not render legacy refresh button anymore', () => {
@@ -141,7 +141,7 @@ describe('Header Component', () => {
     it('should have proper button state for screen readers', () => {
     render(<Header />);
     // Theme toggle button debe ser operable
-    const themeBtn = screen.getByRole('button', { name: /toggle theme/i });
+    const themeBtn = screen.getByRole('button', { name: /Switch to (dark|light) mode/i });
     expect(themeBtn).toBeInTheDocument();
     });
   });

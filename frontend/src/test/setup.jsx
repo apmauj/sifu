@@ -79,6 +79,31 @@ vi.mock('../contexts/I18nContext', () => {
   }
 })
 
+// Mock ThemeContext for tests
+vi.mock('../contexts/ThemeContext', () => {
+  const createMockThemeContext = () => {
+    return {
+      theme: globalThis.__TEST_THEME__ || 'light',
+      isDark: (globalThis.__TEST_THEME__ || 'light') === 'dark',
+      isLight: (globalThis.__TEST_THEME__ || 'light') === 'light',
+      toggleTheme: vi.fn(() => {
+        const newTheme = (globalThis.__TEST_THEME__ || 'light') === 'light' ? 'dark' : 'light';
+        globalThis.__TEST_THEME__ = newTheme;
+      }),
+      setTheme: vi.fn((theme) => {
+        globalThis.__TEST_THEME__ = theme;
+      })
+    }
+  }
+
+  const mockContext = createMockThemeContext()
+
+  return {
+    useTheme: () => mockContext,
+    ThemeProvider: ({ children }) => React.createElement('div', { 'data-testid': 'theme-provider' }, children)
+  }
+})
+
 // Simple Toast Context mock for non-ToastContext tests
 const mockToastContext = () => ({
   useToast: vi.fn(() => ({
