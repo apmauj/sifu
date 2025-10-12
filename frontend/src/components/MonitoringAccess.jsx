@@ -133,7 +133,7 @@ const MonitoringAccess = ({ isOpen, onClose, onAccessGranted }) => {
               aria-label="TOTP Code"
             />
             <div className="totp-input-hint">
-              {t('monitoring.digitCounter', `${code.length}/6 digits`, { current: code.length, total: 6 })}
+              {t('monitoring.digitCounter', { current: code.length, total: 6 })}
             </div>
           </div>
 
@@ -146,7 +146,7 @@ const MonitoringAccess = ({ isOpen, onClose, onAccessGranted }) => {
 
           {attemptsLeft < 5 && attemptsLeft > 0 && (
             <div className="monitoring-access-warning">
-              {t('monitoring.attemptsLeft', `${attemptsLeft} attempts remaining`, { count: attemptsLeft })}
+              {t('monitoring.attemptsLeft', { count: attemptsLeft })}
             </div>
           )}
 
