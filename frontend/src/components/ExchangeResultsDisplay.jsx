@@ -264,7 +264,7 @@ const ExchangeResultsDisplay = ({ results, searchType, isLoading, error }) => {
                   <div className="text-xs text-neutral-600 dark:text-neutral-400 mb-1">{t('exchange.average_rate') || 'Promedio'}</div>
                   <div className="text-sm font-semibold text-blue-600">
                     {rate.average_rate ? `${(currencyDisplay[rate.currency]?.symbol || '$')}${formatExchangeRate(rate.average_rate)}` : (
-                      <span className="text-neutral-400">{t('common.not_available') || 'N/A'}</span>
+                      <span className="text-neutral-400 dark:text-neutral-500">{t('common.not_available') || 'N/A'}</span>
                     )}
                   </div>
                 </div>

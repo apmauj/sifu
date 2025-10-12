@@ -169,7 +169,7 @@ const URResultsDisplay = ({ results, searchType, isLoading, error, pendingCurren
       case 'down':
         return <_ArrowDownIcon className="w-4 h-4 text-red-600" />;
       default:
-        return <_MinusIcon className="w-4 h-4 text-neutral-400" />;
+        return <_MinusIcon className="w-4 h-4 text-neutral-400 dark:text-neutral-500" />;
     }
   };
 

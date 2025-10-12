@@ -265,7 +265,7 @@ const Dashboard = ({ isOpen, onClose }) => {
                         <span className="text-lg">🚀</span>
                         {t('dashboard.general_status.title') || 'Estado General del Sistema'}
                         <span
-                          className="text-xs text-neutral-400 cursor-help"
+                          className="text-xs text-neutral-400 dark:text-neutral-500 cursor-help"
                           title={t('dashboard.tooltips.general_status') || 'Resumen agregado del estado actual de todos los checks'}
                         >ℹ️</span>
                       </h3>
@@ -379,7 +379,7 @@ const Dashboard = ({ isOpen, onClose }) => {
                           <h3 className="text-lg font-semibold mb-4 text-neutral-900 dark:text-white flex items-center gap-2">
                             <span className="text-lg">📅</span>
                             {t('dashboard.ui_freshness_panel.title') || t('dashboard.checks.names.ui_freshness') || 'Frescura UI'}
-                            <span className="text-xs text-neutral-400 cursor-help" title={t('dashboard.tooltips.ui_freshness') || 'Verifica valor de hoy o gaps antiguos; fechas futuras permitidas.'}>ℹ️</span>
+                            <span className="text-xs text-neutral-400 dark:text-neutral-500 cursor-help" title={t('dashboard.tooltips.ui_freshness') || 'Verifica valor de hoy o gaps antiguos; fechas futuras permitidas.'}>ℹ️</span>
                           </h3>
                           <div className="overflow-x-auto">
                             <table className="w-full text-left text-sm">
@@ -425,7 +425,7 @@ const Dashboard = ({ isOpen, onClose }) => {
                     <div>
                       <h3 className="text-lg font-semibold mb-4 text-neutral-900 dark:text-white flex items-center gap-2">
                         <span>{t('dashboard.checks.details_title') || 'Detalles de Verificaciones'}</span>
-                        <span className="text-xs text-neutral-400 cursor-help" title={t('dashboard.tooltips.checks_section') || 'Listado detallado de verificaciones individuales'}>ℹ️</span>
+                        <span className="text-xs text-neutral-400 dark:text-neutral-500 cursor-help" title={t('dashboard.tooltips.checks_section') || 'Listado detallado de verificaciones individuales'}>ℹ️</span>
                       </h3>
                       <div className="grid gap-4">
                         {healthData.checks
@@ -454,7 +454,7 @@ const Dashboard = ({ isOpen, onClose }) => {
                                     checkData.name.replace(/_/g, ' ')
                                   )}
                                   <span
-                                    className="text-[10px] text-neutral-400 cursor-help"
+                                    className="text-[10px] text-neutral-400 dark:text-neutral-500 cursor-help"
                                     title={
                                       (checkData.name === 'database' && (t('dashboard.tooltips.database_check') || 'Conexión y conteos de registros')) ||
                                       (checkData.name === 'brou_api' && (t('dashboard.tooltips.brou_api_check') || 'Disponibilidad de API BROU')) ||
@@ -590,7 +590,7 @@ const Dashboard = ({ isOpen, onClose }) => {
                         <h3 className="text-lg font-semibold mb-4 text-neutral-900 dark:text-white flex items-center gap-2">
                           <span className="text-lg">🖥️</span>
                           {t('dashboard.system_info.title') || 'Información del Sistema'}
-                          <span className="text-xs text-neutral-400 cursor-help" title={t('dashboard.tooltips.system_resources_check') || 'Uso de recursos del servidor'}>ℹ️</span>
+                          <span className="text-xs text-neutral-400 dark:text-neutral-500 cursor-help" title={t('dashboard.tooltips.system_resources_check') || 'Uso de recursos del servidor'}>ℹ️</span>
                         </h3>
 
                         {healthData.system_info.error ? (
@@ -669,7 +669,7 @@ const Dashboard = ({ isOpen, onClose }) => {
                         <h3 className="text-lg font-semibold mb-4 text-neutral-900 dark:text-white flex items-center gap-2">
                           <span className="text-lg">⚡</span>
                           {t('dashboard.performance_metrics.title') || 'Métricas de Rendimiento'}
-                          <span className="text-xs text-neutral-400 cursor-help" title={t('dashboard.tooltips.performance_metrics') || 'Métricas agregadas de rendimiento'}>ℹ️</span>
+                          <span className="text-xs text-neutral-400 dark:text-neutral-500 cursor-help" title={t('dashboard.tooltips.performance_metrics') || 'Métricas agregadas de rendimiento'}>ℹ️</span>
                         </h3>
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                           <div className="text-center p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg border border-indigo-200 dark:border-indigo-800">
@@ -756,7 +756,7 @@ const Dashboard = ({ isOpen, onClose }) => {
                     <h3 className="text-lg font-semibold mb-4 text-neutral-900 dark:text-white flex items-center gap-2">
                       <span className="text-lg">📊</span>
                       {t('dashboard.performance_budgets.title') || 'Presupuestos de Rendimiento'}
-                      <span className="text-xs text-neutral-400 cursor-help" title={t('dashboard.tooltips.performance_budgets') || 'Objetivos y umbrales de salud para métricas clave'}>ℹ️</span>
+                      <span className="text-xs text-neutral-400 dark:text-neutral-500 cursor-help" title={t('dashboard.tooltips.performance_budgets') || 'Objetivos y umbrales de salud para métricas clave'}>ℹ️</span>
                     </h3>
                   
                   {performanceData?.budgets && performanceData.budgets.length > 0 ? (
@@ -829,7 +829,7 @@ const Dashboard = ({ isOpen, onClose }) => {
                     <h3 className="text-lg font-semibold mb-4 text-neutral-900 dark:text-white flex items-center gap-2">
                       <span className="text-lg">🚀</span>
                       {t('dashboard.throughput_metrics.title') || 'Métricas de Throughput'}
-                      <span className="text-xs text-neutral-400 cursor-help" title={t('dashboard.tooltips.throughput_metrics') || 'Rendimiento reciente de solicitudes'}>ℹ️</span>
+                      <span className="text-xs text-neutral-400 dark:text-neutral-500 cursor-help" title={t('dashboard.tooltips.throughput_metrics') || 'Rendimiento reciente de solicitudes'}>ℹ️</span>
                     </h3>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                       <div className="text-center p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
@@ -880,7 +880,7 @@ const Dashboard = ({ isOpen, onClose }) => {
                     <h3 className="text-lg font-semibold mb-4 text-neutral-900 dark:text-white flex items-center gap-2">
                       <span className="text-lg">📋</span>
                       {t('dashboard.status_summary.title') || 'Resumen de Estado'}
-                      <span className="text-xs text-neutral-400 cursor-help" title={t('dashboard.tooltips.status_summary') || 'Conteo de presupuestos por estado'}>ℹ️</span>
+                      <span className="text-xs text-neutral-400 dark:text-neutral-500 cursor-help" title={t('dashboard.tooltips.status_summary') || 'Conteo de presupuestos por estado'}>ℹ️</span>
                     </h3>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                       <div className="text-center p-4 bg-neutral-50 dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700">
@@ -952,3 +952,4 @@ const Dashboard = ({ isOpen, onClose }) => {
 };
 
 export default Dashboard;
+

@@ -200,7 +200,7 @@ const BROUPanel = () => {
         <h2 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100 flex items-center">
           <OpenMojiIcon name="bank" size={32} className="mr-3" />
           {t('brou.title') || 'BROU'}
-          <span className="ml-2 text-sm font-normal text-neutral-500">
+          <span className="ml-2 text-sm font-normal text-neutral-500 dark:text-neutral-400">
             {t('brou.bank_name') || 'Banco República'}
           </span>
           <StatusBadge metadata={metadata} />
@@ -341,8 +341,8 @@ const BROUPanel = () => {
       </div>
 
       {/* Footer */}
-      <div className="mt-4 pt-3 border-t border-neutral-200">
-        <div className="flex items-center justify-between text-xs text-neutral-500">
+      <div className="mt-4 pt-3 border-t border-neutral-200 dark:border-neutral-700">
+        <div className="flex items-center justify-between text-xs text-neutral-500 dark:text-neutral-400">
           <span>{t('brou.source_footer') || t('brou.source') || 'Fuente: BROU • Actualización cada hora'}</span>
           <span>{t('brou.arbitrage_footer') || 'Arbitrajes calculados vs USD'}</span>
         </div>
