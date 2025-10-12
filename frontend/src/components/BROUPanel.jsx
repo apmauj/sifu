@@ -89,7 +89,7 @@ const BROUPanel = () => {
     const baseLight = "border-b border-gray-100 hover:bg-gray-50 transition-colors";
     const baseDark = "dark:border-gray-700 dark:hover:bg-gray-700/30";
     if (currency === 'USD_EBROU') {
-      return `${baseLight} ${baseDark} bg-blue-50 dark:bg-blue-900/20 border-blue-100 dark:border-blue-800`;
+      return `${baseLight} ${baseDark} bg-primary-50 dark:bg-primary-950/30 border-primary-100 dark:border-primary-800`;
     }
     return `${baseLight} ${baseDark}`;
   };

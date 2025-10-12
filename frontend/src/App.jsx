@@ -44,18 +44,23 @@ class ErrorBoundary extends React.Component {
   render() {
     if (this.state.hasError) {
       return (
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
           <div className="max-w-md mx-auto text-center">
-            <div className="bg-red-50 border border-red-200 rounded-lg p-6">
-              <h2 className="text-lg font-medium text-red-800 mb-2">
+            <div className="bg-error-50 dark:bg-error-950/30 
+                            border border-error-200 dark:border-error-800 
+                            rounded-lg p-6">
+              <h2 className="text-lg font-medium text-error-800 dark:text-error-200 mb-2">
                 ⚠️ Error en la aplicación
               </h2>
-              <p className="text-sm text-red-600 mb-4">
+              <p className="text-sm text-error-600 dark:text-error-400 mb-4">
                 Ha ocurrido un error inesperado. Por favor, recarga la página.
               </p>
               <button
                 onClick={() => window.location.reload()}
-                className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700"
+                className="bg-error-600 hover:bg-error-700 active:bg-error-800 
+                           dark:bg-error-600 dark:hover:bg-error-700
+                           text-white px-4 py-2 rounded-lg 
+                           transition-colors duration-200"
               >
                 Recargar página
               </button>
@@ -374,10 +379,14 @@ function App() {
   // Show loading while translations are loading
   if (i18nLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-uruguay-blue mx-auto mb-4"></div>
-                          <p className="text-gray-600">{safeT('common.loading', 'Cargando...')}</p>
+          <div className="animate-spin rounded-full h-12 w-12 
+                          border-b-2 border-primary-600 dark:border-primary-400 
+                          mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-400">
+            {safeT('common.loading', 'Cargando...')}
+          </p>
         </div>
       </div>
     );
@@ -385,7 +394,7 @@ function App() {
 
   return (
     <ErrorBoundary>
-  <div className="min-h-screen bg-gray-50 dark:bg-gray-950" data-testid="app-component">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900" data-testid="app-component">
         <Header 
           onRefresh={handleRefresh} 
           isRefreshing={isRefreshing}
@@ -426,18 +435,24 @@ function App() {
           {/* Contenido de Exchange Rates */}
           {activeTab === 'exchange' && (
             <>
-                        {/* Panel azul de estado de datos históricos de cotizaciones (INE) */}
-                        <ExchangeDataStatusPanel refreshKey={exchangeRefreshKey} />
+              {/* Panel azul de estado de datos históricos de cotizaciones (INE) */}
+              <ExchangeDataStatusPanel refreshKey={exchangeRefreshKey} />
               {exchangeError && (
-                <Card className="mb-6 border-red-200/70 bg-red-50">
+                <Card className="mb-6 
+                                 border-error-200/70 dark:border-error-800/50 
+                                 bg-error-50 dark:bg-error-950/30">
                   <CardBody>
                     <div className="flex">
                       <div className="flex-shrink-0">
-                        <span className="text-red-400">⚠️</span>
+                        <span className="text-error-400 dark:text-error-500">⚠️</span>
                       </div>
                       <div className="ml-3">
-                        <h3 className="text-sm font-medium text-red-800">Error Cotizaciones</h3>
-                        <p className="text-sm text-red-700">{exchangeError}</p>
+                        <h3 className="text-sm font-medium text-error-800 dark:text-error-200">
+                          Error Cotizaciones
+                        </h3>
+                        <p className="text-sm text-error-700 dark:text-error-300">
+                          {exchangeError}
+                        </p>
                       </div>
                     </div>
                   </CardBody>
