@@ -146,9 +146,29 @@ export const I18nProvider = ({ children, forceEmbedded = false }) => {
 
   // Translation function
   const t = useCallback((key, params = {}) => {
-    // If translations are still loading, return the fallback immediately
+    // If translations are still loading, try embedded first
     if (isLoading || !translations || Object.keys(translations).length === 0) {
-      return key;
+      // Try to get from embedded locales
+      const embedded = embeddedRef.current[currentLanguage] || embeddedRef.current[FALLBACK_LANGUAGE] || {};
+      const keys = key.split('.');
+      let value = embedded;
+      
+      for (const k of keys) {
+        if (value && typeof value === 'object' && k in value) {
+          value = value[k];
+        } else {
+          return key; // Fallback to key if not found in embedded
+        }
+      }
+      
+      // Apply parameter interpolation even during loading
+      if (typeof value === 'string' && Object.keys(params).length > 0) {
+        return value.replace(/\{(\w+)\}/g, (match, param) => {
+          return params[param] !== undefined ? params[param] : match;
+        });
+      }
+      
+      return value;
     }
     
     const keys = key.split('.');

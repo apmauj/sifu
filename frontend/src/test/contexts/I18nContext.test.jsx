@@ -432,7 +432,8 @@ describe('I18nContext', () => {
 
       // Check loading state
       expect(screen.getByTestId('loading-state')).toHaveTextContent('true');
-      expect(screen.getByTestId('loading-translation')).toHaveTextContent('ui.search_title');
+      // During loading, t() now returns translations from embedded locales
+      expect(screen.getByTestId('loading-translation')).toHaveTextContent('Consultar Valor de UI');
 
       // Wait for loading to complete
       await waitFor(() => {
