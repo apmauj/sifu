@@ -1,5 +1,8 @@
 import React from 'react';
 import exchangeService from '../services/exchangeService';
+import Spinner from './ui/Spinner';
+import Alert from './ui/Alert';
+import { getSemanticClass } from '../theme/colors';
 import { useI18n } from '../contexts/I18nContext';
 
 /**
@@ -42,16 +45,25 @@ const ExchangeDataStatusPanel = ({ refreshKey, showSource = false }) => {
   const lastDate = maxDate;
 
   return (
-    <div className="mb-6 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-xl p-4">
+    <div className={`mb-6 border rounded-xl p-4 ${getSemanticClass('info', 'bg', 50)} dark:${getSemanticClass('info', 'bg', 950)} ${getSemanticClass('info', 'border', 200)} dark:${getSemanticClass('info', 'border', 800)}`}>
       {loading ? (
-        <span className="text-blue-700 text-sm">{t('common.loading') || 'Cargando información...'}</span>
+        <div className="flex items-center gap-2">
+          <Spinner size="sm" variant="primary" />
+          <span className={`text-sm ${getSemanticClass('info', 'text', 700)}`}>
+            {t('common.loading') || 'Cargando información...'}
+          </span>
+        </div>
       ) : error ? (
-        <span className="text-red-600 text-sm">{error}</span>
+        <Alert variant="error">
+          {error}
+        </Alert>
       ) : (
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-sm font-medium text-blue-900 dark:text-blue-100">📊 {t('exchange.data_status_title') || 'Estado de los datos de Cotizaciones'}</h2>
-            <p className="text-sm text-blue-800 dark:text-blue-100/90">
+            <h2 className={`text-sm font-medium ${getSemanticClass('info', 'text', 900)} dark:${getSemanticClass('info', 'text', 100)}`}>
+              📊 {t('exchange.data_status_title') || 'Estado de los datos de Cotizaciones'}
+            </h2>
+            <p className={`text-sm ${getSemanticClass('info', 'text', 800)} dark:${getSemanticClass('info', 'text', 100)}/90`}>
               {totalRecords.toLocaleString ? totalRecords.toLocaleString() : totalRecords} {t('common.records') || 'registros'} {t('exchange.available') || 'disponibles'}
               {minDate !== '—' && maxDate !== '—' && (
                 <span> • {t('common.period') || 'Período'}: {minDate} a {maxDate}</span>
@@ -62,10 +74,14 @@ const ExchangeDataStatusPanel = ({ refreshKey, showSource = false }) => {
             </p>
           </div>
           <div className="text-right">
-            <div className="text-sm text-blue-700 dark:text-blue-100">{t('exchange.latest_day') || 'Último día disponible'}:</div>
-            <div className="text-lg font-semibold text-blue-900 dark:text-white">{lastDate}</div>
+            <div className={`text-sm ${getSemanticClass('info', 'text', 700)} dark:${getSemanticClass('info', 'text', 100)}`}>
+              {t('exchange.latest_day') || 'Último día disponible'}:
+            </div>
+            <div className={`text-lg font-semibold ${getSemanticClass('info', 'text', 900)} dark:text-white`}>
+              {lastDate}
+            </div>
             {showSource && (
-              <div className="text-xs text-blue-700 dark:text-blue-200 mt-1">
+              <div className={`text-xs ${getSemanticClass('info', 'text', 700)} dark:${getSemanticClass('info', 'text', 200)} mt-1`}>
                 {t('exchange.source_note') || t('exchange.source_note_fallback') || 'Fuente: INE (histórico, último día hábil publicado)'}
               </div>
             )}

@@ -3,7 +3,9 @@ import { useForm, Controller } from 'react-hook-form';
 import { MagnifyingGlassIcon, CalendarIcon } from '../icons';
 import urService from '../services/urService';
 import QuickSelectors from './QuickSelectors';
+import Button from './ui/Button';
 import { useI18n } from '../contexts/I18nContext';
+import { getSemanticClass } from '../theme/colors';
 
 const URSearchForm = ({ onSearch, isLoading }) => {
   const { t } = useI18n();
@@ -260,7 +262,7 @@ const URSearchForm = ({ onSearch, isLoading }) => {
                 )}
               />
               {errors.year && (
-                <p className="mt-1 text-sm text-red-600">{errors.year.message}</p>
+                <p className={`mt-1 text-sm ${getSemanticClass('error', 'text', 600)}`}>{errors.year.message}</p>
               )}
             </div>
 
@@ -296,7 +298,7 @@ const URSearchForm = ({ onSearch, isLoading }) => {
                   )}
                 />
                 {errors.month && (
-                  <p className="mt-1 text-sm text-red-600">{errors.month.message}</p>
+                  <p className={`mt-1 text-sm ${getSemanticClass('error', 'text', 600)}`}>{errors.month.message}</p>
                 )}
               </div>
             )}
@@ -359,7 +361,7 @@ const URSearchForm = ({ onSearch, isLoading }) => {
                     )}
                   />
                   {errors.startYear && (
-                    <p className="mt-1 text-sm text-red-600">{errors.startYear.message}</p>
+                    <p className={`mt-1 text-sm ${getSemanticClass('error', 'text', 600)}`}>{errors.startYear.message}</p>
                   )}
                 </div>
 
@@ -411,7 +413,7 @@ const URSearchForm = ({ onSearch, isLoading }) => {
                     )}
                   />
                   {errors.startMonth && (
-                    <p className="mt-1 text-sm text-red-600">{errors.startMonth.message}</p>
+                    <p className={`mt-1 text-sm ${getSemanticClass('error', 'text', 600)}`}>{errors.startMonth.message}</p>
                   )}
                 </div>
               </div>
@@ -473,7 +475,7 @@ const URSearchForm = ({ onSearch, isLoading }) => {
                     )}
                   />
                   {errors.endYear && (
-                    <p className="mt-1 text-sm text-red-600">{errors.endYear.message}</p>
+                    <p className={`mt-1 text-sm ${getSemanticClass('error', 'text', 600)}`}>{errors.endYear.message}</p>
                   )}
                 </div>
 
@@ -525,7 +527,7 @@ const URSearchForm = ({ onSearch, isLoading }) => {
                     )}
                   />
                   {errors.endMonth && (
-                    <p className="mt-1 text-sm text-red-600">{errors.endMonth.message}</p>
+                    <p className={`mt-1 text-sm ${getSemanticClass('error', 'text', 600)}`}>{errors.endMonth.message}</p>
                   )}
                 </div>
               </div>
