@@ -155,7 +155,7 @@ describe('MonitoringAccess', () => {
 
       await waitFor(() => {
         expect(global.fetch).toHaveBeenCalledWith(
-          expect.stringContaining('/api/monitoring/verify?code=123456'),
+          expect.stringContaining('/monitoring/verify?code=123456'),
           expect.objectContaining({
             method: 'POST'
           })
@@ -184,7 +184,7 @@ describe('MonitoringAccess', () => {
 
       await waitFor(() => {
         expect(global.fetch).toHaveBeenCalledWith(
-          expect.stringContaining('/api/monitoring/verify?code=123456'),
+          expect.stringContaining('/monitoring/verify?code=123456'),
           expect.objectContaining({
             method: 'POST'
           })
