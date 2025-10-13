@@ -121,7 +121,7 @@ const ResultsDisplay = ({ results, searchType }) => {
             {t('ui.ui_value') || 'Valor de la UI'}
           </h3>
           
-          <div className="bg-neutral-50 dark:bg-neutral-700/60 rounded-lg p-6 mb-4">
+          <div className="bg-neutral-50 dark:bg-neutral-800 rounded-lg p-6 mb-4 border border-neutral-200 dark:border-neutral-700">
             <div className="text-3xl font-bold text-uruguay-blue dark:text-blue-300 mb-2">
               {formatCurrency(data.value || data.valor)}
             </div>
@@ -164,7 +164,7 @@ const ResultsDisplay = ({ results, searchType }) => {
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-neutral-50 dark:bg-neutral-700/60 rounded-lg p-4">
+            <div className="bg-neutral-50 dark:bg-neutral-800 rounded-lg p-4 border border-neutral-200 dark:border-neutral-700">
               <div className="text-sm text-neutral-600 dark:text-neutral-300 mb-1">{t('ui.initial_value') || 'Valor inicial'}</div>
               <div className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
                 {formatCurrency(oldest.value || oldest.valor)}
@@ -174,7 +174,7 @@ const ResultsDisplay = ({ results, searchType }) => {
               </div>
             </div>
             
-            <div className="bg-neutral-50 dark:bg-neutral-700/60 rounded-lg p-4">
+            <div className="bg-neutral-50 dark:bg-neutral-800 rounded-lg p-4 border border-neutral-200 dark:border-neutral-700">
               <div className="text-sm text-neutral-600 dark:text-neutral-300 mb-1">{t('ui.final_value') || 'Valor final'}</div>
               <div className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
                 {formatCurrency(latest.value || latest.valor)}
@@ -185,7 +185,7 @@ const ResultsDisplay = ({ results, searchType }) => {
             </div>
             
             {variation && (
-              <div className="bg-neutral-50 dark:bg-neutral-700/60 rounded-lg p-4">
+              <div className="bg-neutral-50 dark:bg-neutral-800 rounded-lg p-4 border border-neutral-200 dark:border-neutral-700">
                 <div className="text-sm text-neutral-600 dark:text-neutral-300 mb-1">{t('common.variation') || 'Variación'}</div>
                 <div className={`text-lg font-semibold flex items-center ${
                   variation.trend === 'up' ? 'text-green-600' : 
@@ -212,7 +212,13 @@ const ResultsDisplay = ({ results, searchType }) => {
               <_CartesianGrid strokeDasharray="3 3" stroke="#374151" />
               <_XAxis dataKey="fecha" tick={{ fontSize: 12, fill: '#d1d5db' }} />
               <_YAxis tick={{ fontSize: 12, fill: '#d1d5db' }} domain={['auto', 'auto']} />
-              <_Tooltip formatter={formatCurrency} labelFormatter={v => `${t('common.date') || 'Fecha'}: ${v}`} />
+              <_Tooltip 
+                formatter={formatCurrency} 
+                labelFormatter={v => `${t('common.date') || 'Fecha'}: ${v}`}
+                contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151', borderRadius: '0.5rem' }}
+                labelStyle={{ color: '#d1d5db' }}
+                itemStyle={{ color: '#d1d5db' }}
+              />
               <_Legend />
               <_Line type="monotone" dataKey="valor" name={t('ui.ui_value') || 'Valor UI'} stroke="#2563eb" strokeWidth={2} dot={false} />
             </_LineChart>
@@ -227,7 +233,13 @@ const ResultsDisplay = ({ results, searchType }) => {
               <_CartesianGrid strokeDasharray="3 3" stroke="#374151" />
               <_XAxis dataKey="fecha" tick={{ fontSize: 12, fill: '#d1d5db' }} />
               <_YAxis tick={{ fontSize: 12, fill: '#d1d5db' }} domain={['auto', 'auto']} unit="%" />
-              <_Tooltip formatter={v => `${v}%`} labelFormatter={v => `${t('common.date') || 'Fecha'}: ${v}`} />
+              <_Tooltip 
+                formatter={v => `${v}%`} 
+                labelFormatter={v => `${t('common.date') || 'Fecha'}: ${v}`}
+                contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151', borderRadius: '0.5rem' }}
+                labelStyle={{ color: '#d1d5db' }}
+                itemStyle={{ color: '#d1d5db' }}
+              />
               <_Legend />
               <_Line type="monotone" dataKey="variacion" name={t('ui.variation_percentage') || 'Variación %'} stroke="#f59e42" strokeWidth={2} dot={false} />
             </_LineChart>

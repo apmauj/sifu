@@ -172,13 +172,16 @@ const URPanel = ({ refreshKey }) => {
           </div>
         )}
       </div>
-      {/* Formulario de búsqueda y resultados */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      {/* Formulario de búsqueda y resultados - Layout de una columna */}
+      <div className="space-y-6">
+        {/* Panel de búsqueda - ancho completo */}
         <Card>
           <CardBody>
             <URSearchForm onSearch={handleSearch} isLoading={searchLoading} />
           </CardBody>
         </Card>
+        
+        {/* Panel de resultados - ancho completo */}
         <Card>
           <CardBody>
             <URResultsDisplay results={results} searchType={searchType} isLoading={searchLoading} pendingCurrentMonth={urInfo?.pending_current_month} pendingMessage={urInfo?.pending_message} />

@@ -7,7 +7,7 @@ import Card, { CardBody } from './ui/Card';
 import { CURRENCY, CURRENCY_LOCALE } from '../constants';
 import Spinner from './ui/Spinner';
 import Alert from './ui/Alert';
-import { getSemanticClass } from '../theme/colors';
+import { getSemanticClass, getSemanticClassWithDark } from '../theme/colors';
 
 const UIPanel = ({ refreshKey }) => {
   const { t, currentLanguage } = useI18n();
@@ -120,7 +120,7 @@ const UIPanel = ({ refreshKey }) => {
   return (
     <div>
       {/* Panel de estado de datos UI */}
-      <div className={`mb-6 border rounded-xl p-4 ${getSemanticClass('info', 'bg', 50)} dark:${getSemanticClass('info', 'bg', 950)} ${getSemanticClass('info', 'border', 200)} dark:${getSemanticClass('info', 'border', 800)}`}>
+      <div className={`mb-6 border rounded-xl p-4 ${getSemanticClassWithDark('info', 'bg', 50, 950)} ${getSemanticClassWithDark('info', 'border', 200, 800)}`}>
         {uiInfoLoading ? (
           <div className="flex items-center gap-2">
             <Spinner size="sm" variant="primary" />
@@ -135,10 +135,10 @@ const UIPanel = ({ refreshKey }) => {
         ) : (
           <div className="flex items-center justify-between">
             <div>
-              <h2 className={`text-sm font-medium ${getSemanticClass('info', 'text', 900)} dark:${getSemanticClass('info', 'text', 100)}`}>
+              <h2 className={`text-sm font-medium ${getSemanticClassWithDark('info', 'text', 900, 100)}`}>
                 📊 {t('ui.data_status') || 'Estado de los datos UI'}
               </h2>
-              <p className={`text-sm ${getSemanticClass('info', 'text', 800)} dark:${getSemanticClass('info', 'text', 100)}/90`}>
+              <p className={`text-sm ${getSemanticClassWithDark('info', 'text', 800, 300)}`}>
                 {uiInfo && uiInfo.total_records ? uiInfo.total_records.toLocaleString() : 'N/D'} {t('common.records') || 'registros'} {t('ui.available') || 'disponibles'}
                 {uiInfo && uiInfo.date_range && (
                   <span> • {t('common.period') || 'Período'}: {uiInfo.date_range.min_date} a {uiInfo.date_range.max_date}</span>
@@ -147,10 +147,10 @@ const UIPanel = ({ refreshKey }) => {
             </div>
             {uiInfo && uiInfo.latest_ui && (
               <div className="text-right">
-                <div className={`text-sm ${getSemanticClass('info', 'text', 700)} dark:${getSemanticClass('info', 'text', 100)}`}>
+                <div className={`text-sm ${getSemanticClassWithDark('info', 'text', 700, 300)}`}>
                   {t('ui.latest_value') || 'Último valor disponible'}:
                 </div>
-                <div className={`text-lg font-semibold ${getSemanticClass('info', 'text', 900)} dark:text-white`}>
+                <div className={`text-lg font-semibold ${getSemanticClassWithDark('info', 'text', 900, 100)}`}>
                   {formatUIValue(uiInfo.latest_ui.value)} • {uiInfo.latest_ui.date}
                 </div>
               </div>
@@ -158,13 +158,16 @@ const UIPanel = ({ refreshKey }) => {
           </div>
         )}
       </div>
-      {/* Formulario de búsqueda y resultados */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      {/* Formulario de búsqueda y resultados - Layout de una columna */}
+      <div className="space-y-6">
+        {/* Panel de búsqueda - ancho completo */}
         <Card>
           <CardBody>
             <SearchForm onSearch={handleSearch} isLoading={searchLoading} />
           </CardBody>
         </Card>
+        
+        {/* Panel de resultados - ancho completo */}
         <Card>
           <CardBody>
             <ResultsDisplay results={results} searchType={searchType} isLoading={searchLoading} />

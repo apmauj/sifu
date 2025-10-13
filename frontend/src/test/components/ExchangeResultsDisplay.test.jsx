@@ -228,17 +228,19 @@ describe('ExchangeResultsDisplay Component', () => {
     });
 
     it('should display chart for range search type', () => {
-  render(<ExchangeResultsDisplay results={multipleCurrenciesResult} searchType="range" />);
-  // Charts should be rendered for each currency
+      render(<ExchangeResultsDisplay results={multipleCurrenciesResult} searchType="range" />);
+      // With multiple currencies, should render ONE unified chart (not one per currency)
       
-      expect(screen.getAllByTestId('line-chart')).toHaveLength(4); // One chart per currency
-      expect(screen.getAllByTestId('responsive-container')).toHaveLength(4);
+      expect(screen.getAllByTestId('line-chart')).toHaveLength(1); // Unified chart for all currencies
+      expect(screen.getAllByTestId('responsive-container')).toHaveLength(1);
+      expect(screen.getByText(/Comparación de Cotizaciones/i)).toBeInTheDocument();
     });
 
     it('should display chart for history search type', () => {
       render(<ExchangeResultsDisplay results={multipleCurrenciesResult} searchType="history" />);
       
-      expect(screen.getAllByTestId('line-chart')).toHaveLength(4); // One chart per currency
+      expect(screen.getAllByTestId('line-chart')).toHaveLength(1); // Unified chart for all currencies
+      expect(screen.getByText(/Comparación de Cotizaciones/i)).toBeInTheDocument();
     });
 
     it('should not display chart for latest search type', () => {
@@ -344,8 +346,9 @@ describe('ExchangeResultsDisplay Component', () => {
       
       render(<ExchangeResultsDisplay results={multiCurrencyData} searchType="range" />);
       
-  expect(screen.getByText(/USD - Evolución de Cotizaciones/)).toBeInTheDocument();
-  expect(screen.getByText(/EUR - Evolución de Cotizaciones/)).toBeInTheDocument();
+      // With multiple currencies, shows unified chart title (not separate per currency)
+      expect(screen.getByText(/Comparación de Cotizaciones/i)).toBeInTheDocument();
+      expect(screen.getAllByTestId('line-chart')).toHaveLength(1);
     });
 
     it('should display chart legend for single currency', () => {
@@ -662,9 +665,11 @@ describe('ExchangeResultsDisplay Component', () => {
         />
       );
 
-      // Should show charts for range search with multiple currencies
-      expect(screen.getByText(/USD.*Evolución de Cotizaciones/)).toBeInTheDocument();
-      expect(screen.getByText(/EUR.*Evolución de Cotizaciones/)).toBeInTheDocument();
+      // Should show unified chart title for multiple currencies (not separate titles per currency)
+      expect(screen.getByText(/Comparación de Cotizaciones/i)).toBeInTheDocument();
+      // Should render a single chart (not one per currency)
+      const charts = screen.getAllByTestId('line-chart');
+      expect(charts).toHaveLength(1);
     });
 
     it('should handle single currency with same date grouping', () => {

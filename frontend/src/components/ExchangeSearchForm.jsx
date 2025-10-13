@@ -1,13 +1,24 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useI18n } from '../contexts/I18nContext';
 import { ExclamationTriangleIcon } from '../icons';
 import { OpenMojiIcon } from '../icons/openmoji/index.jsx';
 import { Flag } from '../icons/flags';
 import { getTodayLocal, getDaysAgoLocal } from '../utils/dateUtils';
+import Button from './ui/Button';
+
+// Rate limiting: máximo 10 requests por minuto
+const MAX_REQUESTS_PER_MINUTE = 10;
+const RATE_LIMIT_WINDOW = 60000; // 1 minuto en ms
+const DEBOUNCE_DELAY = 500; // 500ms de debounce
+
 // Removed decorative icons to simplify UI per request
 
 const ExchangeSearchForm = ({ onSearch, isLoading }) => {
   const { t } = useI18n();
+  
+  // Rate limiting state
+  const requestTimestamps = useRef([]);
+  const debounceTimer = useRef(null);
   
   // Estados del formulario
   const [searchType, setSearchType] = useState('latest');
@@ -15,7 +26,7 @@ const ExchangeSearchForm = ({ onSearch, isLoading }) => {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [historyLimit, setHistoryLimit] = useState(10);
-  const [selectedCurrency, setSelectedCurrency] = useState('ALL'); // 'ALL' o código singular
+  const [selectedCurrencies, setSelectedCurrencies] = useState(['USD', 'EUR', 'ARS', 'BRL']); // Array para selección múltiple
   const [error, setError] = useState('');
   const [latestDataDate, setLatestDataDate] = useState(null); // fecha retornada por 'latest'
   const [latestHintNeeded, setLatestHintNeeded] = useState(false);
@@ -59,7 +70,15 @@ const ExchangeSearchForm = ({ onSearch, isLoading }) => {
   const handleSubmit = (e) => {
     e.preventDefault();
     setError('');
-    const finalCurrency = selectedCurrency === 'ALL' ? null : selectedCurrency;
+    
+    if (!canMakeRequest()) return;
+    
+    // Para el backend: si están todas seleccionadas = null, si no = array o string único
+    const finalCurrency = selectedCurrencies.length === 4 
+      ? null // Todas las monedas
+      : selectedCurrencies.length === 1 
+        ? selectedCurrencies[0] // Una sola moneda (string)
+        : selectedCurrencies; // Múltiples monedas (array - se convierte a CSV en el servicio)
 
     const searchParams = {
       type: searchType,
@@ -68,9 +87,10 @@ const ExchangeSearchForm = ({ onSearch, isLoading }) => {
 
     switch (searchType) {
       case 'latest':
-        // No additional params needed
+        // Latest soporta múltiples monedas
         break;
       case 'date': {
+        // Por fecha: ahora soporta múltiples monedas
         const date = dateRef.current?.value;
         if (!date) {
           setError(t('ui.date_required') || 'La fecha es requerida');
@@ -83,6 +103,7 @@ const ExchangeSearchForm = ({ onSearch, isLoading }) => {
         break;
       }
       case 'range': {
+        // Por rango: ahora soporta múltiples monedas
         const start = startDateRef.current?.value;
         const end = endDateRef.current?.value;
         if (!start || !end) {
@@ -97,8 +118,9 @@ const ExchangeSearchForm = ({ onSearch, isLoading }) => {
         break;
       }
       case 'history': {
-        if (!finalCurrency) {
-          setError(t('exchange.select_currency_for_history') || 'Selecciona una moneda para ver el historial');
+        // Historial: solo soporta UNA moneda específica
+        if (selectedCurrencies.length !== 1) {
+          setError(t('exchange.select_single_currency_for_history') || 'Selecciona solo una moneda para ver el historial');
           return;
         }
         searchParams.limit = historyLimit;
@@ -118,12 +140,18 @@ const ExchangeSearchForm = ({ onSearch, isLoading }) => {
   };
 
   const handleQuickAction = (action) => {
-    const finalCurrency = selectedCurrency === 'ALL' ? null : selectedCurrency;
+    if (!canMakeRequest()) return;
+    
+    const finalCurrency = selectedCurrencies.length === 4 
+      ? null 
+      : selectedCurrencies.length === 1 
+        ? selectedCurrencies[0] 
+        : selectedCurrencies;
 
     switch (action) {
       case 'latest': {
         setSearchType('latest');
-        // Ejecuta búsqueda 'latest'; se espera que el contenedor procese y devuelva datos.
+        // Latest soporta múltiples monedas
         onSearch({ type: 'latest', currency: finalCurrency })
           ?.then((resp) => {
             const today = getTodayLocal();
@@ -137,6 +165,7 @@ const ExchangeSearchForm = ({ onSearch, isLoading }) => {
         break;
       }
       case 'week': {
+        // Por rango: ahora soporta múltiples monedas
         const weekAgo = getDaysAgoLocal(7);
         const todayWeek = getTodayLocal();
         setSearchType('range');
@@ -151,6 +180,7 @@ const ExchangeSearchForm = ({ onSearch, isLoading }) => {
         break;
       }
       case 'month': {
+        // Por rango: ahora soporta múltiples monedas
         const monthAgo = getDaysAgoLocal(30);
         const todayMonth = getTodayLocal();
         setSearchType('range');
@@ -164,6 +194,56 @@ const ExchangeSearchForm = ({ onSearch, isLoading }) => {
     }
   };
 
+  // Rate limiting check
+  const canMakeRequest = useCallback(() => {
+    const now = Date.now();
+    // Filtrar timestamps dentro de la ventana de tiempo
+    requestTimestamps.current = requestTimestamps.current.filter(
+      timestamp => now - timestamp < RATE_LIMIT_WINDOW
+    );
+    
+    if (requestTimestamps.current.length >= MAX_REQUESTS_PER_MINUTE) {
+      setError(`⏱️ Demasiadas búsquedas. Por favor espera un momento (máximo ${MAX_REQUESTS_PER_MINUTE} búsquedas por minuto).`);
+      return false;
+    }
+    
+    requestTimestamps.current.push(now);
+    return true;
+  }, []);
+
+  // Auto-search con debounce cuando cambian las monedas
+  const triggerAutoSearch = useCallback(() => {
+    // Limpiar timer anterior
+    if (debounceTimer.current) {
+      clearTimeout(debounceTimer.current);
+    }
+    
+    // Crear nuevo timer con debounce
+    debounceTimer.current = setTimeout(() => {
+      if (!canMakeRequest()) return;
+      
+      const finalCurrency = selectedCurrencies.length === 4 
+        ? null 
+        : selectedCurrencies.length === 1 
+          ? selectedCurrencies[0] 
+          : selectedCurrencies;
+      
+      // Buscar con el tipo actual
+      if (searchType === 'latest') {
+        onSearch?.({ type: 'latest', currency: finalCurrency });
+      }
+    }, DEBOUNCE_DELAY);
+  }, [selectedCurrencies, searchType, canMakeRequest, onSearch]);
+
+  // Cleanup del debounce timer
+  useEffect(() => {
+    return () => {
+      if (debounceTimer.current) {
+        clearTimeout(debounceTimer.current);
+      }
+    };
+  }, []);
+
   const performLatestForCurrency = (currencyCodeOrAll) => {
     const finalCurrency = currencyCodeOrAll === 'ALL' ? null : currencyCodeOrAll;
     // For UX we reset to latest each time a moneda se selecciona automáticamente
@@ -172,16 +252,34 @@ const ExchangeSearchForm = ({ onSearch, isLoading }) => {
   };
 
   const toggleCurrency = (code) => {
-    setSelectedCurrency(prev => {
-      const next = prev === code ? 'ALL' : code;
-      performLatestForCurrency(next);
+    setSelectedCurrencies(prev => {
+      const isSelected = prev.includes(code);
+      const next = isSelected 
+        ? prev.filter(c => c !== code) // Deseleccionar
+        : [...prev, code]; // Agregar
+      
+      // Si quedó vacío, no hacer nada (mantener al menos una)
+      if (next.length === 0) return prev;
+      
       return next;
     });
+    
+    // No llamar triggerAutoSearch aquí - se manejará con useEffect
   };
-  const setAllCurrencies = () => {
-    setSelectedCurrency('ALL');
-    performLatestForCurrency('ALL');
+
+  const selectAllCurrencies = () => {
+    setSelectedCurrencies(['USD', 'EUR', 'ARS', 'BRL']);
+    
+    // No llamar triggerAutoSearch aquí - se manejará con useEffect
   };
+
+  // Auto-search cuando cambian las monedas seleccionadas
+  useEffect(() => {
+    // Solo disparar si estamos en modo "latest" y hay monedas seleccionadas
+    if (searchType === 'latest' && selectedCurrencies.length > 0) {
+      triggerAutoSearch();
+    }
+  }, [selectedCurrencies, searchType, triggerAutoSearch]);
 
   const currencyButtons = [
     { code: 'USD', label: t('exchange.currencies.USD') || 'USD' },
@@ -205,35 +303,27 @@ const ExchangeSearchForm = ({ onSearch, isLoading }) => {
         </div>
       )}
 
-      {/* Filtro de monedas: botón mundo (ALL) + toggles de banderas (single-select por ahora) */}
+      {/* Filtro de monedas: selección múltiple */}
       <div className="mb-4">
-        <span className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-          {t('exchange.currency') || 'Moneda'}
+        <span className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-3">
+          {t('exchange.currency') || 'Moneda'} <span className="text-xs text-neutral-500 dark:text-neutral-400">({t('exchange.select_multiple') || 'Selección múltiple'})</span>
         </span>
-        <div className="flex items-center justify-center mb-2">
-          <button
-            type="button"
-            onClick={setAllCurrencies}
-            aria-pressed={selectedCurrency === 'ALL'}
-            aria-label={(t('exchange.all_currencies') || 'Todas las monedas') + (selectedCurrency === 'ALL' ? ' (activo)' : '')}
-            className={`px-4 py-2 rounded-md text-base flex items-center justify-center gap-2 border transition-colors font-semibold w-full ${selectedCurrency === 'ALL' ? 'bg-blue-600 text-white border-blue-600' : 'bg-neutral-200 dark:bg-neutral-700 text-neutral-800 dark:text-neutral-200 border-neutral-300 dark:border-neutral-600 hover:bg-neutral-300 dark:hover:bg-neutral-600'}`}
-            style={{width: '100%'}}>
-            <span role="img" aria-hidden="true">🌍</span>
-            {t('exchange.all_currencies') || 'Todas las monedas'}
-          </button>
-        </div>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 md:gap-3">
           {currencyButtons.map(c => (
             <button
               key={c.code}
               type="button"
               onClick={() => toggleCurrency(c.code)}
-              aria-pressed={selectedCurrency === c.code}
-              aria-label={`${c.label} ${selectedCurrency === c.code ? '(activo)' : ''}`}
-              className={`px-3 md:px-4 py-2 rounded-md text-sm md:text-base flex items-center gap-2 border transition-colors font-semibold w-full ${selectedCurrency === c.code ? 'bg-blue-600 text-white border-blue-600' : 'bg-neutral-200 dark:bg-neutral-700 text-neutral-800 dark:text-neutral-200 border-neutral-300 dark:border-neutral-600 hover:bg-neutral-300 dark:hover:bg-neutral-600'}`}
+              aria-pressed={selectedCurrencies.includes(c.code)}
+              aria-label={`${c.label} ${selectedCurrencies.includes(c.code) ? '(seleccionado)' : ''}`}
+              className={`px-3 md:px-4 py-2 rounded-lg text-sm md:text-base flex items-center gap-2 border transition-colors font-medium w-full ${
+                selectedCurrencies.includes(c.code) 
+                  ? 'bg-primary-600 text-white border-primary-600' 
+                  : 'bg-neutral-50 dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200 border-neutral-200 dark:border-neutral-700 hover:bg-neutral-100 dark:hover:bg-neutral-700'
+              }`}
               style={{justifyContent: 'center'}}>
-              <Flag code={c.code} className="flag-icon" style={{verticalAlign: 'middle'}} />
-              <span style={{verticalAlign: 'middle'}}>{c.code}</span>
+              <Flag code={c.code} className="flag-icon" />
+              {c.code}
             </button>
           ))}
         </div>
@@ -244,12 +334,25 @@ const ExchangeSearchForm = ({ onSearch, isLoading }) => {
         <h3 className="text-sm font-medium text-neutral-800 dark:text-neutral-200 mb-3">
           {t('common.quick_actions') || 'Acciones rápidas'}
         </h3>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={selectAllCurrencies}
+            disabled={isLoading}
+            className={`text-xs px-3 py-1 rounded-full transition-colors duration-200 border whitespace-nowrap disabled:opacity-50 ${
+              selectedCurrencies.length === 4
+                ? 'bg-blue-600 hover:bg-blue-700 text-white border-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 dark:border-blue-600'
+                : 'bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-700 dark:hover:bg-neutral-600 text-neutral-700 dark:text-neutral-200 border-neutral-300 hover:border-neutral-400 dark:border-neutral-600 dark:hover:border-neutral-500'
+            }`}
+            title={t('exchange.select_all_currencies') || 'Seleccionar todas las monedas'}
+          >
+            🌍 {t('exchange.all_currencies') || 'Todas'}
+          </button>
           <button
             type="button"
             onClick={() => handleQuickAction('latest')}
             disabled={isLoading}
-    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium transition-colors"
+            className="text-xs px-3 py-1 bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-700 dark:hover:bg-neutral-600 rounded-full transition-colors duration-200 border border-neutral-300 hover:border-neutral-400 dark:border-neutral-600 dark:hover:border-neutral-500 dark:text-neutral-100 whitespace-nowrap disabled:opacity-50"
           >
             {t('exchange.latest_data') || 'Últimos datos'}
           </button>
@@ -257,7 +360,7 @@ const ExchangeSearchForm = ({ onSearch, isLoading }) => {
             type="button"
             onClick={() => handleQuickAction('week')}
             disabled={isLoading}
-    className="px-4 py-2 bg-blue-400 text-white rounded-md hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium transition-colors"
+            className="text-xs px-3 py-1 bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-700 dark:hover:bg-neutral-600 rounded-full transition-colors duration-200 border border-neutral-300 hover:border-neutral-400 dark:border-neutral-600 dark:hover:border-neutral-500 dark:text-neutral-100 whitespace-nowrap disabled:opacity-50"
           >
             {t('common.last_week') || 'Última semana'}
           </button>
@@ -265,7 +368,7 @@ const ExchangeSearchForm = ({ onSearch, isLoading }) => {
             type="button"
             onClick={() => handleQuickAction('month')}
             disabled={isLoading}
-            className="px-4 py-2 bg-blue-300 text-white rounded-md hover:bg-blue-400 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium transition-colors"
+            className="text-xs px-3 py-1 bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-700 dark:hover:bg-neutral-600 rounded-full transition-colors duration-200 border border-neutral-300 hover:border-neutral-400 dark:border-neutral-600 dark:hover:border-neutral-500 dark:text-neutral-100 whitespace-nowrap disabled:opacity-50"
           >
             {t('common.last_month') || 'Último mes'}
           </button>
@@ -277,31 +380,52 @@ const ExchangeSearchForm = ({ onSearch, isLoading }) => {
         )}
       </div>
 
-      {/* Selector de tipo de búsqueda (mismo estilo que acciones rápidas) */}
+      {/* Selector de tipo de búsqueda (radio buttons en fila como es común) */}
       <div className="mb-6">
-        <h3 className="text-sm font-medium text-neutral-800 dark:text-neutral-200 mb-3">
+        <h3 className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-3">
           {t('exchange.search_type') || 'Tipo de consulta'}
         </h3>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
-          {[
-            { key: 'latest', label: t('exchange.latest') || 'Últimas' },
-            { key: 'date', label: t('exchange.by_date') || 'Por fecha' },
-            { key: 'range', label: t('exchange.by_range') || 'Por rango' },
-            { key: 'history', label: t('exchange.history') || 'Historial' }
-          ].map(btn => (
-            <button
-              key={btn.key}
-              type="button"
-              onClick={() => setSearchType(btn.key)}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                searchType === btn.key
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-neutral-200 text-neutral-800 hover:bg-neutral-300 dark:bg-neutral-700 dark:text-neutral-100 dark:hover:bg-neutral-600'
-              }`}
-            >
-              {btn.label}
-            </button>
-          ))}
+        <div className="flex flex-wrap gap-4">
+          <label className="flex items-center cursor-pointer">
+            <input
+              type="radio"
+              value="latest"
+              checked={searchType === 'latest'}
+              onChange={(e) => setSearchType(e.target.value)}
+              className="mr-2 text-primary-600 focus:ring-primary-600"
+            />
+            <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300">{t('exchange.latest') || 'Últimas'}</span>
+          </label>
+          <label className="flex items-center cursor-pointer">
+            <input
+              type="radio"
+              value="date"
+              checked={searchType === 'date'}
+              onChange={(e) => setSearchType(e.target.value)}
+              className="mr-2 text-primary-600 focus:ring-primary-600"
+            />
+            <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300">{t('exchange.by_date') || 'Por fecha'}</span>
+          </label>
+          <label className="flex items-center cursor-pointer">
+            <input
+              type="radio"
+              value="range"
+              checked={searchType === 'range'}
+              onChange={(e) => setSearchType(e.target.value)}
+              className="mr-2 text-primary-600 focus:ring-primary-600"
+            />
+            <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300">{t('exchange.by_range') || 'Por rango'}</span>
+          </label>
+          <label className="flex items-center cursor-pointer">
+            <input
+              type="radio"
+              value="history"
+              checked={searchType === 'history'}
+              onChange={(e) => setSearchType(e.target.value)}
+              className="mr-2 text-primary-600 focus:ring-primary-600"
+            />
+            <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300">{t('exchange.history') || 'Historial'}</span>
+          </label>
         </div>
       </div>
 
@@ -376,23 +500,16 @@ const ExchangeSearchForm = ({ onSearch, isLoading }) => {
         )}
 
         {/* Botón de búsqueda */}
-        <button
+        <Button
           type="submit"
-          disabled={isLoading || (searchType === 'history' && (selectedCurrency === 'ALL'))}
-          className="w-full bg-blue-600 text-white py-3 px-4 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium flex items-center justify-center"
+          variant="primary"
+          fullWidth={true}
+          disabled={isLoading || (searchType === 'history' && (selectedCurrencies.length === 4))}
+          loading={isLoading}
+          className="py-3"
         >
-          {isLoading ? (
-            <span className="flex items-center justify-center">
-              <svg className="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-              {t('common.searching') || 'Consultando...'}
-            </span>
-          ) : (
-            t('common.search') || 'Consultar'
-          )}
-        </button>
+          {t('common.search') || 'Consultar'}
+        </Button>
       </form>
 
   {/* Panel informativo removido por simplificación de interfaz */}

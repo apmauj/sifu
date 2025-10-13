@@ -164,7 +164,7 @@ const ExchangeResultsDisplay = ({ results, searchType, isLoading, error }) => {
       {/* Vista de tabla para pantallas medianas y grandes */}
       <div className="hidden md:block overflow-x-auto rounded-lg border border-neutral-200 dark:border-neutral-700">
         <table className="w-full divide-y divide-neutral-200 dark:divide-neutral-700 text-sm">
-          <thead className="bg-neutral-50 dark:bg-neutral-700/60">
+          <thead className="bg-neutral-50 dark:bg-neutral-800">
             <tr>
               <th className="px-3 py-2 text-left text-xs font-medium text-neutral-600 dark:text-neutral-200 uppercase tracking-wider w-24">
                 {t('common.date') || 'Fecha'}
@@ -187,7 +187,7 @@ const ExchangeResultsDisplay = ({ results, searchType, isLoading, error }) => {
             {rates.map((rate, index) => {
               const currencyInfo = getCurrencyInfo(rate.currency);
               return (
-                <tr key={`${rate.date}-${rate.currency}-${index}`} className="hover:bg-neutral-50 dark:hover:bg-neutral-700/50 transition-colors">
+                <tr key={`${rate.date}-${rate.currency}-${index}`} className="hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors">
                   <td className="px-3 py-3 text-xs text-neutral-900 dark:text-neutral-100 font-mono">
                     <div className="whitespace-nowrap">
                       {rate.date}
@@ -283,72 +283,110 @@ const ExchangeResultsDisplay = ({ results, searchType, isLoading, error }) => {
     // Colores para diferentes monedas
     const currencyColors = {
       'USD': '#10b981', // Verde
+      'USD_EBROU': '#059669', // Verde oscuro
       'EUR': '#3b82f6', // Azul
-      'ARS': '#f59e0b', // Amarillo
-      'BRL': '#ef4444'  // Rojo
+      'ARS': '#f59e0b', // Amarillo/Naranja
+      'BRL': '#ef4444', // Rojo
+      'CLP': '#8b5cf6'  // Púrpura
     };
 
-    // Si hay múltiples monedas, crear un gráfico por moneda
+    // Preparar datos unificados para múltiples monedas
+    const prepareUnifiedChartData = (data) => {
+      // Agrupar por fecha
+      const groupedByDate = {};
+      
+      data.forEach(item => {
+        const dateKey = formatDateForChart(item.date);
+        if (!groupedByDate[dateKey]) {
+          groupedByDate[dateKey] = { date: dateKey, fullDate: item.date };
+        }
+        
+        // Agregar tasas con prefijo de moneda
+        groupedByDate[dateKey][`${item.currency}_compra`] = parseFloat(item.buy_rate);
+        groupedByDate[dateKey][`${item.currency}_venta`] = parseFloat(item.sell_rate);
+      });
+      
+      // Convertir a array y ordenar por fecha
+      return Object.values(groupedByDate).sort((a, b) => new Date(a.fullDate) - new Date(b.fullDate));
+    };
+
+    // Si hay múltiples monedas, crear un gráfico unificado
     if (currencies.length > 1) {
+      const unifiedData = prepareUnifiedChartData(data);
+      const yAxisDomain = calculateYAxisDomain(data.map(item => prepareChartData([item])[0]));
+
       return (
-        <div className="space-y-6">
-          {currencies.map(currency => {
-            const currencyData = prepareChartData(data.filter(item => item.currency === currency));
-            if (currencyData.length === 0) return null;
-
-            const yAxisDomain = calculateYAxisDomain(currencyData);
-
-            return (
-              <div key={currency} className="card fade-in">
-                <h4 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-4">
-                  <Flag code={currency} className="flag-icon mr-1" /> {currency} - {t('exchange.rates_evolution') || 'Evolución de Cotizaciones'}
-                </h4>
-                <div className="h-64">
-                  <ResponsiveContainer data-testid="responsive-container" width="100%" height="100%">
-                    <LineChart data-testid="line-chart" data={currencyData} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis 
-                        dataKey="date" 
-                        angle={-45}
-                        textAnchor="end"
-                        height={80}
-                        fontSize={11}
-                      />
-                      <YAxis 
-                        fontSize={11}
-                        domain={yAxisDomain}
-                        tickFormatter={(value) => `$${value.toFixed(2)}`}
-                      />
-                      <Tooltip 
-                        formatter={(value, name) => [`$${value.toFixed(4)}`, name]}
-                        labelFormatter={(label) => `${t('common.date') || 'Fecha'}: ${label}`}
-                      />
-                      <Legend />
-                      
-                      <Line
-                        type="monotone"
-                        dataKey="buy_rate"
-                        name={`${t('exchange.buy_rate') || 'Compra'}`}
-                        stroke={currencyColors[currency] || '#6b7280'}
-                        strokeWidth={2}
-                        dot={{ fill: currencyColors[currency] || '#6b7280', strokeWidth: 2, r: 3 }}
-                      />
-                      
-                      <Line
-                        type="monotone"
-                        dataKey="sell_rate"
-                        name={`${t('exchange.sell_rate') || 'Venta'}`}
-                        stroke={currencyColors[currency] || '#6b7280'}
-                        strokeWidth={2}
-                        strokeDasharray="5 5"
-                        dot={{ fill: currencyColors[currency] || '#6b7280', strokeWidth: 2, r: 3 }}
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-            );
-          })}
+        <div className="card fade-in">
+          <h4 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-4">
+            📈 {t('exchange.comparison_title') || 'Comparación de Cotizaciones'}
+          </h4>
+          <div className="h-80">
+            <ResponsiveContainer data-testid="responsive-container" width="100%" height="100%">
+              <LineChart data-testid="line-chart" data={unifiedData} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-neutral-200 dark:stroke-neutral-700" />
+                <XAxis 
+                  dataKey="date" 
+                  angle={-45}
+                  textAnchor="end"
+                  height={80}
+                  fontSize={11}
+                  className="fill-neutral-600 dark:fill-neutral-400"
+                />
+                <YAxis 
+                  fontSize={11}
+                  domain={yAxisDomain}
+                  tickFormatter={(value) => `$${value.toFixed(2)}`}
+                  className="fill-neutral-600 dark:fill-neutral-400"
+                />
+                <Tooltip 
+                  formatter={(value, name) => {
+                    const [currency, type] = name.split('_');
+                    const label = type === 'compra' ? t('exchange.buy_rate') || 'Compra' : t('exchange.sell_rate') || 'Venta';
+                    return [`$${value.toFixed(4)}`, `${currency} - ${label}`];
+                  }}
+                  labelFormatter={(label) => `${t('common.date') || 'Fecha'}: ${label}`}
+                  contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151', borderRadius: '0.5rem' }}
+                  labelStyle={{ color: '#d1d5db' }}
+                  itemStyle={{ color: '#d1d5db' }}
+                />
+                <Legend 
+                  formatter={(value) => {
+                    const [currency, type] = value.split('_');
+                    const label = type === 'compra' ? '⬆ Compra' : '⬇ Venta';
+                    return `${currency} ${label}`;
+                  }}
+                />
+                
+                {/* Generar líneas para cada moneda */}
+                {currencies.map(currency => (
+                  <React.Fragment key={currency}>
+                    {/* Línea de Compra - sólida */}
+                    <Line
+                      type="monotone"
+                      dataKey={`${currency}_compra`}
+                      name={`${currency}_compra`}
+                      stroke={currencyColors[currency] || '#6b7280'}
+                      strokeWidth={2}
+                      dot={{ fill: currencyColors[currency] || '#6b7280', strokeWidth: 2, r: 3 }}
+                      connectNulls
+                    />
+                    
+                    {/* Línea de Venta - punteada */}
+                    <Line
+                      type="monotone"
+                      dataKey={`${currency}_venta`}
+                      name={`${currency}_venta`}
+                      stroke={currencyColors[currency] || '#6b7280'}
+                      strokeWidth={2}
+                      strokeDasharray="5 5"
+                      dot={{ fill: currencyColors[currency] || '#6b7280', strokeWidth: 2, r: 3 }}
+                      connectNulls
+                    />
+                  </React.Fragment>
+                ))}
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
         </div>
       );
     }
@@ -360,28 +398,33 @@ const ExchangeResultsDisplay = ({ results, searchType, isLoading, error }) => {
 
     return (
       <div className="card fade-in">
-        <h4 className="text-lg font-semibold text-neutral-900 mb-4">
+        <h4 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-4">
           📈 <Flag code={currency} className="flag-icon mr-1" /> {currency} - {t('exchange.rates_evolution') || 'Evolución de Cotizaciones'}
         </h4>
         <div className="h-64">
           <ResponsiveContainer data-testid="responsive-container" width="100%" height="100%">
             <LineChart data-testid="line-chart" data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
-              <CartesianGrid strokeDasharray="3 3" />
+              <CartesianGrid strokeDasharray="3 3" className="stroke-neutral-200 dark:stroke-neutral-700" />
               <XAxis 
                 dataKey="date" 
                 angle={-45}
                 textAnchor="end"
                 height={80}
                 fontSize={11}
+                className="fill-neutral-600 dark:fill-neutral-400"
               />
               <YAxis 
                 fontSize={11}
                 domain={yAxisDomain}
                 tickFormatter={(value) => `$${value.toFixed(2)}`}
+                className="fill-neutral-600 dark:fill-neutral-400"
               />
               <Tooltip 
                 formatter={(value, name) => [`$${value.toFixed(4)}`, name]}
                 labelFormatter={(label) => `${t('common.date') || 'Fecha'}: ${label}`}
+                contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151', borderRadius: '0.5rem' }}
+                labelStyle={{ color: '#d1d5db' }}
+                itemStyle={{ color: '#d1d5db' }}
               />
               <Legend />
               
@@ -483,20 +526,20 @@ const ExchangeResultsDisplay = ({ results, searchType, isLoading, error }) => {
                 </div>
               
               <div className="grid grid-cols-3 gap-4">
-                <div className="text-center p-3 bg-white dark:bg-neutral-900/40 rounded-lg shadow-sm">
+                <div className="text-center p-3 bg-white dark:bg-neutral-700 rounded-lg shadow-sm border border-neutral-200 dark:border-neutral-600">
                   <p className="text-sm text-neutral-600 dark:text-neutral-300 mb-1">{t('exchange.buy_rate') || 'Compra'}</p>
                   <p className="text-xl font-bold text-green-600">
                     {(currencyDisplay[rate.currency]?.symbol || '$')}{formatExchangeRate(rate.buy_rate)}
                   </p>
                 </div>
-                <div className="text-center p-3 bg-white dark:bg-neutral-900/40 rounded-lg shadow-sm">
+                <div className="text-center p-3 bg-white dark:bg-neutral-700 rounded-lg shadow-sm border border-neutral-200 dark:border-neutral-600">
                   <p className="text-sm text-neutral-600 dark:text-neutral-300 mb-1">{t('exchange.sell_rate') || 'Venta'}</p>
                   <p className="text-xl font-bold text-red-600">
                     {(currencyDisplay[rate.currency]?.symbol || '$')}{formatExchangeRate(rate.sell_rate)}
                   </p>
                 </div>
                 {rate.average_rate && (
-                  <div className="text-center p-3 bg-white dark:bg-neutral-900/40 rounded-lg shadow-sm">
+                  <div className="text-center p-3 bg-white dark:bg-neutral-700 rounded-lg shadow-sm border border-neutral-200 dark:border-neutral-600">
                     <p className="text-sm text-neutral-600 dark:text-neutral-300 mb-1">{t('exchange.average_rate') || 'Promedio'}</p>
                     <p className="text-xl font-bold text-blue-600">
                       {(currencyDisplay[rate.currency]?.symbol || '$')}{formatExchangeRate(rate.average_rate)}

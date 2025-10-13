@@ -108,13 +108,11 @@ describe('ExchangeSearchForm Component', () => {
 
     it('renders currency toggle buttons with correct initial states', () => {
       render(<ExchangeSearchForm {...defaultProps} />);
-      expect(screen.getByRole('button', { name: /Todas las monedas/ })).toHaveAttribute('aria-pressed', 'true');
-      // Buttons still have aria-label with original singular names, but visible text changed to plural
+      // Initially all currencies are selected (default state)
       ;['Dólar estadounidense', 'Euro', 'Peso argentino', 'Real brasileño'].forEach(name => {
-        expect(screen.getByRole('button', { name: new RegExp(name) })).toHaveAttribute('aria-pressed', 'false');
+        expect(screen.getByRole('button', { name: new RegExp(name) })).toHaveAttribute('aria-pressed', 'true');
       });
-      // Visible plural texts present
-      // Buttons now show currency codes (USD, EUR, ARS, BRL) not plural names
+      // Buttons now show currency codes (USD, EUR, ARS, BRL)
       ['USD','EUR','ARS','BRL'].forEach(code => {
         expect(screen.getByText(code)).toBeInTheDocument();
       });
@@ -138,7 +136,9 @@ describe('ExchangeSearchForm Component', () => {
   describe('Search Type Selection', () => {
     it('starts with latest selected', () => {
       render(<ExchangeSearchForm {...defaultProps} />);
-      expect(screen.getByText('Últimas')).toHaveClass('bg-blue-600');
+      // Verify the "Últimas" radio button is checked by default
+      const latestRadio = screen.getByRole('radio', { name: /Últimas/i });
+      expect(latestRadio).toBeChecked();
     });
 
     it('switches to date type', () => {
@@ -165,11 +165,13 @@ describe('ExchangeSearchForm Component', () => {
     it('toggles USD selection', () => {
       render(<ExchangeSearchForm {...defaultProps} />);
       const usdBtn = screen.getByRole('button', { name: /Dólar estadounidense/ });
-      fireEvent.click(usdBtn);
+      // Initially selected (all currencies start selected)
       expect(usdBtn).toHaveAttribute('aria-pressed', 'true');
-  // Card results (not buttons) show plural; buttons show code
-  expect(screen.getByText('USD')).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /Todas las monedas/ })).toHaveAttribute('aria-pressed', 'false');
+      // Click to deselect
+      fireEvent.click(usdBtn);
+      expect(usdBtn).toHaveAttribute('aria-pressed', 'false');
+      // USD code still visible in button
+      expect(screen.getByText('USD')).toBeInTheDocument();
     });
 
     it('does not show filtered message after selection (removed feature)', () => {
@@ -199,7 +201,11 @@ describe('ExchangeSearchForm Component', () => {
 
     it('includes selected currency in quick actions', () => {
       render(<ExchangeSearchForm {...defaultProps} />);
-      fireEvent.click(screen.getByRole('button', { name: /Euro/ }));
+      // Deselect all except EUR
+      fireEvent.click(screen.getByRole('button', { name: /Dólar estadounidense/ }));
+      fireEvent.click(screen.getByRole('button', { name: /Peso argentino/ }));
+      fireEvent.click(screen.getByRole('button', { name: /Real brasileño/ }));
+      // Now only EUR is selected
       fireEvent.click(screen.getByRole('button', { name: /Últimos datos/ }));
       expect(mockOnSearch).toHaveBeenCalledWith({ type: 'latest', currency: 'EUR' });
     });
@@ -240,7 +246,11 @@ describe('ExchangeSearchForm Component', () => {
 
     it('submits history search with selected currency', () => {
       render(<ExchangeSearchForm {...defaultProps} />);
-      fireEvent.click(screen.getByRole('button', { name: /Dólar estadounidense/ }));
+      // Deselect all except USD (USD starts selected, so deselect others)
+      fireEvent.click(screen.getByRole('button', { name: /Euro/ }));
+      fireEvent.click(screen.getByRole('button', { name: /Peso argentino/ }));
+      fireEvent.click(screen.getByRole('button', { name: /Real brasileño/ }));
+      // Now only USD is selected
       fireEvent.click(screen.getByText('Historial'));
       fireEvent.click(screen.getByRole('button', { name: /Consultar/i }));
       expect(mockOnSearch).toHaveBeenCalledWith({ type: 'history', currency: 'USD', limit: 10 });
@@ -248,7 +258,11 @@ describe('ExchangeSearchForm Component', () => {
 
     it('includes selected currency in submission (ARS)', () => {
       render(<ExchangeSearchForm {...defaultProps} />);
-      fireEvent.click(screen.getByRole('button', { name: /Peso argentino/ }));
+      // Deselect all except ARS
+      fireEvent.click(screen.getByRole('button', { name: /Dólar estadounidense/ }));
+      fireEvent.click(screen.getByRole('button', { name: /Euro/ }));
+      fireEvent.click(screen.getByRole('button', { name: /Real brasileño/ }));
+      // Now only ARS is selected
       fireEvent.click(screen.getByRole('button', { name: /Consultar/i }));
       expect(mockOnSearch).toHaveBeenCalledWith({ type: 'latest', currency: 'ARS' });
     });
@@ -302,7 +316,8 @@ describe('ExchangeSearchForm Component', () => {
   describe('Loading State', () => {
     it('shows loading state', () => {
       render(<ExchangeSearchForm {...defaultProps} isLoading={true} />);
-      const btn = screen.getByRole('button', { name: /Consultando/i });
+      // Button maintains original text, just shows spinner and is disabled
+      const btn = screen.getByRole('button', { name: /Consultar/i });
       expect(btn).toBeDisabled();
     });
 
@@ -314,7 +329,10 @@ describe('ExchangeSearchForm Component', () => {
 
     it('enables history when currency selected', () => {
       render(<ExchangeSearchForm {...defaultProps} />);
-      fireEvent.click(screen.getByRole('button', { name: /Euro/ }));
+      // Deselect all except EUR (so only one currency selected)
+      fireEvent.click(screen.getByRole('button', { name: /Dólar estadounidense/ }));
+      fireEvent.click(screen.getByRole('button', { name: /Peso argentino/ }));
+      fireEvent.click(screen.getByRole('button', { name: /Real brasileño/ }));
       fireEvent.click(screen.getByText('Historial'));
       expect(screen.getByRole('button', { name: /Consultar/i })).not.toBeDisabled();
     });
@@ -368,8 +386,13 @@ describe('ExchangeSearchForm Component', () => {
 
     it('initializes with correct defaults', () => {
       render(<ExchangeSearchForm {...defaultProps} />);
-      expect(screen.getByText('Últimas')).toHaveClass('bg-blue-600');
-      expect(screen.getByRole('button', { name: /Todas las monedas/ })).toHaveAttribute('aria-pressed', 'true');
+      // Verify "Últimas" radio button is checked by default
+      const latestRadio = screen.getByRole('radio', { name: /Últimas/i });
+      expect(latestRadio).toBeChecked();
+      // All currencies start selected (no "Todas las monedas" button exists)
+      ;['Dólar estadounidense', 'Euro', 'Peso argentino', 'Real brasileño'].forEach(name => {
+        expect(screen.getByRole('button', { name: new RegExp(name) })).toHaveAttribute('aria-pressed', 'true');
+      });
     });
 
     it('calls date utils on mount', () => {

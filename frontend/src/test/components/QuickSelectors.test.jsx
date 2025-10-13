@@ -140,10 +140,12 @@ describe('QuickSelectors Component', () => {
     it('should render all UR single selectors', () => {
       render(<QuickSelectors type="UR" mode="single" onURSingleSelect={vi.fn()} />);
 
+      // Only month-based selectors in single mode now
       expect(screen.getByText('Mes actual')).toBeInTheDocument();
       expect(screen.getByText('Mes anterior')).toBeInTheDocument();
-      expect(screen.getByText('Año actual')).toBeInTheDocument();
-      expect(screen.getByText('Año anterior')).toBeInTheDocument();
+      // Year selectors removed - full year queries are ranges, not single
+      expect(screen.queryByText('Año actual')).not.toBeInTheDocument();
+      expect(screen.queryByText('Año anterior')).not.toBeInTheDocument();
     });
 
     it('should call onURSingleSelect for current month', () => {
@@ -160,22 +162,6 @@ describe('QuickSelectors Component', () => {
 
       fireEvent.click(screen.getByText('Mes anterior'));
       expect(onURSingleSelect).toHaveBeenCalledWith(2023, 12);
-    });
-
-    it('should call onURSingleSelect for current year with null month', () => {
-      const onURSingleSelect = vi.fn();
-      render(<QuickSelectors type="UR" mode="single" onURSingleSelect={onURSingleSelect} />);
-
-      fireEvent.click(screen.getByText('Año actual'));
-      expect(onURSingleSelect).toHaveBeenCalledWith(2024, null);
-    });
-
-    it('should call onURSingleSelect for last year with null month', () => {
-      const onURSingleSelect = vi.fn();
-      render(<QuickSelectors type="UR" mode="single" onURSingleSelect={onURSingleSelect} />);
-
-      fireEvent.click(screen.getByText('Año anterior'));
-      expect(onURSingleSelect).toHaveBeenCalledWith(2023, null);
     });
   });
 
@@ -319,28 +305,26 @@ describe('QuickSelectors Component', () => {
     });
   });
 
-  describe('UR Single mode with range selectors', () => {
-    it('should handle multi-year selectors as ranges in single mode', () => {
-      // Mock para simular un selector de múltiples años
-      const mockMultiYearSelector = { key: 'multi_year', years: 3 };
-      const onURRangeSelect = vi.fn();
+  describe('UR Single mode - simplified (no year selectors)', () => {
+    it('should only show month-based selectors in single mode', () => {
+      render(<QuickSelectors type="UR" mode="single" onURSingleSelect={vi.fn()} />);
       
-      // Renderizamos con el componente original pero simulamos el click
-      render(<QuickSelectors type="UR" mode="single" onURRangeSelect={onURRangeSelect} />);
-      
-      // Verificamos que el componente puede manejar este caso
-      expect(screen.getByText('Año actual')).toBeInTheDocument();
+      // Only month selectors exist in single mode
+      expect(screen.getByText('Mes actual')).toBeInTheDocument();
+      expect(screen.getByText('Mes anterior')).toBeInTheDocument();
+      // Year selectors removed (full year = 12 months = range, not single)
+      expect(screen.queryByText('Año actual')).not.toBeInTheDocument();
+      expect(screen.queryByText('Año anterior')).not.toBeInTheDocument();
     });
 
-    it('should handle multi-month selectors as ranges in single mode', () => {
-      // Mock para simular un selector de múltiples meses
-      const mockMultiMonthSelector = { key: 'multi_month', months: 6 };
-      const onURRangeSelect = vi.fn();
+    it('should always call onURSingleSelect with month parameter', () => {
+      const onURSingleSelect = vi.fn();
+      render(<QuickSelectors type="UR" mode="single" onURSingleSelect={onURSingleSelect} />);
       
-      render(<QuickSelectors type="UR" mode="single" onURRangeSelect={onURRangeSelect} />);
-      
-      // Verificamos que el componente puede manejar este caso
-      expect(screen.getByText('Mes actual')).toBeInTheDocument();
+      fireEvent.click(screen.getByText('Mes actual'));
+      // All single mode selectors provide both year and month
+      expect(onURSingleSelect).toHaveBeenCalledWith(expect.any(Number), expect.any(Number));
+      expect(onURSingleSelect).not.toHaveBeenCalledWith(expect.any(Number), null);
     });
   });
 

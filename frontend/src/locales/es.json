@@ -181,6 +181,9 @@
     "search_title": "Consultar Cotizaciones",
     "currency_filter": "Filtrar por moneda (opcional)",
     "all_currencies": "Todas las monedas",
+    "select_multiple": "Seleccionar múltiples monedas",
+    "select_all_currencies": "Seleccionar todas",
+    "comparison_title": "Comparación de Cotizaciones",
   "latest_rates": "Últimas cotizaciones",
   "latest_data": "Últimos datos",
     "search_type": "Tipo de consulta",
@@ -354,18 +357,6 @@
   "minutes": "min"
     },
     "title": "Dashboard de Monitoreo",
-    "tab_health": "Salud del Sistema",
-    "tab_performance": "Presupuestos de Rendimiento",
-    "error_loading_health": "Error al cargar datos de salud",
-    "loading_health": "Cargando datos de salud...",
-    "general_status": {
-      "title": "Estado General del Sistema",
-      "healthy": "Sistema Saludable",
-      "warning": "Sistema con Advertencias",
-      "critical": "Sistema Crítico",
-      "unknown": "Estado Desconocido",
-      "last_update_prefix": "Última actualización:"
-    },
     "tab_health": "Salud del Sistema",
     "tab_performance": "Presupuestos de Rendimiento",
     "error_loading_health": "Error al cargar datos de salud",

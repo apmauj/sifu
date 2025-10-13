@@ -10,7 +10,7 @@ const Header = () => {
   const { t } = useI18n();
   
   return (
-    <header className="sticky top-0 z-20 backdrop-blur bg-white/80 dark:bg-neutral-900/70 border-b border-neutral-200 dark:border-neutral-800">
+    <header className="sticky top-0 z-20 bg-white dark:bg-neutral-900 border-b border-neutral-200 dark:border-neutral-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center py-4">
           <div className="flex items-center space-x-3">

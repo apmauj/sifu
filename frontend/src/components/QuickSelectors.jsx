@@ -33,7 +33,7 @@ const QuickSelectors = ({
     };
   };
 
-  // Function to calculate single UR period
+  // Function to calculate single UR period (month only - no years in SINGLE mode)
   const calculateURSingle = (selector) => {
     if (selector.months !== undefined) {
       if (selector.months === 0) {
@@ -52,13 +52,7 @@ const QuickSelectors = ({
       }
     }
     
-    if (selector.years !== undefined) {
-      return {
-        year: currentYear - selector.years,
-        month: null // For full year
-      };
-    }
-    
+    // Default fallback (should not reach here with proper config)
     return {
       year: currentYear,
       month: currentMonth
@@ -111,24 +105,11 @@ const QuickSelectors = ({
   // Handle UR selector click
   const handleURClick = (selector) => {
     if (mode === 'single') {
-      // Check if this should be treated as a range (multi-year or multi-month selectors)
-      const isRangeSelector = (selector.years !== undefined && selector.years > 1) || 
-                             (selector.months !== undefined && selector.months > 1);
-      
-      if (isRangeSelector) {
-        const range = calculateURRange(selector);
-        onURRangeSelect?.(range.startYear, range.startMonth, range.endYear, range.endMonth);
-      } else {
-        const single = calculateURSingle(selector);
-        if (single.month) {
-          // Specific month selection
-          onURSingleSelect?.(single.year, single.month);
-        } else {
-          // Full year selection - call onURSingleSelect with year only
-          onURSingleSelect?.(single.year, null);
-        }
-      }
+      // In SINGLE mode, all selectors are month-based (no year selectors anymore)
+      const single = calculateURSingle(selector);
+      onURSingleSelect?.(single.year, single.month);
     } else {
+      // In RANGE mode, calculate and execute range query
       const range = calculateURRange(selector);
       onURRangeSelect?.(range.startYear, range.startMonth, range.endYear, range.endMonth);
     }

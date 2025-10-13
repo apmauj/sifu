@@ -106,12 +106,13 @@ class SecurityValidator:
 
     @staticmethod
     def validate_currency_code(currency: str) -> bool:
-        """Validate currency code format"""
+        """Validate currency code format (supports comma-separated list)"""
         if not isinstance(currency, str):
             return False
 
-        # Only allow 3-letter uppercase codes
-        currency_pattern = r"^[A-Z]{3}$"
+        # Soportar múltiples monedas separadas por comas
+        # Ejemplo: "USD" o "USD,EUR,BRL"
+        currency_pattern = r"^[A-Z]{3}(,[A-Z]{3})*$"
         return bool(re.match(currency_pattern, currency))
 
     @staticmethod

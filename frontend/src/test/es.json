@@ -211,6 +211,7 @@
     "future_date": "No se pueden seleccionar fechas futuras",
     "retry": "Reintentar",
     "rates_evolution": "Evolución de Cotizaciones",
+    "comparison_title": "Comparación de Cotizaciones",
     "solid_line": "línea sólida",
     "dashed_line": "línea punteada",
     "no_supported_currencies": "No hay monedas soportadas",

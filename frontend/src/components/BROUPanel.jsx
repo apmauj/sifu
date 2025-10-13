@@ -91,9 +91,9 @@ const BROUPanel = () => {
 
   const getCurrencyRowClass = (currency) => {
     // Better contrast in dark mode; subtle highlight for USD_EBROU
-    const baseLight = "border-b border-neutral-100 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700/30 transition-colors";
+    const baseLight = "border-b border-neutral-100 dark:border-neutral-700 hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors";
     if (currency === 'USD_EBROU') {
-      return `${baseLight} bg-primary-50 dark:bg-primary-950/30 border-primary-100 dark:border-primary-800`;
+      return `${baseLight} bg-blue-50 dark:bg-blue-950 border-blue-100 dark:border-blue-800`;
     }
     return baseLight;
   };
@@ -284,8 +284,8 @@ const BROUPanel = () => {
           return (
             <div key={rate.currency} className={`p-4 rounded-lg border ${
               rate.currency === 'USD_EBROU' 
-                ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800' 
-                : 'bg-neutral-50 dark:bg-neutral-700/40 border-neutral-200 dark:border-neutral-700'
+                ? 'bg-blue-50 dark:bg-blue-900/50 border-blue-200 dark:border-blue-800' 
+                : 'bg-neutral-50 dark:bg-neutral-800 border-neutral-200 dark:border-neutral-700'
             }`}>
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center">

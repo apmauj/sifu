@@ -459,7 +459,9 @@ function App() {
                 </Card>
               )}
 
-              <div className="grid lg:grid-cols-2 gap-8 items-start">
+              {/* Layout de una columna: Búsqueda arriba, Resultados abajo */}
+              <div className="space-y-6">
+                {/* Panel de búsqueda - ancho completo */}
                 <Card>
                   <CardBody>
                     <ExchangeSearchForm 
@@ -469,6 +471,7 @@ function App() {
                   </CardBody>
                 </Card>
 
+                {/* Panel de resultados - ancho completo */}
                 <Card>
                   <CardBody>
                     <ExchangeResultsDisplay 

@@ -316,15 +316,14 @@ const SearchForm = ({ onSearch, isLoading }) => {
             <_MagnifyingGlassIcon className="w-4 h-4" />
             <span>{isLoading ? (t('common.loading') || 'Consultando...') : (t('common.search') || 'Consultar')}</span>
           </Button>
-          <button
+          <Button
             type="button"
+            variant="ghost"
             id="reset-btn"
-            name="reset"
             onClick={handleClear}
-            className="btn-secondary"
           >
             {t('common.clear') || 'Limpiar'}
-          </button>
+          </Button>
         </div>
       </form>
     </div>

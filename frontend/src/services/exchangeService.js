@@ -82,7 +82,12 @@ const exchangeService = {
 
   // Obtener últimas cotizaciones (todas las monedas o una específica) - Unificado
   getLatest: async (currency = null) => {
-    const params = currency ? { currencies: currency } : {};
+    // Convertir array a string separado por comas si es necesario
+    let currencyParam = currency;
+    if (Array.isArray(currency)) {
+      currencyParam = currency.join(',');
+    }
+    const params = currencyParam ? { currencies: currencyParam } : {};
     return makeRequest((apiInstance) => 
       apiInstance.get('/exchange-rate/latest', { params })
     );
@@ -104,7 +109,12 @@ const exchangeService = {
 
   // Obtener cotizaciones por fecha específica - Unificado
   getByDate: async (date, currency = null) => {
-    const params = currency ? { currency } : {};
+    // Convertir array a string separado por comas si es necesario
+    let currencyParam = currency;
+    if (Array.isArray(currency)) {
+      currencyParam = currency.join(',');
+    }
+    const params = currencyParam ? { currency: currencyParam } : {};
     return makeRequest((apiInstance) => 
       apiInstance.get(`/exchange-rate/${date}`, { params })
     );
@@ -119,7 +129,12 @@ const exchangeService = {
 
   // Obtener cotizaciones por rango de fechas - Unificado
   getByDateRange: async (startDate, endDate, currency = null) => {
-    const params = currency ? { currency } : {};
+    // Convertir array a string separado por comas si es necesario
+    let currencyParam = currency;
+    if (Array.isArray(currency)) {
+      currencyParam = currency.join(',');
+    }
+    const params = currencyParam ? { currency: currencyParam } : {};
     return makeRequest((apiInstance) => 
       apiInstance.get(`/exchange-rate/range/${startDate}/${endDate}`, { params })
     );

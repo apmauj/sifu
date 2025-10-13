@@ -81,7 +81,8 @@ const URResultsDisplay = ({ results, searchType, isLoading, error, pendingCurren
 
   // Function to calculate monthly variations
   const calculateMonthlyVariations = (data) => {
-    if (!data || data.length < 2) return [];
+    if (!data || data.length === 0) return [];
+    if (data.length === 1) return [{ ...data[0], variation: null }];
     
     // Sort by year and month
     const sortedData = [...data].sort((a, b) => {
@@ -116,7 +117,9 @@ const URResultsDisplay = ({ results, searchType, isLoading, error, pendingCurren
   }, [results]);
 
   const stats = React.useMemo(() => calculateStats(data), [data]);
-  const dataWithVariations = React.useMemo(() => calculateMonthlyVariations(data), [data]);
+  const dataWithVariations = React.useMemo(() => {
+    return calculateMonthlyVariations(data);
+  }, [data]);
   const sortedData = React.useMemo(() => {
     return [...data].sort((a, b) => {
       if (a.year !== b.year) return a.year - b.year;
@@ -142,16 +145,18 @@ const URResultsDisplay = ({ results, searchType, isLoading, error, pendingCurren
   const PAGE_SIZE = 20;
   const [page, setPage] = React.useState(0);
   const paginatedData = React.useMemo(() => {
-    if (searchType === 'single') return data;
-    const base = dataWithVariations.length > 1 ? dataWithVariations : data;
+    // If we have multiple records, ALWAYS use dataWithVariations (it includes variation property)
+    // Single record queries can use data
+    const shouldUseVariations = data.length > 1 && dataWithVariations.length > 0;
+    const base = shouldUseVariations ? dataWithVariations : data;
     const start = page * PAGE_SIZE;
     return base.slice(start, start + PAGE_SIZE);
-  }, [data, dataWithVariations, page, searchType]);
+  }, [data, dataWithVariations, page]);
   const totalPages = React.useMemo(() => {
-    if (searchType === 'single') return 1;
-    const baseLength = (dataWithVariations.length > 1 ? dataWithVariations : data).length;
+    const shouldUseVariations = data.length > 1 && dataWithVariations.length > 0;
+    const baseLength = (shouldUseVariations ? dataWithVariations : data).length;
     return Math.ceil(baseLength / PAGE_SIZE) || 1;
-  }, [data, dataWithVariations, searchType]);
+  }, [data, dataWithVariations]);
 
   // Helper similar to UI component for variation trend (must be top-level, not nested inside another hook)
   const getVariationInfo = React.useMemo(() => {
@@ -226,7 +231,7 @@ const URResultsDisplay = ({ results, searchType, isLoading, error, pendingCurren
             <h3 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100 mb-2">
               {t('ur.ur_value') || 'Valor UR'}
             </h3>
-            <div className="bg-neutral-50 dark:bg-neutral-700/60 rounded-lg p-6 mb-4">
+            <div className="bg-neutral-50 dark:bg-neutral-800 rounded-lg p-6 mb-4 border border-neutral-200 dark:border-neutral-700">
               <div className="text-3xl font-bold text-uruguay-blue dark:text-blue-300 mb-2">
                 {formatURValue(data[0].value)}
               </div>
@@ -271,16 +276,16 @@ const URResultsDisplay = ({ results, searchType, isLoading, error, pendingCurren
           </div>
           {stats && data.length > 1 && (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="bg-neutral-50 dark:bg-neutral-700/60 rounded-lg p-4">
+              <div className="bg-neutral-50 dark:bg-neutral-800 rounded-lg p-4 border border-neutral-200 dark:border-neutral-700">
                 <div className="text-sm text-neutral-600 dark:text-neutral-300 mb-1">{t('ur.initial_value') || 'Valor inicial'}</div>
                 <div className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">{formatURValue(stats.initialValue)}</div>
               </div>
-              <div className="bg-neutral-50 dark:bg-neutral-700/60 rounded-lg p-4">
+              <div className="bg-neutral-50 dark:bg-neutral-800 rounded-lg p-4 border border-neutral-200 dark:border-neutral-700">
                 <div className="text-sm text-neutral-600 dark:text-neutral-300 mb-1">{t('ur.final_value') || 'Valor final'}</div>
                 <div className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">{formatURValue(stats.finalValue)}</div>
               </div>
               {getVariationInfo && (
-                <div className="bg-neutral-50 dark:bg-neutral-700/60 rounded-lg p-4">
+                <div className="bg-neutral-50 dark:bg-neutral-800 rounded-lg p-4 border border-neutral-200 dark:border-neutral-700">
                   <div className="text-sm text-neutral-600 dark:text-neutral-300 mb-1">{t('common.variation') || 'Variación'}</div>
                   <div className={`text-lg font-semibold flex items-center ${
                     getVariationInfo.trend === 'up' ? 'text-green-600' : getVariationInfo.trend === 'down' ? 'text-red-600' : 'text-neutral-900 dark:text-neutral-100'
@@ -309,7 +314,12 @@ const URResultsDisplay = ({ results, searchType, isLoading, error, pendingCurren
                   <_CartesianGrid strokeDasharray="3 3" stroke="#374151" />
                   <_XAxis dataKey="name" angle={-45} textAnchor="end" height={80} fontSize={12} tick={{ fill: '#d1d5db' }} />
                   <_YAxis domain={['dataMin - 10', 'dataMax + 10']} tickFormatter={formatURValue} width={85} fontSize={10} tick={{ fill: '#d1d5db' }} />
-                  <_Tooltip formatter={(value) => [formatURValue(value), t('ur.ur_value') || 'Valor UR']} labelStyle={{ color: '#374151' }} />
+                  <_Tooltip 
+                    formatter={(value) => [formatURValue(value), t('ur.ur_value') || 'Valor UR']}
+                    contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151', borderRadius: '0.5rem' }}
+                    labelStyle={{ color: '#d1d5db' }}
+                    itemStyle={{ color: '#d1d5db' }}
+                  />
                   <_Line type="monotone" dataKey="value" stroke="#2563eb" strokeWidth={2} dot={{ fill: '#2563eb', strokeWidth: 2, r: 4 }} activeDot={{ r: 6, stroke: '#2563eb', strokeWidth: 2 }} />
                 </_LineChart>
               </_ResponsiveContainer>
@@ -326,7 +336,13 @@ const URResultsDisplay = ({ results, searchType, isLoading, error, pendingCurren
                     <_CartesianGrid strokeDasharray="3 3" stroke="#374151" />
                     <_XAxis dataKey="name" angle={-45} textAnchor="end" height={80} fontSize={12} tick={{ fill: '#d1d5db' }} />
                     <_YAxis tickFormatter={(value) => `${value}%`} tick={{ fill: '#d1d5db' }} />
-                    <_Tooltip formatter={(value) => [formatPercentage(value), t('ur.variation_percentage') || 'Variación %']} labelStyle={{ color: '#374151' }} />
+                    <_Tooltip 
+                      formatter={(value) => [formatPercentage(value), t('ur.variation_percentage') || 'Variación %']}
+                      contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151', borderRadius: '0.5rem' }}
+                      labelStyle={{ color: '#d1d5db' }}
+                      itemStyle={{ color: '#d1d5db' }}
+                      cursor={{ fill: 'rgba(55, 65, 81, 0.3)' }}
+                    />
                     <_Bar dataKey="variation" fill="#fbbf24" name={t('ur.variation_percentage') || 'Variación %'} />
                   </_BarChart>
                 </_ResponsiveContainer>
@@ -347,7 +363,7 @@ const URResultsDisplay = ({ results, searchType, isLoading, error, pendingCurren
           </h4>
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-neutral-200 dark:divide-neutral-600">
-              <thead className="bg-neutral-50 dark:bg-neutral-700/60">
+              <thead className="bg-neutral-50 dark:bg-neutral-800">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-300 uppercase tracking-wider">
                     {t('common.period') || 'Período'}
@@ -363,8 +379,8 @@ const URResultsDisplay = ({ results, searchType, isLoading, error, pendingCurren
                 </tr>
               </thead>
               <tbody className="bg-white dark:bg-neutral-800 divide-y divide-neutral-200 dark:divide-neutral-700">
-                {(dataWithVariations.length > 1 ? paginatedData : paginatedData).map((item, index) => (
-                  <tr key={`${item.year}-${item.month}`} className={index % 2 === 0 ? 'bg-white dark:bg-neutral-800' : 'bg-neutral-50 dark:bg-neutral-700/40'}>
+                {paginatedData.map((item, index) => (
+                  <tr key={`${item.year}-${item.month}`} className={index % 2 === 0 ? 'bg-white dark:bg-neutral-800' : 'bg-neutral-50 dark:bg-neutral-700'}>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-neutral-900 dark:text-neutral-100">
                       {formatPeriod(item.year, item.month)}
                     </td>
@@ -373,7 +389,7 @@ const URResultsDisplay = ({ results, searchType, isLoading, error, pendingCurren
                     </td>
                     {dataWithVariations.length > 1 && (
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        {item.variation !== null ? (
+                        {item.variation != null && !isNaN(item.variation) ? (
                           <span className={item.variation >= 0 ? 'text-green-500' : 'text-red-500'}>
                             {formatPercentage(item.variation)}
                           </span>

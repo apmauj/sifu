@@ -152,11 +152,12 @@ describe('URSearchForm Component', () => {
       expect(screen.getByText('Rango de períodos')).toBeInTheDocument();
     });
 
-    it('should render subtype options for single search', () => {
+    it('should always show year and month fields in single mode', () => {
       render(<URSearchForm onSearch={mockOnSearch} />);
       
-      expect(screen.getByText('Mes específico')).toBeInTheDocument();
-      expect(screen.getByText('Año completo')).toBeInTheDocument();
+      // In single mode, year and month are always visible (no subtype selection anymore)
+      expect(screen.getByLabelText('Año')).toBeInTheDocument();
+      expect(screen.getByLabelText('Mes')).toBeInTheDocument();
     });
 
     it('should render form controls and buttons', () => {
@@ -199,65 +200,32 @@ describe('URSearchForm Component', () => {
       expect(singleRadio).toBeChecked();
     });
 
-    it('should hide subtype options when range is selected', () => {
+    it('should hide month/year fields when range is selected', () => {
       render(<URSearchForm onSearch={mockOnSearch} />);
+      
+      // Initially in single mode - verify single mode fields exist
+      expect(screen.getByLabelText('Año')).toBeInTheDocument();
+      expect(screen.getByLabelText('Mes')).toBeInTheDocument();
       
       const rangeRadio = screen.getByRole('radio', { name: 'Rango de períodos' });
       fireEvent.click(rangeRadio);
       
-      expect(screen.queryByText('Mes específico')).not.toBeInTheDocument();
-      expect(screen.queryByText('Año completo')).not.toBeInTheDocument();
+      // After switching to range, verify range sections appear
+      expect(screen.getByText('Período inicio')).toBeInTheDocument();
+      expect(screen.getByText('Período fin')).toBeInTheDocument();
+      // Multiple "Año" and "Mes" labels now exist (startYear, endYear, startMonth, endMonth)
+      expect(screen.getAllByText('Año').length).toBeGreaterThan(1);
     });
   });
 
-  // ===== SUBTYPE SELECTION TESTS =====
-  describe('Subtype Selection', () => {
-    it('should show month field when month subtype is selected', () => {
-      render(<URSearchForm onSearch={mockOnSearch} />);
-      
-      const monthRadio = screen.getByRole('radio', { name: 'Mes específico' });
-      expect(monthRadio).toBeChecked();
-      expect(screen.getByLabelText('Mes')).toBeInTheDocument();
-    });
-
-    it('should hide month field when year subtype is selected', () => {
-      render(<URSearchForm onSearch={mockOnSearch} />);
-      
-      const yearRadio = screen.getByRole('radio', { name: 'Año completo' });
-      fireEvent.click(yearRadio);
-      
-      expect(screen.queryByLabelText('Mes')).not.toBeInTheDocument();
-    });
-
-    it('should switch between month and year subtypes correctly', () => {
-      render(<URSearchForm onSearch={mockOnSearch} />);
-      
-      const yearRadio = screen.getByRole('radio', { name: 'Año completo' });
-      fireEvent.click(yearRadio);
-      expect(screen.queryByLabelText('Mes')).not.toBeInTheDocument();
-      
-      const monthRadio = screen.getByRole('radio', { name: 'Mes específico' });
-      fireEvent.click(monthRadio);
-      expect(screen.getByLabelText('Mes')).toBeInTheDocument();
-    });
-  });
+  // ===== SUBTYPE SELECTION TESTS (REMOVED - NO LONGER APPLICABLE) =====
+  // Subtype selection (Mes específico / Año completo) has been removed
+  // Single mode now always shows Year + Month fields only
 
   // ===== FORM SUBMISSION TESTS =====
   describe('Form Submission', () => {
     it('should submit single month search correctly', () => {
       render(<URSearchForm onSearch={mockOnSearch} />);
-      
-      const form = screen.getByRole('button', { name: 'Consultar UR' }).closest('form');
-      fireEvent.submit(form);
-      
-      expect(mockHandleSubmit).toHaveBeenCalled();
-    });
-
-    it('should submit single year search correctly', () => {
-      render(<URSearchForm onSearch={mockOnSearch} />);
-      
-      const yearRadio = screen.getByRole('radio', { name: 'Año completo' });
-      fireEvent.click(yearRadio);
       
       const form = screen.getByRole('button', { name: 'Consultar UR' }).closest('form');
       fireEvent.submit(form);
@@ -334,9 +302,10 @@ describe('URSearchForm Component', () => {
     it('should show loading state on submit button when loading', () => {
       render(<URSearchForm onSearch={mockOnSearch} isLoading={true} />);
       
-      const submitButton = screen.getByRole('button', { name: 'Consultando...' });
+      // Button should still have original text but be disabled and show spinner
+      const submitButton = screen.getByRole('button', { name: /Consultar UR/i });
       expect(submitButton).toBeDisabled();
-      expect(screen.getByText('Consultando...')).toBeInTheDocument();
+      expect(screen.getByText('Consultar UR')).toBeInTheDocument();
     });
 
     it('should show normal state when not loading', () => {
@@ -533,19 +502,6 @@ describe('URSearchForm Component', () => {
       
       expect(screen.getByText('Período inicio')).toBeInTheDocument();
       expect(screen.getByText('Período fin')).toBeInTheDocument();
-    });
-
-    it('should handle rapid subtype changes', () => {
-      render(<URSearchForm onSearch={mockOnSearch} />);
-      
-      const yearRadio = screen.getByRole('radio', { name: 'Año completo' });
-      const monthRadio = screen.getByRole('radio', { name: 'Mes específico' });
-      
-      fireEvent.click(yearRadio);
-      fireEvent.click(monthRadio);
-      fireEvent.click(yearRadio);
-      
-      expect(screen.queryByLabelText('Mes')).not.toBeInTheDocument();
     });
   });
 

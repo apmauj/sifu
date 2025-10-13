@@ -298,14 +298,19 @@ class ExchangeRateService:
     def get_exchange_rate_by_date(
         self, date: date, currency: Optional[str] = None
     ) -> List[ExchangeRateValue]:
-        """Get exchange rates for a specific date, optionally filtered by currency"""
+        """Get exchange rates for a specific date, optionally filtered by currency or list of currencies"""
         try:
             query = self.db.query(ExchangeRateRecord).filter(
                 ExchangeRateRecord.date == date
             )
 
             if currency:
-                query = query.filter(ExchangeRateRecord.currency == currency.upper())
+                # Soportar múltiples monedas separadas por comas
+                if ',' in currency:
+                    currency_list = [c.strip().upper() for c in currency.split(',')]
+                    query = query.filter(ExchangeRateRecord.currency.in_(currency_list))
+                else:
+                    query = query.filter(ExchangeRateRecord.currency == currency.upper())
 
             records = query.order_by(ExchangeRateRecord.currency).all()
 
@@ -357,7 +362,7 @@ class ExchangeRateService:
     def get_exchange_rate_by_date_range(
         self, start_date: date, end_date: date, currency: Optional[str] = None
     ) -> List[ExchangeRateValue]:
-        """Get exchange rates for a date range, optionally filtered by currency"""
+        """Get exchange rates for a date range, optionally filtered by currency or list of currencies"""
         try:
             query = self.db.query(ExchangeRateRecord).filter(
                 and_(
@@ -367,7 +372,12 @@ class ExchangeRateService:
             )
 
             if currency:
-                query = query.filter(ExchangeRateRecord.currency == currency.upper())
+                # Soportar múltiples monedas separadas por comas
+                if ',' in currency:
+                    currency_list = [c.strip().upper() for c in currency.split(',')]
+                    query = query.filter(ExchangeRateRecord.currency.in_(currency_list))
+                else:
+                    query = query.filter(ExchangeRateRecord.currency == currency.upper())
 
             records = query.order_by(
                 ExchangeRateRecord.date, ExchangeRateRecord.currency
