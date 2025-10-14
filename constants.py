@@ -224,6 +224,8 @@ file inside date-based folders (e.g. 2025-09). We attempt the current month back
 several months until a valid file is found. Overridable via env URL_BHU_UR_TEMPLATE."""
 UR_URL_MONTHS_BACK = int(os.getenv("UR_URL_MONTHS_BACK", "8"))
 """How many previous months (including current) to attempt when resolving BHU UR Excel."""
+URL_INE_UR = "https://www5.ine.gub.uy/documents/Estad%C3%ADsticasecon%C3%B3micas/SERIES%20Y%20OTROS/UR/UR.xls"
+"""INE UR Excel URL - Used as fallback when BHU sources are unavailable or outdated."""
 URL_INE_EXCHANGE_RATES = "https://www5.ine.gub.uy/documents/Estadísticaseconómicas/SERIES%20Y%20OTROS/Cotización%20monedas/Cotización%20monedas.xlsx"  # INE Historical Exchange rates
 URL_BCU_EXCHANGE_RATES = "https://www.bcu.gub.uy/Estadisticas-e-Indicadores/Paginas/Cotizaciones.aspx"  # BCU Current rates
 
@@ -343,6 +345,7 @@ LOG_DATABASE_READY = "✅ Database ready with {count} records"
 
 LOG_DOWNLOADING_EXCEL_INE = "Descargando archivo Excel desde INE..."
 LOG_DOWNLOADING_EXCEL_BHU = "Descargando archivo Excel de UR desde BHU..."
+LOG_DOWNLOADING_EXCEL_INE_UR_FALLBACK = "Intentando fallback a INE para UR..."
 LOG_EXCEL_DOWNLOADED = "Archivo descargado exitosamente. Filas: {count}"
 LOG_EXCEL_UR_DOWNLOADED = "Archivo UR descargado exitosamente. Filas: {count}"
 LOG_RECORDS_PARSED = "Parseados {count} registros válidos"

@@ -29,8 +29,10 @@ from constants import (
     EXCEL_ENGINE_XLS,
     LOG_DOWNLOADING_EXCEL_INE,
     LOG_DOWNLOADING_EXCEL_BHU,
+    LOG_DOWNLOADING_EXCEL_INE_UR_FALLBACK,
     URL_BHU_UR,
     URL_BHU_UR_TEMPLATE,
+    URL_INE_UR,
     UR_URL_MONTHS_BACK,
     URL_INE_UI,
     LOG_RECORDS_SAVED,
@@ -253,46 +255,65 @@ class URExcelProcessor:
         self.timeout = HTTP_TIMEOUT
 
     def download_excel(self) -> Optional[Any]:
-        """Download UR Excel file from BHU URL"""
+        """Download UR Excel file from BHU URL with INE fallback"""
         if pd is None:
             logger.warning("pandas not available; skipping UR Excel download")
             return None
-        try:
+        
+        # Try to resolve the most recent BHU URL
+        bhu_url = self._resolve_dynamic_bhu_url()
+        if bhu_url:
             logger.info(LOG_DOWNLOADING_EXCEL_BHU)
+            excel_data = self._try_download_from_url(bhu_url)
+            if excel_data is not None:
+                return excel_data
+            logger.warning("BHU URL found but file is invalid or corrupt")
+        
+        # If BHU fails, try INE as fallback
+        logger.info(LOG_DOWNLOADING_EXCEL_INE_UR_FALLBACK)
+        excel_data = self._try_download_from_url(URL_INE_UR)
+        if excel_data is not None:
+            logger.info(f"Successfully using INE fallback: {URL_INE_UR}")
+            return excel_data
+        
+        logger.error("Both BHU and INE sources failed for UR data")
+        return None
+    
+    def _try_download_from_url(self, url: str) -> Optional[Any]:
+        """Attempt to download and parse Excel file from given URL"""
+        try:
             headers = {"User-Agent": HTTP_USER_AGENT}
-
-            # Use circuit breaker to protect BHU API calls
             cb = get_circuit_breaker("BHU_API")
+            
             with cb:
-                # NOTE: BHU/INE server has incomplete SSL certificate chain (missing intermediate cert).
-                # Since this is official government site (.gub.uy), we disable SSL verification.
+                # NOTE: BHU/INE servers have incomplete SSL certificate chain (missing intermediate cert).
+                # Since these are official government sites (.gub.uy), we disable SSL verification.
                 # WARNING: Do not use verify=False for untrusted sites.
-                logger.warning("BHU server has incomplete SSL cert chain - disabling verification")
-                # Suppress InsecureRequestWarning for this specific request
+                logger.warning(f"Disabling SSL verification for government site: {url}")
                 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
                 response = requests.get(
-                    self.url, 
+                    url, 
                     timeout=self.timeout, 
                     headers=headers,
                     verify=False
                 )
                 response.raise_for_status()
-
-            # Read Excel file
+            
+            # Try to read Excel file
             excel_data = pd.read_excel(
                 io.BytesIO(response.content), engine=EXCEL_ENGINE_XLS
             )
             logger.info(LOG_EXCEL_UR_DOWNLOADED.format(count=len(excel_data)))
             return excel_data
-
+            
         except CircuitBreakerOpenException:
-            logger.warning("Circuit breaker is OPEN for BHU API - skipping download")
+            logger.warning(f"Circuit breaker is OPEN for {url} - skipping download")
             return None
         except requests.RequestException as e:
-            logger.error(f"Error downloading UR file: {e}")
+            logger.error(f"Error downloading from {url}: {e}")
             return None
         except Exception as e:
-            logger.error(f"Error processing UR Excel file: {e}")
+            logger.error(f"Error processing Excel file from {url}: {e}")
             return None
 
     def _resolve_dynamic_bhu_url(self) -> Optional[str]:
@@ -349,6 +370,26 @@ class URExcelProcessor:
             except Exception as e:  # noqa: BLE001
                 logger.debug(f"HEAD failed for {url}: {e}")
                 continue
+
+        # All BHU URLs failed, try INE as fallback
+        logger.info(LOG_DOWNLOADING_EXCEL_INE_UR_FALLBACK)
+        try:
+            headers = {"User-Agent": HTTP_USER_AGENT}
+            resp = requests.head(
+                URL_INE_UR,
+                timeout=min(10, self.timeout),
+                headers=headers,
+                allow_redirects=True,
+            )
+            if (
+                resp.status_code == 200
+                and int(resp.headers.get("Content-Length", "1")) > 0
+            ):
+                logger.info(f"Usando fallback INE UR: {URL_INE_UR}")
+                return URL_INE_UR
+        except Exception as e:  # noqa: BLE001
+            logger.warning(f"Fallback INE también falló: {e}")
+
         logger.warning(LOG_ALL_BHU_URLS_FAILED)
         return None
 
@@ -356,40 +397,119 @@ class URExcelProcessor:
         self, excel_data: Any
     ) -> List[Tuple[int, int, float]]:
         """
-        Parse UR Excel data with matrix format:
-        - Rows = years
-        - Columns = months
+        Parse UR Excel data from either BHU (matrix format) or INE (list format).
         Returns a list of tuples (year, month, value)
         """
         if pd is None:
             logger.warning("pandas not available; cannot parse UR Excel data")
             return []
         try:
-            records = []
-
             logger.info(f"UR file structure: {excel_data.shape}")
             logger.info(f"Detected columns: {list(excel_data.columns)}")
             logger.info(f"First 5 rows:\n{excel_data.head()}")
+            
+            # Detect format: INE format has date strings in first column
+            # Look for pattern "YYYY-MM-DD HH:MM:SS" or similar date format
+            first_col = excel_data.iloc[:, 0]
+            sample_values = first_col.dropna().head(10).astype(str)
+            
+            # Check if it looks like INE format (dates in first column)
+            is_ine_format = any(
+                '-' in str(val) and any(char.isdigit() for char in str(val))
+                for val in sample_values
+            )
+            
+            if is_ine_format:
+                logger.info("Detected INE list format (date, value)")
+                return self._parse_ine_format(excel_data)
+            else:
+                logger.info("Detected BHU matrix format (years x months)")
+                return self._parse_bhu_format(excel_data)
+                
+        except Exception as e:
+            logger.error(f"Error parsing UR Excel data: {e}")
+            import traceback
+            traceback.print_exc()
+            return []
+    
+    def _parse_ine_format(self, excel_data: Any) -> List[Tuple[int, int, float]]:
+        """Parse INE format: sequential list with date in col 0, value in col 1"""
+        records = []
+        
+        # Find the header row (contains "Mes y año" or similar)
+        data_start_idx = 0
+        for idx, row in excel_data.iterrows():
+            row_str = " ".join([str(cell) for cell in row if pd.notna(cell)])
+            if "Mes" in row_str or "año" in row_str or "Valor" in row_str:
+                data_start_idx = idx + 1
+                logger.info(f"INE data starts at row {data_start_idx}")
+                break
+        
+        # Process data rows
+        for idx in range(data_start_idx, len(excel_data)):
+            try:
+                row = excel_data.iloc[idx]
+                date_val = row.iloc[0]  # First column: date
+                value_val = row.iloc[1] if len(row) > 1 else None  # Second column: value
+                
+                if pd.isna(date_val) or pd.isna(value_val):
+                    continue
+                
+                # Parse date - can be string "YYYY-MM-DD HH:MM:SS" or datetime object
+                if isinstance(date_val, str):
+                    # Extract year and month from string
+                    date_parts = date_val.split('-')
+                    if len(date_parts) >= 2:
+                        year = int(date_parts[0])
+                        month = int(date_parts[1])
+                    else:
+                        continue
+                else:
+                    # Assume it's a datetime object
+                    year = date_val.year
+                    month = date_val.month
+                
+                # Parse value
+                value = float(value_val)
+                
+                # Validate
+                if MIN_VALID_YEAR <= year <= MAX_VALID_YEAR and 1 <= month <= 12:
+                    records.append((year, month, value))
+                    
+            except Exception as e:
+                logger.debug(f"Skipping row {idx}: {e}")
+                continue
+        
+        logger.info(f"INE format: Parsed {len(records)} records")
+        return records
+    
+    def _parse_bhu_format(self, excel_data: Any) -> List[Tuple[int, int, float]]:
+        """Parse BHU format: matrix with years in rows, months in columns"""
+        records = []
 
-            # BHU file has a specific structure
-            # We need to find the row with month names and the column with years
+    def _parse_bhu_format(self, excel_data: Any) -> List[Tuple[int, int, float]]:
+        """Parse BHU format: matrix with years in rows, months in columns"""
+        records = []
+        
+        # BHU file has a specific structure
+        # We need to find the row with month names and the column with years
 
-            # Search for the row containing months (header)
-            header_row_idx = None
-            month_names = UR_MONTH_NAMES
+        # Search for the row containing months (header)
+        header_row_idx = None
+        month_names = UR_MONTH_NAMES
 
-            for idx, row in excel_data.iterrows():
-                row_str = " ".join(
-                    [str(cell).upper() for cell in row if pd.notna(cell)]
-                )
-                if any(month in row_str for month in month_names):
-                    header_row_idx = idx
-                    logger.info(f"Month header found in row {idx}")
-                    break
+        for idx, row in excel_data.iterrows():
+            row_str = " ".join(
+                [str(cell).upper() for cell in row if pd.notna(cell)]
+            )
+            if any(month in row_str for month in month_names):
+                header_row_idx = idx
+                logger.info(f"Month header found in row {idx}")
+                break
 
-            if header_row_idx is None:
-                logger.error("No row with month names found")
-                return []
+        if header_row_idx is None:
+            logger.error("No row with month names found in BHU format")
+            return []
 
             # Use that row as header
             new_header = excel_data.iloc[header_row_idx].values
@@ -524,23 +644,16 @@ class URExcelProcessor:
                     logger.warning(f"Error processing row: {e}")
                     continue
 
-            logger.info(f"Parsed {len(records)} valid UR records")
+        logger.info(f"BHU format: Parsed {len(records)} valid UR records")
 
-            # Show some sample records
-            if records:
-                records.sort(key=lambda x: (x[0], x[1]))  # Sort by year and month
-                logger.info(f"First record: {records[0]}")
-                logger.info(f"Last record: {records[-1]}")
-                logger.info(f"Sample records: {records[:5]}")
+        # Show some sample records
+        if records:
+            records.sort(key=lambda x: (x[0], x[1]))  # Sort by year and month
+            logger.info(f"First record: {records[0]}")
+            logger.info(f"Last record: {records[-1]}")
+            logger.info(f"Sample records: {records[:5]}")
 
-            return records
-
-        except Exception as e:
-            logger.error(f"Error parsing UR Excel data: {e}")
-            import traceback
-
-            logger.error(traceback.format_exc())
-            return []
+        return records
 
     def save_to_database(
         self, db: Session, records: List[Tuple[int, int, float]]
