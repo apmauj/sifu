@@ -183,77 +183,79 @@ const URSearchForm = ({ onSearch, isLoading }) => {
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         {searchType === 'single' ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label htmlFor="year" className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
-                <_CalendarIcon className="w-4 h-4 inline mr-1" />
-                {t('common.year') || 'Año'}
-              </label>
-              <_Controller
-                control={control}
-                name="year"
-                defaultValue={currentYear}
-                rules={{
-                  required: t('ur.year_required') || 'El año es requerido'
-                }}
-                render={({ field }) => (
-                  <select
-                    {...field}
-                    id="year"
-                    className="input-field"
-                    disabled={loadingInfo}
-                  >
-                    <option value="">
-                      {loadingInfo 
-                        ? (t('common.loading') || 'Cargando...') 
-                        : (t('ur.select_year') || 'Selecciona un año')
-                      }
-                    </option>
-                    {yearOptions.map(year => (
-                      <option key={year} value={year}>{year}</option>
-                    ))}
-                  </select>
-                )}
-              />
-              {errors.year && (
-                <p className={`mt-1 text-sm ${getSemanticClass('error', 'text', 600)}`}>{errors.year.message}</p>
-              )}
-            </div>
-
-            <div>
-              <label htmlFor="month" className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
-                <_CalendarIcon className="w-4 h-4 inline mr-1" />
-                {t('common.month') || 'Mes'}
-              </label>
+          <div className="bg-neutral-50 dark:bg-neutral-800 p-4 rounded-lg border border-neutral-200 dark:border-neutral-700">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="year" className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+                  <_CalendarIcon className="w-4 h-4 inline mr-1" />
+                  {t('common.year') || 'Año'}
+                </label>
                 <_Controller
                   control={control}
-                  name="month"
-                  defaultValue={currentMonth}
+                  name="year"
+                  defaultValue={currentYear}
                   rules={{
-                    required: t('ur.month_required') || 'El mes es requerido'
+                    required: t('ur.year_required') || 'El año es requerido'
                   }}
                   render={({ field }) => (
                     <select
                       {...field}
-                      id="month"
+                      id="year"
                       className="input-field"
+                      disabled={loadingInfo}
                     >
-                      <option value="">{t('ur.select_month') || 'Selecciona un mes'}</option>
-                      {Array.from({ length: 12 }, (_, i) => i + 1).map(month => (
-                        <option key={month} value={month}>
-                          {t(`ur.${['january', 'february', 'march', 'april', 'may', 'june', 
-                               'july', 'august', 'september', 'october', 'november', 'december'][month - 1]}`) || 
-                           ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-                            'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'][month - 1]}
-                        </option>
+                      <option value="">
+                        {loadingInfo 
+                          ? (t('common.loading') || 'Cargando...') 
+                          : (t('ur.select_year') || 'Selecciona un año')
+                        }
+                      </option>
+                      {yearOptions.map(year => (
+                        <option key={year} value={year}>{year}</option>
                       ))}
                     </select>
                   )}
                 />
-                {errors.month && (
-                  <p className={`mt-1 text-sm ${getSemanticClass('error', 'text', 600)}`}>{errors.month.message}</p>
+                {errors.year && (
+                  <p className={`mt-1 text-sm ${getSemanticClass('error', 'text', 600)}`}>{errors.year.message}</p>
                 )}
               </div>
+
+              <div>
+                <label htmlFor="month" className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+                  <_CalendarIcon className="w-4 h-4 inline mr-1" />
+                  {t('common.month') || 'Mes'}
+                </label>
+                  <_Controller
+                    control={control}
+                    name="month"
+                    defaultValue={currentMonth}
+                    rules={{
+                      required: t('ur.month_required') || 'El mes es requerido'
+                    }}
+                    render={({ field }) => (
+                      <select
+                        {...field}
+                        id="month"
+                        className="input-field"
+                      >
+                        <option value="">{t('ur.select_month') || 'Selecciona un mes'}</option>
+                        {Array.from({ length: 12 }, (_, i) => i + 1).map(month => (
+                          <option key={month} value={month}>
+                            {t(`ur.${['january', 'february', 'march', 'april', 'may', 'june', 
+                                 'july', 'august', 'september', 'october', 'november', 'december'][month - 1]}`) || 
+                             ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+                              'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'][month - 1]}
+                          </option>
+                        ))}
+                      </select>
+                    )}
+                  />
+                  {errors.month && (
+                    <p className={`mt-1 text-sm ${getSemanticClass('error', 'text', 600)}`}>{errors.month.message}</p>
+                  )}
+                </div>
+            </div>
           </div>
         ) : (
           <div className="space-y-6">

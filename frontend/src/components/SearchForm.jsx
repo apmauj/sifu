@@ -141,48 +141,50 @@ const SearchForm = ({ onSearch, isLoading }) => {
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         {searchType === 'single' ? (
-          <div>
-            <label htmlFor="fecha" className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
-              <_CalendarIcon className="w-4 h-4 inline mr-1" />
-              {t('common.date') || 'Fecha'}
-            </label>
-            <_Controller
-              control={control}
-              name="fecha"
-              defaultValue={today}
-              rules={{
-                required: t('ui.date_required') || 'La fecha es requerida',
-                validate: (value) => {
-                  if (maxDate && value > effectiveMaxDate) {
-                    return t('ui.date_too_late') || 'La fecha no puede ser posterior a la última fecha disponible';
+          <>
+            <div className="bg-neutral-50 dark:bg-neutral-800 p-4 rounded-lg border border-neutral-200 dark:border-neutral-700">
+              <label htmlFor="fecha" className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+                <_CalendarIcon className="w-4 h-4 inline mr-1" />
+                {t('common.date') || 'Fecha'}
+              </label>
+              <_Controller
+                control={control}
+                name="fecha"
+                defaultValue={today}
+                rules={{
+                  required: t('ui.date_required') || 'La fecha es requerida',
+                  validate: (value) => {
+                    if (maxDate && value > effectiveMaxDate) {
+                      return t('ui.date_too_late') || 'La fecha no puede ser posterior a la última fecha disponible';
+                    }
+                    return true;
                   }
-                  return true;
-                }
-              }}
-              render={({ field }) => (
-                <_DatePicker
-                  {...field}
-                  name="fecha"
-                  id="fecha"
-                  className="input-field"
-                  dateFormat="yyyy-MM-dd"
-                  selected={field.value && typeof field.value === 'string' && field.value.trim() !== '' ? parseISO(field.value) : null}
-                  onChange={date => field.onChange(format(date, 'yyyy-MM-dd'))}
-                  minDate={null}
-                  // maxDate={maxDateObj}
-                  placeholderText={t('ui.select_date') || 'Selecciona una fecha'}
-                  showMonthDropdown
-                  showYearDropdown
-                  dropdownMode="select"
-                  todayButton={t('common.today') || 'Hoy'}
-                  monthDropdownProps={{ id: 'month-select-fecha', name: 'month-fecha' }}
-                  yearDropdownProps={{ id: 'year-select-fecha', name: 'year-fecha' }}
-                />
+                }}
+                render={({ field }) => (
+                  <_DatePicker
+                    {...field}
+                    name="fecha"
+                    id="fecha"
+                    className="input-field"
+                    dateFormat="yyyy-MM-dd"
+                    selected={field.value && typeof field.value === 'string' && field.value.trim() !== '' ? parseISO(field.value) : null}
+                    onChange={date => field.onChange(format(date, 'yyyy-MM-dd'))}
+                    minDate={null}
+                    // maxDate={maxDateObj}
+                    placeholderText={t('ui.select_date') || 'Selecciona una fecha'}
+                    showMonthDropdown
+                    showYearDropdown
+                    dropdownMode="select"
+                    todayButton={t('common.today') || 'Hoy'}
+                    monthDropdownProps={{ id: 'month-select-fecha', name: 'month-fecha' }}
+                    yearDropdownProps={{ id: 'year-select-fecha', name: 'year-fecha' }}
+                  />
+                )}
+              />
+              {errors.fecha && (
+                <p className={`mt-1 text-sm ${getSemanticClass('error', 'text', 600)}`}>{errors.fecha.message}</p>
               )}
-            />
-            {errors.fecha && (
-              <p className={`mt-1 text-sm ${getSemanticClass('error', 'text', 600)}`}>{errors.fecha.message}</p>
-            )}
+            </div>
             {/* Enhanced quick selectors */}
             <_QuickSelectors
               type="UI"
@@ -190,14 +192,15 @@ const SearchForm = ({ onSearch, isLoading }) => {
               onSingleSelect={setQuickDate}
               maxDate={maxDate}
             />
-          </div>
+          </>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label htmlFor="fechaInicio" className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
-                <_CalendarIcon className="w-4 h-4 inline mr-1" />
+          <div className="space-y-6">
+            {/* Start Date Section */}
+            <div className="bg-neutral-50 dark:bg-neutral-800 p-4 rounded-lg border border-neutral-200 dark:border-neutral-700">
+              <h4 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300 mb-3 flex items-center">
+                <_CalendarIcon className="w-4 h-4 mr-2" />
                 {t('ui.start_date') || 'Fecha inicio'}
-              </label>
+              </h4>
               <_Controller
                 control={control}
                 name="fechaInicio"
@@ -244,11 +247,13 @@ const SearchForm = ({ onSearch, isLoading }) => {
                 <p className={`mt-1 text-sm ${getSemanticClass('error', 'text', 600)}`}>{errors.fechaInicio.message}</p>
               )}
             </div>
-            <div>
-              <label htmlFor="fechaFin" className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
-                <_CalendarIcon className="w-4 h-4 inline mr-1" />
+
+            {/* End Date Section */}
+            <div className="bg-neutral-50 dark:bg-neutral-800 p-4 rounded-lg border border-neutral-200 dark:border-neutral-700">
+              <h4 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300 mb-3 flex items-center">
+                <_CalendarIcon className="w-4 h-4 mr-2" />
                 {t('ui.end_date') || 'Fecha fin'}
-              </label>
+              </h4>
               <_Controller
                 control={control}
                 name="fechaFin"
@@ -295,15 +300,14 @@ const SearchForm = ({ onSearch, isLoading }) => {
                 <p className={`mt-1 text-sm ${getSemanticClass('error', 'text', 600)}`}>{errors.fechaFin.message}</p>
               )}
             </div>
+            
             {/* Enhanced range quick selectors */}
-            <div className="md:col-span-2">
-              <_QuickSelectors
-                type="UI"
-                mode="range"
-                onRangeSelect={setQuickRange}
-                maxDate={maxDate}
-              />
-            </div>
+            <_QuickSelectors
+              type="UI"
+              mode="range"
+              onRangeSelect={setQuickRange}
+              maxDate={maxDate}
+            />
           </div>
         )}
         <div className="flex space-x-3 pt-4">
