@@ -205,6 +205,10 @@ jobs:
         run: ruff check .
       - name: Static message duplication check
         run: python scripts/util/check_messages.py
+      - name: Verify Alembic migrations
+        run: |
+          alembic current
+          alembic upgrade head
       - name: Run backend tests
         env:
           PYTHONUNBUFFERED: '1'

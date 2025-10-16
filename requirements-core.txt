@@ -30,5 +30,6 @@ opentelemetry-instrumentation==0.47b0
 opentelemetry-instrumentation-fastapi==0.47b0
 opentelemetry-instrumentation-requests==0.47b0
 opentelemetry-instrumentation-sqlalchemy==0.47b0
-opentelemetry-exporter-otlp==0.47b0
+opentelemetry-instrumentation-logging==0.47b0
+opentelemetry-exporter-otlp==1.26.0
 prometheus-client==0.21.0
