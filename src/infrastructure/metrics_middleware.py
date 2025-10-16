@@ -9,7 +9,7 @@ from typing import Callable
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
 
-from metrics import metrics_collector
+from src.infrastructure.metrics.metrics import metrics_collector
 
 
 class MetricsMiddleware(BaseHTTPMiddleware):
@@ -42,7 +42,7 @@ class MetricsMiddleware(BaseHTTPMiddleware):
 
             # Increment lightweight throughput counter for performance dashboard (best-effort)
             try:
-                from performance_budget import (
+                from src.infrastructure.performance.performance_budget import (
                     get_performance_budget_manager,
                 )  # lazy import to avoid cycles
 
@@ -74,7 +74,7 @@ class MetricsMiddleware(BaseHTTPMiddleware):
 
             # Still count towards throughput to reflect incoming load
             try:
-                from performance_budget import (
+                from src.infrastructure.performance.performance_budget import (
                     get_performance_budget_manager,
                 )  # lazy import to avoid cycles
 
@@ -156,8 +156,8 @@ async def get_metrics():
 
     # UI freshness metrics (roadmap task) - lightweight query
     try:
-        from database import SessionLocal
-        from services import UIService
+        from src.infrastructure.database.database import SessionLocal
+        from src.domain.services import UIService
         from datetime import datetime
         import os
         import pytz  # type: ignore
@@ -214,7 +214,7 @@ async def get_metrics():
         # Add cache age warnings based on configurable thresholds
         cache_warnings = []
         try:
-            from constants import CACHE_WARNING_THRESHOLD_MINUTES, CACHE_CRITICAL_THRESHOLD_MINUTES
+            from src.utils.constants import CACHE_WARNING_THRESHOLD_MINUTES, CACHE_CRITICAL_THRESHOLD_MINUTES
             
             if cache_metrics.get("brou_cache_age_seconds") is not None:
                 brou_age_minutes = cache_metrics["brou_cache_age_minutes"]
@@ -272,3 +272,4 @@ async def get_simple_metrics():
         "endpoints_tracked": global_stats["endpoints_tracked"],
         "timestamp": datetime.utcnow().isoformat(),
     }
+

@@ -2,7 +2,7 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from database import UIRecord
+from src.infrastructure.database.database import UIRecord
 from main import app, get_db
 from datetime import date
 import uuid
@@ -23,7 +23,7 @@ def sqlite_file(tmp_path):
 @pytest.fixture(scope="function")
 def db_session(sqlite_file):
     from sqlalchemy import create_engine
-    from database import Base as DBBase
+    from src.infrastructure.database.database import Base as DBBase
 
     SQLALCHEMY_DATABASE_URL = f"sqlite:///{sqlite_file}"
     engine = create_engine(
@@ -90,3 +90,4 @@ def test_get_ui_by_date_integration(client, db_session):
 def test_get_ui_by_date_not_found_integration(client):
     response = client.get("/api/ui/2024-01-02")
     assert response.status_code == 404
+

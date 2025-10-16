@@ -11,7 +11,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 import logging
 
-from metrics import metrics_collector
+from src.infrastructure.metrics.metrics import metrics_collector
 
 
 class AlertSeverity(Enum):
@@ -372,3 +372,4 @@ class AlertManager:
 
 # Global alert manager instance
 alert_manager = AlertManager()
+

@@ -8,13 +8,13 @@ from __future__ import annotations
 
 from typing import Dict, Any
 import logging
-from database import SessionLocal
-from excel_processor import (
+from src.infrastructure.database.database import SessionLocal
+from src.domain.excel_processor import (
     ExcelProcessor,
     URExcelProcessor,
     ExchangeRateExcelProcessor,
 )
-from services import (
+from src.domain.services import (
     get_ui_table_record_count,
     get_ur_table_record_count,
     get_exchange_rate_table_record_count,
@@ -129,3 +129,4 @@ def perform_bootstrap(
         summary["exchange"] = {"attempted": True, "success": False, "error": str(e)}
 
     return summary
+

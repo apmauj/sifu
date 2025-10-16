@@ -16,28 +16,28 @@ from dotenv import load_dotenv
 
 from threading import Lock
 from threading import Lock as ThreadLock
-from bootstrap import perform_bootstrap
+from src.application.bootstrap import perform_bootstrap
 
-from database import get_db
-from database_optimizer import DatabaseOptimizer
-from models import UIResponse, RefreshResponse, URResponse, ExchangeRateResponse
-from services import UIService, URService, ExchangeRateService
-from excel_processor import (
+from src.infrastructure.database.database import get_db
+from src.infrastructure.database.database_optimizer import DatabaseOptimizer
+from src.domain.models import UIResponse, RefreshResponse, URResponse, ExchangeRateResponse
+from src.domain.services import UIService, URService, ExchangeRateService
+from src.domain.excel_processor import (
     ExcelProcessor,
     URExcelProcessor,
     ExchangeRateExcelProcessor,
     ExchangeRateBCUProcessor,
 )
-from brou_processor import BROUProcessor
-from security_utils import SecurityValidator, InputValidator
-from pydantic_models import URRangeRequestModel
-from simple_totp import totp_service
+from src.domain.brou_processor import BROUProcessor
+from src.infrastructure.security.security_utils import SecurityValidator, InputValidator
+from src.domain.pydantic_models import URRangeRequestModel
+from src.infrastructure.auth.simple_totp import totp_service
 
 # RFC7807 error model
-from error_model import ProblemDetail, ProblemResponse, PROBLEM_TYPES
+from src.domain.error_model import ProblemDetail, ProblemResponse, PROBLEM_TYPES
 
 # OpenTelemetry instrumentation (OSS, optional via OTEL_ENABLED)
-from opentelemetry_setup import (
+from src.application.opentelemetry_setup import (
     init_otel_tracer_provider,
     init_otel_meter_provider,
     instrument_fastapi,
@@ -48,27 +48,27 @@ from opentelemetry_setup import (
 )
 
 # HTTPS Security Middleware
-from https_middleware import HTTPSRedirectMiddleware, SSLHeadersMiddleware
+from src.infrastructure.middleware.https_middleware import HTTPSRedirectMiddleware, SSLHeadersMiddleware
 
 # Authentication and Authorization
-from auth_routes import router as auth_router
+from src.api.routers.auth_routes import router as auth_router
 
 # API Routers (modular endpoints)
-from api import ui as ui_router
-from api import ur as ur_router
-from api import exchange as exchange_router
-from api import system as system_router
-from api import brou as brou_router
+from src.api.routers import ui as ui_router
+from src.api.routers import ur as ur_router
+from src.api.routers import exchange as exchange_router
+from src.api.routers import system as system_router
+from src.api.routers import brou as brou_router
 
-from rate_limit import RateLimitMiddleware, EndpointRateLimitMiddleware
-from circuit_breaker import (
+from src.infrastructure.middleware.rate_limit import RateLimitMiddleware, EndpointRateLimitMiddleware
+from src.infrastructure.resilience.circuit_breaker import (
     get_all_circuit_breakers,
     get_circuit_breaker_status,
     reset_circuit_breaker,
 )
 
 # Metrics middleware
-from metrics_middleware import (
+from src.infrastructure.middleware.metrics_middleware import (
     MetricsMiddleware,
     get_metrics,
     get_health,
@@ -76,8 +76,8 @@ from metrics_middleware import (
 )
 
 # Advanced health checks
-from health_checks import get_advanced_health, get_simple_health
-from constants import (
+from src.infrastructure.health.health_checks import get_advanced_health, get_simple_health
+from src.utils.constants import (
     HTTP_400_BAD_REQUEST,
     HTTP_404_NOT_FOUND,
     HTTP_500_INTERNAL_SERVER_ERROR,
@@ -161,15 +161,15 @@ else:
         pytz = None  # type: ignore
 
 # Correlation ID middleware for distributed tracing
-from correlation_middleware import (
+from src.infrastructure.middleware.correlation_middleware import (
     CorrelationIdMiddleware,
     setup_correlation_logging,
     get_correlation_logger,
 )
 
 # Alert and dashboard services
-from alerts import alert_manager
-from dashboard import dashboard_service
+from src.application.alerts import alert_manager
+from src.domain.dashboard import dashboard_service
 
 # Load environment variables from .env file
 # Try config/env/.env first, fall back to root for compatibility

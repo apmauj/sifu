@@ -10,8 +10,8 @@ from typing import Dict, List, Tuple, Optional
 from datetime import datetime
 import logging
 from sqlalchemy.orm import Session
-from database import BROURecord, SessionLocal
-from circuit_breaker import get_circuit_breaker, CircuitBreakerOpenException
+from src.infrastructure.database.database import BROURecord, SessionLocal
+from src.infrastructure.resilience.circuit_breaker import get_circuit_breaker, CircuitBreakerOpenException
 
 logger = logging.getLogger(__name__)
 
@@ -438,3 +438,4 @@ class BROUProcessor:
             return None
         finally:
             db.close()
+

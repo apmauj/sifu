@@ -1,6 +1,6 @@
 from unittest.mock import Mock
 from datetime import date
-from services import UIService, URService, ExchangeRateService
+from src.domain.services import UIService, URService, ExchangeRateService
 
 
 class TestUIServiceEdgeCases:
@@ -28,3 +28,4 @@ class TestExchangeRateServiceEdgeCases:
         service = ExchangeRateService(mock_db)
         result = service.get_exchange_rate_by_date(date(2024, 1, 1))
         assert result == []
+

@@ -3,7 +3,7 @@ Tests para servicios de UR
 """
 
 from unittest.mock import Mock
-from services import URService
+from src.domain.services import URService
 
 
 class TestURService:
@@ -185,3 +185,4 @@ class TestURService:
         result = self.service.get_available_years()
 
         assert result == []
+

@@ -4,7 +4,7 @@ Utilities para unificación de terminología exchange (Punto 5)
 
 from typing import Dict, List, Any, Optional
 from datetime import datetime
-from constants import (
+from src.utils.constants import (
     EXCHANGE_FIELD_CURRENCY,
     EXCHANGE_FIELD_BUY_RATE,
     EXCHANGE_FIELD_SELL_RATE,
@@ -264,3 +264,4 @@ def create_error_response(
         response["error"]["details"] = details
     
     return response
+

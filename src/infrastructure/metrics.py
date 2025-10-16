@@ -66,7 +66,7 @@ class MetricsCollector:
         """Lazy import of performance budget manager"""
         if self._performance_budget_manager is None:
             try:
-                from performance_budget import performance_budget_manager
+                from src.infrastructure.performance.performance_budget import performance_budget_manager
 
                 self._performance_budget_manager = performance_budget_manager
             except ImportError:
@@ -209,3 +209,4 @@ class MetricsCollector:
 
 # Global metrics collector instance
 metrics_collector = MetricsCollector()
+

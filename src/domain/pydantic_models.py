@@ -1,7 +1,7 @@
 from pydantic import BaseModel, Field, validator
 from typing import Optional, List, Any
 from datetime import date
-from constants import VALID_CURRENCY_CODES, MIN_VALID_YEAR, MAX_VALID_YEAR
+from src.utils.constants import VALID_CURRENCY_CODES, MIN_VALID_YEAR, MAX_VALID_YEAR
 
 
 class UIValueModel(BaseModel):
@@ -125,3 +125,4 @@ class TOTPVerifyResponse(BaseModel):
     session_token: str
     expires_in: int
     message: str = "Access granted to monitoring dashboard"
+

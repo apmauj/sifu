@@ -1,6 +1,6 @@
 from unittest.mock import patch
-from excel_processor import ExchangeRateBCUProcessor
-from constants import URL_BCU_EXCHANGE_RATES
+from src.domain.excel_processor import ExchangeRateBCUProcessor
+from src.utils.constants import URL_BCU_EXCHANGE_RATES
 
 
 class TestBCUURLFix:
@@ -128,3 +128,4 @@ class TestBCUURLFix:
 
             # Verify get_cotizacion was called for each currency
             assert mock_get_cotizacion.call_count == 4
+

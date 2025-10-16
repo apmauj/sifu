@@ -11,7 +11,7 @@ from sqlalchemy import (
 from sqlalchemy.orm import declarative_base
 from sqlalchemy.orm import sessionmaker
 from datetime import datetime
-from constants import (
+from src.utils.constants import (
     DATABASE_URL,
     DATABASE_CONNECT_ARGS,
     TABLE_UI_RECORDS,
@@ -153,3 +153,4 @@ def get_db():
 
 # Create tables
 Base.metadata.create_all(bind=engine)
+

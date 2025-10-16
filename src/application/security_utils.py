@@ -194,7 +194,7 @@ class InputValidator:
     def validate_currency_param(currency: str) -> tuple[bool, str]:
         """Validate currency parameter"""
         if not SecurityValidator.validate_currency_code(currency):
-            from constants import VALID_CURRENCY_CODES
+            from src.utils.constants import VALID_CURRENCY_CODES
 
             return (
                 False,
@@ -212,3 +212,4 @@ def sanitize_request_data(data: Union[Dict, List]) -> Union[Dict, List]:
         return SecurityValidator.sanitize_list(data)
     else:
         return data
+

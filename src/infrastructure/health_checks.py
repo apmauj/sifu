@@ -8,10 +8,10 @@ from datetime import datetime, timedelta
 from typing import Dict, Any, List, Optional
 from sqlalchemy import text
 
-from database import get_db
-from brou_processor import BROUProcessor
-from excel_processor import ExchangeRateBCUProcessor
-from services import UIService  # For UI freshness check
+from src.infrastructure.database.database import get_db
+from src.domain.brou_processor import BROUProcessor
+from src.domain.excel_processor import ExchangeRateBCUProcessor
+from src.domain.services import UIService  # For UI freshness check
 
 try:
     import psutil
@@ -558,7 +558,7 @@ def check_ui_freshness() -> HealthCheckResult:
     """
     start_time = time.time()
     try:
-        from database import SessionLocal  # local import para evitar ciclos en tests ligeros
+        from src.infrastructure.database.database import SessionLocal  # local import para evitar ciclos en tests ligeros
         import os
         import pytz  # type: ignore
 
@@ -672,3 +672,4 @@ async def get_simple_health():
         "checks": results["total_checks"],
         "issues": results["critical_checks"] + results["warning_checks"],
     }
+

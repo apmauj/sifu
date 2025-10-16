@@ -58,8 +58,8 @@ async def health_check(db: Session = Depends(get_db)):
 async def get_info_v2(db: Session = Depends(get_db)):
     """Informacion general del sistema (endpoint v2 - expandido)."""
     try:
-        from services import UIService
-        from models import HealthResponse
+        from src.domain.services import UIService
+        from src.domain.models import HealthResponse
         
         service = UIService(db)
         total_records = service.get_total_records()
@@ -144,3 +144,4 @@ async def readiness_probe(db: Session = Depends(get_db)):
     except Exception as e:
         logger.error(f"Error in readiness probe: {e}")
         raise HTTPException(status_code=503, detail=str(e))
+

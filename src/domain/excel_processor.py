@@ -12,11 +12,11 @@ from datetime import datetime, date
 from typing import List, Tuple, Optional
 import logging
 from sqlalchemy.orm import Session
-from database import UIRecord, URRecord, ExchangeRateRecord
+from src.infrastructure.database.database import UIRecord, URRecord, ExchangeRateRecord
 import io
 from urllib3.exceptions import InsecureRequestWarning
-from circuit_breaker import get_circuit_breaker, CircuitBreakerOpenException
-from constants import (
+from src.infrastructure.resilience.circuit_breaker import get_circuit_breaker, CircuitBreakerOpenException
+from src.utils.constants import (
     UR_MONTH_NAMES,
     URL_BCU_EXCHANGE_RATES,
     SUPPORTED_CURRENCIES,
@@ -736,7 +736,7 @@ class URExcelProcessor:
                 )
             else:
                 if missing_current:
-                    from constants import MSG_UR_MONTH_NOT_PUBLISHED
+                    from src.utils.constants import MSG_UR_MONTH_NOT_PUBLISHED
                     return True, MSG_UR_MONTH_NOT_PUBLISHED, 0
                 return True, "No changes in UR data", 0
 
@@ -1196,8 +1196,8 @@ class ExchangeRateBCUProcessor:
     ) -> List[Tuple[str, float, float, Optional[float]]]:
         """Get latest historical exchange rates from database as fallback"""
         try:
-            from services import ExchangeRateService
-            from database import get_db
+            from src.domain.services import ExchangeRateService
+            from src.infrastructure.database.database import get_db
 
             # Get database session
             db = next(get_db())
@@ -1248,3 +1248,4 @@ class ExchangeRateBCUProcessor:
             ("ARS", 0.041, 0.043, 0.042),
             ("BRL", 7.60, 7.80, 7.70),
         ]
+
