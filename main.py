@@ -33,6 +33,9 @@ from security_utils import SecurityValidator, InputValidator
 from pydantic_models import URRangeRequestModel
 from simple_totp import totp_service
 
+# RFC7807 error model
+from error_model import ProblemDetail, ProblemResponse, PROBLEM_TYPES
+
 # HTTPS Security Middleware
 from https_middleware import HTTPSRedirectMiddleware, SSLHeadersMiddleware
 
@@ -397,6 +400,93 @@ app.add_middleware(MetricsMiddleware)
 
 # Include authentication router
 app.include_router(auth_router)
+
+
+# ============================================================================
+# RFC 7807 Global Exception Handlers
+# ============================================================================
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException):
+    """
+    Convert FastAPI HTTPException to RFC 7807 Problem Details response.
+    Falls back to original format if ?legacy=true is in query.
+    """
+    from correlation_middleware import get_correlation_id
+
+    # Check for legacy mode
+    use_legacy = request.query_params.get("legacy") == "true"
+    trace_id = get_correlation_id(request)
+    
+    if use_legacy:
+        # Return original format
+        return JSONResponse(
+            status_code=exc.status_code,
+            content={"detail": exc.detail},
+        )
+    
+    # Determine problem type and title from status code
+    status_map = {
+        400: ("validation", "Bad Request"),
+        401: ("unauthorized", "Unauthorized"),
+        403: ("forbidden", "Forbidden"),
+        404: ("not_found", "Not Found"),
+        409: ("conflict", "Conflict"),
+        429: ("rate_limit", "Too Many Requests"),
+        500: ("internal_error", "Internal Server Error"),
+        503: ("service_unavailable", "Service Unavailable"),
+    }
+    
+    problem_key, title = status_map.get(exc.status_code, ("internal_error", "Error"))
+    problem_type = PROBLEM_TYPES.get(problem_key, PROBLEM_TYPES["internal_error"])
+    instance = request.url.path
+    
+    problem = ProblemResponse.create(
+        title=title,
+        status=exc.status_code,
+        detail=exc.detail,
+        instance=instance,
+        trace_id=trace_id,
+        problem_type=problem_type
+    )
+    
+    return JSONResponse(
+        status_code=exc.status_code,
+        content=problem.model_dump(exclude_none=True),
+        media_type="application/problem+json",
+    )
+
+
+@app.exception_handler(Exception)
+async def generic_exception_handler(request: Request, exc: Exception):
+    """
+    Catch-all for unhandled exceptions. Return RFC 7807 Problem Details.
+    """
+    from correlation_middleware import get_correlation_id
+
+    # Only log and convert if not already an HTTPException
+    if isinstance(exc, HTTPException):
+        return  # Let the dedicated handler deal with it
+    
+    trace_id = get_correlation_id(request)
+    logger.error(
+        f"Unhandled exception in {request.method} {request.url.path}: {exc}",
+        exc_info=True
+    )
+    
+    problem = ProblemResponse.create(
+        title="Internal Server Error",
+        status=500,
+        detail="An unexpected error occurred. Please check server logs.",
+        instance=request.url.path,
+        trace_id=trace_id,
+        problem_type=PROBLEM_TYPES["internal_error"]
+    )
+    
+    return JSONResponse(
+        status_code=500,
+        content=problem.model_dump(exclude_none=True),
+        media_type="application/problem+json",
+    )
 
 
 @app.get("/api/debug/correlation", tags=["Sistema"])
