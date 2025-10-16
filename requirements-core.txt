@@ -22,3 +22,13 @@ pyotp==2.9.0
 qrcode[pil]==7.4.2
 psutil==5.9.8
 slowapi==0.1.9
+
+# OpenTelemetry instrumentation (OSS, no licensing cost)
+opentelemetry-api==1.26.0
+opentelemetry-sdk==1.26.0
+opentelemetry-instrumentation==0.47b0
+opentelemetry-instrumentation-fastapi==0.47b0
+opentelemetry-instrumentation-requests==0.47b0
+opentelemetry-instrumentation-sqlalchemy==0.47b0
+opentelemetry-exporter-otlp==0.47b0
+prometheus-client==0.21.0

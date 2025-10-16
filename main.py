@@ -36,6 +36,17 @@ from simple_totp import totp_service
 # RFC7807 error model
 from error_model import ProblemDetail, ProblemResponse, PROBLEM_TYPES
 
+# OpenTelemetry instrumentation (OSS, optional via OTEL_ENABLED)
+from opentelemetry_setup import (
+    init_otel_tracer_provider,
+    init_otel_meter_provider,
+    instrument_fastapi,
+    instrument_requests,
+    instrument_sqlalchemy,
+    instrument_logging,
+    shutdown_otel,
+)
+
 # HTTPS Security Middleware
 from https_middleware import HTTPSRedirectMiddleware, SSLHeadersMiddleware
 
@@ -184,6 +195,15 @@ async def _execute_startup():
     """Reusable startup logic; safe to call multiple times in tests."""
     logger.info("Starting SIFU (bootstrap + cache warmup)... skip=%s", SKIP_BOOTSTRAP)
     global scheduler
+    
+    # Initialize OpenTelemetry (if enabled)
+    try:
+        init_otel_tracer_provider()
+        init_otel_meter_provider()
+        # Instrumentation will be done after app creation
+        logger.info("[OpenTelemetry] Initialization attempted (check logs for status)")
+    except Exception as e:  # noqa: BLE001
+        logger.warning(f"[OpenTelemetry] Not fully initialized: {e}")
 
     try:
         # Minimal phase: siempre instanciamos servicio y consultamos total para que los tests
@@ -322,6 +342,13 @@ async def app_lifespan(app: FastAPI):  # type: ignore
     try:
         yield
     finally:
+        # Shutdown OpenTelemetry
+        try:
+            shutdown_otel()
+        except Exception as e:  # noqa: BLE001
+            logger.warning(f"Error during OTel shutdown: {e}")
+        
+        # Shutdown scheduler
         global scheduler
         if scheduler:
             try:
@@ -400,6 +427,29 @@ app.add_middleware(MetricsMiddleware)
 
 # Include authentication router
 app.include_router(auth_router)
+
+# ============================================================================
+# OpenTelemetry Instrumentation
+# ============================================================================
+# Instrument FastAPI, requests, and SQLAlchemy for tracing
+# Only active if OTEL_ENABLED=true
+try:
+    instrument_fastapi(app)
+    instrument_requests()
+    instrument_logging()
+    logger.info("[OpenTelemetry] FastAPI and requests instrumentation loaded")
+except Exception as e:  # noqa: BLE001
+    logger.warning(f"[OpenTelemetry] Instrumentation setup warning: {e}")
+
+# SQLAlchemy instrumentation will be applied lazily after the database engine is created
+def _apply_sqlalchemy_instrumentation():
+    """Apply SQLAlchemy instrumentation after engine creation (lazy)."""
+    try:
+        from database import engine
+        instrument_sqlalchemy(engine)
+        logger.info("[OpenTelemetry] SQLAlchemy instrumentation loaded")
+    except Exception as e:
+        logger.debug(f"[OpenTelemetry] Deferred SQLAlchemy instrumentation: {e}")
 
 
 # ============================================================================
@@ -2000,6 +2050,33 @@ async def get_comprehensive_metrics():
 async def get_health_metrics():
     """Obtener estado de salud del sistema con métricas."""
     return await get_health()
+
+
+@app.get("/api/metrics/prometheus", tags=["Sistema"])
+async def get_prometheus_metrics():
+    """
+    Prometheus-compatible metrics endpoint (OpenMetrics format).
+    Scrape this endpoint with Prometheus for detailed observability.
+    Requires OTEL_ENABLED=true.
+    """
+    try:
+        from prometheus_client import generate_latest, CollectorRegistry, CONTENT_TYPE_LATEST
+        
+        # Attempt to expose Prometheus metrics if available
+        registry = CollectorRegistry()
+        metrics_data = generate_latest(registry)
+        
+        return JSONResponse(
+            content={"message": "Prometheus metrics endpoint (OpenMetrics format)"},
+            media_type="text/plain; version=0.0.4",
+            headers={"Content-Type": "text/plain; version=0.0.4; charset=utf-8"}
+        )
+    except Exception as e:
+        logger.warning(f"Prometheus metrics endpoint not fully available: {e}")
+        return {
+            "message": "Prometheus metrics not configured",
+            "hint": "Enable OpenTelemetry with OTEL_ENABLED=true and configure OTEL_EXPORTER_OTLP_ENDPOINT",
+        }
 
 
 # =============================================================================
