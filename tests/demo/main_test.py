@@ -7,7 +7,7 @@ from fastapi import FastAPI
 from datetime import datetime
 
 # Import health check functions
-from health_checks import get_simple_health, get_advanced_health
+from src.infrastructure.health_checks import get_simple_health, get_advanced_health
 
 # Create FastAPI application
 app = FastAPI(

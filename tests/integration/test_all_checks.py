@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from health_checks import health_checker
+from src.infrastructure.health_checks import health_checker
 
 print("Testing run_all_checks...")
 try:

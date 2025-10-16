@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from fastapi import FastAPI
-from health_checks import health_checker
+from src.infrastructure.health_checks import health_checker
 
 app = FastAPI()
 

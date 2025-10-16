@@ -4,7 +4,7 @@ Simple test for health checks
 """
 
 try:
-    from health_checks import health_checker
+    from src.infrastructure.health_checks import health_checker
 
     print("Import successful")
     result = health_checker.run_all_checks()

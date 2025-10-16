@@ -6,7 +6,7 @@ import pytest
 import os
 import time
 from datetime import datetime, timedelta
-from simple_totp import SimpleTOTP
+from src.application.simple_totp import SimpleTOTP
 import pyotp
 
 

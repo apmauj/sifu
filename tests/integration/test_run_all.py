@@ -5,7 +5,7 @@ Test run_all_checks function
 
 print("Testing run_all_checks()...")
 try:
-    from health_checks import health_checker
+    from src.infrastructure.health_checks import health_checker
 
     result = health_checker.run_all_checks()
     print("✅ run_all_checks() completed successfully")

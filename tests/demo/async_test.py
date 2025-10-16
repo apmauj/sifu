@@ -8,7 +8,7 @@ import asyncio
 
 async def test():
     try:
-        from health_checks import get_simple_health
+        from src.infrastructure.health_checks import get_simple_health
 
         result = await get_simple_health()
         print("✅ Async health check successful")

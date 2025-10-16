@@ -9,7 +9,7 @@ for protecting external API calls.
 
 import time
 import requests
-from circuit_breaker import (
+from src.infrastructure.circuit_breaker import (
     get_circuit_breaker,
     get_all_circuit_breakers,
     CircuitBreakerOpenException,
@@ -50,7 +50,7 @@ def test_circuit_breaker_failure():
     print("=" * 50)
 
     # Create a test circuit breaker with low threshold
-    from circuit_breaker import CircuitBreakerConfig
+    from src.infrastructure.circuit_breaker import CircuitBreakerConfig
 
     test_config = CircuitBreakerConfig(
         name="TEST_FAILURE_API",
