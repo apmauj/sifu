@@ -10,7 +10,7 @@ import os
 
 
 class HTTPSRedirectMiddleware(BaseHTTPMiddleware):
-    """Middleware to redirect HTTP to HTTPS"""
+    """Middleware to redirect HTTP to HTTPS and add security headers"""
 
     async def dispatch(self, request: Request, call_next):
         # Check if request is behind proxy/load balancer
@@ -35,6 +35,21 @@ class HTTPSRedirectMiddleware(BaseHTTPMiddleware):
             response.headers["X-Content-Type-Options"] = "nosniff"
             response.headers["X-XSS-Protection"] = "1; mode=block"
             response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+            
+            # Content Security Policy (CSP) - report-only mode initially for safe rollout
+            # Prevents XSS, clickjacking, script injection; reports violations without blocking
+            response.headers["Content-Security-Policy-Report-Only"] = (
+                "default-src 'self'; "
+                "script-src 'self' 'wasm-unsafe-eval'; "
+                "style-src 'self' 'unsafe-inline'; "
+                "img-src 'self' data: https:; "
+                "font-src 'self' data:; "
+                "connect-src 'self'; "
+                "frame-ancestors 'none'; "
+                "base-uri 'self'; "
+                "form-action 'self'; "
+                "upgrade-insecure-requests"
+            )
 
         return response
 

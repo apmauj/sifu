@@ -196,6 +196,18 @@ async def _execute_startup():
     logger.info("Starting SIFU (bootstrap + cache warmup)... skip=%s", SKIP_BOOTSTRAP)
     global scheduler
     
+    # Production security check: ensure JWT_SECRET_KEY is set
+    if os.getenv("ENVIRONMENT") == "production":
+        jwt_secret = os.getenv("JWT_SECRET_KEY", "").strip()
+        if not jwt_secret:
+            msg = (
+                "FATAL: JWT_SECRET_KEY is not set in production. "
+                "Set JWT_SECRET_KEY environment variable before starting."
+            )
+            logger.critical(msg)
+            raise RuntimeError(msg)
+        logger.info("[Security] JWT_SECRET_KEY verified in production")
+    
     # Initialize OpenTelemetry (if enabled)
     try:
         init_otel_tracer_provider()
