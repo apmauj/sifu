@@ -2,8 +2,8 @@ services:
   # Backend - FastAPI
   backend:
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ../..
+      dockerfile: config/docker/Dockerfile
     container_name: ui-calculator-backend
     ports:
       - "8000:8000"
@@ -20,7 +20,7 @@ services:
   # Frontend - Nginx (usando build existente)
   frontend:
     build:
-      context: ./frontend
+      context: ../../frontend
       dockerfile: Dockerfile.simple
     container_name: ui-calculator-frontend
     ports:

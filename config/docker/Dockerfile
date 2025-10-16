@@ -28,6 +28,10 @@ COPY metrics.py ./
 COPY alerts.py ./
 COPY README.md ./
 
+# Copiar config y data directorios
+COPY config/ ./config/
+COPY src/ ./src/
+
 # Crear directorio para la base de datos
 RUN mkdir -p /app/data
 

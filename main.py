@@ -172,7 +172,9 @@ from alerts import alert_manager
 from dashboard import dashboard_service
 
 # Load environment variables from .env file
-load_dotenv()
+# Try config/env/.env first, fall back to root for compatibility
+env_path = "config/env/.env" if os.path.exists("config/env/.env") else ".env"
+load_dotenv(env_path)
 
 # Configure correlation logging
 setup_correlation_logging()

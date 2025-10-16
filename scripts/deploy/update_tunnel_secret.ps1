@@ -58,15 +58,15 @@ if($LASTEXITCODE -ne 0){
 }
 
 # 1. Intentar obtener URL con reintentos (problemas intermitentes Cloudflare Quick Tunnel)
-if(-not (Test-Path './docker-compose.tunnel.yml')){ Err 'docker-compose.tunnel.yml no encontrado'; exit 1 }
+if(-not (Test-Path './config/docker/docker-compose.tunnel.yml')){ Err 'config/docker/docker-compose.tunnel.yml no encontrado'; exit 1 }
 
 $regex = 'https://[a-zA-Z0-9-]+\.trycloudflare\.com'
 $url = $null
 
 for($attempt=1; $attempt -le $RetryCount -and -not $url; $attempt++){
   if($attempt -gt 1){ Info "Reintento $attempt/$RetryCount (reiniciando contenedor túnel)" }
-  Info 'Levantando túnel con docker-compose.tunnel.yml'
-  docker compose -f docker-compose.tunnel.yml up -d --force-recreate --remove-orphans tunnel | Out-Null
+  Info 'Levantando túnel con config/docker/docker-compose.tunnel.yml'
+  docker compose -f config/docker/docker-compose.tunnel.yml up -d --force-recreate --remove-orphans tunnel | Out-Null
   $start = Get-Date
   while((Get-Date)-$start -lt [TimeSpan]::FromSeconds($TimeoutSeconds)){
     $logs = docker logs --tail 160 sifu-tunnel 2>&1

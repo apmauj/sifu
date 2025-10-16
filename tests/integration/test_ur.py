@@ -16,7 +16,7 @@ PANDAS_AVAILABLE = importlib.util.find_spec("pandas") is not None
 
 
 # Test database configuration
-SQLALCHEMY_DATABASE_URL = "sqlite:///./test_ur.db"
+SQLALCHEMY_DATABASE_URL = "sqlite:///./data/test_ur.db"
 engine = create_engine(
     SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
 )

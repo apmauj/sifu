@@ -1,8 +1,8 @@
 services:
   backend:
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ../..
+      dockerfile: config/docker/Dockerfile
     container_name: sifu-backend
     environment:
       PYTHONUNBUFFERED: "1"
@@ -14,8 +14,8 @@ services:
       MONITORING_TOTP_SECRET: ${MONITORING_TOTP_SECRET:-}
       MONITORING_SESSION_HOURS: ${MONITORING_SESSION_HOURS:-1}
     volumes:
-      - ./data:/app/data
-      - .:/app  # comentar en producción si no querés hot-reload de código
+      - ../../data:/app/data
+      - ../../:/app  # comentar en producción si no querés hot-reload de código
     networks:
       - sifu-network
     restart: unless-stopped

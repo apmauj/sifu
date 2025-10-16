@@ -14,11 +14,11 @@ services:
       - "127.0.0.1:${BACKEND_PORT:-8000}:8000"
     volumes:
       # Volumen para persistir la base de datos
-      - ./data:/app/data
+      - ../data:/app/data
       # (Comentado) Montar el código fuente anula la imagen. Mantener desactivado en prod.
       # - .:/app
     env_file:
-      - .env
+      - env/.env
     environment:
       PYTHONPATH: /app
       PYTHONUNBUFFERED: "1"

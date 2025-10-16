@@ -10,7 +10,7 @@ import os
 # Prefer environment variables to define database location.
 # DATABASE_PATH points to a SQLite file path (e.g., /app/data/ui_data.db)
 # DATABASE_URL can override fully (e.g., postgresql://...)
-DATABASE_PATH = os.getenv("DATABASE_PATH", "./ui_data.db")
+DATABASE_PATH = os.getenv("DATABASE_PATH", "data/ui_data.db")
 DATABASE_URL = os.getenv("DATABASE_URL", f"sqlite:///{DATABASE_PATH}")
 DATABASE_CONNECT_ARGS = {"check_same_thread": False}
 
