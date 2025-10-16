@@ -8,7 +8,7 @@ import jwt
 import bcrypt
 from datetime import datetime, timedelta
 from typing import Optional, Dict, Any
-from auth_models import User, UserRole, get_role_permissions
+from src.infrastructure.auth_models import User, UserRole, get_role_permissions
 import secrets
 
 

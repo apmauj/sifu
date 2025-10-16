@@ -4,9 +4,9 @@ Login, logout, and user management endpoints
 """
 
 from fastapi import APIRouter, HTTPException, Depends
-from auth_models import LoginRequest, TokenResponse, User
-from auth_service import auth_service
-from auth_middleware import get_current_user, require_admin
+from src.infrastructure.auth_models import LoginRequest, TokenResponse, User
+from src.infrastructure.auth_service import auth_service
+from src.infrastructure.auth_middleware import get_current_user, require_admin
 from typing import List
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])

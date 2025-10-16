@@ -12,7 +12,7 @@ from starlette.responses import JSONResponse
 from typing import Dict, List, Optional
 from threading import Lock
 
-from src.infrastructure.secure_logging import get_security_logger
+from src.application.secure_logging import get_security_logger
 
 logger = logging.getLogger(__name__)
 security_logger = get_security_logger()

@@ -6,8 +6,8 @@ from fastapi import HTTPException, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from starlette.status import HTTP_401_UNAUTHORIZED, HTTP_403_FORBIDDEN
 from typing import List
-from auth_models import User, Permission
-from auth_service import auth_service
+from src.infrastructure.auth_models import User, Permission
+from src.infrastructure.auth_service import auth_service
 
 security = HTTPBearer()
 

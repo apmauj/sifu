@@ -35,7 +35,7 @@ from src.domain.pydantic_models import URRangeRequestModel
 # from src.application.simple_totp import totp_service
 
 # RFC7807 error model
-from src.domain.error_model import ProblemDetail, ProblemResponse, PROBLEM_TYPES
+from src.utils.error_model import ProblemDetail, ProblemResponse, PROBLEM_TYPES
 
 # OpenTelemetry instrumentation (OSS, optional via OTEL_ENABLED)
 from src.application.opentelemetry_setup import (
@@ -52,7 +52,7 @@ from src.application.opentelemetry_setup import (
 from src.infrastructure.https_middleware import HTTPSRedirectMiddleware, SSLHeadersMiddleware
 
 # Authentication and Authorization
-from src.api.routers.auth_routes import router as auth_router
+from src.infrastructure.auth_routes import router as auth_router
 
 # API Routers (modular endpoints)
 from src.api.routers import ui as ui_router
