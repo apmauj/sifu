@@ -52,6 +52,14 @@ from https_middleware import HTTPSRedirectMiddleware, SSLHeadersMiddleware
 
 # Authentication and Authorization
 from auth_routes import router as auth_router
+
+# API Routers (modular endpoints)
+from api import ui as ui_router
+from api import ur as ur_router
+from api import exchange as exchange_router
+from api import system as system_router
+from api import brou as brou_router
+
 from rate_limit import RateLimitMiddleware, EndpointRateLimitMiddleware
 from circuit_breaker import (
     get_all_circuit_breakers,
@@ -216,6 +224,19 @@ async def _execute_startup():
         logger.info("[OpenTelemetry] Initialization attempted (check logs for status)")
     except Exception as e:  # noqa: BLE001
         logger.warning(f"[OpenTelemetry] Not fully initialized: {e}")
+
+    # Initialize router dependencies with shared instances
+    try:
+        ui_router.set_excel_processor(excel_processor)
+        ur_router.set_ur_excel_processor(ur_excel_processor)
+        exchange_router.set_exchange_rate_processor(exchange_rate_excel_processor)
+        exchange_router.set_job_manager(job_manager)
+        exchange_router.set_cache_and_lock(bcu_cache, _cache_lock)
+        brou_router.set_brou_cache_and_lock(brou_cache, _cache_lock)
+        brou_router.set_brou_processor(brou_processor)
+        logger.info("[Routers] Dependencies initialized successfully")
+    except Exception as e:  # noqa: BLE001
+        logger.warning(f"[Routers] Failed to initialize dependencies: {e}")
 
     try:
         # Minimal phase: siempre instanciamos servicio y consultamos total para que los tests
@@ -439,6 +460,20 @@ app.add_middleware(MetricsMiddleware)
 
 # Include authentication router
 app.include_router(auth_router)
+
+# Include API routers (modular domain-based endpoints)
+app.include_router(system_router.router)
+app.include_router(ui_router.router)
+app.include_router(ur_router.router)
+app.include_router(exchange_router.router)
+app.include_router(brou_router.router)
+
+# Initialize routers with shared instances (processors, caches, etc.)
+# These will be set after the main module loads all dependencies
+def _initialize_router_dependencies():
+    """Initialize router modules with shared instances."""
+    # NOTE: This is called later in _execute_startup() after all instances are created
+    pass
 
 # ============================================================================
 # OpenTelemetry Instrumentation
