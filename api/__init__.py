@@ -1,9 +1,15 @@
-"""SIFU API routers package.
-
-Modular routers for different domain areas:
-- ui.py: Unidad Indexada (UI) endpoints
-- ur.py: Unidad Reajustable (UR) endpoints
-- exchange.py: Exchange rate endpoints
-- brou.py: BROU exchange rate endpoints
-- system.py: System, health, and metrics endpoints
 """
+Compatibility shim: Re-exports from src.api.routers
+This file ensures backward compatibility after moving to hexagonal architecture.
+All new code should import from: from src.api.routers import *
+"""
+
+from src.api.routers import *
+
+__all__ = [
+    "ui_router",
+    "ur_router",
+    "exchange_router",
+    "brou_router",
+    "system_router",
+]
