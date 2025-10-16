@@ -18,8 +18,8 @@ from threading import Lock
 from threading import Lock as ThreadLock
 from src.application.bootstrap import perform_bootstrap
 
-from src.infrastructure.database.database import get_db
-from src.infrastructure.database.database_optimizer import DatabaseOptimizer
+from src.infrastructure.database import get_db
+from src.infrastructure.database_optimizer import DatabaseOptimizer
 from src.domain.models import UIResponse, RefreshResponse, URResponse, ExchangeRateResponse
 from src.domain.services import UIService, URService, ExchangeRateService
 from src.domain.excel_processor import (
@@ -29,9 +29,10 @@ from src.domain.excel_processor import (
     ExchangeRateBCUProcessor,
 )
 from src.domain.brou_processor import BROUProcessor
-from src.infrastructure.security.security_utils import SecurityValidator, InputValidator
+from src.application.security_utils import SecurityValidator, InputValidator
 from src.domain.pydantic_models import URRangeRequestModel
-from src.infrastructure.auth.simple_totp import totp_service
+# TODO: Move simple_totp to src/infrastructure/
+# from src.application.simple_totp import totp_service
 
 # RFC7807 error model
 from src.domain.error_model import ProblemDetail, ProblemResponse, PROBLEM_TYPES
@@ -48,7 +49,7 @@ from src.application.opentelemetry_setup import (
 )
 
 # HTTPS Security Middleware
-from src.infrastructure.middleware.https_middleware import HTTPSRedirectMiddleware, SSLHeadersMiddleware
+from src.infrastructure.https_middleware import HTTPSRedirectMiddleware, SSLHeadersMiddleware
 
 # Authentication and Authorization
 from src.api.routers.auth_routes import router as auth_router
@@ -60,15 +61,15 @@ from src.api.routers import exchange as exchange_router
 from src.api.routers import system as system_router
 from src.api.routers import brou as brou_router
 
-from src.infrastructure.middleware.rate_limit import RateLimitMiddleware, EndpointRateLimitMiddleware
-from src.infrastructure.resilience.circuit_breaker import (
+from src.infrastructure.rate_limit import RateLimitMiddleware, EndpointRateLimitMiddleware
+from src.infrastructure.circuit_breaker import (
     get_all_circuit_breakers,
     get_circuit_breaker_status,
     reset_circuit_breaker,
 )
 
 # Metrics middleware
-from src.infrastructure.middleware.metrics_middleware import (
+from src.infrastructure.metrics_middleware import (
     MetricsMiddleware,
     get_metrics,
     get_health,
@@ -76,7 +77,7 @@ from src.infrastructure.middleware.metrics_middleware import (
 )
 
 # Advanced health checks
-from src.infrastructure.health.health_checks import get_advanced_health, get_simple_health
+from src.infrastructure.health_checks import get_advanced_health, get_simple_health
 from src.utils.constants import (
     HTTP_400_BAD_REQUEST,
     HTTP_404_NOT_FOUND,
@@ -161,7 +162,7 @@ else:
         pytz = None  # type: ignore
 
 # Correlation ID middleware for distributed tracing
-from src.infrastructure.middleware.correlation_middleware import (
+from src.infrastructure.correlation_middleware import (
     CorrelationIdMiddleware,
     setup_correlation_logging,
     get_correlation_logger,
@@ -2751,3 +2752,4 @@ if __name__ == "__main__":  # pragma: no cover (explicitly exercised in tests)
     import uvicorn  # local import to avoid mandatory dependency at import time
 
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+

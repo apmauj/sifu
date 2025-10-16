@@ -11,7 +11,7 @@ from typing import Dict, List, Optional, Any
 from datetime import date
 from sqlalchemy import Index, text, func
 from sqlalchemy.orm import Session
-from src.infrastructure.database.database import (
+from src.infrastructure.database import (
     engine,
     UIRecord,
     URRecord,
@@ -441,4 +441,5 @@ def clear_db_cache():
 def get_db_cache_stats():
     """Get database cache statistics"""
     return db_optimizer.get_cache_stats()
+
 

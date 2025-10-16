@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from typing import Dict, Any
 import logging
-from src.infrastructure.database.database import SessionLocal
+from src.infrastructure.database import SessionLocal
 from src.domain.excel_processor import (
     ExcelProcessor,
     URExcelProcessor,

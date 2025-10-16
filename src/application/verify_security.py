@@ -65,7 +65,7 @@ def test_secure_logging():
     print("📊 Testing secure logging...")
 
     try:
-        from src.infrastructure.logging.secure_logging import init_security_logging
+        from src.infrastructure.secure_logging import init_security_logging
 
         security_logger = init_security_logging(
             {
@@ -234,4 +234,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 

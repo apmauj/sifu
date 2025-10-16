@@ -12,7 +12,7 @@ from starlette.responses import JSONResponse
 from typing import Dict, List, Optional
 from threading import Lock
 
-from src.infrastructure.logging.secure_logging import get_security_logger
+from src.infrastructure.secure_logging import get_security_logger
 
 logger = logging.getLogger(__name__)
 security_logger = get_security_logger()
@@ -289,4 +289,5 @@ class EndpointRateLimitMiddleware(BaseHTTPMiddleware):
             },
             headers={"Retry-After": "60"},
         )
+
 

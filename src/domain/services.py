@@ -2,7 +2,7 @@ from datetime import date
 from typing import List, Optional
 from sqlalchemy.orm import Session
 from sqlalchemy import and_, or_
-from src.infrastructure.database.database import UIRecord, URRecord, ExchangeRateRecord, SessionLocal
+from src.infrastructure.database import UIRecord, URRecord, ExchangeRateRecord, SessionLocal
 from src.domain.models import UIValue, URValue, ExchangeRateValue
 import logging
 
@@ -576,4 +576,5 @@ def get_exchange_rate_table_record_count() -> int:
         return 0
     finally:
         db.close()
+
 

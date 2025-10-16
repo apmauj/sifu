@@ -9,7 +9,7 @@ from typing import Callable
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
 
-from src.infrastructure.metrics.metrics import metrics_collector
+from src.infrastructure.metrics import metrics_collector
 
 
 class MetricsMiddleware(BaseHTTPMiddleware):
@@ -42,7 +42,7 @@ class MetricsMiddleware(BaseHTTPMiddleware):
 
             # Increment lightweight throughput counter for performance dashboard (best-effort)
             try:
-                from src.infrastructure.performance.performance_budget import (
+                from src.infrastructure.performance_budget import (
                     get_performance_budget_manager,
                 )  # lazy import to avoid cycles
 
@@ -74,7 +74,7 @@ class MetricsMiddleware(BaseHTTPMiddleware):
 
             # Still count towards throughput to reflect incoming load
             try:
-                from src.infrastructure.performance.performance_budget import (
+                from src.infrastructure.performance_budget import (
                     get_performance_budget_manager,
                 )  # lazy import to avoid cycles
 
@@ -156,7 +156,7 @@ async def get_metrics():
 
     # UI freshness metrics (roadmap task) - lightweight query
     try:
-        from src.infrastructure.database.database import SessionLocal
+        from src.infrastructure.database import SessionLocal
         from src.domain.services import UIService
         from datetime import datetime
         import os
@@ -272,4 +272,6 @@ async def get_simple_metrics():
         "endpoints_tracked": global_stats["endpoints_tracked"],
         "timestamp": datetime.utcnow().isoformat(),
     }
+
+
 

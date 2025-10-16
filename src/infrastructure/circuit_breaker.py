@@ -13,7 +13,7 @@ States:
 - HALF_OPEN: Testing if service has recovered
 
 Usage:
-    from src.infrastructure.resilience.circuit_breaker import CircuitBreaker, get_circuit_breaker
+    from src.infrastructure.circuit_breaker import CircuitBreaker, get_circuit_breaker
 
     # Get a circuit breaker for a specific service
     cb = get_circuit_breaker("INE_API")
@@ -344,4 +344,5 @@ def initialize_default_circuit_breakers():
 
 # Initialize default circuit breakers on module import
 initialize_default_circuit_breakers()
+
 

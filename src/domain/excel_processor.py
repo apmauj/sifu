@@ -12,10 +12,10 @@ from datetime import datetime, date
 from typing import List, Tuple, Optional
 import logging
 from sqlalchemy.orm import Session
-from src.infrastructure.database.database import UIRecord, URRecord, ExchangeRateRecord
+from src.infrastructure.database import UIRecord, URRecord, ExchangeRateRecord
 import io
 from urllib3.exceptions import InsecureRequestWarning
-from src.infrastructure.resilience.circuit_breaker import get_circuit_breaker, CircuitBreakerOpenException
+from src.infrastructure.circuit_breaker import get_circuit_breaker, CircuitBreakerOpenException
 from src.utils.constants import (
     UR_MONTH_NAMES,
     URL_BCU_EXCHANGE_RATES,
@@ -1197,7 +1197,7 @@ class ExchangeRateBCUProcessor:
         """Get latest historical exchange rates from database as fallback"""
         try:
             from src.domain.services import ExchangeRateService
-            from src.infrastructure.database.database import get_db
+            from src.infrastructure.database import get_db
 
             # Get database session
             db = next(get_db())
@@ -1248,4 +1248,6 @@ class ExchangeRateBCUProcessor:
             ("ARS", 0.041, 0.043, 0.042),
             ("BRL", 7.60, 7.80, 7.70),
         ]
+
+
 

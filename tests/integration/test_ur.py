@@ -6,7 +6,7 @@ from sqlalchemy.orm import sessionmaker
 
 from main import app
 from src.utils.constants import MSG_NO_UR_DATA
-from src.infrastructure.database.database import Base, get_db, URRecord
+from src.infrastructure.database import Base, get_db, URRecord
 from src.domain.services import URService
 from src.domain.models import URValue, URResponse
 from src.domain.excel_processor import URExcelProcessor
@@ -421,4 +421,5 @@ class TestURIntegration:
 if __name__ == "__main__":
     # Allow running this file directly for quick debugging
     pytest.main([__file__, "-v", "--tb=short"])
+
 
