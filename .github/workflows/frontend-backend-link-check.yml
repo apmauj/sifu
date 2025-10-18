@@ -19,6 +19,7 @@ on:
 permissions:
   contents: read
   issues: write  # Para crear issues si hay problemas
+  actions: write  # Para disparar workflow de recuperación de túnel
 
 jobs:
   check-connection:
