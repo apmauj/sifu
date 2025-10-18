@@ -486,10 +486,6 @@ class URExcelProcessor:
     def _parse_bhu_format(self, excel_data: Any) -> List[Tuple[int, int, float]]:
         """Parse BHU format: matrix with years in rows, months in columns"""
         records = []
-
-    def _parse_bhu_format(self, excel_data: Any) -> List[Tuple[int, int, float]]:
-        """Parse BHU format: matrix with years in rows, months in columns"""
-        records = []
         
         # BHU file has a specific structure
         # We need to find the row with month names and the column with years

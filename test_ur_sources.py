@@ -38,9 +38,9 @@ def test_source(url, name):
         
         print(f"\nShape: {df.shape}")
         print(f"Columns: {list(df.columns)}")
-        print(f"\nFirst 10 rows:")
+        print("\nFirst 10 rows:")
         print(df.head(10))
-        print(f"\nData types:")
+        print("\nData types:")
         print(df.dtypes)
         
         return df
