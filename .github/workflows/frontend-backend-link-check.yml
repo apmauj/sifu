@@ -2,7 +2,7 @@ name: Frontend-Backend Link Check
 
 on:
   schedule:
-    - cron: '*/5 * * * *'  # Cada 5 minutos (testing)
+    - cron: '*/30 * * * *'  # Cada 30 minutos
   workflow_dispatch:
     inputs:
       check_all_endpoints:
@@ -176,20 +176,68 @@ jobs:
             echo "✅ URL del túnel actualizada"
           fi
 
+      - name: Verify Frontend Can Reach Backend
+        id: frontend_backend_integration
+        if: steps.backend_check.outputs.backend_accessible == 'true'
+        continue-on-error: true
+        run: |
+          BACKEND_URL="${{ secrets.VITE_PUBLIC_API_URL }}"
+          FRONTEND_URL="https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}"
+          
+          echo "🔗 Verificando que frontend desplegado puede comunicarse con backend..."
+          echo "Frontend: $FRONTEND_URL"
+          echo "Backend: $BACKEND_URL"
+          
+          # Verificar que el frontend está accesible
+          FRONTEND_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$FRONTEND_URL")
+          
+          if [ "$FRONTEND_STATUS" != "200" ]; then
+            echo "⚠️  Frontend no accesible (HTTP $FRONTEND_STATUS)"
+            echo "frontend_backend_ok=unknown" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          
+          echo "✅ Frontend accesible (HTTP $FRONTEND_STATUS)"
+          
+          # Intentar hacer una llamada de prueba simulando CORS
+          # Verificamos que el backend responda con headers CORS apropiados
+          CORS_CHECK=$(curl -s -I \
+            -H "Origin: $FRONTEND_URL" \
+            -H "Access-Control-Request-Method: GET" \
+            "$BACKEND_URL/api/health" | grep -i "access-control-allow-origin" || echo "")
+          
+          if [ -n "$CORS_CHECK" ]; then
+            echo "✅ Backend responde con CORS headers apropiados"
+            echo "   $CORS_CHECK"
+            echo "frontend_backend_ok=true" >> $GITHUB_OUTPUT
+          else
+            echo "⚠️  Backend no responde con CORS headers apropiados"
+            echo "   Esto puede causar problemas de conectividad desde el frontend"
+            echo "frontend_backend_ok=false" >> $GITHUB_OUTPUT
+            
+            # Si el backend está vivo pero CORS falla, podría necesitar redeploy
+            # para asegurar que el frontend tiene la URL correcta compilada
+            echo "needs_redeploy=true" >> $GITHUB_OUTPUT
+          fi
+
       - name: Detect Tunnel Failure
         id: tunnel_check
         if: |
           (steps.backend_check.outputs.backend_accessible == 'false' ||
-           needs.check-tunnel-url.outputs.tunnel_changed == 'true')
+           needs.check-tunnel-url.outputs.tunnel_changed == 'true' ||
+           steps.frontend_backend_integration.outputs.frontend_backend_ok == 'false')
         run: |
           BACKEND_URL="${{ secrets.VITE_PUBLIC_API_URL }}"
           
           if [ "${{ steps.backend_check.outputs.backend_accessible }}" == "false" ]; then
             echo "🔍 Backend no accesible - verificando si es un túnel caído..."
             REASON="backend_down"
-          else
+          elif [ "${{ needs.check-tunnel-url.outputs.tunnel_changed }}" == "true" ]; then
             echo "🔍 URL del túnel cambió - se requiere actualización..."
             REASON="url_mismatch"
+          else
+            echo "🔍 Frontend no puede comunicarse con backend - posible URL desactualizada en build..."
+            REASON="frontend_backend_mismatch"
           fi
           
           # Detectar si es una URL de Cloudflare Tunnel
@@ -199,8 +247,10 @@ jobs:
             
             if [ "$REASON" == "backend_down" ]; then
               echo "⚠️  Túnel Cloudflare detectado y caído"
+            elif [ "$REASON" == "url_mismatch" ]; then
+              echo "⚠️  Túnel Cloudflare URL desactualizada en secret"
             else
-              echo "⚠️  Túnel Cloudflare URL desactualizada"
+              echo "⚠️  Frontend desplegado tiene URL incorrecta compilada"
             fi
             
             echo "tunnel_url=$BACKEND_URL" >> $GITHUB_OUTPUT
