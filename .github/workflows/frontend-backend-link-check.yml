@@ -2,7 +2,7 @@ name: Frontend-Backend Link Check
 
 on:
   schedule:
-    - cron: '*/15 * * * *'  # Cada 15 minutos
+    - cron: '*/5 * * * *'  # Cada 5 minutos (testing)
   workflow_dispatch:
     inputs:
       check_all_endpoints:
