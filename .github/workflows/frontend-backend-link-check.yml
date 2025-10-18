@@ -69,35 +69,42 @@ jobs:
           
           echo "🔧 Verificando Backend en: $HEALTH_ENDPOINT"
           
-          RESPONSE=$(curl -s -w "\nHTTP_STATUS:%{http_code}" "$HEALTH_ENDPOINT")
-          BODY=$(echo "$RESPONSE" | head -n -1)
-          HTTP_STATUS=$(echo "$RESPONSE" | tail -n 1 | cut -d: -f2)
+          RESPONSE=$(curl -s -w "\nHTTP_STATUS:%{http_code}" "$HEALTH_ENDPOINT" || echo "CURL_FAILED")
           
-          echo "backend_status=$HTTP_STATUS" >> $GITHUB_OUTPUT
-          echo "backend_response=$BODY" >> $GITHUB_OUTPUT
-          
-          if [ "$HTTP_STATUS" != "200" ]; then
-            echo "❌ ERROR: Backend no responde correctamente (HTTP $HTTP_STATUS)"
+          if echo "$RESPONSE" | grep -q "CURL_FAILED"; then
+            echo "❌ ERROR: Curl falló completamente"
+            echo "backend_status=0" >> $GITHUB_OUTPUT
             echo "backend_accessible=false" >> $GITHUB_OUTPUT
-            exit 1
+            echo "health_status=unreachable" >> $GITHUB_OUTPUT
           else
-            echo "✅ Backend responde correctamente"
-            echo "backend_accessible=true" >> $GITHUB_OUTPUT
+            BODY=$(echo "$RESPONSE" | head -n -1)
+            HTTP_STATUS=$(echo "$RESPONSE" | tail -n 1 | cut -d: -f2)
             
-            # Verificar contenido de respuesta
-            STATUS=$(echo "$BODY" | python3 -c "
-            import sys, json
-            try:
-                data = json.load(sys.stdin)
-                print(data.get('status', 'unknown'))
-            except:
-                print('error')
-            ")
+            echo "backend_status=$HTTP_STATUS" >> $GITHUB_OUTPUT
             
-            echo "health_status=$STATUS" >> $GITHUB_OUTPUT
-            
-            if [ "$STATUS" != "healthy" ]; then
-              echo "⚠️  WARNING: Backend health status: $STATUS"
+            if [ "$HTTP_STATUS" != "200" ]; then
+              echo "❌ ERROR: Backend no responde correctamente (HTTP $HTTP_STATUS)"
+              echo "backend_accessible=false" >> $GITHUB_OUTPUT
+              echo "health_status=down" >> $GITHUB_OUTPUT
+            else
+              echo "✅ Backend responde correctamente"
+              echo "backend_accessible=true" >> $GITHUB_OUTPUT
+              
+              # Verificar contenido de respuesta
+              STATUS=$(echo "$BODY" | python3 -c "
+              import sys, json
+              try:
+                  data = json.load(sys.stdin)
+                  print(data.get('status', 'unknown'))
+              except:
+                  print('error')
+              " 2>/dev/null || echo "parse_error")
+              
+              echo "health_status=$STATUS" >> $GITHUB_OUTPUT
+              
+              if [ "$STATUS" != "healthy" ]; then
+                echo "⚠️  WARNING: Backend health status: $STATUS"
+              fi
             fi
           fi
 
