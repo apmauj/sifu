@@ -1,0 +1,262 @@
+name: Update Cloudflare Tunnel
+
+on:
+  workflow_dispatch:
+    inputs:
+      trigger_deploy:
+        description: 'Disparar redeploy de frontend después de actualizar'
+        required: false
+        default: true
+        type: boolean
+      skip_if_unchanged:
+        description: 'Saltar si la URL no cambió'
+        required: false
+        default: false
+        type: boolean
+  workflow_call:
+    inputs:
+      trigger_deploy:
+        description: 'Disparar redeploy de frontend después de actualizar'
+        required: false
+        default: true
+        type: boolean
+
+permissions:
+  contents: read
+  actions: write
+
+jobs:
+  update-tunnel:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Docker
+        run: |
+          echo "🐳 Verificando Docker..."
+          docker --version
+          docker compose version
+
+      - name: Install GitHub CLI
+        run: |
+          echo "📦 Instalando gh CLI..."
+          type -p curl >/dev/null || (sudo apt update && sudo apt install curl -y)
+          curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg \
+          && sudo chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg \
+          && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null \
+          && sudo apt update \
+          && sudo apt install gh -y
+          
+          gh --version
+
+      - name: Setup GH Authentication
+        run: |
+          echo "🔐 Configurando autenticación gh..."
+          echo "${{ secrets.GITHUB_TOKEN }}" | gh auth login --with-token
+          gh auth status
+
+      - name: Start Cloudflare Tunnel
+        id: start_tunnel
+        run: |
+          echo "🌐 Iniciando Cloudflare Tunnel..."
+          
+          if [ ! -f "docker-compose.tunnel.yml" ]; then
+            echo "❌ Error: docker-compose.tunnel.yml no encontrado"
+            exit 1
+          fi
+          
+          # Limpiar contenedores anteriores
+          docker compose -f docker-compose.tunnel.yml down 2>/dev/null || true
+          
+          # Iniciar túnel
+          docker compose -f docker-compose.tunnel.yml up -d --force-recreate tunnel
+          
+          echo "⏳ Esperando 10 segundos para que el túnel se establezca..."
+          sleep 10
+
+      - name: Extract Tunnel URL
+        id: extract_url
+        run: |
+          echo "🔍 Extrayendo URL del túnel..."
+          
+          RETRY_COUNT=5
+          RETRY_DELAY=6
+          URL=""
+          
+          for attempt in $(seq 1 $RETRY_COUNT); do
+            echo "Intento $attempt/$RETRY_COUNT..."
+            
+            # Obtener logs del contenedor
+            LOGS=$(docker logs sifu-tunnel 2>&1 | tail -n 200)
+            
+            # Buscar URL de Cloudflare
+            URL=$(echo "$LOGS" | grep -oP 'https://[a-zA-Z0-9-]+\.trycloudflare\.com' | head -n 1)
+            
+            if [ -n "$URL" ]; then
+              echo "✅ URL detectada: $URL"
+              echo "tunnel_url=$URL" >> $GITHUB_OUTPUT
+              echo "url_found=true" >> $GITHUB_OUTPUT
+              break
+            fi
+            
+            # Verificar si hay errores
+            if echo "$LOGS" | grep -q "Error unmarshaling QuickTunnel response"; then
+              echo "⚠️  Cloudflare devolvió respuesta inválida, reintentando..."
+              docker compose -f docker-compose.tunnel.yml restart tunnel
+            fi
+            
+            if [ $attempt -lt $RETRY_COUNT ]; then
+              echo "⏳ Esperando ${RETRY_DELAY}s antes del siguiente intento..."
+              sleep $RETRY_DELAY
+            fi
+          done
+          
+          if [ -z "$URL" ]; then
+            echo "❌ No se pudo obtener URL del túnel después de $RETRY_COUNT intentos"
+            echo "Últimos logs del túnel:"
+            docker logs sifu-tunnel 2>&1 | tail -n 50
+            echo "url_found=false" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+
+      - name: Check Previous URL
+        id: check_previous
+        if: github.event.inputs.skip_if_unchanged == 'true'
+        run: |
+          echo "🔍 Verificando si la URL cambió..."
+          
+          # Intentar obtener el secret actual
+          CURRENT_URL=$(gh secret list -R ${{ github.repository }} | grep VITE_PUBLIC_API_URL | awk '{print $2}' || echo "")
+          
+          NEW_URL="${{ steps.extract_url.outputs.tunnel_url }}"
+          
+          if [ "$CURRENT_URL" = "$NEW_URL" ]; then
+            echo "url_changed=false" >> $GITHUB_OUTPUT
+            echo "ℹ️  URL no cambió: $NEW_URL"
+          else
+            echo "url_changed=true" >> $GITHUB_OUTPUT
+            echo "📝 URL cambió de '$CURRENT_URL' a '$NEW_URL'"
+          fi
+
+      - name: Update GitHub Secret
+        id: update_secret
+        if: steps.check_previous.outputs.url_changed != 'false'
+        run: |
+          NEW_URL="${{ steps.extract_url.outputs.tunnel_url }}"
+          
+          echo "🔐 Actualizando secret VITE_PUBLIC_API_URL..."
+          echo "$NEW_URL" | gh secret set VITE_PUBLIC_API_URL -R ${{ github.repository }}
+          
+          if [ $? -eq 0 ]; then
+            echo "✅ Secret actualizado exitosamente"
+            echo "secret_updated=true" >> $GITHUB_OUTPUT
+            echo "new_url=$NEW_URL" >> $GITHUB_OUTPUT
+          else
+            echo "❌ Error actualizando secret"
+            echo "secret_updated=false" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+
+      - name: Verify Backend Health
+        id: verify_backend
+        if: steps.update_secret.outputs.secret_updated == 'true'
+        run: |
+          NEW_URL="${{ steps.extract_url.outputs.tunnel_url }}"
+          HEALTH_ENDPOINT="$NEW_URL/api/health"
+          
+          echo "🏥 Verificando salud del backend en: $HEALTH_ENDPOINT"
+          
+          # Esperar un poco para que el túnel se estabilice
+          sleep 5
+          
+          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$HEALTH_ENDPOINT")
+          
+          echo "backend_status=$HTTP_STATUS" >> $GITHUB_OUTPUT
+          
+          if [ "$HTTP_STATUS" = "200" ]; then
+            echo "✅ Backend responde correctamente"
+            echo "backend_healthy=true" >> $GITHUB_OUTPUT
+          else
+            echo "⚠️  Backend no responde con 200 (HTTP $HTTP_STATUS)"
+            echo "backend_healthy=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Trigger Frontend Deploy
+        id: trigger_deploy
+        if: |
+          steps.update_secret.outputs.secret_updated == 'true' &&
+          (github.event.inputs.trigger_deploy == 'true' || inputs.trigger_deploy == true)
+        run: |
+          echo "🚀 Disparando redeploy de frontend..."
+          
+          gh workflow run ci-cd.yml \
+            -R ${{ github.repository }} \
+            -f force_frontend_deploy=true \
+            -f override_tunnel_guard=true
+          
+          if [ $? -eq 0 ]; then
+            echo "✅ Workflow de deploy disparado"
+            echo "deploy_triggered=true" >> $GITHUB_OUTPUT
+          else
+            echo "❌ Error disparando workflow"
+            echo "deploy_triggered=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Cleanup on Failure
+        if: failure()
+        run: |
+          echo "🧹 Limpiando recursos..."
+          docker compose -f docker-compose.tunnel.yml logs tunnel | tail -n 100
+          docker compose -f docker-compose.tunnel.yml down
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "### 🌐 Cloudflare Tunnel Update Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Timestamp:** $(date -u +%Y-%m-%dT%H:%M:%SZ)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "${{ steps.extract_url.outputs.url_found }}" = "true" ]; then
+            echo "✅ **Tunnel URL:** \`${{ steps.extract_url.outputs.tunnel_url }}\`" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **Tunnel URL:** No se pudo obtener" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          if [ "${{ steps.update_secret.outputs.secret_updated }}" = "true" ]; then
+            echo "✅ **Secret Updated:** Yes" >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ steps.check_previous.outputs.url_changed }}" = "false" ]; then
+            echo "ℹ️  **Secret Updated:** Skipped (URL unchanged)" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **Secret Updated:** Failed" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          if [ "${{ steps.verify_backend.outputs.backend_healthy }}" = "true" ]; then
+            echo "✅ **Backend Health:** Healthy (HTTP ${{ steps.verify_backend.outputs.backend_status }})" >> $GITHUB_STEP_SUMMARY
+          elif [ -n "${{ steps.verify_backend.outputs.backend_status }}" ]; then
+            echo "⚠️  **Backend Health:** Unhealthy (HTTP ${{ steps.verify_backend.outputs.backend_status }})" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "ℹ️  **Backend Health:** Not checked" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          if [ "${{ steps.trigger_deploy.outputs.deploy_triggered }}" = "true" ]; then
+            echo "✅ **Frontend Deploy:** Triggered" >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ github.event.inputs.trigger_deploy }}" = "false" ]; then
+            echo "ℹ️  **Frontend Deploy:** Skipped (not requested)" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Next Steps" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ steps.update_secret.outputs.secret_updated }}" = "true" ]; then
+            echo "- ✅ Tunnel actualizado exitosamente" >> $GITHUB_STEP_SUMMARY
+            if [ "${{ steps.trigger_deploy.outputs.deploy_triggered }}" = "true" ]; then
+              echo "- ⏳ Esperando completar workflow de deploy" >> $GITHUB_STEP_SUMMARY
+              echo "- 🔍 Verificar [Actions](https://github.com/${{ github.repository }}/actions) para monitorear progreso" >> $GITHUB_STEP_SUMMARY
+            fi
+          else
+            echo "- ❌ Revisa los logs para diagnosticar el problema" >> $GITHUB_STEP_SUMMARY
+            echo "- 🔄 Considera reintentar manualmente" >> $GITHUB_STEP_SUMMARY
+          fi
