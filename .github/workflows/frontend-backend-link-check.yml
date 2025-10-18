@@ -121,7 +121,7 @@ jobs:
 
       - name: Attempt Tunnel Recovery
         id: tunnel_recovery
-        if: steps.tunnel_check.outputs.tunnel_detected == 'true' && github.event_name == 'schedule'
+        if: steps.tunnel_check.outputs.tunnel_detected == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
