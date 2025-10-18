@@ -122,6 +122,8 @@ jobs:
       - name: Attempt Tunnel Recovery
         id: tunnel_recovery
         if: steps.tunnel_check.outputs.tunnel_detected == 'true' && github.event_name == 'schedule'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           echo "🔄 Intentando recuperar túnel automáticamente..."
           
@@ -156,7 +158,9 @@ jobs:
 
       - name: Check Critical Endpoints
         id: endpoints_check
-        if: github.event.inputs.check_all_endpoints == 'true' || github.event_name == 'schedule'
+        if: |
+          steps.backend_check.outputs.backend_accessible == 'true' &&
+          (github.event.inputs.check_all_endpoints == 'true' || github.event_name == 'schedule')
         run: |
           BACKEND_URL="${{ secrets.VITE_PUBLIC_API_URL }}"
           
