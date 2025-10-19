@@ -507,138 +507,138 @@ class URExcelProcessor:
             logger.error("No row with month names found in BHU format")
             return []
 
-            # Use that row as header
-            new_header = excel_data.iloc[header_row_idx].values
-            excel_data.columns = new_header
+        # Use that row as header
+        new_header = excel_data.iloc[header_row_idx].values
+        excel_data.columns = new_header
 
-            # Data starts after the header
-            data_start = header_row_idx + 1
-            data_section = excel_data.iloc[data_start:].copy()
+        # Data starts after the header
+        data_start = header_row_idx + 1
+        data_section = excel_data.iloc[data_start:].copy()
 
-            logger.info(f"New columns: {list(data_section.columns)}")
-            logger.info(f"Data from row {data_start}, total rows: {len(data_section)}")
+        logger.info(f"New columns: {list(data_section.columns)}")
+        logger.info(f"Data from row {data_start}, total rows: {len(data_section)}")
 
-            # Search for the year column (first column that is not NaN)
-            year_column = None
-            for col in data_section.columns:
-                if pd.notna(col):  # Column with valid name
-                    # Check if it contains years
-                    sample_values = data_section[col].dropna().head(10)
-                    if any(
-                        isinstance(val, (int, float)) and 1990 <= val <= 2030
-                        for val in sample_values
-                    ):
-                        year_column = col
-                        break
-
-            # If we didn't find by name, use the first column
-            if year_column is None:
-                year_column = data_section.columns[0]
-                logger.info(f"Using first column as years: {year_column}")
-
-            # Map month columns
-            month_columns = {}
-            for col in data_section.columns:
-                if pd.isna(col):
-                    continue
-
-                col_str = str(col).upper().strip()
-
-                # Specific mapping for each month
-                if "ENERO" in col_str or col_str == "ENE":
-                    month_columns[1] = col
-                elif "FEBRERO" in col_str or col_str == "FEB":
-                    month_columns[2] = col
-                elif "MARZO" in col_str or col_str == "MAR":
-                    month_columns[3] = col
-                elif "ABRIL" in col_str or col_str == "ABR":
-                    month_columns[4] = col
-                elif "MAYO" in col_str or col_str == "MAY":
-                    month_columns[5] = col
-                elif "JUNIO" in col_str or col_str == "JUN":
-                    month_columns[6] = col
-                elif "JULIO" in col_str or col_str == "JUL":
-                    month_columns[7] = col
-                elif "AGOSTO" in col_str or col_str == "AGO":
-                    month_columns[8] = col
-                elif (
-                    "SEPTIEMBRE" in col_str
-                    or "SETIEMBRE" in col_str
-                    or col_str == "SEP"
-                    or col_str == "SET"
+        # Search for the year column (first column that is not NaN)
+        year_column = None
+        for col in data_section.columns:
+            if pd.notna(col):  # Column with valid name
+                # Check if it contains years
+                sample_values = data_section[col].dropna().head(10)
+                if any(
+                    isinstance(val, (int, float)) and 1990 <= val <= 2030
+                    for val in sample_values
                 ):
-                    month_columns[9] = col
-                elif "OCTUBRE" in col_str or col_str == "OCT":
-                    month_columns[10] = col
-                elif "NOVIEMBRE" in col_str or col_str == "NOV":
-                    month_columns[11] = col
-                elif "DICIEMBRE" in col_str or col_str == "DIC":
-                    month_columns[12] = col
+                    year_column = col
+                    break
 
-            logger.info(f"Mapped month columns: {month_columns}")
+        # If we didn't find by name, use the first column
+        if year_column is None:
+            year_column = data_section.columns[0]
+            logger.info(f"Using first column as years: {year_column}")
 
-            # Process data row by row
-            for idx, row in data_section.iterrows():
-                try:
-                    year_raw = row[year_column]
+        # Map month columns
+        month_columns = {}
+        for col in data_section.columns:
+            if pd.isna(col):
+                continue
 
-                    # Validate year
-                    if pd.isna(year_raw):
-                        continue
+            col_str = str(col).upper().strip()
 
-                    try:
-                        year = int(
-                            float(year_raw)
-                        )  # Convert to float first just in case
-                        if year < MIN_VALID_YEAR or year > MAX_VALID_YEAR:
-                            continue
-                    except (ValueError, TypeError):
-                        continue
+            # Specific mapping for each month
+            if "ENERO" in col_str or col_str == "ENE":
+                month_columns[1] = col
+            elif "FEBRERO" in col_str or col_str == "FEB":
+                month_columns[2] = col
+            elif "MARZO" in col_str or col_str == "MAR":
+                month_columns[3] = col
+            elif "ABRIL" in col_str or col_str == "ABR":
+                month_columns[4] = col
+            elif "MAYO" in col_str or col_str == "MAY":
+                month_columns[5] = col
+            elif "JUNIO" in col_str or col_str == "JUN":
+                month_columns[6] = col
+            elif "JULIO" in col_str or col_str == "JUL":
+                month_columns[7] = col
+            elif "AGOSTO" in col_str or col_str == "AGO":
+                month_columns[8] = col
+            elif (
+                "SEPTIEMBRE" in col_str
+                or "SETIEMBRE" in col_str
+                or col_str == "SEP"
+                or col_str == "SET"
+            ):
+                month_columns[9] = col
+            elif "OCTUBRE" in col_str or col_str == "OCT":
+                month_columns[10] = col
+            elif "NOVIEMBRE" in col_str or col_str == "NOV":
+                month_columns[11] = col
+            elif "DICIEMBRE" in col_str or col_str == "DIC":
+                month_columns[12] = col
 
-                    # Process each month
-                    for month, col in month_columns.items():
-                        try:
-                            value_raw = row[col]
-                            if pd.isna(value_raw) or value_raw == "":
-                                continue
+        logger.info(f"Mapped month columns: {month_columns}")
 
-                            # Clean and convert value
-                            if isinstance(value_raw, str):
-                                # Clean spaces and strange characters
-                                value_raw = value_raw.strip()
+        # Process data row by row
+        for idx, row in data_section.iterrows():
+            try:
+                year_raw = row[year_column]
 
-                                # Handle European format: 1.234,56 or 1234,56
-                                if "," in value_raw:
-                                    # European format with comma as decimal
-                                    if "." in value_raw:
-                                        # Format: 1.234,56 -> 1234.56
-                                        value_raw = value_raw.replace(".", "").replace(
-                                            ",", "."
-                                        )
-                                    else:
-                                        # Format: 1234,56 -> 1234.56
-                                        value_raw = value_raw.replace(",", ".")
-
-                                value = float(value_raw)
-                            else:
-                                value = float(value_raw)
-
-                            # Check that the value is reasonable for UR
-                            if (
-                                value > 0 and value < 100000
-                            ):  # Values between 0 and 100,000 are reasonable
-                                records.append((year, month, value))
-                                logger.debug(f"Added: {year}-{month:02d} = {value}")
-
-                        except (ValueError, TypeError) as e:
-                            logger.debug(
-                                f"Error processing value {year}-{month}: {value_raw} - {e}"
-                            )
-                            continue
-
-                except Exception as e:
-                    logger.warning(f"Error processing row: {e}")
+                # Validate year
+                if pd.isna(year_raw):
                     continue
+
+                try:
+                    year = int(
+                        float(year_raw)
+                    )  # Convert to float first just in case
+                    if year < MIN_VALID_YEAR or year > MAX_VALID_YEAR:
+                        continue
+                except (ValueError, TypeError):
+                    continue
+
+                # Process each month
+                for month, col in month_columns.items():
+                    try:
+                        value_raw = row[col]
+                        if pd.isna(value_raw) or value_raw == "":
+                            continue
+
+                        # Clean and convert value
+                        if isinstance(value_raw, str):
+                            # Clean spaces and strange characters
+                            value_raw = value_raw.strip()
+
+                            # Handle European format: 1.234,56 or 1234,56
+                            if "," in value_raw:
+                                # European format with comma as decimal
+                                if "." in value_raw:
+                                    # Format: 1.234,56 -> 1234.56
+                                    value_raw = value_raw.replace(".", "").replace(
+                                    ",", "."
+                                )
+                            else:
+                                # Format: 1234,56 -> 1234.56
+                                value_raw = value_raw.replace(",", ".")
+
+                            value = float(value_raw)
+                        else:
+                            value = float(value_raw)
+
+                        # Check that the value is reasonable for UR
+                        if (
+                            value > 0 and value < 100000
+                        ):  # Values between 0 and 100,000 are reasonable
+                            records.append((year, month, value))
+                            logger.debug(f"Added: {year}-{month:02d} = {value}")
+
+                    except (ValueError, TypeError) as e:
+                        logger.debug(
+                            f"Error processing value {year}-{month}: {value_raw} - {e}"
+                        )
+                        continue
+
+            except Exception as e:
+                logger.warning(f"Error processing row: {e}")
+                continue
 
         logger.info(f"BHU format: Parsed {len(records)} valid UR records")
 
