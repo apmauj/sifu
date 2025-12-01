@@ -21,9 +21,6 @@ from opentelemetry.instrumentation.sqlalchemy import SQLAlchemyInstrumentor
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.instrumentation.logging import LoggingInstrumentor
 
-# Prometheus exporter for metrics (optional, for /api/metrics/prometheus endpoint)
-from prometheus_client import CollectorRegistry
-
 # Logger
 import logging
 

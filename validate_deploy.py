@@ -4,6 +4,6 @@ This file ensures backward compatibility after moving to hexagonal architecture.
 All new code should import from: from src.application.validate_deploy import *
 """
 
-from src.application.validate_deploy import *
+from src.application.validate_deploy import *  # noqa: F403
 
-__all__ = [name for name in dir() if not name.startswith("_")]
+__all__ = [name for name in dir() if not name.startswith("_")]  # noqa: F405

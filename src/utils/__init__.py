@@ -10,7 +10,7 @@ Exports:
   - correlation_middleware: Request correlation
 """
 
-from .constants import *
+from .constants import *  # noqa: F403
 from .error_model import ProblemResponse, ProblemDetail, PROBLEM_TYPES
 
 __all__ = [

@@ -4,7 +4,7 @@ Standardized error response model for all API endpoints.
 Ref: https://tools.ietf.org/html/rfc7807
 """
 
-from typing import Optional, Any, Dict
+from typing import Optional
 from pydantic import BaseModel, Field
 
 

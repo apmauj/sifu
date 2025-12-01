@@ -1,6 +1,6 @@
 """Exchange Rate router endpoints."""
 
-from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks, Query
+from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 from datetime import date, datetime

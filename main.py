@@ -31,11 +31,10 @@ from src.domain.excel_processor import (
 from src.domain.brou_processor import BROUProcessor
 from src.application.security_utils import SecurityValidator, InputValidator
 from src.domain.pydantic_models import URRangeRequestModel
-# TODO: Move simple_totp to src/infrastructure/
-# from src.application.simple_totp import totp_service
+from src.application.simple_totp import totp_service
 
 # RFC7807 error model
-from src.utils.error_model import ProblemDetail, ProblemResponse, PROBLEM_TYPES
+from src.utils.error_model import ProblemResponse, PROBLEM_TYPES
 
 # OpenTelemetry instrumentation (OSS, optional via OTEL_ENABLED)
 from src.application.opentelemetry_setup import (
@@ -2110,11 +2109,11 @@ async def get_prometheus_metrics():
     Requires OTEL_ENABLED=true.
     """
     try:
-        from prometheus_client import generate_latest, CollectorRegistry, CONTENT_TYPE_LATEST
+        from prometheus_client import generate_latest, CollectorRegistry
         
         # Attempt to expose Prometheus metrics if available
         registry = CollectorRegistry()
-        metrics_data = generate_latest(registry)
+        _ = generate_latest(registry)  # Used to check if prometheus is available
         
         return JSONResponse(
             content={"message": "Prometheus metrics endpoint (OpenMetrics format)"},

@@ -4,10 +4,9 @@ from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
 import logging
 import uuid
-from typing import Optional
 
 from src.infrastructure.database import get_db
-from src.utils.constants import ENDPOINT_HEALTH, MSG_LATEST_UI_SUCCESS
+from src.utils.constants import ENDPOINT_HEALTH
 
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["Sistema"])
@@ -42,7 +41,6 @@ async def health_check(db: Session = Depends(get_db)):
             raise RuntimeError("Health checker not initialized")
 
         status = health_checker.check_all()
-        status_code = 200 if status.is_healthy else 503
         return status.to_dict()
 
     except Exception as e:
@@ -59,7 +57,6 @@ async def get_info_v2(db: Session = Depends(get_db)):
     """Informacion general del sistema (endpoint v2 - expandido)."""
     try:
         from src.domain.services import UIService
-        from src.domain.models import HealthResponse
         
         service = UIService(db)
         total_records = service.get_total_records()
