@@ -24,12 +24,12 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent  # From scripts/uti
 # Also exclude virtual environment directories to avoid scanning installed packages
 EXCLUDE_DIRS = {"tests", "__pycache__", "scripts", "migration-tools", ".venv", "venv", "api"}
 # Allow legacy files that have intentional duplication with src/ (for backward compatibility)
-ALLOWED_FILES = {"constants.py", "main.py"}
+ALLOWED_FILES = {"main.py"}
 MIN_LEN = int(os.getenv("MIN_LEN", "20"))
 MIN_COUNT = int(os.getenv("MIN_COUNT", "4"))  # Changed from 2 to 4 to reduce false positives
 
-# Load constant values from constants.py
-constants_module = PROJECT_ROOT / "constants.py"
+# Load constant values from src/utils/constants.py (hexagonal architecture)
+constants_module = PROJECT_ROOT / "src" / "utils" / "constants.py"
 constant_values: set[str] = set()
 if constants_module.exists():
     try:

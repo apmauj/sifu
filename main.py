@@ -245,7 +245,7 @@ async def _execute_startup():
         # puedan verificar la llamada (incluso cuando SKIP_BOOTSTRAP=1)
         db = None
         try:
-            from database import (
+            from src.infrastructure.database import (
                 SessionLocal as _SL,
             )  # local import para evitar costos al importar tests
 
@@ -657,7 +657,7 @@ except Exception as e:  # noqa: BLE001
 def _apply_sqlalchemy_instrumentation():
     """Apply SQLAlchemy instrumentation after engine creation (lazy)."""
     try:
-        from database import engine
+        from src.infrastructure.database import engine
         instrument_sqlalchemy(engine)
         logger.info("[OpenTelemetry] SQLAlchemy instrumentation loaded")
     except Exception as e:
@@ -798,7 +798,7 @@ def _add_jobs(_scheduler):
     # UI daily refresh
     def job_ui_refresh():
         try:
-            from database import SessionLocal
+            from src.infrastructure.database import SessionLocal
 
             db = SessionLocal()
             logger.info("[Scheduler] Running UI refresh job...")
@@ -816,7 +816,7 @@ def _add_jobs(_scheduler):
             if not _is_business_day():
                 logger.info("[Scheduler][EXCHANGE] Skipped (non-business day)")
                 return
-            from database import SessionLocal
+            from src.infrastructure.database import SessionLocal
 
             db = SessionLocal()
             logger.info("[Scheduler] Running Exchange refresh job...")
@@ -844,7 +844,7 @@ def _add_jobs(_scheduler):
         try:
             if not _is_business_day(now):
                 return
-            from database import SessionLocal
+            from src.infrastructure.database import SessionLocal
 
             db = SessionLocal()
             service = ExchangeRateService(db)
@@ -871,7 +871,7 @@ def _add_jobs(_scheduler):
     def job_ur_refresh():
         try:
             # UR es mensual; si cae fin de semana se ejecutará el primer día hábil siguiente (no aplicamos skip aquí)
-            from database import SessionLocal
+            from src.infrastructure.database import SessionLocal
 
             db = SessionLocal()
             logger.info("[Scheduler] Running UR refresh job...")
@@ -899,7 +899,7 @@ def _add_jobs(_scheduler):
 
     def job_data_freshness_guard():
         now_local = datetime.now(tz)
-        from database import SessionLocal
+        from src.infrastructure.database import SessionLocal
 
         db = None
         try:
@@ -1728,7 +1728,7 @@ async def get_ur_info(db: Session = Depends(get_db)):
                 from datetime import datetime as _dt
                 now = _dt.utcnow()
                 if (latest_ur.year, latest_ur.month) < (now.year, now.month):
-                    from constants import MSG_UR_PENDING_CURRENT_MONTH
+                    from src.utils.constants import MSG_UR_PENDING_CURRENT_MONTH
                     pending = True
                     pending_message = MSG_UR_PENDING_CURRENT_MONTH
         except Exception:
@@ -1933,7 +1933,7 @@ def _run_exchange_refresh_job(job_id: str):  # runs in background thread
     """Internal function executed in background to perform the heavy refresh and update job metadata."""
     job_manager.mark_running(job_id)
     # New DB session (cannot reuse dependency outside request context)
-    from database import SessionLocal
+    from src.infrastructure.database import SessionLocal
 
     db_local = SessionLocal()
     try:

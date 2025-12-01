@@ -18,7 +18,7 @@ def test_configuration_validation():
     print("🔍 Testing configuration validation...")
 
     try:
-        from config_validator import ConfigurationValidator
+        from src.application.config_validator import ConfigurationValidator
 
         validator = ConfigurationValidator()
         success, errors, warnings = validator.validate_all()
@@ -41,7 +41,7 @@ def test_secret_management():
     print("🔐 Testing secret management...")
 
     try:
-        from secret_manager import secret_manager
+        from src.application.secret_manager import secret_manager
 
         secrets = secret_manager.load_secrets()
         is_valid, validation_errors = secret_manager.validate_secrets()

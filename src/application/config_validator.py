@@ -8,7 +8,7 @@ import sys
 import logging
 from typing import List, Tuple
 from pathlib import Path
-from secret_manager import secret_manager
+from src.application.secret_manager import secret_manager
 
 
 class ConfigurationValidator:

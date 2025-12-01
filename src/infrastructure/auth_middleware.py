@@ -41,7 +41,7 @@ def require_permissions(required_permissions: List[Permission]):
 
     async def permission_checker(user: User = Depends(get_current_user)) -> User:
         """Check if user has required permissions"""
-        from auth_models import has_any_permission
+        from src.infrastructure.auth_models import has_any_permission
 
         if not has_any_permission(user, required_permissions):
             raise HTTPException(
