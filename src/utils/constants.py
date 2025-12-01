@@ -1,0 +1,438 @@
+"""
+Constants and configuration values for the SIFU application
+"""
+
+import os
+
+# =============================================================================
+# DATABASE CONFIGURATION
+# =============================================================================
+# Prefer environment variables to define database location.
+# DATABASE_PATH points to a SQLite file path (e.g., /app/data/ui_data.db)
+# DATABASE_URL can override fully (e.g., postgresql://...)
+DATABASE_PATH = os.getenv("DATABASE_PATH", "data/ui_data.db")
+DATABASE_URL = os.getenv("DATABASE_URL", f"sqlite:///{DATABASE_PATH}")
+DATABASE_CONNECT_ARGS = {"check_same_thread": False}
+
+# Table names
+TABLE_UI_RECORDS = "ui_records"
+TABLE_UR_RECORDS = "ur_records"
+TABLE_EXCHANGE_RATE_RECORDS = "exchange_rate_records"
+TABLE_BROU_RECORDS = "brou_records"
+
+# Column names (English for international standards)
+COLUMN_UI_DATE = "date"
+COLUMN_UI_VALUE = "value"
+COLUMN_UR_YEAR = "year"
+COLUMN_UR_MONTH = "month"
+COLUMN_UR_VALUE = "value"
+COLUMN_EXCHANGE_RATE_DATE = "date"
+COLUMN_EXCHANGE_RATE_CURRENCY = "currency"
+COLUMN_EXCHANGE_RATE_BUY = "buy_rate"
+COLUMN_EXCHANGE_RATE_SELL = "sell_rate"
+COLUMN_EXCHANGE_RATE_AVERAGE = "average_rate"
+COLUMN_EXCHANGE_RATE_ARBITRAGE = "arbitrage"
+COLUMN_ID = "id"
+COLUMN_CREATED_AT = "created_at"
+COLUMN_UPDATED_AT = "updated_at"
+
+# =============================================================================
+# API CONFIGURATION
+# =============================================================================
+API_TITLE = "SIFU - Sistema de Índices Financieros del Uruguay"
+API_DESCRIPTION = "API para consultar índices financieros de Uruguay: Unidad Indexada (UI), Unidad Reajustable (UR) y Cotizaciones de Monedas"
+API_VERSION = "1.0.0"
+API_DOCS_URL = "/api/docs"
+API_REDOC_URL = "/api/redoc"
+
+# CORS Configuration
+# Security improvement: Use restrictive defaults, require explicit configuration for production
+_env_origins = os.getenv("ALLOW_ORIGINS", "").strip()
+if _env_origins:
+    # Parse comma-separated origins and validate format
+    origins_list = [o.strip() for o in _env_origins.split(",") if o.strip()]
+    # Basic validation - only allow http/https origins
+    valid_origins = []
+    for origin in origins_list:
+        if origin.startswith(("http://", "https://")) or origin == "*":
+            valid_origins.append(origin)
+    CORS_ALLOW_ORIGINS = valid_origins if valid_origins else []
+else:
+    # Default to empty list for security - no CORS in development without explicit config
+    CORS_ALLOW_ORIGINS = []
+
+CORS_ALLOW_METHODS = ["GET", "POST"]  # Restrict to only necessary methods
+CORS_ALLOW_HEADERS = ["Content-Type", "Authorization"]  # Restrict headers
+CORS_ALLOW_CREDENTIALS = False  # Disable credentials by default
+
+# Static files
+STATIC_DIRECTORY = "static"
+STATIC_MOUNT_PATH = "/static"
+STATIC_NAME = "static"
+
+# =============================================================================
+# SCHEDULER (APScheduler) CONFIGURATION
+# =============================================================================
+# Enable/disable the background scheduler via env (default: enabled)
+SCHEDULER_ENABLED = os.getenv("SIFU_SCHEDULER_ENABLED", "true").lower() in (
+    "1",
+    "true",
+    "yes",
+    "on",
+)
+
+# Timezone used by cron triggers (defaults to Montevideo)
+SCHEDULER_TIMEZONE = os.getenv("TIMEZONE", "America/Montevideo")
+
+# Cron expressions (standard 5-field: min hour day month weekday)
+# Daily UI refresh at 02:00
+CRON_UI_REFRESH = os.getenv("CRON_UI_REFRESH", "0 2 * * *")
+# Daily Exchange historical refresh at 03:00
+CRON_EXCHANGE_REFRESH = os.getenv("CRON_EXCHANGE_REFRESH", "0 3 * * *")
+# Monthly UR refresh on day 1 at 04:00
+CRON_UR_REFRESH = os.getenv("CRON_UR_REFRESH", "0 4 1 * *")
+# Data freshness guard (every 5 minutes by default)
+CRON_DATA_GUARD = os.getenv("CRON_DATA_GUARD", "*/5 * * * *")
+
+# Cooldowns (minutes) to avoid hammering external sources when forcing refresh via guard
+DATA_GUARD_UI_COOLDOWN_MIN = int(os.getenv("DATA_GUARD_UI_COOLDOWN_MIN", "60"))
+DATA_GUARD_UR_COOLDOWN_MIN = int(os.getenv("DATA_GUARD_UR_COOLDOWN_MIN", "180"))
+DATA_GUARD_EXCHANGE_COOLDOWN_MIN = int(
+    os.getenv("DATA_GUARD_EXCHANGE_COOLDOWN_MIN", "60")
+)
+
+# Hourly health/check cron for Exchange (verifica y refresca si falta el día actual)
+CRON_EXCHANGE_HOURLY_CHECK = os.getenv(
+    "CRON_EXCHANGE_HOURLY_CHECK", "0 * * * *"
+)  # top of every hour
+EXCHANGE_HOURLY_CHECK_ENABLED = os.getenv(
+    "EXCHANGE_HOURLY_CHECK_ENABLED", "true"
+).lower() in ("1", "true", "yes", "on")
+EXCHANGE_HOURLY_CHECK_START_HOUR = int(
+    os.getenv("EXCHANGE_HOURLY_CHECK_START_HOUR", "9")
+)  # local tz hour to start attempts
+EXCHANGE_HOURLY_CHECK_END_HOUR = int(
+    os.getenv("EXCHANGE_HOURLY_CHECK_END_HOUR", "18")
+)  # local tz hour to stop attempts
+
+# =============================================================================
+# API ENDPOINTS
+# =============================================================================
+# Health
+ENDPOINT_HEALTH = "/api/health"
+
+# UI Endpoints
+ENDPOINT_UI_LATEST = "/api/ui/latest"
+ENDPOINT_UI_BY_DATE = "/api/ui/{date}"
+ENDPOINT_UI_RANGE = "/api/ui/range/{start_date}/{end_date}"
+ENDPOINT_INFO = "/api/info"
+ENDPOINT_REFRESH = "/api/refresh"
+
+# UR Endpoints
+ENDPOINT_UR_LATEST = "/api/ur/latest"
+ENDPOINT_UR_BY_YEAR_MONTH = "/api/ur/year-month/{year}/{month}"
+ENDPOINT_UR_BY_YEAR = "/api/ur/year/{year}"
+ENDPOINT_UR_RANGE = "/api/ur/range/{start_year}/{start_month}/{end_year}/{end_month}"
+ENDPOINT_UR_RANGE_POST = "/api/ur/range"
+ENDPOINT_UR_REFRESH = "/api/ur/refresh"
+ENDPOINT_UR_INFO = "/api/ur/info"
+
+
+# Exchange Rate Endpoints
+ENDPOINT_EXCHANGE_RATE_LATEST = "/api/exchange-rate/latest"
+ENDPOINT_EXCHANGE_RATE_BY_DATE = "/api/exchange-rate/{date}"
+ENDPOINT_EXCHANGE_RATE_BY_CURRENCY = "/api/exchange-rate/currency/{currency}"
+ENDPOINT_EXCHANGE_RATE_BY_DATE_CURRENCY = "/api/exchange-rate/{date}/{currency}"
+ENDPOINT_EXCHANGE_RATE_RANGE = "/api/exchange-rate/range/{start_date}/{end_date}"
+ENDPOINT_EXCHANGE_RATE_REFRESH = "/api/exchange-rate/refresh"
+ENDPOINT_EXCHANGE_RATE_INFO = "/api/exchange-rate/info"
+
+# =============================================================================
+# HTTP STATUS CODES
+# =============================================================================
+HTTP_200_OK = 200
+HTTP_400_BAD_REQUEST = 400
+HTTP_404_NOT_FOUND = 404
+HTTP_500_INTERNAL_SERVER_ERROR = 500
+
+# =============================================================================
+# RESPONSE MESSAGES
+# =============================================================================
+# Success messages
+MSG_LATEST_UI_SUCCESS = "Latest UI value retrieved successfully"
+MSG_LATEST_UR_SUCCESS = "Latest UR value retrieved successfully"
+MSG_UI_DATE_SUCCESS = "UI value for {date} retrieved successfully"
+MSG_UR_YEAR_MONTH_SUCCESS = "UR value for {year}-{month:02d} retrieved successfully"
+MSG_UI_RANGE_SUCCESS = "UI values for range {start_date} - {end_date} retrieved successfully. {count} records found"
+MSG_UR_YEAR_SUCCESS = "Retrieved {count} UR values for year {year}"
+MSG_UR_RANGE_SUCCESS = "Retrieved {count} UR values for range {start_year}-{start_month:02d} to {end_year}-{end_month:02d}"
+MSG_LATEST_EXCHANGE_RATE_SUCCESS = "Latest exchange rates retrieved successfully"
+MSG_EXCHANGE_RATE_DATE_SUCCESS = "Exchange rates for {date} retrieved successfully"
+MSG_EXCHANGE_RATE_CURRENCY_SUCCESS = (
+    "Exchange rates for {currency} retrieved successfully"
+)
+MSG_EXCHANGE_RATE_RANGE_SUCCESS = "Exchange rates for range {start_date} - {end_date} retrieved successfully. {count} records found"
+
+# Error messages
+MSG_NO_UI_DATA = "No UI data available. Run /api/refresh to load data."
+MSG_NO_UR_DATA = "No UR data available"
+MSG_NO_UI_DATE_DATA = "No data for {date}. Showing closest previous value"
+MSG_NO_UR_YEAR_MONTH_DATA = "No UR data available for {year}-{month:02d}"
+MSG_NO_UR_YEAR_DATA = "No UR data available for year {year}"
+MSG_NO_UR_RANGE_DATA = "No UR data available for range {start_year}-{start_month:02d} to {end_year}-{end_month:02d}"
+MSG_NO_UI_FOUND = "No UI data found for {date} or previous dates"
+MSG_NO_EXCHANGE_RATE_DATA = (
+    "No exchange rate data available. Run /api/exchange-rate/refresh to load data."
+)
+MSG_NO_EXCHANGE_RATE_DATE_DATA = (
+    "No exchange rate data for {date}. Showing closest previous value"
+)
+MSG_NO_EXCHANGE_RATE_CURRENCY_DATA = "No exchange rate data available for {currency}"
+MSG_UR_MONTH_NOT_PUBLISHED = "UR current month value not yet published by BHU"
+MSG_UR_PENDING_CURRENT_MONTH = "Pending publication of current month UR value"
+
+# Validation messages
+MSG_INVALID_MONTH = "Month must be between 1 and 12"
+MSG_INVALID_DATE_RANGE = "Start date must be less than or equal to end date"
+MSG_INVALID_PERIOD_RANGE = "Start period must be before or equal to end period"
+
+# System messages
+MSG_INTERNAL_SERVER_ERROR = "Internal server error"
+MSG_INTERNAL_ERROR = "Internal error: {error}"
+
+# Health check
+MSG_HEALTH_OK = "ok"
+
+# =============================================================================
+# DATA SOURCES
+# =============================================================================
+DATA_SOURCE_INE = "Instituto Nacional de Estadística - Uruguay"
+
+# =============================================================================
+# EXCEL PROCESSOR CONFIGURATION
+# =============================================================================
+# URLs
+URL_INE_UI = "https://www5.ine.gub.uy/documents/Estad%C3%ADsticasecon%C3%B3micas/SERIES%20Y%20OTROS/UI/Unidad%20Indexada.xls"
+URL_BHU_UR = "https://bhu.com.uy/sites/default/files/2024-01/historico-ur.xls"
+"""Legacy BHU UR Excel URL (kept for backwards compatibility / bootstrap)."""
+URL_BHU_UR_TEMPLATE = os.getenv(
+    "URL_BHU_UR_TEMPLATE",
+    "https://bhu.com.uy/sites/default/files/{year}-{month:02d}/historico-ur.xls",
+)
+"""Template to construct monthly BHU UR Excel URLs. The site organizes the historical
+file inside date-based folders (e.g. 2025-09). We attempt the current month backward
+several months until a valid file is found. Overridable via env URL_BHU_UR_TEMPLATE."""
+UR_URL_MONTHS_BACK = int(os.getenv("UR_URL_MONTHS_BACK", "8"))
+"""How many previous months (including current) to attempt when resolving BHU UR Excel."""
+URL_INE_UR = "https://www5.ine.gub.uy/documents/Estad%C3%ADsticasecon%C3%B3micas/SERIES%20Y%20OTROS/UR/UR.xls"
+"""INE UR Excel URL - Used as fallback when BHU sources are unavailable or outdated."""
+URL_INE_EXCHANGE_RATES = "https://www5.ine.gub.uy/documents/Estadísticaseconómicas/SERIES%20Y%20OTROS/Cotización%20monedas/Cotización%20monedas.xlsx"  # INE Historical Exchange rates
+URL_BCU_EXCHANGE_RATES = "https://www.bcu.gub.uy/Estadisticas-e-Indicadores/Paginas/Cotizaciones.aspx"  # BCU Current rates
+
+# HTTP Configuration
+HTTP_TIMEOUT = 30
+HTTP_USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+
+# Excel processing
+EXCEL_ENGINE_XLS = "xlrd"
+DATE_FORMATS = ["%Y-%m-%d", "%d/%m/%Y", "%d-%m-%Y"]
+
+# UR Excel specific
+UR_MONTH_NAMES = [
+    "ENERO",
+    "FEBRERO",
+    "MARZO",
+    "ABRIL",
+    "MAYO",
+    "JUNIO",
+    "JULIO",
+    "AGOSTO",
+    "SEPTIEMBRE",
+    "SETIEMBRE",
+    "OCTUBRE",
+    "NOVIEMBRE",
+    "DICIEMBRE",
+]
+
+# Year validation
+MIN_VALID_YEAR = 1900
+MAX_VALID_YEAR = 2100
+
+# Exchange Rate Configuration - Unificada (Punto 5)
+SUPPORTED_CURRENCIES = [
+    "USD",
+    "EUR",
+    "ARS",
+    "BRL",
+    "CLP",  # Solo BCU
+]  # Main currencies (available in INE and BCU)
+DEFAULT_CURRENCY = "USD"
+
+# Exchange Rate Validation
+MIN_EXCHANGE_RATE = 0.0001
+MAX_EXCHANGE_RATE = 1000000
+VALID_CURRENCY_CODES = ["USD", "USD_EBROU", "EUR", "ARS", "BRL", "CLP", "PYG", "UYU"]
+
+# =============================================================================
+# EXCHANGE TERMINOLOGY - UNIFICADA (Punto 5)
+# =============================================================================
+
+# Nombres de campos estandarizados
+EXCHANGE_FIELD_CURRENCY = "currency"
+EXCHANGE_FIELD_BUY_RATE = "buy_rate"
+EXCHANGE_FIELD_SELL_RATE = "sell_rate"
+EXCHANGE_FIELD_AVERAGE_RATE = "average_rate"
+EXCHANGE_FIELD_DATE = "date"
+EXCHANGE_FIELD_SOURCE = "source"
+EXCHANGE_FIELD_SOURCE_TYPE = "source_type"
+EXCHANGE_FIELD_TIMESTAMP = "timestamp"
+
+# Tipos de fuente estandarizados
+EXCHANGE_SOURCE_TYPE_LIVE = "live"
+EXCHANGE_SOURCE_TYPE_HISTORICAL = "historical"
+EXCHANGE_SOURCE_TYPE_SAMPLE = "sample"
+EXCHANGE_SOURCE_TYPE_PERSISTED = "persisted"
+
+# Fuentes de datos
+EXCHANGE_SOURCE_BCU = "BCU"
+EXCHANGE_SOURCE_INE = "INE"
+EXCHANGE_SOURCE_BROU = "BROU"
+EXCHANGE_SOURCE_BROU_SAMPLE = "BROU_SAMPLE"
+EXCHANGE_SOURCE_BROU_PERSISTED = "BROU_PERSISTED"
+
+# Nombres de monedas unificados
+CURRENCY_NAMES = {
+    "USD": "Dólar Estadounidense",
+    "USD_EBROU": "Dólar eBROU",
+    "EUR": "Euro",
+    "ARS": "Peso Argentino",
+    "BRL": "Real Brasileño",
+    "CLP": "Peso Chileno",
+    "PYG": "Guaraní Paraguayo",
+    "UYU": "Peso Uruguayo"
+}
+
+# Descripciones de fuentes
+SOURCE_DESCRIPTIONS = {
+    EXCHANGE_SOURCE_BCU: "Banco Central del Uruguay",
+    EXCHANGE_SOURCE_INE: "Instituto Nacional de Estadística",
+    EXCHANGE_SOURCE_BROU: "Banco República del Uruguay",
+    EXCHANGE_SOURCE_BROU_SAMPLE: "Banco República (Datos de Muestra)",
+    EXCHANGE_SOURCE_BROU_PERSISTED: "Banco República (Datos Históricos)"
+}
+
+# =============================================================================
+# SCHEDULER CONFIGURATION
+# =============================================================================
+# Enable or disable background scheduler via env
+SCHEDULER_ENABLED = os.getenv("SCHEDULER_ENABLED", "true").lower() == "true"
+SCHEDULER_TIMEZONE = os.getenv("SCHEDULER_TIMEZONE", "UTC")
+
+# Cron expressions (crontab format) for APScheduler
+# Default: UI and Exchange refresh daily at 03:00 UTC; UR refresh on day 1 at 04:00 UTC
+UI_REFRESH_CRON = os.getenv("UI_REFRESH_CRON", "0 3 * * *")
+EXCHANGE_REFRESH_CRON = os.getenv("EXCHANGE_REFRESH_CRON", "0 3 * * *")
+UR_REFRESH_CRON = os.getenv("UR_REFRESH_CRON", "0 4 1 * *")
+
+# =============================================================================
+# LOGGING MESSAGES
+# =============================================================================
+LOG_STARTING_APP = "🚀 Starting SIFU..."
+LOG_NO_DATA_LOADING = "No data in database. Attempting to load initial data..."
+LOG_INITIAL_DATA_LOADED = "✅ Initial data loaded: {count} records"
+LOG_COULD_NOT_LOAD_DATA = "⚠️ Could not load initial data: {message}"
+LOG_DATABASE_READY = "✅ Database ready with {count} records"
+
+LOG_DOWNLOADING_EXCEL_INE = "Descargando archivo Excel desde INE..."
+LOG_DOWNLOADING_EXCEL_BHU = "Descargando archivo Excel de UR desde BHU..."
+LOG_DOWNLOADING_EXCEL_INE_UR_FALLBACK = "Intentando fallback a INE para UR..."
+LOG_EXCEL_DOWNLOADED = "Archivo descargado exitosamente. Filas: {count}"
+LOG_EXCEL_UR_DOWNLOADED = "Archivo UR descargado exitosamente. Filas: {count}"
+LOG_RECORDS_PARSED = "Parseados {count} registros válidos"
+LOG_RECORDS_SAVED = "Guardados/actualizados {count} registros en la base de datos"
+LOG_TRYING_BHU_URL = "Probando URL BHU UR: {url}"
+LOG_USING_BHU_URL = "Usando URL BHU UR encontrada: {url}"
+LOG_ALL_BHU_URLS_FAILED = "No se pudo descargar UR desde ninguna URL candidata"
+
+# =============================================================================
+# RESPONSE FIELD NAMES
+# =============================================================================
+FIELD_SUCCESS = "success"
+FIELD_MESSAGE = "message"
+FIELD_DATA = "data"
+FIELD_TOTAL_RECORDS = "total_records"
+FIELD_LAST_UPDATED = "last_updated"
+FIELD_STATUS = "status"
+FIELD_TIMESTAMP = "timestamp"
+FIELD_DATE = "date"
+FIELD_VALUE = "value"
+FIELD_YEAR = "year"
+FIELD_MONTH = "month"
+FIELD_DATE_RANGE = "date_range"
+FIELD_MIN_DATE = "min_date"
+FIELD_MAX_DATE = "max_date"
+FIELD_LATEST_UI = "latest_ui"
+FIELD_DATA_SOURCE = "data_source"
+FIELD_YEAR_RANGE = "year_range"
+FIELD_MIN_YEAR = "min_year"
+FIELD_MAX_YEAR = "max_year"
+FIELD_LATEST_VALUE = "latest_value"
+FIELD_AVAILABLE_YEARS = "available_years"
+
+# =============================================================================
+# API TAG NAMES (for OpenAPI grouping) - keep Spanish originals for backward compatibility
+# =============================================================================
+TAG_UI = "Unidad Indexada (UI)"
+TAG_UR = "Unidad Reajustable (UR)"
+TAG_EXCHANGE = "Cotizaciones de Monedas"
+
+
+# =============================================================================
+# VALIDATION CONSTANTS
+# =============================================================================
+MIN_MONTH = 1
+MAX_MONTH = 12
+
+# =============================================================================
+# SCHEDULER SETTINGS (ENV-configurable)
+# =============================================================================
+SCHEDULER_ENABLED = os.getenv("SCHEDULER_ENABLED", "true").lower() == "true"
+# Cron-like strings or simple presets for APScheduler triggers
+SCHEDULE_UI_REFRESH_CRON = os.getenv(
+    "SCHEDULE_UI_REFRESH_CRON", "0 2 * * *"
+)  # daily 02:00
+SCHEDULE_EXCHANGE_REFRESH_CRON = os.getenv(
+    "SCHEDULE_EXCHANGE_REFRESH_CRON", "0 3 * * *"
+)  # daily 03:00
+SCHEDULE_UR_REFRESH_CRON = os.getenv(
+    "SCHEDULE_UR_REFRESH_CRON", "0 4 1 * *"
+)  # monthly day 1 at 04:00
+
+# Business day (weekday / optional holiday) filtering for scheduled refreshes
+SCHEDULER_BUSINESS_DAY_ONLY = (
+    os.getenv("SCHEDULER_BUSINESS_DAY_ONLY", "true").lower() == "true"
+)
+# Comma-separated ISO dates (YYYY-MM-DD) of holidays where refresh should be skipped
+_holidays_env = os.getenv("SCHEDULER_HOLIDAYS", "").strip()
+SCHEDULER_HOLIDAYS = set(
+    [h for h in (x.strip() for x in _holidays_env.split(",")) if h]
+)
+
+# =============================================================================
+# CACHE CONFIGURATION
+# =============================================================================
+# Cache age thresholds for warnings (in minutes)
+CACHE_WARNING_THRESHOLD_MINUTES = int(
+    os.getenv("CACHE_WARNING_THRESHOLD_MINUTES", "60")
+)  # 1 hour warning
+CACHE_CRITICAL_THRESHOLD_MINUTES = int(
+    os.getenv("CACHE_CRITICAL_THRESHOLD_MINUTES", "120")
+)  # 2 hours critical
+
+# Cache refresh intervals (in minutes)
+CACHE_BROU_REFRESH_INTERVAL_MINUTES = int(
+    os.getenv("CACHE_BROU_REFRESH_INTERVAL_MINUTES", "55")
+)  # Refresh every 55 minutes
+CACHE_BCU_REFRESH_INTERVAL_MINUTES = int(
+    os.getenv("CACHE_BCU_REFRESH_INTERVAL_MINUTES", "55")
+)  # Refresh every 55 minutes

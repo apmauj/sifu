@@ -4,7 +4,7 @@ param(
   [switch]$WaitWorkflows,
   [switch]$RedeployFrontend,
   [switch]$SkipValidation,
-  [string]$EnvFile = ".env",
+  [string]$EnvFile = "config/env/.env",
   [ValidateSet('Default','Exchange','None')]
   [string]$StartupProbe='Default'
 )
@@ -16,7 +16,7 @@ if (-not $SkipValidation) {
 
   # Verificar que existe el archivo .env
   if (-not (Test-Path $EnvFile)) {
-    throw "Archivo $EnvFile no encontrado. Crear desde .env.template"
+    throw "Archivo $EnvFile no encontrado. Crear desde config/env/.env.template"
   }
 
   # Verificar que existe el secret_manager

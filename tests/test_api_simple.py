@@ -7,7 +7,7 @@ from unittest.mock import patch
 from fastapi.testclient import TestClient
 from datetime import date
 from main import app
-from models import UIValue
+from src.domain.models import UIValue
 
 
 class TestAPISimple:
@@ -132,7 +132,7 @@ class TestAPISimple:
         """Test obtener último UR exitoso"""
         with patch("main.URService") as mock_service_class:
             mock_service = mock_service_class.return_value
-            from models import URValue
+            from src.domain.models import URValue
 
             mock_ur = URValue(year=2024, month=12, value=6.1234)
             mock_service.get_latest_ur.return_value = mock_ur
@@ -149,7 +149,7 @@ class TestAPISimple:
         """Test obtener UR por año y mes exitoso"""
         with patch("main.URService") as mock_service_class:
             mock_service = mock_service_class.return_value
-            from models import URValue
+            from src.domain.models import URValue
 
             mock_ur = URValue(year=2024, month=1, value=5.1234)
             mock_service.get_ur_by_year_month.return_value = mock_ur
@@ -166,7 +166,7 @@ class TestAPISimple:
         """Test obtener UR por año exitoso"""
         with patch("main.URService") as mock_service_class:
             mock_service = mock_service_class.return_value
-            from models import URValue
+            from src.domain.models import URValue
 
             mock_ur_1 = URValue(year=2024, month=1, value=5.1234)
             mock_ur_2 = URValue(year=2024, month=2, value=5.2234)
@@ -184,7 +184,7 @@ class TestAPISimple:
         """Test obtener información UR exitoso"""
         with patch("main.URService") as mock_service_class:
             mock_service = mock_service_class.return_value
-            from models import URValue
+            from src.domain.models import URValue
 
             mock_service.get_total_records.return_value = 410
             mock_service.get_year_range_available.return_value = (2020, 2024)
@@ -208,3 +208,4 @@ class TestAPISimple:
         assert data["data"]["total_records"] == 410
 
     # Test eliminado - endpoint obsoleto
+

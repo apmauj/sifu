@@ -4,7 +4,7 @@ Tests para servicios de negocio
 
 from unittest.mock import Mock
 from datetime import date
-from services import UIService
+from src.domain.services import UIService
 
 
 class TestUIService:
@@ -167,7 +167,7 @@ class TestURServiceCoverage:
 
     def setup_method(self):
         """Setup for each test"""
-        from services import URService
+        from src.domain.services import URService
 
         self.mock_session = Mock()
         self.service = URService(self.mock_session)
@@ -279,3 +279,4 @@ class TestURServiceCoverage:
         result = self.service.get_ur_by_year(2024)
 
         assert result == []
+

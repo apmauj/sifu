@@ -1,0 +1,78 @@
+services:
+  # Backend - FastAPI (Producción)
+  backend:
+    build:
+      context: ../..
+      dockerfile: config/docker/Dockerfile
+    container_name: sifu-backend-prod
+    ports:
+      - "8000:8000"
+    volumes:
+      # Solo volumen para datos persistentes
+      - ui_data:/app/data
+    environment:
+      - PYTHONPATH=/app
+      - PYTHONUNBUFFERED=1
+      - DATABASE_PATH=/app/data/ui_data.db
+      - ENV=production
+      - ENVIRONMENT=production
+      - MONITORING_TOTP_SECRET=${MONITORING_TOTP_SECRET}
+      - MONITORING_SESSION_HOURS=${MONITORING_SESSION_HOURS:-1}
+    networks:
+      - sifu-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    # Limitaciones de recursos
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+
+  # Frontend - React/Nginx (Producción)
+  frontend:
+    build:
+      context: ../../frontend
+      dockerfile: Dockerfile
+    container_name: sifu-frontend-prod
+    ports:
+      - "80:80"
+      - "443:443"  # Para HTTPS futuro
+    depends_on:
+      - backend
+    networks:
+      - sifu-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    # Limitaciones de recursos
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+
+volumes:
+  # Volumen persistente para la base de datos
+  ui_data:
+    driver: local
+
+networks:
+  # Red interna para comunicación entre servicios
+  sifu-network:
+    driver: bridge

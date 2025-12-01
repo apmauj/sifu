@@ -8,7 +8,7 @@ import pandas as pd
 import requests
 from unittest.mock import Mock, patch
 from datetime import date, datetime
-from excel_processor import ExcelProcessor, URExcelProcessor
+from src.domain.excel_processor import ExcelProcessor, URExcelProcessor
 
 
 class TestExcelProcessorComprehensive:
@@ -959,3 +959,4 @@ class TestExcelProcessorMissingLinesCoverage:
         assert 2100 in years
         assert 1899 not in years
         assert 2101 not in years
+

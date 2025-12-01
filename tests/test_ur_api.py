@@ -6,7 +6,7 @@ import pytest
 from unittest.mock import patch
 from fastapi.testclient import TestClient
 from main import app
-from models import URValue
+from src.domain.models import URValue
 
 
 class TestUREndpoints:
@@ -314,3 +314,4 @@ class TestUREndpoints:
         assert response.status_code == 500
 
     # Test eliminado - endpoint obsoleto
+

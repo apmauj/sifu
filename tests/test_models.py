@@ -3,7 +3,7 @@ Tests para modelos de datos
 """
 
 from datetime import date
-from models import (
+from src.domain.models import (
     UIValue,
     UIResponse,
     UIRangeRequest,
@@ -185,3 +185,4 @@ class TestRefreshResponse:
         )
         result = response.dict()
         assert result["last_updated"] is None
+

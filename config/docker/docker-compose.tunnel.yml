@@ -1,0 +1,56 @@
+services:
+  backend:
+    build:
+      context: ../..
+      dockerfile: config/docker/Dockerfile
+    container_name: sifu-backend
+    environment:
+      PYTHONUNBUFFERED: "1"
+      PYTHONPATH: /app
+      DATABASE_PATH: /app/data/ui_data.db
+      ALLOW_ORIGINS: "https://apmauj.github.io"
+      SCHEDULER_ENABLED: "true"
+      SCHEDULER_TIMEZONE: America/Montevideo
+      MONITORING_TOTP_SECRET: ${MONITORING_TOTP_SECRET:-}
+      MONITORING_SESSION_HOURS: ${MONITORING_SESSION_HOURS:-1}
+    volumes:
+      - ../../data:/app/data
+      - ../../:/app  # comentar en producción si no querés hot-reload de código
+    networks:
+      - sifu-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+
+  # Opción 1: Túnel con cloudflared (no requiere cuenta para túnel efímero)
+  tunnel:
+    image: cloudflare/cloudflared:latest
+    container_name: sifu-tunnel
+    command: tunnel --url http://backend:8000 --no-autoupdate
+    depends_on:
+      - backend
+    networks:
+      - sifu-network
+    restart: unless-stopped
+    # Logs mostrarán la URL pública: buscar 'trycloudflare.com'
+
+  # Opción 2 (alternativa): ngrok (requiere NGROK_AUTHTOKEN) -> descomentar para usar
+  # ngrok:
+  #   image: ngrok/ngrok:latest
+  #   container_name: sifu-ngrok
+  #   environment:
+  #     NGROK_AUTHTOKEN: ${NGROK_AUTHTOKEN}  # definir en .env
+  #   command: http --log=stdout backend:8000
+  #   depends_on:
+  #     - backend
+  #   networks:
+  #     - sifu-network
+  #   restart: unless-stopped
+
+networks:
+  sifu-network:
+    driver: bridge

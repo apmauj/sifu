@@ -7,7 +7,7 @@ from fastapi.testclient import TestClient
 from unittest.mock import Mock, patch
 from datetime import date
 from main import app
-from models import UIValue
+from src.domain.models import UIValue
 
 
 @pytest.fixture
@@ -412,3 +412,4 @@ class TestStartupEvent:
         asyncio.run(startup_event())
 
         mock_session_local.assert_called_once()
+

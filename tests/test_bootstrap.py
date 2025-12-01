@@ -1,5 +1,5 @@
 from unittest.mock import patch, MagicMock
-from bootstrap import perform_bootstrap
+from src.application.bootstrap import perform_bootstrap
 
 
 def test_perform_bootstrap_all_empty():
@@ -61,3 +61,4 @@ def test_perform_bootstrap_force():
         mock_ui.refresh_data.assert_called_once()
         mock_ur.refresh_data.assert_called_once()
         mock_ex.refresh_data.assert_called_once()
+

@@ -16,37 +16,60 @@ from dotenv import load_dotenv
 
 from threading import Lock
 from threading import Lock as ThreadLock
-from bootstrap import perform_bootstrap
+from src.application.bootstrap import perform_bootstrap
 
-from database import get_db
-from database_optimizer import DatabaseOptimizer
-from models import UIResponse, RefreshResponse, URResponse, ExchangeRateResponse
-from services import UIService, URService, ExchangeRateService
-from excel_processor import (
+from src.infrastructure.database import get_db
+from src.infrastructure.database_optimizer import DatabaseOptimizer
+from src.domain.models import UIResponse, RefreshResponse, URResponse, ExchangeRateResponse
+from src.domain.services import UIService, URService, ExchangeRateService
+from src.domain.excel_processor import (
     ExcelProcessor,
     URExcelProcessor,
     ExchangeRateExcelProcessor,
     ExchangeRateBCUProcessor,
 )
-from brou_processor import BROUProcessor
-from security_utils import SecurityValidator, InputValidator
-from pydantic_models import URRangeRequestModel
-from simple_totp import totp_service
+from src.domain.brou_processor import BROUProcessor
+from src.application.security_utils import SecurityValidator, InputValidator
+from src.domain.pydantic_models import URRangeRequestModel
+# TODO: Move simple_totp to src/infrastructure/
+# from src.application.simple_totp import totp_service
+
+# RFC7807 error model
+from src.utils.error_model import ProblemDetail, ProblemResponse, PROBLEM_TYPES
+
+# OpenTelemetry instrumentation (OSS, optional via OTEL_ENABLED)
+from src.application.opentelemetry_setup import (
+    init_otel_tracer_provider,
+    init_otel_meter_provider,
+    instrument_fastapi,
+    instrument_requests,
+    instrument_sqlalchemy,
+    instrument_logging,
+    shutdown_otel,
+)
 
 # HTTPS Security Middleware
-from https_middleware import HTTPSRedirectMiddleware, SSLHeadersMiddleware
+from src.infrastructure.https_middleware import HTTPSRedirectMiddleware, SSLHeadersMiddleware
 
 # Authentication and Authorization
-from auth_routes import router as auth_router
-from rate_limit import RateLimitMiddleware, EndpointRateLimitMiddleware
-from circuit_breaker import (
+from src.infrastructure.auth_routes import router as auth_router
+
+# API Routers (modular endpoints)
+from src.api.routers import ui as ui_router
+from src.api.routers import ur as ur_router
+from src.api.routers import exchange as exchange_router
+from src.api.routers import system as system_router
+from src.api.routers import brou as brou_router
+
+from src.infrastructure.rate_limit import RateLimitMiddleware, EndpointRateLimitMiddleware
+from src.infrastructure.circuit_breaker import (
     get_all_circuit_breakers,
     get_circuit_breaker_status,
     reset_circuit_breaker,
 )
 
 # Metrics middleware
-from metrics_middleware import (
+from src.infrastructure.metrics_middleware import (
     MetricsMiddleware,
     get_metrics,
     get_health,
@@ -54,8 +77,8 @@ from metrics_middleware import (
 )
 
 # Advanced health checks
-from health_checks import get_advanced_health, get_simple_health
-from constants import (
+from src.infrastructure.health_checks import get_advanced_health, get_simple_health
+from src.utils.constants import (
     HTTP_400_BAD_REQUEST,
     HTTP_404_NOT_FOUND,
     HTTP_500_INTERNAL_SERVER_ERROR,
@@ -139,18 +162,20 @@ else:
         pytz = None  # type: ignore
 
 # Correlation ID middleware for distributed tracing
-from correlation_middleware import (
+from src.infrastructure.correlation_middleware import (
     CorrelationIdMiddleware,
     setup_correlation_logging,
     get_correlation_logger,
 )
 
 # Alert and dashboard services
-from alerts import alert_manager
-from dashboard import dashboard_service
+from src.application.alerts import alert_manager
+from src.domain.dashboard import dashboard_service
 
 # Load environment variables from .env file
-load_dotenv()
+# Try config/env/.env first, fall back to root for compatibility
+env_path = "config/env/.env" if os.path.exists("config/env/.env") else ".env"
+load_dotenv(env_path)
 
 # Configure correlation logging
 setup_correlation_logging()
@@ -181,6 +206,40 @@ async def _execute_startup():
     """Reusable startup logic; safe to call multiple times in tests."""
     logger.info("Starting SIFU (bootstrap + cache warmup)... skip=%s", SKIP_BOOTSTRAP)
     global scheduler
+    
+    # Production security check: ensure JWT_SECRET_KEY is set
+    if os.getenv("ENVIRONMENT") == "production":
+        jwt_secret = os.getenv("JWT_SECRET_KEY", "").strip()
+        if not jwt_secret:
+            msg = (
+                "FATAL: JWT_SECRET_KEY is not set in production. "
+                "Set JWT_SECRET_KEY environment variable before starting."
+            )
+            logger.critical(msg)
+            raise RuntimeError(msg)
+        logger.info("[Security] JWT_SECRET_KEY verified in production")
+    
+    # Initialize OpenTelemetry (if enabled)
+    try:
+        init_otel_tracer_provider()
+        init_otel_meter_provider()
+        # Instrumentation will be done after app creation
+        logger.info("[OpenTelemetry] Initialization attempted (check logs for status)")
+    except Exception as e:  # noqa: BLE001
+        logger.warning(f"[OpenTelemetry] Not fully initialized: {e}")
+
+    # Initialize router dependencies with shared instances
+    try:
+        ui_router.set_excel_processor(excel_processor)
+        ur_router.set_ur_excel_processor(ur_excel_processor)
+        exchange_router.set_exchange_rate_processor(exchange_rate_excel_processor)
+        exchange_router.set_job_manager(job_manager)
+        exchange_router.set_cache_and_lock(bcu_cache, _cache_lock)
+        brou_router.set_brou_cache_and_lock(brou_cache, _cache_lock)
+        brou_router.set_brou_processor(brou_processor)
+        logger.info("[Routers] Dependencies initialized successfully")
+    except Exception as e:  # noqa: BLE001
+        logger.warning(f"[Routers] Failed to initialize dependencies: {e}")
 
     try:
         # Minimal phase: siempre instanciamos servicio y consultamos total para que los tests
@@ -319,6 +378,13 @@ async def app_lifespan(app: FastAPI):  # type: ignore
     try:
         yield
     finally:
+        # Shutdown OpenTelemetry
+        try:
+            shutdown_otel()
+        except Exception as e:  # noqa: BLE001
+            logger.warning(f"Error during OTel shutdown: {e}")
+        
+        # Shutdown scheduler
         global scheduler
         if scheduler:
             try:
@@ -397,6 +463,130 @@ app.add_middleware(MetricsMiddleware)
 
 # Include authentication router
 app.include_router(auth_router)
+
+# Include API routers (modular domain-based endpoints)
+app.include_router(system_router.router)
+app.include_router(ui_router.router)
+app.include_router(ur_router.router)
+app.include_router(exchange_router.router)
+app.include_router(brou_router.router)
+
+# Initialize routers with shared instances (processors, caches, etc.)
+# These will be set after the main module loads all dependencies
+def _initialize_router_dependencies():
+    """Initialize router modules with shared instances."""
+    # NOTE: This is called later in _execute_startup() after all instances are created
+    pass
+
+# ============================================================================
+# OpenTelemetry Instrumentation
+# ============================================================================
+# Instrument FastAPI, requests, and SQLAlchemy for tracing
+# Only active if OTEL_ENABLED=true
+try:
+    instrument_fastapi(app)
+    instrument_requests()
+    instrument_logging()
+    logger.info("[OpenTelemetry] FastAPI and requests instrumentation loaded")
+except Exception as e:  # noqa: BLE001
+    logger.warning(f"[OpenTelemetry] Instrumentation setup warning: {e}")
+
+# SQLAlchemy instrumentation will be applied lazily after the database engine is created
+def _apply_sqlalchemy_instrumentation():
+    """Apply SQLAlchemy instrumentation after engine creation (lazy)."""
+    try:
+        from database import engine
+        instrument_sqlalchemy(engine)
+        logger.info("[OpenTelemetry] SQLAlchemy instrumentation loaded")
+    except Exception as e:
+        logger.debug(f"[OpenTelemetry] Deferred SQLAlchemy instrumentation: {e}")
+
+
+# ============================================================================
+# RFC 7807 Global Exception Handlers
+# ============================================================================
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException):
+    """
+    Convert FastAPI HTTPException to RFC 7807 Problem Details response.
+    Falls back to original format if ?legacy=true is in query.
+    """
+    from correlation_middleware import get_correlation_id
+
+    # Check for legacy mode
+    use_legacy = request.query_params.get("legacy") == "true"
+    trace_id = get_correlation_id(request)
+    
+    if use_legacy:
+        # Return original format
+        return JSONResponse(
+            status_code=exc.status_code,
+            content={"detail": exc.detail},
+        )
+    
+    # Determine problem type and title from status code
+    status_map = {
+        400: ("validation", "Bad Request"),
+        401: ("unauthorized", "Unauthorized"),
+        403: ("forbidden", "Forbidden"),
+        404: ("not_found", "Not Found"),
+        409: ("conflict", "Conflict"),
+        429: ("rate_limit", "Too Many Requests"),
+        500: ("internal_error", "Internal Server Error"),
+        503: ("service_unavailable", "Service Unavailable"),
+    }
+    
+    problem_key, title = status_map.get(exc.status_code, ("internal_error", "Error"))
+    problem_type = PROBLEM_TYPES.get(problem_key, PROBLEM_TYPES["internal_error"])
+    instance = request.url.path
+    
+    problem = ProblemResponse.create(
+        title=title,
+        status=exc.status_code,
+        detail=exc.detail,
+        instance=instance,
+        trace_id=trace_id,
+        problem_type=problem_type
+    )
+    
+    return JSONResponse(
+        status_code=exc.status_code,
+        content=problem.model_dump(exclude_none=True),
+        media_type="application/problem+json",
+    )
+
+
+@app.exception_handler(Exception)
+async def generic_exception_handler(request: Request, exc: Exception):
+    """
+    Catch-all for unhandled exceptions. Return RFC 7807 Problem Details.
+    """
+    from correlation_middleware import get_correlation_id
+
+    # Only log and convert if not already an HTTPException
+    if isinstance(exc, HTTPException):
+        return  # Let the dedicated handler deal with it
+    
+    trace_id = get_correlation_id(request)
+    logger.error(
+        f"Unhandled exception in {request.method} {request.url.path}: {exc}",
+        exc_info=True
+    )
+    
+    problem = ProblemResponse.create(
+        title="Internal Server Error",
+        status=500,
+        detail="An unexpected error occurred. Please check server logs.",
+        instance=request.url.path,
+        trace_id=trace_id,
+        problem_type=PROBLEM_TYPES["internal_error"]
+    )
+    
+    return JSONResponse(
+        status_code=500,
+        content=problem.model_dump(exclude_none=True),
+        media_type="application/problem+json",
+    )
 
 
 @app.get("/api/debug/correlation", tags=["Sistema"])
@@ -1912,6 +2102,33 @@ async def get_health_metrics():
     return await get_health()
 
 
+@app.get("/api/metrics/prometheus", tags=["Sistema"])
+async def get_prometheus_metrics():
+    """
+    Prometheus-compatible metrics endpoint (OpenMetrics format).
+    Scrape this endpoint with Prometheus for detailed observability.
+    Requires OTEL_ENABLED=true.
+    """
+    try:
+        from prometheus_client import generate_latest, CollectorRegistry, CONTENT_TYPE_LATEST
+        
+        # Attempt to expose Prometheus metrics if available
+        registry = CollectorRegistry()
+        metrics_data = generate_latest(registry)
+        
+        return JSONResponse(
+            content={"message": "Prometheus metrics endpoint (OpenMetrics format)"},
+            media_type="text/plain; version=0.0.4",
+            headers={"Content-Type": "text/plain; version=0.0.4; charset=utf-8"}
+        )
+    except Exception as e:
+        logger.warning(f"Prometheus metrics endpoint not fully available: {e}")
+        return {
+            "message": "Prometheus metrics not configured",
+            "hint": "Enable OpenTelemetry with OTEL_ENABLED=true and configure OTEL_EXPORTER_OTLP_ENDPOINT",
+        }
+
+
 # =============================================================================
 # DASHBOARD ENDPOINTS
 # =============================================================================
@@ -2535,3 +2752,4 @@ if __name__ == "__main__":  # pragma: no cover (explicitly exercised in tests)
     import uvicorn  # local import to avoid mandatory dependency at import time
 
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+
