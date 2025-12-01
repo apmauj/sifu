@@ -35,21 +35,17 @@ async def test_endpoint():
 
 @router.get(ENDPOINT_HEALTH)
 async def health_check(db: Session = Depends(get_db)):
-    """Endpoint de health check (verifica conexion BD y status general)."""
-    try:
-        if not health_checker:
-            raise RuntimeError("Health checker not initialized")
-
-        status = health_checker.check_all()
-        return status.to_dict()
-
-    except Exception as e:
-        logger.error(f"Error in health check: {e}")
-        return {
-            "status": "unhealthy",
-            "timestamp": None,
-            "checks": {"database": {"status": "error", "error": str(e)}},
-        }
+    """Endpoint de health check basico - verifica que el servidor esta corriendo.
+    
+    Para health checks avanzados usar /api/health/detailed o /api/health/ready.
+    """
+    from datetime import datetime
+    
+    return {
+        "status": "ok",
+        "message": "Server is running",
+        "timestamp": datetime.utcnow().isoformat(),
+    }
 
 
 @router.get("/api/info")
@@ -105,13 +101,13 @@ async def get_detailed_health(db: Session = Depends(get_db)):
         if not health_checker:
             raise RuntimeError("Health checker not initialized")
 
-        status = health_checker.check_all()
+        result = health_checker.run_all_checks()
+        status_str = "healthy" if result.get("status") == "healthy" else "unhealthy"
         return {
-            "status": "healthy" if status.is_healthy else "unhealthy",
-            "timestamp": status.timestamp.isoformat() if status.timestamp else None,
-            "checks": {
-                name: check.to_dict() for name, check in status.checks.items()
-            },
+            "status": status_str,
+            "timestamp": result.get("timestamp"),
+            "checks": result.get("checks", {}),
+            "system_info": result.get("system_info", {}),
         }
 
     except Exception as e:
@@ -132,8 +128,8 @@ async def readiness_probe(db: Session = Depends(get_db)):
         if not health_checker:
             raise RuntimeError("Health checker not initialized")
 
-        status = health_checker.check_all()
-        if status.is_healthy:
+        result = health_checker.run_all_checks()
+        if result.get("status") == "healthy":
             return {"status": "ready"}
         else:
             raise HTTPException(status_code=503, detail="Service not ready")

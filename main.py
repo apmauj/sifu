@@ -76,7 +76,7 @@ from src.infrastructure.metrics_middleware import (
 )
 
 # Advanced health checks
-from src.infrastructure.health_checks import get_advanced_health, get_simple_health
+from src.infrastructure.health_checks import get_advanced_health, get_simple_health, health_checker
 from src.utils.constants import (
     HTTP_400_BAD_REQUEST,
     HTTP_404_NOT_FOUND,
@@ -469,6 +469,9 @@ app.include_router(ui_router.router)
 app.include_router(ur_router.router)
 app.include_router(exchange_router.router)
 app.include_router(brou_router.router)
+
+# Initialize health checker for system router
+system_router.set_health_checker(health_checker)
 
 # Initialize routers with shared instances (processors, caches, etc.)
 # These will be set after the main module loads all dependencies
