@@ -10,7 +10,7 @@ requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 BHU_URL = "https://bhu.com.uy/sites/default/files/2025-10/historico-ur.xls"
 INE_URL = "https://www5.ine.gub.uy/documents/Estad%C3%ADsticasecon%C3%B3micas/SERIES%20Y%20OTROS/UR/UR.xls"
 
-def test_source(url, name):
+def fetch_source(url, name):
     print(f"\n{'='*60}")
     print(f"Testing {name}: {url}")
     print('='*60)
@@ -54,8 +54,8 @@ def test_source(url, name):
 if __name__ == "__main__":
     print("Testing UR data sources...")
     
-    bhu_data = test_source(BHU_URL, "BHU")
-    ine_data = test_source(INE_URL, "INE")
+    bhu_data = fetch_source(BHU_URL, "BHU")
+    ine_data = fetch_source(INE_URL, "INE")
     
     print(f"\n{'='*60}")
     print("SUMMARY")

@@ -188,16 +188,16 @@ jobs:
           echo "Frontend: $FRONTEND_URL"
           echo "Backend: $BACKEND_URL"
           
-          # Verificar que el frontend está accesible
-          FRONTEND_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$FRONTEND_URL")
+          # Verificar que el frontend está accesible (seguir redirecciones de Pages)
+          FRONTEND_STATUS=$(curl -s -o /dev/null -w "%{http_code}" -L "$FRONTEND_URL")
           
-          if [ "$FRONTEND_STATUS" != "200" ]; then
+          if [ "$FRONTEND_STATUS" -ge 200 ] && [ "$FRONTEND_STATUS" -lt 400 ]; then
+            echo "✅ Frontend accesible (HTTP $FRONTEND_STATUS)"
+          else
             echo "⚠️  Frontend no accesible (HTTP $FRONTEND_STATUS)"
             echo "frontend_backend_ok=unknown" >> $GITHUB_OUTPUT
             exit 0
           fi
-          
-          echo "✅ Frontend accesible (HTTP $FRONTEND_STATUS)"
           
           # Intentar hacer una llamada de prueba simulando CORS
           # Verificamos que el backend responda con headers CORS apropiados
@@ -306,10 +306,10 @@ jobs:
           
           # Array de endpoints críticos a verificar
           declare -a ENDPOINTS=(
-            "/api/ui/info"
+            "/api/info"
             "/api/ur/info"
             "/api/brou/current"
-            "/api/exchange/rates/latest"
+            "/api/exchange-rate/latest"
           )
           
           FAILED_ENDPOINTS=""
