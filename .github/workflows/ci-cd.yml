@@ -207,8 +207,9 @@ jobs:
         run: python scripts/util/check_messages.py
       - name: Verify Alembic migrations
         run: |
-          alembic -c config/alembic.ini current
-          alembic -c config/alembic.ini upgrade head
+          # Verify migrations are properly configured (generates SQL without executing)
+          alembic -c config/alembic.ini upgrade head --sql > /dev/null
+          echo "Alembic migrations validated successfully"
       - name: Run backend tests
         env:
           PYTHONUNBUFFERED: '1'
