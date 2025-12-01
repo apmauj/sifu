@@ -513,7 +513,7 @@ async def http_exception_handler(request: Request, exc: HTTPException):
     Convert FastAPI HTTPException to RFC 7807 Problem Details response.
     Falls back to original format if ?legacy=true is in query.
     """
-    from correlation_middleware import get_correlation_id
+    from src.infrastructure.correlation_middleware import get_correlation_id
 
     # Check for legacy mode
     use_legacy = request.query_params.get("legacy") == "true"
@@ -563,7 +563,7 @@ async def generic_exception_handler(request: Request, exc: Exception):
     """
     Catch-all for unhandled exceptions. Return RFC 7807 Problem Details.
     """
-    from correlation_middleware import get_correlation_id
+    from src.infrastructure.correlation_middleware import get_correlation_id
 
     # Only log and convert if not already an HTTPException
     if isinstance(exc, HTTPException):
@@ -594,7 +594,7 @@ async def generic_exception_handler(request: Request, exc: Exception):
 @app.get("/api/debug/correlation", tags=["Sistema"])
 async def debug_correlation_id(request: Request):
     """Endpoint de debug para probar correlation IDs."""
-    from correlation_middleware import get_correlation_id
+    from src.infrastructure.correlation_middleware import get_correlation_id
 
     correlation_id = get_correlation_id(request)
     logger.info(f"Debug endpoint called with correlation ID: {correlation_id}")
