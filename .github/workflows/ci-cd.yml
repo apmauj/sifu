@@ -6,7 +6,7 @@ on:
     paths:
       - '**/*.py'
       - 'requirements*.txt'
-      - 'Dockerfile'
+      - 'config/docker/Dockerfile'
       - 'frontend/**'
       - '.github/workflows/ci-cd.yml'
   pull_request:
@@ -325,7 +325,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: Dockerfile
+          file: config/docker/Dockerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
