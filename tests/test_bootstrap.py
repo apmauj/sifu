@@ -4,9 +4,9 @@ from src.application.bootstrap import perform_bootstrap
 
 def test_perform_bootstrap_all_empty():
     """When all tables empty, processors should be invoked"""
-    with patch("bootstrap.get_ui_table_record_count", return_value=0), patch(
-        "bootstrap.get_ur_table_record_count", return_value=0
-    ), patch("bootstrap.get_exchange_rate_table_record_count", return_value=0):
+    with patch("src.application.bootstrap.get_ui_table_record_count", return_value=0), patch(
+        "src.application.bootstrap.get_ur_table_record_count", return_value=0
+    ), patch("src.application.bootstrap.get_exchange_rate_table_record_count", return_value=0):
         mock_ui = MagicMock()
         mock_ui.refresh_data.return_value = (True, "ok ui", 10)
         mock_ur = MagicMock()
@@ -28,9 +28,9 @@ def test_perform_bootstrap_all_empty():
 
 def test_perform_bootstrap_present():
     """When tables already have data, processors must NOT be called"""
-    with patch("bootstrap.get_ui_table_record_count", return_value=1), patch(
-        "bootstrap.get_ur_table_record_count", return_value=2
-    ), patch("bootstrap.get_exchange_rate_table_record_count", return_value=3):
+    with patch("src.application.bootstrap.get_ui_table_record_count", return_value=1), patch(
+        "src.application.bootstrap.get_ur_table_record_count", return_value=2
+    ), patch("src.application.bootstrap.get_exchange_rate_table_record_count", return_value=3):
         mock_ui = MagicMock()
         mock_ur = MagicMock()
         mock_ex = MagicMock()
@@ -45,9 +45,9 @@ def test_perform_bootstrap_present():
 
 def test_perform_bootstrap_force():
     """Force=True debe ejecutar refresh incluso con datos"""
-    with patch("bootstrap.get_ui_table_record_count", return_value=10), patch(
-        "bootstrap.get_ur_table_record_count", return_value=20
-    ), patch("bootstrap.get_exchange_rate_table_record_count", return_value=30):
+    with patch("src.application.bootstrap.get_ui_table_record_count", return_value=10), patch(
+        "src.application.bootstrap.get_ur_table_record_count", return_value=20
+    ), patch("src.application.bootstrap.get_exchange_rate_table_record_count", return_value=30):
         mock_ui = MagicMock()
         mock_ui.refresh_data.return_value = (True, "forced", 1)
         mock_ur = MagicMock()
