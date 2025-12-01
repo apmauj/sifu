@@ -1,7 +1,6 @@
 """BROU router endpoints."""
 
 from fastapi import APIRouter
-from datetime import datetime
 import logging
 
 logger = logging.getLogger(__name__)
