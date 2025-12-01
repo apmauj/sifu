@@ -85,8 +85,7 @@ export const QUICK_SELECTORS = {
     SINGLE: [
       { key: 'current_month', label: BUTTON_LABELS.currentMonthUR, months: 0 },
       { key: 'last_month', label: BUTTON_LABELS.lastMonthUR, months: 1 },
-      { key: 'last_year', label: BUTTON_LABELS.lastYearUR, months: 12 }
-      // Removed current_year - full year queries return 12 months = range, not single
+      // Full-year presets map to range selectors to avoid misleading "single" queries
     ],
     RANGE: [
       { key: 'last_12_months', label: BUTTON_LABELS.last12MonthsUR, months: 12 },

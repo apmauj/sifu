@@ -1,0 +1,83 @@
+name: Update Cloudflare Tunnel
+
+on:
+  workflow_dispatch:
+    inputs:
+      trigger_deploy:
+        description: 'Disparar redeploy de frontend después de actualizar'
+        required: false
+        default: true
+        type: boolean
+      skip_if_unchanged:
+        description: 'Saltar si la URL no cambió'
+        required: false
+        default: false
+        type: boolean
+  workflow_call:
+    inputs:
+      trigger_deploy:
+        description: 'Disparar redeploy de frontend después de actualizar'
+        required: false
+        default: true
+        type: boolean
+
+permissions:
+  contents: read
+  actions: write
+
+jobs:
+  update-tunnel:
+    runs-on: [self-hosted, sifu-local]  # Usar runner local con Docker
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Update Tunnel using PowerShell Script
+        id: update_tunnel
+        shell: pwsh
+        run: |
+          Write-Host "🔄 Ejecutando script de actualización de túnel..."
+          
+          $params = @{
+            Repo = '${{ github.repository }}'
+            TriggerDeploy = $${{ github.event.inputs.trigger_deploy == 'true' || inputs.trigger_deploy == true }}
+            SkipIfUnchanged = $${{ github.event.inputs.skip_if_unchanged == 'true' }}
+          }
+          
+          & ".\scripts\deploy\update_tunnel_secret.ps1" @params
+          
+          if ($LASTEXITCODE -eq 0) {
+            Write-Host "✅ Túnel actualizado exitosamente"
+            echo "success=true" >> $env:GITHUB_OUTPUT
+          } else {
+            Write-Host "❌ Error actualizando túnel"
+            echo "success=false" >> $env:GITHUB_OUTPUT
+            exit 1
+          }
+
+      - name: Summary
+        if: always()
+        shell: pwsh
+        run: |
+          echo "### 🌐 Cloudflare Tunnel Update Summary" >> $env:GITHUB_STEP_SUMMARY
+          echo "" >> $env:GITHUB_STEP_SUMMARY
+          echo "**Timestamp:** $(Get-Date -Format 'o')" >> $env:GITHUB_STEP_SUMMARY
+          echo "" >> $env:GITHUB_STEP_SUMMARY
+          
+          if ("${{ steps.update_tunnel.outputs.success }}" -eq "true") {
+            echo "✅ **Status:** Túnel actualizado exitosamente" >> $env:GITHUB_STEP_SUMMARY
+            echo "" >> $env:GITHUB_STEP_SUMMARY
+            echo "### Next Steps" >> $env:GITHUB_STEP_SUMMARY
+            if ($${{ github.event.inputs.trigger_deploy == 'true' || inputs.trigger_deploy == true }}) {
+              echo "- ⏳ Workflow de deploy frontend disparado automáticamente" >> $env:GITHUB_STEP_SUMMARY
+              echo "- 🔍 Verificar [Actions](https://github.com/${{ github.repository }}/actions) para monitorear progreso" >> $env:GITHUB_STEP_SUMMARY
+            }
+          } else {
+            echo "❌ **Status:** Error al actualizar túnel" >> $env:GITHUB_STEP_SUMMARY
+            echo "" >> $env:GITHUB_STEP_SUMMARY
+            echo "### Next Steps" >> $env:GITHUB_STEP_SUMMARY
+            echo "- 📋 Revisa los logs del workflow para más detalles" >> $env:GITHUB_STEP_SUMMARY
+            echo "- � Intenta ejecutar manualmente: ``.\scripts\deploy\update_tunnel_secret.ps1 -Repo ${{ github.repository }} -TriggerDeploy``" >> $env:GITHUB_STEP_SUMMARY
+          }
