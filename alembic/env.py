@@ -10,7 +10,8 @@ import sys
 # Add the parent directory to the Python path so we can import models
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from database import Base, DATABASE_URL, DATABASE_CONNECT_ARGS
+# Import from new hexagonal structure (src/infrastructure)
+from src.infrastructure.database import Base, DATABASE_URL, DATABASE_CONNECT_ARGS
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
