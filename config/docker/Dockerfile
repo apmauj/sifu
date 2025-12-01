@@ -19,16 +19,15 @@ COPY requirements*.txt ./
 RUN pip install --no-cache-dir -r requirements.txt && \
     pip install --no-cache-dir --upgrade certifi
 
-# Copiar código fuente
-COPY *.py ./
-COPY auth_*.py ./
-COPY https_middleware.py ./
-COPY performance_budget.py ./
-COPY metrics.py ./
-COPY alerts.py ./
+# Copiar código fuente principal
+COPY main.py ./
 COPY README.md ./
 
-# Copiar config y data directorios
+# Copiar módulos de compatibilidad que aún están en root
+# (auth_*.py, bootstrap.py, etc. - algunos pueden estar en src/, verificar)
+COPY *.py ./
+
+# Copiar config y src directorios
 COPY config/ ./config/
 COPY src/ ./src/
 
