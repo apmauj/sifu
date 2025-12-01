@@ -18,7 +18,7 @@ class TestExcelProcessorComprehensive:
     def processor(self):
         return ExcelProcessor()
 
-    @patch("excel_processor.requests.get")
+    @patch("src.domain.excel_processor.requests.get")
     def test_download_excel_request_exception(self, mock_get, processor):
         """Test download_excel con RequestException específica"""
         mock_get.side_effect = requests.RequestException("Network error")
@@ -28,7 +28,7 @@ class TestExcelProcessorComprehensive:
         assert result is None
         mock_get.assert_called_once()
 
-    @patch("excel_processor.requests.get")
+    @patch("src.domain.excel_processor.requests.get")
     def test_download_excel_http_error(self, mock_get, processor):
         """Test download_excel con error HTTP"""
         mock_response = Mock()
@@ -39,8 +39,8 @@ class TestExcelProcessorComprehensive:
 
         assert result is None
 
-    @patch("excel_processor.requests.get")
-    @patch("excel_processor.pd.read_excel")
+    @patch("src.domain.excel_processor.requests.get")
+    @patch("src.domain.excel_processor.pd.read_excel")
     def test_download_excel_pandas_exception(
         self, mock_read_excel, mock_get, processor
     ):
@@ -209,8 +209,8 @@ class TestURExcelProcessorComprehensive:
         assert 1 <= month <= 12, f"Month {month} out of valid range"
         assert ur_processor.timeout == 30
 
-    @patch("excel_processor.requests.get")
-    @patch("excel_processor.pd.read_excel")
+    @patch("src.domain.excel_processor.requests.get")
+    @patch("src.domain.excel_processor.pd.read_excel")
     def test_download_excel_success(self, mock_read_excel, mock_get, ur_processor):
         """Test download_excel exitoso para UR - verifica que se use la URL dinámica correctamente"""
         # Mock the dynamic URL resolution to return the processor's URL
@@ -238,7 +238,7 @@ class TestURExcelProcessorComprehensive:
             assert 'User-Agent' in call_args[1]['headers']
             assert call_args[1]['verify'] is False
 
-    @patch("excel_processor.requests.get")
+    @patch("src.domain.excel_processor.requests.get")
     def test_download_excel_request_exception(self, mock_get, ur_processor):
         """Test download_excel con RequestException"""
         mock_get.side_effect = requests.RequestException("Network error")
@@ -247,7 +247,7 @@ class TestURExcelProcessorComprehensive:
 
         assert result is None
 
-    @patch("excel_processor.requests.get")
+    @patch("src.domain.excel_processor.requests.get")
     def test_download_excel_general_exception(self, mock_get, ur_processor):
         """Test download_excel con excepción general"""
         mock_get.side_effect = Exception("General error")
@@ -642,7 +642,7 @@ class TestURExcelProcessorEdgeCases:
 
     def test_download_excel_request_exception_coverage(self, ur_processor):
         """Test requests exception in URExcelProcessor download_excel"""
-        with patch("excel_processor.requests.get") as mock_get:
+        with patch("src.domain.excel_processor.requests.get") as mock_get:
             mock_get.side_effect = Exception("Network error")
 
             result = ur_processor.download_excel()
@@ -725,7 +725,7 @@ class TestExcelProcessorMissingLinesCoverage:
 
     def test_download_excel_http_error_raise_for_status(self, processor):
         """Test lines 33-34: HTTPError in raise_for_status"""
-        with patch("excel_processor.requests.get") as mock_get:
+        with patch("src.domain.excel_processor.requests.get") as mock_get:
             mock_response = Mock()
             mock_response.raise_for_status.side_effect = requests.HTTPError("HTTP 404")
             mock_get.return_value = mock_response
@@ -791,7 +791,7 @@ class TestExcelProcessorMissingLinesCoverage:
 
     def test_ur_download_excel_http_error(self, ur_processor):
         """Test line 243: HTTPError in UR download_excel"""
-        with patch("excel_processor.requests.get") as mock_get:
+        with patch("src.domain.excel_processor.requests.get") as mock_get:
             mock_response = Mock()
             mock_response.raise_for_status.side_effect = requests.HTTPError("HTTP 500")
             mock_get.return_value = mock_response

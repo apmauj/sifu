@@ -467,7 +467,167 @@ app.include_router(auth_router)
 app.include_router(system_router.router)
 app.include_router(ui_router.router)
 app.include_router(ur_router.router)
+
+
+# IMPORTANT: Register /api/exchange-rate/current BEFORE the exchange router
+# to ensure it takes precedence over the dynamic /api/exchange-rate/{date} route
+@app.get("/api/exchange-rate/current", tags=[TAG_EXCHANGE])
+async def get_current_exchange_rates(force_refresh: bool = False):
+    """Obtener cotizaciones actuales (BCU tiempo real)."""
+    try:
+        # Refresh cache if forced or stale (>55m) or missing
+        global bcu_cache
+        with _cache_lock:
+            cached = bcu_cache
+        need_update = False
+        if not cached:
+            need_update = True
+        else:
+            age = (
+                datetime.utcnow() - cached.get("updated_at", datetime.utcnow())
+            ).total_seconds()
+            if age > 55 * 60:
+                need_update = True
+        if force_refresh or need_update:
+            _update_bcu_cache()
+            with _cache_lock:
+                if bcu_cache is None:  # mocked case
+                    bcu_cache = {"data": [], "updated_at": datetime.utcnow()}
+                cached = bcu_cache
+
+        if cached:
+            return ExchangeRateResponse(
+                success=True,
+                message=f"Current exchange rates (cached) retrieved successfully. {len(cached['data'])} currencies",
+                data=cached["data"],
+            ).dict()
+        return ExchangeRateResponse(
+            success=False,
+            message="Could not retrieve current exchange rates",
+            data=None,
+        ).dict()
+
+    except Exception as e:
+        logger.error(f"Error getting current exchange rates: {e}")
+        return ExchangeRateResponse(
+            success=False, message=f"Internal error: {str(e)}", data=None
+        ).dict()
+
+
 app.include_router(exchange_router.router)
+
+
+# IMPORTANT: Register /api/brou/current BEFORE the brou router
+# to ensure mocks in tests work correctly (they patch main._update_brou_cache)
+@app.get("/api/brou/current", tags=["BROU"])
+async def get_current_brou_rates(force_refresh: bool = False, full: bool = False):
+    """Obtener cotizaciones actuales del BROU.
+
+    Compatibilidad: versión anterior devolvía lista directamente. Ahora por defecto
+    seguimos retornando únicamente la lista (para no romper frontend/tests existentes).
+    Si se pasa ?full=true se entrega un envoltorio con metadatos.
+    """
+    try:
+        global brou_cache
+        with _cache_lock:
+            cached = brou_cache
+        need_update = False
+        if not cached:
+            need_update = True
+        else:
+            age = (
+                datetime.utcnow() - cached.get("updated_at", datetime.utcnow())
+            ).total_seconds()
+            if age > 55 * 60:
+                need_update = True
+        if force_refresh or need_update:
+            _update_brou_cache()
+            with _cache_lock:
+                if brou_cache is None:  # mocked case
+                    brou_cache = {
+                        "data": [],
+                        "updated_at": datetime.utcnow(),
+                        "source": "BROU_SAMPLE",
+                    }
+                cached = brou_cache
+
+        data_list = cached["data"] if cached else []
+        source = cached.get("source", "BROU") if cached else "UNKNOWN"
+        source_type = cached.get("source_type", "unknown") if cached else "unknown"
+
+        if full:
+            # Calcular edad de los datos
+            data_age = None
+            if cached and cached.get("updated_at"):
+                data_age = (
+                    datetime.utcnow() - cached["updated_at"]
+                ).total_seconds() / 60  # en minutos
+
+            # Información de estado para el frontend
+            status_info = {
+                "live": {
+                    "label": "Datos en vivo",
+                    "color": "green",
+                    "description": "Cotizaciones obtenidas directamente del BROU",
+                },
+                "persisted": {
+                    "label": "Datos históricos",
+                    "color": "yellow",
+                    "description": "Cotizaciones almacenadas de consultas anteriores",
+                },
+                "sample": {
+                    "label": "Datos de muestra",
+                    "color": "red",
+                    "description": "Datos de ejemplo - API no disponible",
+                },
+            }
+
+            current_status = status_info.get(
+                source_type,
+                {
+                    "label": "Estado desconocido",
+                    "color": "gray",
+                    "description": "No se pudo determinar el estado de los datos",
+                },
+            )
+
+            return {
+                "success": True if data_list else False,
+                "message": f"Cotizaciones BROU obtenidas ({len(data_list)} monedas)"
+                if data_list
+                else "Sin datos BROU",
+                "data": data_list,
+                "source": source,
+                "source_type": source_type,
+                "status": current_status,
+                "timestamp": cached.get("updated_at").isoformat()
+                if cached and cached.get("updated_at")
+                else None,
+                "data_age_minutes": round(data_age, 1)
+                if data_age is not None
+                else None,
+                "is_fresh": data_age is not None
+                and data_age < 60,  # Consideramos frescos datos de menos de 1 hora
+                "frontend_display": {
+                    "status_label": current_status["label"],
+                    "status_color": current_status["color"],
+                    "warning_message": current_status["description"]
+                    if source_type in ["persisted", "sample"]
+                    else None,
+                },
+            }
+        return data_list
+    except Exception as e:
+        logger.error(f"Error getting current BROU rates: {e}")
+        if full:
+            return {
+                "success": False,
+                "message": f"Error interno: {str(e)}",
+                "data": None,
+            }
+        return []
+
+
 app.include_router(brou_router.router)
 
 # Initialize health checker for system router
@@ -1872,49 +2032,6 @@ async def list_jobs():
 )
 async def get_exchange_refresh_status(job_id: str):
     return await get_job_status(job_id)
-
-
-@app.get("/api/exchange-rate/current", tags=[TAG_EXCHANGE])
-async def get_current_exchange_rates(force_refresh: bool = False):
-    """Obtener cotizaciones actuales (BCU tiempo real)."""
-    try:
-        # Refresh cache if forced or stale (>55m) or missing
-        global bcu_cache
-        with _cache_lock:
-            cached = bcu_cache
-        need_update = False
-        if not cached:
-            need_update = True
-        else:
-            age = (
-                datetime.utcnow() - cached.get("updated_at", datetime.utcnow())
-            ).total_seconds()
-            if age > 55 * 60:
-                need_update = True
-        if force_refresh or need_update:
-            _update_bcu_cache()
-            with _cache_lock:
-                if bcu_cache is None:  # mocked case
-                    bcu_cache = {"data": [], "updated_at": datetime.utcnow()}
-                cached = bcu_cache
-
-        if cached:
-            return ExchangeRateResponse(
-                success=True,
-                message=f"Current exchange rates (cached) retrieved successfully. {len(cached['data'])} currencies",
-                data=cached["data"],
-            ).dict()
-        return ExchangeRateResponse(
-            success=False,
-            message="Could not retrieve current exchange rates",
-            data=None,
-        ).dict()
-
-    except Exception as e:
-        logger.error(f"Error getting current exchange rates: {e}")
-        return ExchangeRateResponse(
-            success=False, message=f"Internal error: {str(e)}", data=None
-        ).dict()
 
 
 @app.get(ENDPOINT_EXCHANGE_RATE_BY_DATE, tags=[TAG_EXCHANGE])

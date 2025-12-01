@@ -3,6 +3,7 @@ import importlib.util
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import StaticPool
 
 from main import app
 from src.utils.constants import MSG_NO_UR_DATA
@@ -15,41 +16,58 @@ from src.domain.excel_processor import URExcelProcessor
 PANDAS_AVAILABLE = importlib.util.find_spec("pandas") is not None
 
 
-# Test database configuration
-SQLALCHEMY_DATABASE_URL = "sqlite:///./data/test_ur.db"
+# Test database configuration - uses in-memory SQLite with StaticPool
+# StaticPool ensures all connections share the same database
+SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"
 engine = create_engine(
-    SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
+    SQLALCHEMY_DATABASE_URL,
+    connect_args={"check_same_thread": False},
+    poolclass=StaticPool,
 )
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
-def override_get_db():
-    """Override the DB dependency for tests."""
-    try:
-        db = TestingSessionLocal()
-        yield db
-    finally:
-        db.close()
+# NOTE: We don't override get_db at module level anymore.
+# Each test fixture handles its own override to avoid conflicts with conftest.py
 
 
-app.dependency_overrides[get_db] = override_get_db
-
-
-@pytest.fixture(scope="module", autouse=True)
-def setup_database():
-    """Create/drop test database metadata once for the module."""
+@pytest.fixture(scope="function")
+def ur_test_db():
+    """Create isolated database for UR integration tests.
+    
+    This fixture:
+    1. Creates fresh tables for each test
+    2. Overrides get_db dependency
+    3. Cleans up after the test
+    """
+    # Create tables
     Base.metadata.create_all(bind=engine)
-    yield
+    
+    # Create session factory for this test
+    def override_get_db():
+        db = TestingSessionLocal()
+        try:
+            yield db
+        finally:
+            db.close()
+    
+    # Override the dependency
+    original_override = app.dependency_overrides.get(get_db)
+    app.dependency_overrides[get_db] = override_get_db
+    
+    yield engine
+    
+    # Cleanup: drop all tables and restore original override
     Base.metadata.drop_all(bind=engine)
+    if original_override:
+        app.dependency_overrides[get_db] = original_override
+    else:
+        app.dependency_overrides.pop(get_db, None)
 
 
 @pytest.fixture
-def db_session():
-    """Yield a fresh DB session (clean tables each test)."""
-    # Drop & recreate all tables to ensure isolation
-    Base.metadata.drop_all(bind=engine)
-    Base.metadata.create_all(bind=engine)
-
+def db_session(ur_test_db):
+    """Yield a fresh DB session for direct database access."""
     db = TestingSessionLocal()
     try:
         yield db
@@ -58,8 +76,8 @@ def db_session():
 
 
 @pytest.fixture
-def client():
-    """FastAPI test client."""
+def client(ur_test_db):
+    """FastAPI test client with isolated database."""
     return TestClient(app)
 
 

@@ -139,13 +139,16 @@ ENDPOINT_UR_INFO = "/api/ur/info"
 
 
 # Exchange Rate Endpoints
+# NOTE: Order matters for FastAPI routing - static paths must be registered before dynamic paths
 ENDPOINT_EXCHANGE_RATE_LATEST = "/api/exchange-rate/latest"
-ENDPOINT_EXCHANGE_RATE_BY_DATE = "/api/exchange-rate/{date}"
-ENDPOINT_EXCHANGE_RATE_BY_CURRENCY = "/api/exchange-rate/currency/{currency}"
-ENDPOINT_EXCHANGE_RATE_BY_DATE_CURRENCY = "/api/exchange-rate/{date}/{currency}"
-ENDPOINT_EXCHANGE_RATE_RANGE = "/api/exchange-rate/range/{start_date}/{end_date}"
-ENDPOINT_EXCHANGE_RATE_REFRESH = "/api/exchange-rate/refresh"
+ENDPOINT_EXCHANGE_RATE_CURRENT = "/api/exchange-rate/current"
 ENDPOINT_EXCHANGE_RATE_INFO = "/api/exchange-rate/info"
+ENDPOINT_EXCHANGE_RATE_REFRESH = "/api/exchange-rate/refresh"
+ENDPOINT_EXCHANGE_RATE_BY_CURRENCY = "/api/exchange-rate/currency/{currency}"
+ENDPOINT_EXCHANGE_RATE_RANGE = "/api/exchange-rate/range/{start_date}/{end_date}"
+# Dynamic path endpoints - must be AFTER static paths
+ENDPOINT_EXCHANGE_RATE_BY_DATE = "/api/exchange-rate/{date}"
+ENDPOINT_EXCHANGE_RATE_BY_DATE_CURRENCY = "/api/exchange-rate/{date}/{currency}"
 
 # =============================================================================
 # HTTP STATUS CODES

@@ -199,6 +199,10 @@ async def get_exchange_rates_by_range(
         raise HTTPException(status_code=HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
 
+# Note: /api/exchange-rate/current is defined in main.py BEFORE including this router
+# to ensure it takes precedence over the dynamic /api/exchange-rate/{date} route
+
+
 @router.get(ENDPOINT_EXCHANGE_RATE_BY_DATE)
 async def get_exchange_rates_by_date(
     date: date, currency: Optional[str] = None, db: Session = Depends(get_db)
@@ -374,50 +378,3 @@ async def list_jobs():
 )
 async def get_exchange_refresh_status(job_id: str):
     return await get_job_status(job_id)
-
-
-@router.get("/api/exchange-rate/current")
-async def get_current_exchange_rates(force_refresh: bool = False):
-    """Obtener cotizaciones actuales (BCU tiempo real)."""
-    try:
-        if not _cache_lock:
-            raise RuntimeError("Cache not initialized")
-
-        # Refresh cache if forced or stale (>55m) or missing
-        global bcu_cache
-        with _cache_lock:
-            cached = bcu_cache
-        need_update = False
-        if not cached:
-            need_update = True
-        else:
-            age = (
-                datetime.utcnow() - cached.get("updated_at", datetime.utcnow())
-            ).total_seconds()
-            if age > 55 * 60:
-                need_update = True
-        if force_refresh or need_update:
-            from main import _update_bcu_cache
-            _update_bcu_cache()
-            with _cache_lock:
-                if bcu_cache is None:  # mocked case
-                    bcu_cache = {"data": [], "updated_at": datetime.utcnow()}
-                cached = bcu_cache
-
-        if cached:
-            return ExchangeRateResponse(
-                success=True,
-                message=f"Current exchange rates (cached) retrieved successfully. {len(cached['data'])} currencies",
-                data=cached["data"],
-            ).dict()
-        return ExchangeRateResponse(
-            success=False,
-            message="Could not retrieve current exchange rates",
-            data=None,
-        ).dict()
-
-    except Exception as e:
-        logger.error(f"Error getting current exchange rates: {e}")
-        return ExchangeRateResponse(
-            success=False, message=f"Internal error: {str(e)}", data=None
-        ).dict()
