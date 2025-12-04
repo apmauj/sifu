@@ -30,6 +30,8 @@ from src.utils.constants import (
     LOG_DOWNLOADING_EXCEL_INE,
     LOG_DOWNLOADING_EXCEL_BHU,
     LOG_DOWNLOADING_EXCEL_INE_UR_FALLBACK,
+    LOG_DOWNLOADING_EXCEL_INE_UR_PRIMARY,
+    LOG_DOWNLOADING_EXCEL_BHU_FALLBACK,
     URL_BHU_UR,
     URL_BHU_UR_TEMPLATE,
     URL_INE_UR,
@@ -255,28 +257,34 @@ class URExcelProcessor:
         self.timeout = HTTP_TIMEOUT
 
     def download_excel(self) -> Optional[Any]:
-        """Download UR Excel file from BHU URL with INE fallback"""
+        """Download UR Excel file from INE (primary) or BHU (fallback).
+        
+        Since BHU suffered a security incident and no longer reliably serves
+        the UR Excel file, we now prioritize INE as the primary source.
+        INE publishes the same data (sourced from BHU) in a list format.
+        """
         if pd is None:
             logger.warning("pandas not available; skipping UR Excel download")
             return None
         
-        # Try to resolve the most recent BHU URL
+        # Try INE first (primary source since BHU hack)
+        logger.info(LOG_DOWNLOADING_EXCEL_INE_UR_PRIMARY)
+        excel_data = self._try_download_from_url(URL_INE_UR)
+        if excel_data is not None:
+            logger.info(f"Successfully downloaded UR data from INE: {URL_INE_UR}")
+            return excel_data
+        
+        # If INE fails, try BHU as fallback
+        logger.info(LOG_DOWNLOADING_EXCEL_BHU_FALLBACK)
         bhu_url = self._resolve_dynamic_bhu_url()
         if bhu_url:
-            logger.info(LOG_DOWNLOADING_EXCEL_BHU)
             excel_data = self._try_download_from_url(bhu_url)
             if excel_data is not None:
+                logger.info(f"Successfully using BHU fallback: {bhu_url}")
                 return excel_data
             logger.warning("BHU URL found but file is invalid or corrupt")
         
-        # If BHU fails, try INE as fallback
-        logger.info(LOG_DOWNLOADING_EXCEL_INE_UR_FALLBACK)
-        excel_data = self._try_download_from_url(URL_INE_UR)
-        if excel_data is not None:
-            logger.info(f"Successfully using INE fallback: {URL_INE_UR}")
-            return excel_data
-        
-        logger.error("Both BHU and INE sources failed for UR data")
+        logger.error("Both INE and BHU sources failed for UR data")
         return None
     
     def _try_download_from_url(self, url: str) -> Optional[Any]:
@@ -457,8 +465,9 @@ class URExcelProcessor:
                 
                 # Parse date - can be string "YYYY-MM-DD HH:MM:SS" or datetime object
                 if isinstance(date_val, str):
-                    # Extract year and month from string
-                    date_parts = date_val.split('-')
+                    # Extract year and month from string (handle "YYYY-MM-DD HH:MM:SS" format)
+                    date_str = date_val.split(" ")[0]  # Remove time part if present
+                    date_parts = date_str.split("-")
                     if len(date_parts) >= 2:
                         year = int(date_parts[0])
                         month = int(date_parts[1])
@@ -469,8 +478,20 @@ class URExcelProcessor:
                     year = date_val.year
                     month = date_val.month
                 
-                # Parse value
-                value = float(value_val)
+                # Parse value - handle European format (1.234,56 or 1234,56)
+                if isinstance(value_val, str):
+                    value_str = value_val.strip()
+                    if "," in value_str:
+                        # European format with comma as decimal separator
+                        if "." in value_str:
+                            # Format: 1.234,56 -> 1234.56 (dot is thousands separator)
+                            value_str = value_str.replace(".", "").replace(",", ".")
+                        else:
+                            # Format: 1234,56 -> 1234.56
+                            value_str = value_str.replace(",", ".")
+                    value = float(value_str)
+                else:
+                    value = float(value_val)
                 
                 # Validate
                 if MIN_VALID_YEAR <= year <= MAX_VALID_YEAR and 1 <= month <= 12:
