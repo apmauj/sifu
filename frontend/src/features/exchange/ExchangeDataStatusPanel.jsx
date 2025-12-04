@@ -1,9 +1,9 @@
 import React from 'react';
-import exchangeService from '../services/exchangeService';
-import Spinner from '../shared/components/ui/Spinner';
-import Alert from '../shared/components/ui/Alert';
-import { getSemanticClass } from '../shared/theme/colors';
-import { useI18n } from '../shared/contexts/I18nContext';
+import exchangeService from '../../services/exchangeService';
+import Spinner from '../../shared/components/ui/Spinner';
+import Alert from '../../shared/components/ui/Alert';
+import { getSemanticClass } from '../../shared/theme/colors';
+import { useI18n } from '../../shared/contexts/I18nContext';
 
 /**
  * Panel azul de estado (similar a UI / UR) para cotizaciones históricas.

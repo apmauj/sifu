@@ -2,9 +2,7 @@
  * Features module
  * 
  * Each feature is a self-contained module with its own:
- * - components/
- * - hooks/
- * - services/
+ * - components
  * - index.js (public exports)
  * 
  * Features:
@@ -13,11 +11,16 @@
  * - exchange: Exchange rates feature
  * - brou: BROU current rates feature
  * - dashboard: Monitoring dashboard feature
+ * - monitoring: System monitoring access feature
  */
 
-// Feature exports will be added as each feature is migrated
-// export * from './ui';
-// export * from './ur';
+// Feature exports
+export * from './ui';
+export * from './ur';
+export * from './exchange';
+export * from './brou';
+export * from './dashboard';
+export * from './monitoring';
 // export * from './exchange';
 // export * from './brou';
 // export * from './dashboard';

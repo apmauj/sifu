@@ -1,13 +1,13 @@
 import React from 'react';
 import SearchForm from './SearchForm';
 import ResultsDisplay from './ResultsDisplay';
-import uiService from '../services/api';
-import { useI18n } from '../shared/contexts/I18nContext';
-import Card, { CardBody } from '../shared/components/ui/Card';
-import { CURRENCY, CURRENCY_LOCALE } from '../constants';
-import Spinner from '../shared/components/ui/Spinner';
-import Alert from '../shared/components/ui/Alert';
-import { getSemanticClass, getSemanticClassWithDark } from '../shared/theme/colors';
+import uiService from '../../services/api';
+import { useI18n } from '../../shared/contexts/I18nContext';
+import Card, { CardBody } from '../../shared/components/ui/Card';
+import { CURRENCY, CURRENCY_LOCALE } from '../../constants';
+import Spinner from '../../shared/components/ui/Spinner';
+import Alert from '../../shared/components/ui/Alert';
+import { getSemanticClass, getSemanticClassWithDark } from '../../shared/theme/colors';
 
 const UIPanel = ({ refreshKey }) => {
   const { t, currentLanguage } = useI18n();

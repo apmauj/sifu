@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useI18n } from '../shared/contexts/I18nContext';
-import { ExclamationTriangleIcon } from '../shared/icons';
-import { OpenMojiIcon } from '../shared/icons/openmoji/index.jsx';
-import { Flag } from '../shared/icons/flags';
-import { getTodayLocal, getDaysAgoLocal } from '../shared/utils/dateUtils';
-import Button from '../shared/components/ui/Button';
+import { useI18n } from '../../shared/contexts/I18nContext';
+import { ExclamationTriangleIcon } from '../../shared/icons';
+import { OpenMojiIcon } from '../../shared/icons/openmoji/index.jsx';
+import { Flag } from '../../shared/icons/flags';
+import { getTodayLocal, getDaysAgoLocal } from '../../shared/utils/dateUtils';
+import Button from '../../shared/components/ui/Button';
 
 // Rate limiting: máximo 10 requests por minuto
 const MAX_REQUESTS_PER_MINUTE = 10;

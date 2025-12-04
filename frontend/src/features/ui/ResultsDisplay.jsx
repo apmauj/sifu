@@ -1,10 +1,10 @@
 import React from 'react';
-import { CalendarIcon, ChartBarIcon, ArrowDownIcon, ArrowUpIcon, MinusIcon } from '../shared/icons';
-import { OpenMojiIcon } from '../shared/icons/openmoji/index.jsx';
-import IconCircle from '../shared/components/ui/IconCircle.jsx';
+import { CalendarIcon, ChartBarIcon, ArrowDownIcon, ArrowUpIcon, MinusIcon } from '../../shared/icons';
+import { OpenMojiIcon } from '../../shared/icons/openmoji/index.jsx';
+import IconCircle from '../../shared/components/ui/IconCircle.jsx';
 import { format, parseISO } from 'date-fns';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { useI18n } from '../shared/contexts/I18nContext';
+import { useI18n } from '../../shared/contexts/I18nContext';
 import {
   DATE_FORMAT_DDMMYYYY,
   CURRENCY,
@@ -13,7 +13,7 @@ import {
   DATA_SOURCE_LABEL,
   NO_RESULTS_MESSAGE,
   NO_RESULTS_HINT
-} from '../constants';
+} from '../../constants';
 
 function calculateVariations(data) {
   if (!data || data.length === 0) return [];

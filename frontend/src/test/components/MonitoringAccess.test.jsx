@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { I18nProvider } from '../../shared/contexts/I18nContext';
-import MonitoringAccess from '../../components/MonitoringAccess';
+import MonitoringAccess from '../../features/monitoring/MonitoringAccess';
 
 // Mock fetch globally
 global.fetch = vi.fn();

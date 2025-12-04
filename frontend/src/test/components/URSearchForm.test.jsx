@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
-import URSearchForm from '../../components/URSearchForm';
+import URSearchForm from '../../features/ur/URSearchForm';
 import { vi } from 'vitest';
 
 // Mock del servicio UR

@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import { vi } from 'vitest';
-import UIPanel from '../../components/UIPanel';
+import UIPanel from '../../features/ui/UIPanel';
 
 vi.mock('../../shared/contexts/I18nContext', () => ({
   useI18n: () => ({

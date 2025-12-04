@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useI18n } from '../shared/contexts/I18nContext';
+import { useI18n } from '../../shared/contexts/I18nContext';
 import './MonitoringAccess.css';
 
 /**

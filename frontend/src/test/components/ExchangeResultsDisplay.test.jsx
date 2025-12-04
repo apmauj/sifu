@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
-import ExchangeResultsDisplay from '../../components/ExchangeResultsDisplay';
+import ExchangeResultsDisplay from '../../features/exchange/ExchangeResultsDisplay';
 import { getCurrencyDisplayMap } from '../../shared/utils/currencyDisplay.js';
 // Helper to access symbols consistent with component logic
 const t = (k) => k; // simple noop translator for tests

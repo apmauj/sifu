@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
-import SearchForm from '../../components/SearchForm';
+import SearchForm from '../../features/ui/SearchForm';
 import { vi } from 'vitest';
 import { BUTTON_LABELS } from '../../constants';
 

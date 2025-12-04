@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useForm, Controller } from 'react-hook-form';
-import { MagnifyingGlassIcon, CalendarIcon } from '../shared/icons';
-import urService from '../services/urService';
-import QuickSelectors from '../shared/components/QuickSelectors';
-import Button from '../shared/components/ui/Button';
-import { useI18n } from '../shared/contexts/I18nContext';
-import { getSemanticClass } from '../shared/theme/colors';
+import { MagnifyingGlassIcon, CalendarIcon } from '../../shared/icons';
+import urService from '../../services/urService';
+import QuickSelectors from '../../shared/components/QuickSelectors';
+import Button from '../../shared/components/ui/Button';
+import { useI18n } from '../../shared/contexts/I18nContext';
+import { getSemanticClass } from '../../shared/theme/colors';
 
 const URSearchForm = ({ onSearch, isLoading }) => {
   const { t } = useI18n();

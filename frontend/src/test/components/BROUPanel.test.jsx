@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { vi } from 'vitest';
-import BROUPanel from '../../components/BROUPanel';
+import BROUPanel from '../../features/brou/BROUPanel';
 
 // Mock i18n context (return deterministic Spanish strings)
 vi.mock('../../shared/contexts/I18nContext', () => ({

@@ -13,16 +13,18 @@ import { useHourlySyncedUpdate } from './shared/hooks/useHourlySyncedUpdate';
 // Shared icons
 import { OpenMojiIcon } from './shared/icons/openmoji/index.jsx';
 import { UruguayFlagIcon } from './shared/icons/system_icons';
-// Feature components (still in components/ for now)
-import UIPanel from './components/UIPanel';
-import URPanel from './components/URPanel';
-import ExchangeRatePanel from './components/ExchangeRatePanel';
-import ExchangeSearchForm from './components/ExchangeSearchForm';
-import ExchangeResultsDisplay from './components/ExchangeResultsDisplay';
-import ExchangeDataStatusPanel from './components/ExchangeDataStatusPanel';
-import BROUPanel from './components/BROUPanel';
-import Dashboard from './components/Dashboard';
-import MonitoringAccess from './components/MonitoringAccess';
+// Feature components
+import { UIPanel } from './features/ui';
+import { URPanel } from './features/ur';
+import { 
+  ExchangeRatePanel, 
+  ExchangeSearchForm, 
+  ExchangeResultsDisplay, 
+  ExchangeDataStatusPanel 
+} from './features/exchange';
+import { BROUPanel } from './features/brou';
+import { Dashboard } from './features/dashboard';
+import { MonitoringAccess } from './features/monitoring';
 // Services
 import exchangeService from './services/exchangeService';
 import uiService from './services/api';

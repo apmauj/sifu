@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
-import ExchangeSearchForm from '../../components/ExchangeSearchForm';
+import ExchangeSearchForm from '../../features/exchange/ExchangeSearchForm';
 import * as dateUtils from '../../shared/utils/dateUtils';
 
 // Mock del contexto I18n

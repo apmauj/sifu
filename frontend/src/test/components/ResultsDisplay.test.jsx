@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import ResultsDisplay from '../../components/ResultsDisplay';
+import ResultsDisplay from '../../features/ui/ResultsDisplay';
 
 describe('ResultsDisplay Component', () => {
   it('should display no results message when results are null', () => {

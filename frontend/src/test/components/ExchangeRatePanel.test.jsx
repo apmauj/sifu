@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
-import ExchangeRatePanel from '../../components/ExchangeRatePanel';
+import ExchangeRatePanel from '../../features/exchange/ExchangeRatePanel';
 import { vi } from 'vitest';
 import { renderAsync, actFlush } from '../utils/renderAsync';
 

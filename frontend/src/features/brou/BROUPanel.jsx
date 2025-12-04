@@ -1,18 +1,18 @@
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 // Eliminamos sentinel global para evitar quedarse en loading al volver desde otra pestaña
-import { useI18n } from '../shared/contexts/I18nContext';
-import { useHourlySyncedUpdate } from '../shared/hooks/useHourlySyncedUpdate';
-import brouService from '../services/brouService';
-import { useToast } from '../shared/contexts/ToastContext';
-import { OpenMojiIcon } from '../shared/icons/openmoji/index.jsx';
-import { Flag } from '../shared/icons/flags.jsx';
-import { RetryIcon } from '../shared/components/icons/SimpleIcons.jsx';
-import { getCurrencyDisplayMap } from '../shared/utils/currencyDisplay.js';
-import Badge from '../shared/components/ui/Badge';
-import Alert from '../shared/components/ui/Alert';
-import Button from '../shared/components/ui/Button';
-import Spinner from '../shared/components/ui/Spinner';
-import { getSemanticClass } from '../shared/theme/colors';
+import { useI18n } from '../../shared/contexts/I18nContext';
+import { useHourlySyncedUpdate } from '../../shared/hooks/useHourlySyncedUpdate';
+import brouService from '../../services/brouService';
+import { useToast } from '../../shared/contexts/ToastContext';
+import { OpenMojiIcon } from '../../shared/icons/openmoji/index.jsx';
+import { Flag } from '../../shared/icons/flags.jsx';
+import { RetryIcon } from '../../shared/components/icons/SimpleIcons.jsx';
+import { getCurrencyDisplayMap } from '../../shared/utils/currencyDisplay.js';
+import Badge from '../../shared/components/ui/Badge';
+import Alert from '../../shared/components/ui/Alert';
+import Button from '../../shared/components/ui/Button';
+import Spinner from '../../shared/components/ui/Spinner';
+import { getSemanticClass } from '../../shared/theme/colors';
 
 const BROUPanel = () => {
   const { t } = useI18n();
