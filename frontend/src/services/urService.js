@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { getApiBaseUrl, getDirectApiUrl, API_CONFIG } from '../utils/apiConfig.js';
+import { getApiBaseUrl, getDirectApiUrl, API_CONFIG } from '../shared/utils/apiConfig.js';
 
 // Configurar las instancias de axios
 const api = axios.create({

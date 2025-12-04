@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
-import { I18nProvider } from '../../contexts/I18nContext';
+import { I18nProvider } from '../../shared/contexts/I18nContext';
 import Dashboard from '../../components/Dashboard.jsx';
 
 // Smoke test simple que monta el Dashboard con la prop isOpen para que se rendericen las claves i18n.

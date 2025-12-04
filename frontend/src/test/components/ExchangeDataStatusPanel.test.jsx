@@ -19,7 +19,7 @@ const t = (k) => {
   return map[k] || k;
 };
 
-vi.mock('../../contexts/I18nContext', () => ({
+vi.mock('../../shared/contexts/I18nContext', () => ({
   useI18n: () => ({
     t
   })

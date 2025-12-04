@@ -1,9 +1,9 @@
 import React from 'react';
 import { getCurrencyInfo, formatExchangeRate } from '../services/exchangeService';
-import { getCurrencyDisplayMap } from '../utils/currencyDisplay.js';
-import { useI18n } from '../contexts/I18nContext';
+import { getCurrencyDisplayMap } from '../shared/utils/currencyDisplay.js';
+import { useI18n } from '../shared/contexts/I18nContext';
 import { format, parseISO } from 'date-fns';
-import { Flag } from '../icons/flags.jsx';
+import { Flag } from '../shared/icons/flags.jsx';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
 
 const ExchangeResultsDisplay = ({ results, searchType, isLoading, error }) => {
@@ -609,3 +609,4 @@ const ExchangeResultsDisplay = ({ results, searchType, isLoading, error }) => {
 };
 
 export default ExchangeResultsDisplay; 
+

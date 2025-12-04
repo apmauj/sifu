@@ -1,9 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import Header from '../../components/Header.jsx';
+import Header from '../../shared/components/Header.jsx';
 
 // Mock de LanguageSelector
-vi.mock('../../components/LanguageSelector', () => ({
+vi.mock('../../shared/components/LanguageSelector', () => ({
   default: () => <div data-testid="language-selector">Language Selector</div>
 }));
 
@@ -40,7 +40,7 @@ vi.mock('@heroicons/react/24/outline', () => ({
 }));
 
 // Mock del contexto I18n siguiendo el patrón del proyecto
-vi.mock('../../contexts/I18nContext', () => ({
+vi.mock('../../shared/contexts/I18nContext', () => ({
   useI18n: () => ({
     currentLanguage: 'es',
     isLoading: false,

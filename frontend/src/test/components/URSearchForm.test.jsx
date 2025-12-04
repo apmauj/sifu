@@ -22,7 +22,7 @@ vi.mock('../../services/urService', () => ({
 }));
 
 // Mock del contexto I18n
-vi.mock('../../contexts/I18nContext', () => ({
+vi.mock('../../shared/contexts/I18nContext', () => ({
   useI18n: () => ({
     t: (key) => {
       const translations = {
@@ -68,7 +68,7 @@ vi.mock('../../contexts/I18nContext', () => ({
 }));
 
 // Mock de QuickSelectors
-vi.mock('../../components/QuickSelectors', () => ({
+vi.mock('../../shared/components/QuickSelectors', () => ({
   default: ({ onURSingleSelect, onURRangeSelect }) => (
     <div data-testid="quick-selectors">
       <button onClick={() => onURSingleSelect(2024, 6)}>Quick Single</button>

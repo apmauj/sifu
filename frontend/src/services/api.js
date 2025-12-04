@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { getApiBaseUrl, getDirectApiUrl, API_CONFIG } from '../utils/apiConfig.js';
+import { getApiBaseUrl, getDirectApiUrl, API_CONFIG } from '../shared/utils/apiConfig.js';
 
 // Detectar si estamos en desarrollo
 const isDevelopment = import.meta.env.DEV;

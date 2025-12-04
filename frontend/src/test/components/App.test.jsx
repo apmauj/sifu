@@ -2,8 +2,8 @@ import React from 'react'
 import { screen, fireEvent, waitFor } from '@testing-library/react'
 import { describe, it, expect, beforeEach } from 'vitest'
 import App from '../../App'
-import { I18nProvider } from '../../contexts/I18nContext'
-import { ToastProvider } from '../../contexts/ToastContext'
+import { I18nProvider } from '../../shared/contexts/I18nContext'
+import { ToastProvider } from '../../shared/contexts/ToastContext'
 import { renderAsync, actFlush } from '../utils/renderAsync'
 
 const TestWrapper = ({ children }) => (

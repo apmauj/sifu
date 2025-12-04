@@ -37,7 +37,7 @@ function flattenTranslations(obj, prefix = '', out = new Set()) {
 }
 
 function loadLocaleKeys(code) {
-  const file = path.join(__dirname, '..', '..', 'locales', `${code}.json`);
+  const file = path.join(__dirname, '..', '..', 'shared', 'locales', `${code}.json`);
   const data = JSON.parse(fs.readFileSync(file, 'utf8'));
   return flattenTranslations(data);
 }

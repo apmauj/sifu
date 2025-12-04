@@ -18,7 +18,7 @@ vi.mock('../../services/exchangeService', () => ({
 let hasExecuted = false;
 let currentUpdateFn = null;
 
-vi.mock('../../hooks/useHourlySyncedUpdate', () => ({
+vi.mock('../../shared/hooks/useHourlySyncedUpdate', () => ({
   useHourlySyncedUpdate: vi.fn((updateFn) => {
     currentUpdateFn = updateFn;
     

@@ -1,6 +1,6 @@
 import React from 'react';
 import { render } from '@testing-library/react';
-import { OpenMojiIcon } from '../../icons/openmoji/index.jsx';
+import { OpenMojiIcon } from '../../shared/icons/openmoji/index.jsx';
 
 describe('OpenMojiIcon', () => {
   it('renders calculator icon', () => {

@@ -1,7 +1,7 @@
 import React from 'react';
-import { I18nProvider } from '../contexts/I18nContext.jsx';
-import { ToastProvider } from '../contexts/ToastContext.jsx';
-import { ThemeProvider } from '../contexts/ThemeContext.jsx';
+import { I18nProvider } from '../shared/contexts/I18nContext.jsx';
+import { ToastProvider } from '../shared/contexts/ToastContext.jsx';
+import { ThemeProvider } from '../shared/contexts/ThemeContext.jsx';
 import ErrorBoundary from './ErrorBoundary.jsx';
 
 /**

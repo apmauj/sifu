@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { I18nProvider } from '../../contexts/I18nContext';
+import { I18nProvider } from '../../shared/contexts/I18nContext';
 import MonitoringAccess from '../../components/MonitoringAccess';
 
 // Mock fetch globally

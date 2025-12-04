@@ -13,7 +13,7 @@ import {
   TrendingDownIcon,
   GlobeIcon,
   CalendarIcon,
-} from '../../components/icons/IconSet.jsx';
+} from '../../shared/components/icons/IconSet.jsx';
 
 // Render the remaining IconSet components not directly covered elsewhere
 

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useI18n } from '../contexts/I18nContext';
+import { useI18n } from '../shared/contexts/I18nContext';
 import './MonitoringAccess.css';
 
 /**
@@ -188,3 +188,4 @@ const MonitoringAccess = ({ isOpen, onClose, onAccessGranted }) => {
 };
 
 export default MonitoringAccess;
+

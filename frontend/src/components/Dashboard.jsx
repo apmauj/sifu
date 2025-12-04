@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import healthService from '../services/healthService';
 import performanceService from '../services/performanceService';
-import Card, { CardBody } from './ui/Card';
-import Badge from './ui/Badge';
-import Spinner from './ui/Spinner';
-import { getSemanticClass } from '../theme/colors';
-import { useI18n } from '../contexts/I18nContext';
+import Card, { CardBody } from '../shared/components/ui/Card';
+import Badge from '../shared/components/ui/Badge';
+import Spinner from '../shared/components/ui/Spinner';
+import { getSemanticClass } from '../shared/theme/colors';
+import { useI18n } from '../shared/contexts/I18nContext';
 
 const Dashboard = ({ isOpen, onClose }) => {
   const { t, translateBackendMessage } = useI18n();
@@ -952,4 +952,5 @@ const Dashboard = ({ isOpen, onClose }) => {
 };
 
 export default Dashboard;
+
 

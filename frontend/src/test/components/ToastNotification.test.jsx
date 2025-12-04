@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import ToastNotification from '../../components/ToastNotification.jsx';
+import ToastNotification from '../../shared/components/ToastNotification.jsx';
 import { TOAST_DURATION } from '../../constants.js';
 
 describe('ToastNotification Component', () => {

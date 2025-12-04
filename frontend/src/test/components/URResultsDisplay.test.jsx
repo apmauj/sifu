@@ -4,7 +4,7 @@ import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import URResultsDisplay from '../../components/URResultsDisplay';
 
 // Mock de contexto I18n
-vi.mock('../../contexts/I18nContext', () => ({
+vi.mock('../../shared/contexts/I18nContext', () => ({
   useI18n: vi.fn(() => ({
     t: vi.fn((key) => {
       const translations = {

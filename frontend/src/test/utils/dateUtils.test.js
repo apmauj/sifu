@@ -5,7 +5,7 @@ import {
   subtractDaysLocal,
   getDaysAgoLocal,
   getCurrentTimestamp
-} from '../../utils/dateUtils.js';
+} from '../../shared/utils/dateUtils.js';
 
 describe('Date Utils', () => {
   // Sin fake timers - usar fechas reales para coverage correcto

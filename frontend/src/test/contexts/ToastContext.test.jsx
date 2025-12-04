@@ -7,11 +7,11 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 globalThis.__TESTING_TOAST_CONTEXT__ = true
 
 // NO USAR MOCK DE TOASTCONTEXT - usar el real
-vi.unmock('../../contexts/ToastContext');
-import { ToastProvider, useToast } from '../../contexts/ToastContext';
+vi.unmock('../../shared/contexts/ToastContext');
+import { ToastProvider, useToast } from '../../shared/contexts/ToastContext';
 
 // Mock del componente ToastNotification
-vi.mock('../../components/ToastNotification', () => ({
+vi.mock('../../shared/components/ToastNotification', () => ({
   default: ({ message, type, onClose, duration }) => (
     <div 
       data-testid={`toast-${type}`}

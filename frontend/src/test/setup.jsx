@@ -18,7 +18,7 @@ import * as realConstants from '../constants.js'
 globalThis.REAL_CONSTANTS = realConstants
 
 // Enhanced I18n mock with better branch coverage
-vi.mock('../contexts/I18nContext', () => {
+vi.mock('../shared/contexts/I18nContext', () => {
   const createMockI18nContext = () => {
     const t = (key, params = {}) => {
       const keys = key.split('.')
@@ -80,7 +80,7 @@ vi.mock('../contexts/I18nContext', () => {
 })
 
 // Mock ThemeContext for tests
-vi.mock('../contexts/ThemeContext', () => {
+vi.mock('../shared/contexts/ThemeContext', () => {
   const createMockThemeContext = () => {
     return {
       theme: globalThis.__TEST_THEME__ || 'light',
@@ -146,7 +146,7 @@ const mockToastContext = () => ({
 
 // Mock ToastContext solo si no estamos testeando específicamente ToastContext
 if (!globalThis.__TESTING_TOAST_CONTEXT__) {
-  vi.mock('../contexts/ToastContext', () => mockToastContext())
+  vi.mock('../shared/contexts/ToastContext', () => mockToastContext())
 }
 
 // Enhanced axios mock with more realistic error scenarios
@@ -607,7 +607,7 @@ globalThis.setupBranchTest = (scenario) => {
 // Mock global de useHourlySyncedUpdate (usado en paneles)
 // Solo mockear si no estamos testeando el hook específicamente
 if (!globalThis.__TESTING_HOOK_DIRECTLY__) {
-  vi.mock('../hooks/useHourlySyncedUpdate', () => ({
+  vi.mock('../shared/hooks/useHourlySyncedUpdate', () => ({
   useHourlySyncedUpdate: vi.fn((updateFn) => {
     // For component tests, provide a simple mock
     return vi.fn()

@@ -2,17 +2,17 @@ import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 // Sentinel de módulo para carga inicial única bajo StrictMode
 // Reemplazamos sentinel global por ref interna para evitar estados inconsistentes al cambiar de pestañas
 import exchangeService from '../services/exchangeService';
-import { useI18n } from '../contexts/I18nContext';
-import { useHourlySyncedUpdate } from '../hooks/useHourlySyncedUpdate';
+import { useI18n } from '../shared/contexts/I18nContext';
+import { useHourlySyncedUpdate } from '../shared/hooks/useHourlySyncedUpdate';
 // Centralized icons (RefreshIcon not used after removing manual refresh)
-import { useToast } from '../contexts/ToastContext';
-import { OpenMojiIcon } from '../icons/openmoji/index.jsx';
-import { Flag } from '../icons/flags.jsx';
-import { LoadingIcon } from '../components/icons/SimpleIcons.jsx';
-import { getCurrencyDisplayMap } from '../utils/currencyDisplay.js';
-import Spinner, { InlineSpinner } from './ui/Spinner';
-import Alert from './ui/Alert';
-import { getSemanticClass } from '../theme/colors';
+import { useToast } from '../shared/contexts/ToastContext';
+import { OpenMojiIcon } from '../shared/icons/openmoji/index.jsx';
+import { Flag } from '../shared/icons/flags.jsx';
+import { LoadingIcon } from '../shared/components/icons/SimpleIcons.jsx';
+import { getCurrencyDisplayMap } from '../shared/utils/currencyDisplay.js';
+import Spinner, { InlineSpinner } from '../shared/components/ui/Spinner';
+import Alert from '../shared/components/ui/Alert';
+import { getSemanticClass } from '../shared/theme/colors';
 
 const ExchangeRatePanel = () => {
   const [glow, setGlow] = useState(false);

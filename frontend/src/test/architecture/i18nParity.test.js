@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { describe, it, expect } from 'vitest';
 
-const LOCALES_DIR = path.join(__dirname, '..', '..', 'locales');
+const LOCALES_DIR = path.join(__dirname, '..', '..', 'shared', 'locales');
 const BASE_LOCALE = 'es'; // Referencia canónica
 const LOCALES = ['en', 'pt']; // Idiomas a comparar contra la base
 

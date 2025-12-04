@@ -12,7 +12,7 @@ import {
   TodayIcon,
   WeekIcon,
   SummaryIcon
-} from '../../components/icons/SimpleIcons';
+} from '../../shared/components/icons/SimpleIcons';
 
 describe('SimpleIcons basic render', () => {
   const cases = [

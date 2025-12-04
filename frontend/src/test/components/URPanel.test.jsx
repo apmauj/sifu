@@ -3,7 +3,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { vi } from 'vitest';
 import URPanel from '../../components/URPanel';
 
-vi.mock('../../contexts/I18nContext', () => ({
+vi.mock('../../shared/contexts/I18nContext', () => ({
   useI18n: () => ({
     t: (k) => ({
       'common.loading': 'Cargando información...',

@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useForm, Controller } from 'react-hook-form';
-import { MagnifyingGlassIcon, CalendarIcon } from '../icons';
+import { MagnifyingGlassIcon, CalendarIcon } from '../shared/icons';
 import { format, parseISO, isValid } from 'date-fns';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import uiService from '../services/api';
-import QuickSelectors from './QuickSelectors';
-import Button from './ui/Button';
-import { useI18n } from '../contexts/I18nContext';
-import { getTodayLocal, getDaysAgoLocal } from '../utils/dateUtils';
-import { getSemanticClass } from '../theme/colors';
+import QuickSelectors from '../shared/components/QuickSelectors';
+import Button from '../shared/components/ui/Button';
+import { useI18n } from '../shared/contexts/I18nContext';
+import { getTodayLocal, getDaysAgoLocal } from '../shared/utils/dateUtils';
+import { getSemanticClass } from '../shared/theme/colors';
 
 const SearchForm = ({ onSearch, isLoading }) => {
   const { t } = useI18n();
@@ -335,3 +335,4 @@ const SearchForm = ({ onSearch, isLoading }) => {
 };
 
 export default SearchForm; 
+

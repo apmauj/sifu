@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import SectionTitle from '../../components/ui/SectionTitle';
+import SectionTitle from '../../shared/components/ui/SectionTitle';
 
 describe('SectionTitle', () => {
   it('renders title and subtitle', () => {

@@ -1,7 +1,19 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 // Sentinel de módulo para evitar doble inicialización con React StrictMode
 let APP_INIT_DONE = false;
-import Header from './components/Header';
+// Shared components
+import Header from './shared/components/Header';
+import BuildInfoFooter from './shared/components/BuildInfoFooter.jsx';
+import Card, { CardBody } from './shared/components/ui/Card';
+import { Tabs, Tab } from './shared/components/ui/Tabs';
+// Shared contexts and hooks
+import { useI18n } from './shared/contexts/I18nContext';
+import { useToast } from './shared/contexts/ToastContext';
+import { useHourlySyncedUpdate } from './shared/hooks/useHourlySyncedUpdate';
+// Shared icons
+import { OpenMojiIcon } from './shared/icons/openmoji/index.jsx';
+import { UruguayFlagIcon } from './shared/icons/system_icons';
+// Feature components (still in components/ for now)
 import UIPanel from './components/UIPanel';
 import URPanel from './components/URPanel';
 import ExchangeRatePanel from './components/ExchangeRatePanel';
@@ -11,20 +23,12 @@ import ExchangeDataStatusPanel from './components/ExchangeDataStatusPanel';
 import BROUPanel from './components/BROUPanel';
 import Dashboard from './components/Dashboard';
 import MonitoringAccess from './components/MonitoringAccess';
+// Services
 import exchangeService from './services/exchangeService';
 import uiService from './services/api';
 import urService from './services/urService';
-import { useI18n } from './contexts/I18nContext';
-import { useToast } from './contexts/ToastContext';
-import {
-  OFFICIAL_URLS
-} from './constants';
-import { OpenMojiIcon } from './icons/openmoji/index.jsx';
-import { UruguayFlagIcon } from './icons/system_icons';
-import Card, { CardBody } from './components/ui/Card';
-import { Tabs, Tab } from './components/ui/Tabs';
-import { useHourlySyncedUpdate } from './hooks/useHourlySyncedUpdate';
-import BuildInfoFooter from './components/BuildInfoFooter.jsx';
+// Constants
+import { OFFICIAL_URLS } from './constants';
 
 function App() {
   // Internationalization hook

@@ -48,7 +48,7 @@ const ALLOWLIST = new Set([
 ]);
 
 // Ruta al archivo de traducciones principal (producción)
-const ES_JSON_PATH = path.join(__dirname, '..', '..', 'locales', 'es.json');
+const ES_JSON_PATH = path.join(__dirname, '..', '..', 'shared', 'locales', 'es.json');
 
 // Cargar traducciones reales
 const translations = JSON.parse(fs.readFileSync(ES_JSON_PATH, 'utf8'));
@@ -57,8 +57,9 @@ const translations = JSON.parse(fs.readFileSync(ES_JSON_PATH, 'utf8'));
 const SRC_ROOT = path.join(__dirname, '..', '..');
 const SOURCE_DIR = path.join(SRC_ROOT, '..'); // subir a src/
 const COMPONENT_ROOT = path.join(SOURCE_DIR, 'components');
-const HOOKS_ROOT = path.join(SOURCE_DIR, 'hooks');
-const CONTEXTS_ROOT = path.join(SOURCE_DIR, 'contexts');
+const SHARED_ROOT = path.join(SOURCE_DIR, 'shared');
+const HOOKS_ROOT = path.join(SHARED_ROOT, 'hooks');
+const CONTEXTS_ROOT = path.join(SHARED_ROOT, 'contexts');
 const SERVICES_ROOT = path.join(SOURCE_DIR, 'services');
 
 const scanTargets = [COMPONENT_ROOT, HOOKS_ROOT, CONTEXTS_ROOT, SERVICES_ROOT].filter(p => fs.existsSync(p));
