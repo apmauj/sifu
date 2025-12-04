@@ -109,11 +109,34 @@ jobs:
             echo "frontend_accessible=true" >> $GITHUB_OUTPUT
           fi
 
+      - name: Determine Active Backend URL
+        id: backend_url
+        run: |
+          SECRET_URL="${{ secrets.VITE_PUBLIC_API_URL }}"
+          CURRENT_URL="${{ needs.check-tunnel-url.outputs.current_url }}"
+
+          if [ -z "$SECRET_URL" ]; then
+            echo "❌ ERROR: VITE_PUBLIC_API_URL no está configurado"
+            exit 1
+          fi
+
+          RESOLVED_URL="$SECRET_URL"
+          SOURCE="secret"
+
+          if [ -n "$CURRENT_URL" ]; then
+            RESOLVED_URL="$CURRENT_URL"
+            SOURCE="tunnel_logs"
+          fi
+
+          echo "🔗 URL backend activa: $RESOLVED_URL (origen: $SOURCE)"
+          echo "resolved_url=$RESOLVED_URL" >> $GITHUB_OUTPUT
+          echo "url_source=$SOURCE" >> $GITHUB_OUTPUT
+
       - name: Check Backend Health Endpoint
         id: backend_check
         continue-on-error: true
         run: |
-          BACKEND_URL="${{ secrets.VITE_PUBLIC_API_URL }}"
+          BACKEND_URL="${{ steps.backend_url.outputs.resolved_url }}"
           HEALTH_ENDPOINT="$BACKEND_URL/api/health"
           
           echo "🔧 Verificando Backend en: $HEALTH_ENDPOINT"
@@ -181,7 +204,7 @@ jobs:
         if: steps.backend_check.outputs.backend_accessible == 'true'
         continue-on-error: true
         run: |
-          BACKEND_URL="${{ secrets.VITE_PUBLIC_API_URL }}"
+          BACKEND_URL="${{ steps.backend_url.outputs.resolved_url }}"
           FRONTEND_URL="https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}"
           
           echo "🔗 Verificando que frontend desplegado puede comunicarse con backend..."
@@ -227,7 +250,7 @@ jobs:
            needs.check-tunnel-url.outputs.tunnel_changed == 'true' ||
            steps.frontend_backend_integration.outputs.frontend_backend_ok == 'false')
         run: |
-          BACKEND_URL="${{ secrets.VITE_PUBLIC_API_URL }}"
+          BACKEND_URL="${{ steps.backend_url.outputs.resolved_url }}"
           
           if [ "${{ steps.backend_check.outputs.backend_accessible }}" == "false" ]; then
             echo "🔍 Backend no accesible - verificando si es un túnel caído..."
@@ -264,30 +287,60 @@ jobs:
         if: steps.tunnel_check.outputs.tunnel_detected == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TARGET_SHA: ${{ github.sha }}
+          WORKFLOW_FILE: .github/workflows/update-tunnel.yml
+          WORKFLOW_REF: ${{ github.ref_name }}
+          WORKFLOW_REPO: ${{ github.repository }}
+          RESOLVED_BACKEND_URL: ${{ steps.backend_url.outputs.resolved_url }}
         run: |
           echo "🔄 Intentando recuperar túnel automáticamente..."
           
-          # Disparar workflow de actualización de túnel si existe
-          # Nota: Esto requiere que tengas un workflow separado o script que maneje la actualización
-          
+          if [ -z "$GH_TOKEN" ]; then
+            echo "❌ GH_TOKEN no disponible. No se puede disparar la recuperación"
+            echo "recovery_attempted=false" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+
           echo "Disparando actualización de túnel..."
-          gh workflow run .github/workflows/update-tunnel.yml \
-            -R ${{ github.repository }} \
-            --ref ${{ github.ref_name }} || echo "No se pudo disparar workflow de túnel"
-          
+          if ! gh workflow run "$WORKFLOW_FILE" -R "$WORKFLOW_REPO" --ref "$WORKFLOW_REF"; then
+            echo "❌ No se pudo disparar el workflow de túnel"
+            echo "recovery_attempted=false" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+
           echo "recovery_attempted=true" >> $GITHUB_OUTPUT
           echo "recovery_time=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> $GITHUB_OUTPUT
-          
-          echo "⏳ Workflow de recuperación disparado. Esperando 30 segundos..."
-          sleep 30
-          
-          # Reintentar verificación después de intentar recuperar
-          BACKEND_URL="${{ secrets.VITE_PUBLIC_API_URL }}"
+
+          echo "⏳ Buscando run activo de $WORKFLOW_FILE..."
+          UPDATE_RUN_ID=""
+          for attempt in {1..18}; do
+            UPDATE_RUN_ID=$(gh run list --workflow "$WORKFLOW_FILE" --json databaseId,headSha,status -L 10 | \
+              jq -r 'map(select(.headSha == env.TARGET_SHA)) | (.[0].databaseId // "")')
+            if [ -n "$UPDATE_RUN_ID" ]; then
+              break
+            fi
+            sleep 10
+          done
+
+          if [ -z "$UPDATE_RUN_ID" ]; then
+            echo "⚠️ No se pudo identificar el run de actualización"
+            echo "recovery_successful=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          echo "🕘 Esperando a que el workflow ($UPDATE_RUN_ID) termine..."
+          if ! gh run watch "$UPDATE_RUN_ID" --interval 15 --exit-status; then
+            echo "⚠️ El workflow de actualización falló"
+            echo "recovery_successful=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          echo "✅ Workflow de actualización completado. Re-validando backend..."
+          BACKEND_URL="$RESOLVED_BACKEND_URL"
           HEALTH_ENDPOINT="$BACKEND_URL/api/health"
-          
-          echo "🔄 Re-verificando backend después de intento de recuperación..."
+
           HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$HEALTH_ENDPOINT")
-          
+
           if [ "$HTTP_STATUS" = "200" ]; then
             echo "✅ Backend recuperado exitosamente"
             echo "recovery_successful=true" >> $GITHUB_OUTPUT
@@ -302,7 +355,7 @@ jobs:
           steps.backend_check.outputs.backend_accessible == 'true' &&
           (github.event.inputs.check_all_endpoints == 'true' || github.event_name == 'schedule')
         run: |
-          BACKEND_URL="${{ secrets.VITE_PUBLIC_API_URL }}"
+          BACKEND_URL="${{ steps.backend_url.outputs.resolved_url }}"
           
           # Array de endpoints críticos a verificar
           declare -a ENDPOINTS=(

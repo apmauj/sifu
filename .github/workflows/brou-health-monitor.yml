@@ -46,7 +46,7 @@ jobs:
           # Configurar variables
           FAIL_ON_EMPTY="${{ github.event.inputs.fail_on_empty || 'true' }}"
           MAX_AGE_MINUTES="${{ github.event.inputs.max_age_minutes || '60' }}"
-          BROU_ENDPOINT="${{ secrets.VITE_PUBLIC_API_URL }}/brou/current?full=true"
+          BROU_ENDPOINT="${{ secrets.VITE_PUBLIC_API_URL }}/api/brou/current?full=true"
 
           echo "Configuración:"
           echo "- FAIL_ON_EMPTY: $FAIL_ON_EMPTY"

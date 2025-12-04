@@ -42,6 +42,31 @@ function Write-JsonLog {
   $obj | ConvertTo-Json -Compress | Write-Host
 }
 
+function Ensure-BackendRunning {
+  param(
+    [string]$ComposeFile = 'config/docker/docker-compose.tunnel.yml',
+    [string]$BackendService = 'sifu-backend'
+  )
+
+  $containerId = docker ps -a --filter "name=^/$BackendService$" --format '{{.ID}}'
+
+  if([string]::IsNullOrWhiteSpace($containerId)){
+    Info "Contenedor $BackendService no existe. Creándolo mediante docker compose..."
+    docker compose -f $ComposeFile up -d $BackendService | Out-Null
+    if($LASTEXITCODE -ne 0){ Err "No se pudo crear $BackendService vía docker compose"; exit 1 }
+    return
+  }
+
+  $status = docker inspect -f '{{.State.Status}}' $BackendService 2>$null
+  if($LASTEXITCODE -ne 0){ Err "No se pudo inspeccionar $BackendService"; exit 1 }
+
+  if($status -ne 'running'){
+    Info "Backend $BackendService está en estado '$status'. Intentando iniciarlo..."
+    docker start $BackendService | Out-Null
+    if($LASTEXITCODE -ne 0){ Err "No se pudo iniciar $BackendService"; exit 1 }
+  }
+}
+
 if(-not (Get-Command gh -ErrorAction SilentlyContinue)){ Err 'gh CLI no encontrado'; exit 1 }
 
 # Verificar autenticación gh antes de continuar (para evitar fallo tardío)
@@ -66,7 +91,16 @@ $url = $null
 for($attempt=1; $attempt -le $RetryCount -and -not $url; $attempt++){
   if($attempt -gt 1){ Info "Reintento $attempt/$RetryCount (reiniciando contenedor túnel)" }
   Info 'Levantando túnel con config/docker/docker-compose.tunnel.yml'
-  docker compose -f config/docker/docker-compose.tunnel.yml up -d --force-recreate --remove-orphans tunnel | Out-Null
+  $existingTunnel = docker ps -aq --filter "name=^/sifu-tunnel$"
+  if($existingTunnel){
+    Info 'Deteniendo túnel previo para evitar conflictos'
+    docker rm -f sifu-tunnel | Out-Null
+  }
+  docker compose -f config/docker/docker-compose.tunnel.yml up -d --no-deps --force-recreate --remove-orphans tunnel | Out-Null
+  if($LASTEXITCODE -ne 0){
+    Err 'docker compose falló al recrear el servicio tunnel. Reintentando...'
+    continue
+  }
   $start = Get-Date
   while((Get-Date)-$start -lt [TimeSpan]::FromSeconds($TimeoutSeconds)){
     $logs = docker logs --tail 160 sifu-tunnel 2>&1
@@ -101,6 +135,8 @@ if(-not $url){
   exit 1
 }
 Info "URL túnel: $url"
+
+Ensure-BackendRunning
 
 # El workflow CI/CD normaliza y agrega /api automáticamente, así que el secret es solo la URL base
 $apiUrl = "$url"
