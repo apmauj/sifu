@@ -8,7 +8,7 @@ import { renderAsync, actFlush } from '../utils/renderAsync';
 global.fetch = vi.fn();
 
 // Mock del exchangeService
-vi.mock('../../services/exchangeService', () => ({
+vi.mock('../../shared/services/exchangeService', () => ({
   default: {
     getCurrentRates: vi.fn()
   }
@@ -61,7 +61,7 @@ describe('ExchangeRatePanel', () => {
   beforeEach(async () => {
     vi.clearAllMocks();
     resetMock();
-    mockExchangeService = (await import('../../services/exchangeService')).default;
+    mockExchangeService = (await import('../../shared/services/exchangeService')).default;
   });
 
   describe('Loading State', () => {

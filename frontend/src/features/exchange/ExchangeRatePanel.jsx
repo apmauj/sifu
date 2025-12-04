@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 // Sentinel de módulo para carga inicial única bajo StrictMode
 // Reemplazamos sentinel global por ref interna para evitar estados inconsistentes al cambiar de pestañas
-import exchangeService from '../../services/exchangeService';
+import exchangeService from '../../shared/services/exchangeService';
 import { useI18n } from '../../shared/contexts/I18nContext';
 import { useHourlySyncedUpdate } from '../../shared/hooks/useHourlySyncedUpdate';
 // Centralized icons (RefreshIcon not used after removing manual refresh)

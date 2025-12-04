@@ -1,5 +1,5 @@
 import React from 'react';
-import exchangeService from '../../services/exchangeService';
+import exchangeService from '../../shared/services/exchangeService';
 import Spinner from '../../shared/components/ui/Spinner';
 import Alert from '../../shared/components/ui/Alert';
 import { getSemanticClass } from '../../shared/theme/colors';

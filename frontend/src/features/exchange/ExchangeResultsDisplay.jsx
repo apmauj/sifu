@@ -1,5 +1,5 @@
 import React from 'react';
-import { getCurrencyInfo, formatExchangeRate } from '../../services/exchangeService';
+import { getCurrencyInfo, formatExchangeRate } from '../../shared/services/exchangeService';
 import { getCurrencyDisplayMap } from '../../shared/utils/currencyDisplay.js';
 import { useI18n } from '../../shared/contexts/I18nContext';
 import { format, parseISO } from 'date-fns';

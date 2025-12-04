@@ -46,7 +46,7 @@ vi.mock('../../shared/hooks/useHourlySyncedUpdate', () => ({
 
 // Service mock
 const getCurrentMock = vi.fn();
-vi.mock('../../services/brouService', () => ({
+vi.mock('../../shared/services/brouService', () => ({
   default: { getCurrent: (...args) => getCurrentMock(...args) }
 }));
 

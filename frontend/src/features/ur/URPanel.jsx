@@ -1,7 +1,7 @@
 import React from 'react';
 import URSearchForm from './URSearchForm';
 import URResultsDisplay from './URResultsDisplay';
-import urService from '../../services/urService';
+import urService from '../../shared/services/urService';
 import { useI18n } from '../../shared/contexts/I18nContext';
 import Card, { CardBody } from '../../shared/components/ui/Card';
 import Spinner from '../../shared/components/ui/Spinner';

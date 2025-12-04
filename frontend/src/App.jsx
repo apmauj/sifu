@@ -26,9 +26,9 @@ import { BROUPanel } from './features/brou';
 import { Dashboard } from './features/dashboard';
 import { MonitoringAccess } from './features/monitoring';
 // Services
-import exchangeService from './services/exchangeService';
-import uiService from './services/api';
-import urService from './services/urService';
+import exchangeService from './shared/services/exchangeService';
+import uiService from './shared/services/api';
+import urService from './shared/services/urService';
 // Constants
 import { OFFICIAL_URLS } from './constants';
 

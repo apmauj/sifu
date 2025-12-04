@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import healthService from '../../services/healthService';
-import performanceService from '../../services/performanceService';
+import healthService from '../../shared/services/healthService';
+import performanceService from '../../shared/services/performanceService';
 import Card, { CardBody } from '../../shared/components/ui/Card';
 import Badge from '../../shared/components/ui/Badge';
 import Spinner from '../../shared/components/ui/Spinner';

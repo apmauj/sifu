@@ -4,7 +4,7 @@ import { MagnifyingGlassIcon, CalendarIcon } from '../../shared/icons';
 import { format, parseISO, isValid } from 'date-fns';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
-import uiService from '../../services/api';
+import uiService from '../../shared/services/api';
 import QuickSelectors from '../../shared/components/QuickSelectors';
 import Button from '../../shared/components/ui/Button';
 import { useI18n } from '../../shared/contexts/I18nContext';

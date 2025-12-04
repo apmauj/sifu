@@ -8,7 +8,7 @@ const t = (k) => k; // simple noop translator for tests
 const currencyDisplay = getCurrencyDisplayMap(t, 'bcu');
 
 // Mock de servicios (específico para este componente)
-vi.mock('../../services/exchangeService', () => ({
+vi.mock('../../shared/services/exchangeService', () => ({
   getCurrencyInfo: vi.fn((currency) => {
     // Flags migrated to SVG components; tests now use currency codes instead of emoji glyphs
     const currencies = {

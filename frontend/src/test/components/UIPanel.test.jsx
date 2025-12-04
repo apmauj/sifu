@@ -22,7 +22,7 @@ vi.mock('../../shared/contexts/I18nContext', () => ({
 const getInfoMock = vi.fn();
 const getByDateMock = vi.fn();
 
-vi.mock('../../services/api', () => ({
+vi.mock('../../shared/services/api', () => ({
   __esModule: true,
   default: {
     getInfo: (...a) => getInfoMock(...a),

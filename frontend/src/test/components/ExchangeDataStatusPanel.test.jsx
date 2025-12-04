@@ -26,7 +26,7 @@ vi.mock('../../shared/contexts/I18nContext', () => ({
 }));
 
 // Mock service
-vi.mock('../../services/exchangeService', () => {
+vi.mock('../../shared/services/exchangeService', () => {
   const getInfoMock = vi.fn();
   return {
     __esModule: true,
@@ -36,7 +36,7 @@ vi.mock('../../services/exchangeService', () => {
 
 let getInfoMock;
 beforeEach(async () => {
-  const { default: exchangeService } = await import('../../services/exchangeService');
+  const { default: exchangeService } = await import('../../shared/services/exchangeService');
   getInfoMock = exchangeService.getInfo;
   getInfoMock.mockReset();
 });

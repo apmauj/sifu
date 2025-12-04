@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 // Eliminamos sentinel global para evitar quedarse en loading al volver desde otra pestaña
 import { useI18n } from '../../shared/contexts/I18nContext';
 import { useHourlySyncedUpdate } from '../../shared/hooks/useHourlySyncedUpdate';
-import brouService from '../../services/brouService';
+import brouService from '../../shared/services/brouService';
 import { useToast } from '../../shared/contexts/ToastContext';
 import { OpenMojiIcon } from '../../shared/icons/openmoji/index.jsx';
 import { Flag } from '../../shared/icons/flags.jsx';

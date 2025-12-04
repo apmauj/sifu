@@ -12,7 +12,8 @@
  * - icons/: Icon components
  */
 
-// Shared exports will be added as modules are migrated
+// Shared exports - services now in shared/
+export * from './services';
 // export * from './components';
 // export * from './contexts';
 // export * from './hooks';

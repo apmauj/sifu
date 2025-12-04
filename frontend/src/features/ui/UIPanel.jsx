@@ -1,7 +1,7 @@
 import React from 'react';
 import SearchForm from './SearchForm';
 import ResultsDisplay from './ResultsDisplay';
-import uiService from '../../services/api';
+import uiService from '../../shared/services/api';
 import { useI18n } from '../../shared/contexts/I18nContext';
 import Card, { CardBody } from '../../shared/components/ui/Card';
 import { CURRENCY, CURRENCY_LOCALE } from '../../constants';

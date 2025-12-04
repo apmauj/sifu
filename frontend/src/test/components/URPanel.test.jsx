@@ -32,7 +32,7 @@ vi.mock('../../shared/contexts/I18nContext', () => ({
 const getInfoMock = vi.fn();
 const getByYearMonthMock = vi.fn();
 
-vi.mock('../../services/urService', () => ({
+vi.mock('../../shared/services/urService', () => ({
   __esModule: true,
   default: {
     getInfo: (...a) => getInfoMock(...a),
