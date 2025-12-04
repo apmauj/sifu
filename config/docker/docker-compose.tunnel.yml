@@ -32,7 +32,8 @@ services:
     container_name: sifu-tunnel
     command: tunnel --url http://backend:8000 --no-autoupdate
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy  # Esperar que backend esté saludable antes de iniciar túnel
     networks:
       - sifu-network
     restart: unless-stopped

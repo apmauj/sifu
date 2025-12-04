@@ -34,6 +34,22 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Validate VITE_PUBLIC_API_URL Secret Exists
+        id: check_secret
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          Write-Host "🔍 Verificando que el secret VITE_PUBLIC_API_URL existe..."
+          $secrets = gh secret list -R '${{ github.repository }}' 2>&1
+          if ($secrets -match 'VITE_PUBLIC_API_URL') {
+            Write-Host "✅ Secret VITE_PUBLIC_API_URL encontrado"
+            echo "secret_exists=true" >> $env:GITHUB_OUTPUT
+          } else {
+            Write-Host "⚠️ Secret VITE_PUBLIC_API_URL no existe - se creará automáticamente"
+            echo "secret_exists=false" >> $env:GITHUB_OUTPUT
+          }
+
       - name: Update Tunnel using PowerShell Script
         id: update_tunnel
         shell: pwsh
