@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
-import ExchangeRatePanel from '../../components/ExchangeRatePanel';
+import ExchangeRatePanel from '../../features/exchange/ExchangeRatePanel';
 import { vi } from 'vitest';
 import { renderAsync, actFlush } from '../utils/renderAsync';
 
@@ -8,7 +8,7 @@ import { renderAsync, actFlush } from '../utils/renderAsync';
 global.fetch = vi.fn();
 
 // Mock del exchangeService
-vi.mock('../../services/exchangeService', () => ({
+vi.mock('../../shared/services/exchangeService', () => ({
   default: {
     getCurrentRates: vi.fn()
   }
@@ -18,7 +18,7 @@ vi.mock('../../services/exchangeService', () => ({
 let hasExecuted = false;
 let currentUpdateFn = null;
 
-vi.mock('../../hooks/useHourlySyncedUpdate', () => ({
+vi.mock('../../shared/hooks/useHourlySyncedUpdate', () => ({
   useHourlySyncedUpdate: vi.fn((updateFn) => {
     currentUpdateFn = updateFn;
     
@@ -61,7 +61,7 @@ describe('ExchangeRatePanel', () => {
   beforeEach(async () => {
     vi.clearAllMocks();
     resetMock();
-    mockExchangeService = (await import('../../services/exchangeService')).default;
+    mockExchangeService = (await import('../../shared/services/exchangeService')).default;
   });
 
   describe('Loading State', () => {

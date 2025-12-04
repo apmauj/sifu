@@ -1,6 +1,6 @@
 import React from 'react';
 import { render } from '@testing-library/react';
-import * as Open from '../../icons/openmoji/index.jsx';
+import * as Open from '../../shared/icons/openmoji/index.jsx';
 
 // Cover the mapping object and OpenMojiIcon dynamic resolution path
 

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import LanguageSelector from '../../components/LanguageSelector.jsx';
+import LanguageSelector from '../../shared/components/LanguageSelector.jsx';
 
 // Mock de heroicons (incluye íconos usados indirectamente)
 vi.mock('@heroicons/react/24/outline', () => ({
@@ -29,7 +29,7 @@ vi.mock('@heroicons/react/24/outline', () => ({
 const mockSetLanguage = vi.fn();
 const mockT = vi.fn();
 
-vi.mock('../../contexts/I18nContext', () => ({
+vi.mock('../../shared/contexts/I18nContext', () => ({
   useI18n: () => ({
     currentLanguage: 'es',
     supportedLanguages: ['es', 'en', 'pt'],

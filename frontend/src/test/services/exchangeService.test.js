@@ -3,7 +3,7 @@ import {
   SUPPORTED_CURRENCIES, 
   getCurrencyInfo, 
   formatExchangeRate 
-} from '../../services/exchangeService.js';
+} from '../../shared/services/exchangeService.js';
 
 describe('Exchange Service', () => {
   // Use global mocks from setup.jsx
@@ -24,7 +24,7 @@ describe('Exchange Service', () => {
     
     beforeEach(async () => {
       // Re-import the service to get fresh instance with mocks
-      exchangeService = (await import('../../services/exchangeService.js')).default;
+      exchangeService = (await import('../../shared/services/exchangeService.js')).default;
     });
 
     describe('getCurrentRates', () => {
@@ -239,7 +239,7 @@ describe('Exchange Service', () => {
     let exchangeService;
     
     beforeEach(async () => {
-      exchangeService = (await import('../../services/exchangeService.js')).default;
+      exchangeService = (await import('../../shared/services/exchangeService.js')).default;
     });
 
     it('should handle network errors gracefully', async () => {
@@ -287,7 +287,7 @@ describe('Exchange Service', () => {
     let exchangeService;
     
     beforeEach(async () => {
-      exchangeService = (await import('../../services/exchangeService.js')).default;
+      exchangeService = (await import('../../shared/services/exchangeService.js')).default;
     });
 
     it('should handle empty response data', async () => {

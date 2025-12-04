@@ -1,78 +1,36 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 // Sentinel de módulo para evitar doble inicialización con React StrictMode
 let APP_INIT_DONE = false;
-import Header from './components/Header';
-import UIPanel from './components/UIPanel';
-import URPanel from './components/URPanel';
-import ExchangeRatePanel from './components/ExchangeRatePanel';
-import ExchangeSearchForm from './components/ExchangeSearchForm';
-import ExchangeResultsDisplay from './components/ExchangeResultsDisplay';
-import ExchangeDataStatusPanel from './components/ExchangeDataStatusPanel';
-import BROUPanel from './components/BROUPanel';
-import Dashboard from './components/Dashboard';
-import MonitoringAccess from './components/MonitoringAccess';
-import exchangeService from './services/exchangeService';
-import uiService from './services/api';
-import urService from './services/urService';
-import { useI18n } from './contexts/I18nContext';
-import { useToast } from './contexts/ToastContext';
-import {
-  OFFICIAL_URLS
-} from './constants';
-import { OpenMojiIcon } from './icons/openmoji/index.jsx';
-import { UruguayFlagIcon } from './icons/system_icons';
-import Card, { CardBody } from './components/ui/Card';
-import { Tabs, Tab } from './components/ui/Tabs';
-import { useHourlySyncedUpdate } from './hooks/useHourlySyncedUpdate';
-import BuildInfoFooter from './components/BuildInfoFooter.jsx';
-
-// Error Boundary Component
-class ErrorBoundary extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = { hasError: false, error: null };
-  }
-
-  static getDerivedStateFromError(error) {
-    return { hasError: true, error };
-  }
-
-  componentDidCatch(error, errorInfo) {
-    console.error('Error boundary caught an error:', error, errorInfo);
-  }
-
-  render() {
-    if (this.state.hasError) {
-      return (
-        <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900 flex items-center justify-center">
-          <div className="max-w-md mx-auto text-center">
-            <div className="bg-error-50 dark:bg-error-950/30 
-                            border border-error-200 dark:border-error-800 
-                            rounded-lg p-6">
-              <h2 className="text-lg font-medium text-error-800 dark:text-error-200 mb-2">
-                ⚠️ Error en la aplicación
-              </h2>
-              <p className="text-sm text-error-600 dark:text-error-400 mb-4">
-                Ha ocurrido un error inesperado. Por favor, recarga la página.
-              </p>
-              <button
-                onClick={() => window.location.reload()}
-                className="bg-error-600 hover:bg-error-700 active:bg-error-800 
-                           dark:bg-error-600 dark:hover:bg-error-700
-                           text-white px-4 py-2 rounded-lg 
-                           transition-colors duration-200"
-              >
-                Recargar página
-              </button>
-            </div>
-          </div>
-        </div>
-      );
-    }
-
-    return this.props.children;
-  }
-}
+// Shared components
+import Header from './shared/components/Header';
+import BuildInfoFooter from './shared/components/BuildInfoFooter.jsx';
+import Card, { CardBody } from './shared/components/ui/Card';
+import { Tabs, Tab } from './shared/components/ui/Tabs';
+// Shared contexts and hooks
+import { useI18n } from './shared/contexts/I18nContext';
+import { useToast } from './shared/contexts/ToastContext';
+import { useHourlySyncedUpdate } from './shared/hooks/useHourlySyncedUpdate';
+// Shared icons
+import { OpenMojiIcon } from './shared/icons/openmoji/index.jsx';
+import { UruguayFlagIcon } from './shared/icons/system_icons';
+// Feature components
+import { UIPanel } from './features/ui';
+import { URPanel } from './features/ur';
+import { 
+  ExchangeRatePanel, 
+  ExchangeSearchForm, 
+  ExchangeResultsDisplay, 
+  ExchangeDataStatusPanel 
+} from './features/exchange';
+import { BROUPanel } from './features/brou';
+import { Dashboard } from './features/dashboard';
+import { MonitoringAccess } from './features/monitoring';
+// Services
+import exchangeService from './shared/services/exchangeService';
+import uiService from './shared/services/api';
+import urService from './shared/services/urService';
+// Constants
+import { OFFICIAL_URLS } from './constants';
 
 function App() {
   // Internationalization hook
@@ -393,19 +351,18 @@ function App() {
   }
 
   return (
-    <ErrorBoundary>
-      <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900" data-testid="app-component">
-        <Header 
-          onRefresh={handleRefresh} 
-          isRefreshing={isRefreshing}
-        />
-        
-        {/* Panel de cotizaciones BCU en tiempo real */}
-        <ExchangeRatePanel />
-        
-  <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {/* Tabs de navegación modernos */}
-          <div className="mb-6">
+    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900" data-testid="app-component">
+      <Header 
+        onRefresh={handleRefresh} 
+        isRefreshing={isRefreshing}
+      />
+      
+      {/* Panel de cotizaciones BCU en tiempo real */}
+      <ExchangeRatePanel />
+      
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Tabs de navegación modernos */}
+        <div className="mb-6">
             <Tabs value={activeTab} onChange={setActiveTab}>
               {/* UI: calculator/money icon */}
               <Tab value="ui" icon={(props) => <OpenMojiIcon name="calculator" {...props} />}>{t('navigation.ui_calculator') || 'Unidad Indexada (UI)'}</Tab>
@@ -568,7 +525,6 @@ function App() {
           onAccessGranted={handleMonitoringAccessGranted}
         />
       </div>
-    </ErrorBoundary>
   );
 }
 

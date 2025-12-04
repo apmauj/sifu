@@ -1,10 +1,10 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { vi } from 'vitest';
-import BROUPanel from '../../components/BROUPanel';
+import BROUPanel from '../../features/brou/BROUPanel';
 
 // Mock i18n context (return deterministic Spanish strings)
-vi.mock('../../contexts/I18nContext', () => ({
+vi.mock('../../shared/contexts/I18nContext', () => ({
   useI18n: () => ({
     t: (k) => {
       const map = {
@@ -35,18 +35,18 @@ vi.mock('../../contexts/I18nContext', () => ({
 }));
 
 // Mock toast context (no-op implementations)
-vi.mock('../../contexts/ToastContext', () => ({
+vi.mock('../../shared/contexts/ToastContext', () => ({
   useToast: () => ({ showSuccess: vi.fn(), showError: vi.fn() })
 }));
 
 // Mock hourly hook so it does not schedule intervals; call function once after mount
-vi.mock('../../hooks/useHourlySyncedUpdate', () => ({
+vi.mock('../../shared/hooks/useHourlySyncedUpdate', () => ({
   useHourlySyncedUpdate: (fn) => fn
 }));
 
 // Service mock
 const getCurrentMock = vi.fn();
-vi.mock('../../services/brouService', () => ({
+vi.mock('../../shared/services/brouService', () => ({
   default: { getCurrent: (...args) => getCurrentMock(...args) }
 }));
 

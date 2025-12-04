@@ -27,7 +27,7 @@ describe('UR Service', () => {
     };
     
     // Importar dinámicamente el servicio para que use los mocks
-    const module = await import('../../services/urService.js');
+    const module = await import('../../shared/services/urService.js');
     urService = module.default;
   });
 

@@ -37,7 +37,7 @@ function flattenTranslations(obj, prefix = '', out = new Set()) {
 }
 
 function loadLocaleKeys(code) {
-  const file = path.join(__dirname, '..', '..', 'locales', `${code}.json`);
+  const file = path.join(__dirname, '..', '..', 'shared', 'locales', `${code}.json`);
   const data = JSON.parse(fs.readFileSync(file, 'utf8'));
   return flattenTranslations(data);
 }
@@ -383,8 +383,12 @@ const COMPONENT_ROOT = path.join(SOURCE_DIR, 'components');
 const HOOKS_ROOT = path.join(SOURCE_DIR, 'hooks');
 const CONTEXTS_ROOT = path.join(SOURCE_DIR, 'contexts');
 const SERVICES_ROOT = path.join(SOURCE_DIR, 'services');
+// Nueva arquitectura hexagonal - escanear también app/, features/, shared/
+const APP_ROOT = path.join(SOURCE_DIR, 'app');
+const FEATURES_ROOT = path.join(SOURCE_DIR, 'features');
+const SHARED_ROOT = path.join(SOURCE_DIR, 'shared');
 
-const scanTargets = [COMPONENT_ROOT, HOOKS_ROOT, CONTEXTS_ROOT, SERVICES_ROOT].filter(p => fs.existsSync(p));
+const scanTargets = [COMPONENT_ROOT, HOOKS_ROOT, CONTEXTS_ROOT, SERVICES_ROOT, APP_ROOT, FEATURES_ROOT, SHARED_ROOT].filter(p => fs.existsSync(p));
 const allFiles = scanTargets.flatMap(p => collectFiles(p));
 
 // Cargar todas las claves de traducciones primero (necesario antes de cualquier fallback)

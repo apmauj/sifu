@@ -1,9 +1,9 @@
 import React from 'react';
-import exchangeService from '../services/exchangeService';
-import Spinner from './ui/Spinner';
-import Alert from './ui/Alert';
-import { getSemanticClass } from '../theme/colors';
-import { useI18n } from '../contexts/I18nContext';
+import exchangeService from '../../shared/services/exchangeService';
+import Spinner from '../../shared/components/ui/Spinner';
+import Alert from '../../shared/components/ui/Alert';
+import { getSemanticClass } from '../../shared/theme/colors';
+import { useI18n } from '../../shared/contexts/I18nContext';
 
 /**
  * Panel azul de estado (similar a UI / UR) para cotizaciones históricas.
@@ -93,3 +93,4 @@ const ExchangeDataStatusPanel = ({ refreshKey, showSource = false }) => {
 };
 
 export default ExchangeDataStatusPanel;
+

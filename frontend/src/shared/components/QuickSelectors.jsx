@@ -2,7 +2,7 @@ import React from 'react';
 import { format, subDays, subMonths, startOfMonth, endOfMonth, startOfYear, endOfYear } from 'date-fns';
 import { useI18n } from '../contexts/I18nContext';
 import { getTodayLocal, getDaysAgoLocal, formatDateLocal } from '../utils/dateUtils';
-import { DATE_FORMAT_YYYYMMDD, QUICK_SELECTORS } from '../constants';
+import { DATE_FORMAT_YYYYMMDD, QUICK_SELECTORS } from '../../constants';
 
 const QuickSelectors = ({
   type, // 'UI' or 'UR'

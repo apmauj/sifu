@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import { vi } from 'vitest';
-import ExchangeDataStatusPanel from '../../components/ExchangeDataStatusPanel';
+import ExchangeDataStatusPanel from '../../features/exchange/ExchangeDataStatusPanel';
 
 // Mock i18n
 const t = (k) => {
@@ -19,14 +19,14 @@ const t = (k) => {
   return map[k] || k;
 };
 
-vi.mock('../../contexts/I18nContext', () => ({
+vi.mock('../../shared/contexts/I18nContext', () => ({
   useI18n: () => ({
     t
   })
 }));
 
 // Mock service
-vi.mock('../../services/exchangeService', () => {
+vi.mock('../../shared/services/exchangeService', () => {
   const getInfoMock = vi.fn();
   return {
     __esModule: true,
@@ -36,7 +36,7 @@ vi.mock('../../services/exchangeService', () => {
 
 let getInfoMock;
 beforeEach(async () => {
-  const { default: exchangeService } = await import('../../services/exchangeService');
+  const { default: exchangeService } = await import('../../shared/services/exchangeService');
   getInfoMock = exchangeService.getInfo;
   getInfoMock.mockReset();
 });

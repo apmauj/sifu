@@ -3,10 +3,10 @@ import { render, screen, waitFor, act } from '@testing-library/react';
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 
 // Deshabilitar mocks globales para este archivo
-vi.unmock('../../contexts/I18nContext');
+vi.unmock('../../shared/contexts/I18nContext');
 vi.unmock('../contexts/I18nContext');
 
-import { I18nProvider, useI18n } from '../../contexts/I18nContext';
+import { I18nProvider, useI18n } from '../../shared/contexts/I18nContext';
 
 // Mock de fetch
 const mockFetch = vi.fn();

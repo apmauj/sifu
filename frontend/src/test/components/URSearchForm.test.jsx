@@ -1,10 +1,10 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
-import URSearchForm from '../../components/URSearchForm';
+import URSearchForm from '../../features/ur/URSearchForm';
 import { vi } from 'vitest';
 
 // Mock del servicio UR
-vi.mock('../../services/urService', () => ({
+vi.mock('../../shared/services/urService', () => ({
   default: {
     getInfo: vi.fn().mockResolvedValue({
       success: true,
@@ -22,7 +22,7 @@ vi.mock('../../services/urService', () => ({
 }));
 
 // Mock del contexto I18n
-vi.mock('../../contexts/I18nContext', () => ({
+vi.mock('../../shared/contexts/I18nContext', () => ({
   useI18n: () => ({
     t: (key) => {
       const translations = {
@@ -68,7 +68,7 @@ vi.mock('../../contexts/I18nContext', () => ({
 }));
 
 // Mock de QuickSelectors
-vi.mock('../../components/QuickSelectors', () => ({
+vi.mock('../../shared/components/QuickSelectors', () => ({
   default: ({ onURSingleSelect, onURRangeSelect }) => (
     <div data-testid="quick-selectors">
       <button onClick={() => onURSingleSelect(2024, 6)}>Quick Single</button>
@@ -407,7 +407,7 @@ describe('URSearchForm Component', () => {
 
     it('should handle UR info loading errors gracefully', async () => {
       // Reset mock for this test
-      const urService = await import('../../services/urService');
+      const urService = await import('../../shared/services/urService');
       vi.mocked(urService.default.getInfo).mockRejectedValueOnce(new Error('Network error'));
       
       render(<URSearchForm onSearch={mockOnSearch} />);
@@ -422,7 +422,7 @@ describe('URSearchForm Component', () => {
   // ===== EDGE CASES TESTS =====
   describe('Edge Cases', () => {
     it('should handle missing UR info gracefully', async () => {
-      const urService = await import('../../services/urService');
+      const urService = await import('../../shared/services/urService');
       vi.mocked(urService.default.getInfo).mockResolvedValueOnce({
         success: true,
         data: null
@@ -436,7 +436,7 @@ describe('URSearchForm Component', () => {
     });
 
   it('should handle UR info without success flag (no line)', async () => {
-      const urService = await import('../../services/urService');
+      const urService = await import('../../shared/services/urService');
       vi.mocked(urService.default.getInfo).mockResolvedValueOnce({
         data: {
           total_records: 500,
@@ -456,7 +456,7 @@ describe('URSearchForm Component', () => {
     });
 
     it('should generate fallback year options when no date range', async () => {
-      const urService = await import('../../services/urService');
+      const urService = await import('../../shared/services/urService');
       vi.mocked(urService.default.getInfo).mockResolvedValueOnce({
         success: true,
         data: {
@@ -583,7 +583,7 @@ describe('URSearchForm Component', () => {
   describe('Error Handling - Advanced', () => {
     it('should handle console errors during UR info fetch', async () => {
       const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-      const urService = await import('../../services/urService');
+      const urService = await import('../../shared/services/urService');
       vi.mocked(urService.default.getInfo).mockRejectedValueOnce(new Error('API Error'));
 
       render(<URSearchForm onSearch={mockOnSearch} />);
@@ -596,7 +596,7 @@ describe('URSearchForm Component', () => {
     });
 
   it('should handle UR info with missing total_records (no line)', async () => {
-      const urService = await import('../../services/urService');
+      const urService = await import('../../shared/services/urService');
       vi.mocked(urService.default.getInfo).mockResolvedValueOnce({
         success: true,
         data: {
@@ -617,7 +617,7 @@ describe('URSearchForm Component', () => {
     });
 
   it('should handle UR info with missing date_range months (internal only)', async () => {
-      const urService = await import('../../services/urService');
+      const urService = await import('../../shared/services/urService');
       vi.mocked(urService.default.getInfo).mockResolvedValueOnce({
         success: true,
         data: {
@@ -640,7 +640,7 @@ describe('URSearchForm Component', () => {
 
   describe('Conditional Rendering - Advanced', () => {
   it('should not render availability line even with full date_range', async () => {
-      const urService = await import('../../services/urService');
+      const urService = await import('../../shared/services/urService');
       vi.mocked(urService.default.getInfo).mockResolvedValueOnce({
         success: true,
         data: {
@@ -663,7 +663,7 @@ describe('URSearchForm Component', () => {
     });
 
     it('should handle missing urInfo gracefully in display section', async () => {
-      const urService = await import('../../services/urService');
+      const urService = await import('../../shared/services/urService');
       vi.mocked(urService.default.getInfo).mockResolvedValueOnce({
         success: false,
         data: null

@@ -1,9 +1,9 @@
 import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import { vi } from 'vitest';
-import URPanel from '../../components/URPanel';
+import URPanel from '../../features/ur/URPanel';
 
-vi.mock('../../contexts/I18nContext', () => ({
+vi.mock('../../shared/contexts/I18nContext', () => ({
   useI18n: () => ({
     t: (k) => ({
       'common.loading': 'Cargando información...',
@@ -32,7 +32,7 @@ vi.mock('../../contexts/I18nContext', () => ({
 const getInfoMock = vi.fn();
 const getByYearMonthMock = vi.fn();
 
-vi.mock('../../services/urService', () => ({
+vi.mock('../../shared/services/urService', () => ({
   __esModule: true,
   default: {
     getInfo: (...a) => getInfoMock(...a),

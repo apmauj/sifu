@@ -1,8 +1,8 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
-import ExchangeSearchForm from '../../components/ExchangeSearchForm';
-import * as dateUtils from '../../utils/dateUtils';
+import ExchangeSearchForm from '../../features/exchange/ExchangeSearchForm';
+import * as dateUtils from '../../shared/utils/dateUtils';
 
 // Mock del contexto I18n
 const mockT = vi.fn((key, params) => {
@@ -44,12 +44,12 @@ const mockT = vi.fn((key, params) => {
   return result;
 });
 
-vi.mock('../../contexts/I18nContext', () => ({
+vi.mock('../../shared/contexts/I18nContext', () => ({
   useI18n: () => ({ t: mockT })
 }));
 
 // Mock de dateUtils
-vi.mock('../../utils/dateUtils', () => ({
+vi.mock('../../shared/utils/dateUtils', () => ({
   getTodayLocal: vi.fn(() => '2025-01-15'),
   getDaysAgoLocal: vi.fn((days) => {
     const dates = { 7: '2025-01-08', 30: '2024-12-16' };

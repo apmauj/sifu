@@ -1,11 +1,11 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
-import SearchForm from '../../components/SearchForm';
+import SearchForm from '../../features/ui/SearchForm';
 import { vi } from 'vitest';
 import { BUTTON_LABELS } from '../../constants';
 
 // Mock del servicio API
-vi.mock('../../services/api', () => ({
+vi.mock('../../shared/services/api', () => ({
   default: {
     getInfo: vi.fn().mockResolvedValue({
       success: true,
@@ -260,7 +260,7 @@ describe('SearchForm Component', () => {
   // NUEVOS TESTS PARA MEJORAR COVERAGE
 
   it('should handle API error when fetching max date', async () => {
-    const apiMock = await import('../../services/api');
+    const apiMock = await import('../../shared/services/api');
     apiMock.default.getInfo.mockRejectedValueOnce(new Error('API Error'));
     
     render(<SearchForm onSearch={mockOnSearch} />);
@@ -270,7 +270,7 @@ describe('SearchForm Component', () => {
   });
 
   it('should handle API response without latest_date', async () => {
-    const apiMock = await import('../../services/api');
+    const apiMock = await import('../../shared/services/api');
     apiMock.default.getInfo.mockResolvedValueOnce({
       success: false,
       data: null
@@ -283,7 +283,7 @@ describe('SearchForm Component', () => {
   });
 
   it('should handle invalid maxDate parsing', async () => {
-    const apiMock = await import('../../services/api');
+    const apiMock = await import('../../shared/services/api');
     apiMock.default.getInfo.mockResolvedValueOnce({
       success: true,
       data: {
@@ -344,7 +344,7 @@ describe('SearchForm Component', () => {
   });
 
   it('should handle date validation for max date constraint', async () => {
-    const apiMock = await import('../../services/api');
+    const apiMock = await import('../../shared/services/api');
     apiMock.default.getInfo.mockResolvedValueOnce({
       success: true,
       data: {
@@ -418,7 +418,7 @@ describe('SearchForm Component', () => {
     parseISO.mockImplementationOnce(() => new Date('invalid'));
     isValid.mockImplementationOnce(() => false);
     
-    const apiMock = await import('../../services/api');
+    const apiMock = await import('../../shared/services/api');
     apiMock.default.getInfo.mockResolvedValueOnce({
       success: true,
       data: {

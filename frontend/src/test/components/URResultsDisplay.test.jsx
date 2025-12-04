@@ -1,10 +1,10 @@
 import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
-import URResultsDisplay from '../../components/URResultsDisplay';
+import URResultsDisplay from '../../features/ur/URResultsDisplay';
 
 // Mock de contexto I18n
-vi.mock('../../contexts/I18nContext', () => ({
+vi.mock('../../shared/contexts/I18nContext', () => ({
   useI18n: vi.fn(() => ({
     t: vi.fn((key) => {
       const translations = {

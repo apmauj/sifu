@@ -16,7 +16,7 @@ describe('system_icons fallbacks', () => {
   it('uses fallback <svg> when heroicons exports are missing', async () => {
     vi.resetModules();
     vi.doMock('@heroicons/react/24/outline', () => emptyModuleFactory());
-    const icons = await import('../../icons/system_icons.js');
+    const icons = await import('../../shared/icons/system_icons.js');
     const { ArrowPathIcon, ArrowDownIcon, MinusIcon, GlobeAltIcon } = icons;
     render(<>
       <ArrowPathIcon />
@@ -41,7 +41,7 @@ describe('system_icons fallbacks', () => {
         has: () => true // report presence to avoid Vitest missing export error
       });
     });
-    const icons = await import('../../icons/system_icons.js');
+    const icons = await import('../../shared/icons/system_icons.js');
     const { ArrowPathIcon, ArrowUpIcon } = icons;
     render(<>
       <ArrowPathIcon />

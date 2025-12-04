@@ -1,6 +1,6 @@
 import React from 'react';
 import { render } from '@testing-library/react';
-import FlagIcon from '../../components/icons/FlagIcon';
+import FlagIcon from '../../shared/components/icons/FlagIcon';
 
 describe('FlagIcon', () => {
   it('renders known flag (US)', () => {

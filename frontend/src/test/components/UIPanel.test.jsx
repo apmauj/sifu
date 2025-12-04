@@ -1,9 +1,9 @@
 import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import { vi } from 'vitest';
-import UIPanel from '../../components/UIPanel';
+import UIPanel from '../../features/ui/UIPanel';
 
-vi.mock('../../contexts/I18nContext', () => ({
+vi.mock('../../shared/contexts/I18nContext', () => ({
   useI18n: () => ({
     t: (k) => ({
       'common.loading': 'Cargando información...',
@@ -22,7 +22,7 @@ vi.mock('../../contexts/I18nContext', () => ({
 const getInfoMock = vi.fn();
 const getByDateMock = vi.fn();
 
-vi.mock('../../services/api', () => ({
+vi.mock('../../shared/services/api', () => ({
   __esModule: true,
   default: {
     getInfo: (...a) => getInfoMock(...a),

@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import ToastNotification from '../components/ToastNotification';
-import { TOAST_DURATION } from '../constants';
+import { TOAST_DURATION } from '../../constants';
 
 const ToastContext = createContext();
 

@@ -1,14 +1,14 @@
 import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
-import ExchangeResultsDisplay from '../../components/ExchangeResultsDisplay';
-import { getCurrencyDisplayMap } from '../../utils/currencyDisplay.js';
+import ExchangeResultsDisplay from '../../features/exchange/ExchangeResultsDisplay';
+import { getCurrencyDisplayMap } from '../../shared/utils/currencyDisplay.js';
 // Helper to access symbols consistent with component logic
 const t = (k) => k; // simple noop translator for tests
 const currencyDisplay = getCurrencyDisplayMap(t, 'bcu');
 
 // Mock de servicios (específico para este componente)
-vi.mock('../../services/exchangeService', () => ({
+vi.mock('../../shared/services/exchangeService', () => ({
   getCurrencyInfo: vi.fn((currency) => {
     // Flags migrated to SVG components; tests now use currency codes instead of emoji glyphs
     const currencies = {

@@ -2,10 +2,10 @@ import { renderHook, act } from '@testing-library/react';
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 
 // Unmock the hook for this test file
-vi.unmock('../../hooks/useHourlySyncedUpdate');
+vi.unmock('../../shared/hooks/useHourlySyncedUpdate');
 
 // Import the real hook
-import { useHourlySyncedUpdate } from '../../hooks/useHourlySyncedUpdate';
+import { useHourlySyncedUpdate } from '../../shared/hooks/useHourlySyncedUpdate';
 
 // Mock de setTimeout y setInterval para testing
 vi.useFakeTimers();

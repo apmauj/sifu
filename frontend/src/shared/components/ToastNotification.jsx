@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { TOAST_DURATION } from '../constants';
+import { TOAST_DURATION } from '../../constants';
 
 const ToastNotification = ({ message, type = 'success', duration = TOAST_DURATION, onClose }) => {
   const [isVisible, setIsVisible] = useState(true);

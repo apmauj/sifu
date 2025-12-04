@@ -1,11 +1,11 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import QuickSelectors from '../../components/QuickSelectors.jsx';
-import { I18nProvider } from '../../contexts/I18nContext.jsx';
+import QuickSelectors from '../../shared/components/QuickSelectors.jsx';
+import { I18nProvider } from '../../shared/contexts/I18nContext.jsx';
 import { QUICK_SELECTORS } from '../../constants.js';
 
 // Mock de dateUtils para que QuickSelectors funcione correctamente
-vi.mock('../../utils/dateUtils', () => ({
+vi.mock('../../shared/utils/dateUtils', () => ({
   getTodayLocal: vi.fn(() => '2024-01-15'),
   getDaysAgoLocal: vi.fn((days) => {
     const date = new Date('2024-01-15');

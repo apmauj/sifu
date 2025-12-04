@@ -1,9 +1,9 @@
 import React from 'react';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { ExclamationTriangleIcon, MagnifyingGlassIcon, CalendarIcon, ArrowUpIcon, ArrowDownIcon, MinusIcon } from '../icons';
-import { OpenMojiIcon } from '../icons/openmoji/index.jsx';
-import IconCircle from './ui/IconCircle.jsx';
-import { useI18n } from '../contexts/I18nContext';
+import { ExclamationTriangleIcon, MagnifyingGlassIcon, CalendarIcon, ArrowUpIcon, ArrowDownIcon, MinusIcon } from '../../shared/icons';
+import { OpenMojiIcon } from '../../shared/icons/openmoji/index.jsx';
+import IconCircle from '../../shared/components/ui/IconCircle.jsx';
+import { useI18n } from '../../shared/contexts/I18nContext';
 
 const URResultsDisplay = ({ results, searchType, isLoading, error, pendingCurrentMonth = false, pendingMessage = null }) => {
   const { t } = useI18n();
@@ -438,3 +438,4 @@ const URResultsDisplay = ({ results, searchType, isLoading, error, pendingCurren
 };
 
 export default URResultsDisplay;
+

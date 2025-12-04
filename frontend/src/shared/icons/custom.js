@@ -20,6 +20,6 @@ export {
   DateIcon,
   RangeIcon,
   // LegacyFlagIcon eliminado tras migración a nuevo sistema de banderas SVG
-} from '../components/icons/IconSet';
+} from '../components/icons/IconSet.jsx';
 
 

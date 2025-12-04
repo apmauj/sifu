@@ -36,7 +36,7 @@ describe('API Service', () => {
     };
     
     // Importar dinámicamente el servicio para que use los mocks
-    const module = await import('../../services/api');
+    const module = await import('../../shared/services/api');
     uiService = module.default;
   });
 
