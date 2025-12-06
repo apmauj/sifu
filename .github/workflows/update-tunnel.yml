@@ -34,11 +34,35 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Validate GH_PAT Secret
+        id: check_pat
+        shell: pwsh
+        run: |
+          # Verificar que GH_PAT está configurado (necesario para modificar secrets)
+          if ([string]::IsNullOrEmpty("${{ secrets.GH_PAT }}")) {
+            Write-Host "❌ ERROR: Secret GH_PAT no está configurado"
+            Write-Host ""
+            Write-Host "Para configurarlo:" -ForegroundColor Yellow
+            Write-Host "1. Ve a: https://github.com/settings/tokens?type=beta" -ForegroundColor Cyan
+            Write-Host "2. Crea un Fine-grained PAT con:" -ForegroundColor Cyan
+            Write-Host "   - Repository access: Only select repositories -> apmauj/sifu" -ForegroundColor DarkCyan
+            Write-Host "   - Permissions:" -ForegroundColor DarkCyan
+            Write-Host "     * Actions: Read and write" -ForegroundColor DarkCyan
+            Write-Host "     * Secrets: Read and write" -ForegroundColor DarkCyan
+            Write-Host "     * Workflows: Read and write" -ForegroundColor DarkCyan
+            Write-Host "3. Guarda el token como secret GH_PAT en:" -ForegroundColor Cyan
+            Write-Host "   https://github.com/apmauj/sifu/settings/secrets/actions" -ForegroundColor Cyan
+            echo "pat_valid=false" >> $env:GITHUB_OUTPUT
+            exit 1
+          }
+          Write-Host "✅ Secret GH_PAT encontrado"
+          echo "pat_valid=true" >> $env:GITHUB_OUTPUT
+
       - name: Validate VITE_PUBLIC_API_URL Secret Exists
         id: check_secret
         shell: pwsh
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GH_PAT }}
         run: |
           Write-Host "🔍 Verificando que el secret VITE_PUBLIC_API_URL existe..."
           $secrets = gh secret list -R '${{ github.repository }}' 2>&1
@@ -53,6 +77,8 @@ jobs:
       - name: Update Tunnel using PowerShell Script
         id: update_tunnel
         shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT }}
         run: |
           Write-Host "🔄 Ejecutando script de actualización de túnel..."
           
