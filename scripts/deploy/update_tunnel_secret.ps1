@@ -42,6 +42,38 @@ function Write-JsonLog {
   $obj | ConvertTo-Json -Compress | Write-Host
 }
 
+function Test-BackendHealth {
+  param(
+    [string]$BaseUrl,
+    [int[]]$Delays = @(30,60,90,120,180)
+  )
+
+  $attempts = $Delays.Count
+  for($i = 0; $i -lt $attempts; $i++){
+    $endpoint = "$BaseUrl/api/health/simple"
+    $attemptNum = $i + 1
+    Info "Verificando health ($attemptNum/$attempts): $endpoint"
+    try {
+      $resp = Invoke-RestMethod -Method Get -Uri $endpoint -TimeoutSec 10
+      $status = $resp.status
+      if($status -eq 'ok' -or $status -eq 'healthy'){
+        Info "Health OK en intento $attemptNum"
+        return $true
+      }
+      Err "Health devolvió estado inesperado: $status"
+    } catch {
+      Err "Health request falló (intento $attemptNum): $_"
+    }
+
+    if($attemptNum -lt $attempts){
+      $sleep = $Delays[$i]
+      Info "Reintentando health en $sleep s"
+      Start-Sleep -Seconds $sleep
+    }
+  }
+  return $false
+}
+
 function Ensure-BackendRunning {
   param(
     [string]$ComposeFile = 'config/docker/docker-compose.tunnel.yml',
@@ -137,6 +169,13 @@ if(-not $url){
 Info "URL túnel: $url"
 
 Ensure-BackendRunning
+
+# Validar health del backend antes de publicar la URL (evita guardar una URL aún no lista)
+$healthOk = Test-BackendHealth -BaseUrl $url -Attempts 4 -InitialDelaySeconds 4 -Backoff 2 -MaxDelaySeconds 20
+if(-not $healthOk){
+  Err 'Backend no respondió OK tras reintentos de health. Abortando actualización de secret.'
+  exit 1
+}
 
 # El workflow CI/CD normaliza y agrega /api automáticamente, así que el secret es solo la URL base
 $apiUrl = "$url"

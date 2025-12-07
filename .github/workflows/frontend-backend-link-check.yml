@@ -173,44 +173,62 @@ jobs:
           HEALTH_ENDPOINT="$BACKEND_URL/api/health"
           
           echo "🔧 Verificando Backend en: $HEALTH_ENDPOINT"
-          
-          RESPONSE=$(curl -s -w "\nHTTP_STATUS:%{http_code}" "$HEALTH_ENDPOINT" || echo "CURL_FAILED")
-          
-          if echo "$RESPONSE" | grep -q "CURL_FAILED"; then
-            echo "❌ ERROR: Curl falló completamente"
-            echo "backend_status=0" >> $GITHUB_OUTPUT
-            echo "backend_accessible=false" >> $GITHUB_OUTPUT
-            echo "health_status=unreachable" >> $GITHUB_OUTPUT
-          else
-            BODY=$(echo "$RESPONSE" | head -n -1)
-            HTTP_STATUS=$(echo "$RESPONSE" | tail -n 1 | cut -d: -f2)
-            
-            echo "backend_status=$HTTP_STATUS" >> $GITHUB_OUTPUT
-            
-            if [ "$HTTP_STATUS" != "200" ]; then
-              echo "❌ ERROR: Backend no responde correctamente (HTTP $HTTP_STATUS)"
-              echo "backend_accessible=false" >> $GITHUB_OUTPUT
-              echo "health_status=down" >> $GITHUB_OUTPUT
+
+          DELAYS=(30 60 90 120 180)
+          ATTEMPTS=${#DELAYS[@]}
+          SUCCESS=false
+          HTTP_STATUS=0
+          BODY=""
+
+          for idx in "${!DELAYS[@]}"; do
+            i=$((idx+1))
+            RESPONSE=$(curl -s -w "\nHTTP_STATUS:%{http_code}" "$HEALTH_ENDPOINT" || echo "CURL_FAILED")
+
+            if echo "$RESPONSE" | grep -q "CURL_FAILED"; then
+              echo "❌ ERROR: Curl falló completamente (intento $i/$ATTEMPTS)"
             else
-              echo "✅ Backend responde correctamente"
-              echo "backend_accessible=true" >> $GITHUB_OUTPUT
-              
-              # Verificar contenido de respuesta
-              STATUS=$(echo "$BODY" | python3 -c "
-              import sys, json
-              try:
-                  data = json.load(sys.stdin)
-                  print(data.get('status', 'unknown'))
-              except:
-                  print('error')
-              " 2>/dev/null || echo "parse_error")
-              
-              echo "health_status=$STATUS" >> $GITHUB_OUTPUT
-              
-              if [ "$STATUS" != "healthy" ]; then
-                echo "⚠️  WARNING: Backend health status: $STATUS"
+              BODY=$(echo "$RESPONSE" | head -n -1)
+              HTTP_STATUS=$(echo "$RESPONSE" | tail -n 1 | cut -d: -f2)
+
+              if [ "$HTTP_STATUS" = "200" ]; then
+                SUCCESS=true
+                break
+              else
+                echo "❌ ERROR: Backend HTTP $HTTP_STATUS (intento $i/$ATTEMPTS)"
               fi
             fi
+
+            if [ "$i" -lt "$ATTEMPTS" ]; then
+              DELAY=${DELAYS[$idx]}
+              echo "⏳ Reintentando en ${DELAY}s..."
+              sleep $DELAY
+            fi
+          done
+
+          echo "backend_status=$HTTP_STATUS" >> $GITHUB_OUTPUT
+
+          if [ "$SUCCESS" != "true" ]; then
+            echo "backend_accessible=false" >> $GITHUB_OUTPUT
+            echo "health_status=down" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          echo "✅ Backend responde correctamente"
+          echo "backend_accessible=true" >> $GITHUB_OUTPUT
+
+          STATUS=$(echo "$BODY" | python3 -c "
+          import sys, json
+          try:
+              data = json.load(sys.stdin)
+              print(data.get('status', 'unknown'))
+          except:
+              print('error')
+          " 2>/dev/null || echo "parse_error")
+
+          echo "health_status=$STATUS" >> $GITHUB_OUTPUT
+          
+          if [ "$STATUS" != "healthy" ]; then
+            echo "⚠️  WARNING: Backend health status: $STATUS"
           fi
 
       - name: Check if Tunnel URL Changed
