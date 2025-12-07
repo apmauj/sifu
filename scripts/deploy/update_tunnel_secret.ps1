@@ -25,6 +25,21 @@ param(
   [switch]$SkipIfUnchanged
 )
 
+$rateLimitFile = Join-Path $PSScriptRoot '..' '..' '.tunnel_rate_limit_until.txt'
+
+function Read-RateLimitUntil {
+  if(-not (Test-Path $rateLimitFile)){ return $null }
+  try {
+    $raw = Get-Content $rateLimitFile -ErrorAction SilentlyContinue | Select-Object -First 1
+    if([string]::IsNullOrWhiteSpace($raw)){ return $null }
+    return [DateTime]::Parse($raw)
+  } catch { return $null }
+}
+
+function Write-RateLimitUntil($dt){
+  try { $dt.ToString('o') | Out-File -FilePath $rateLimitFile -Encoding UTF8 -Force } catch {}
+}
+
 function Info($m){ if($JsonLogs){ Write-JsonLog -Level 'INFO' -Message $m } else { Write-Host "[INFO] $m" -ForegroundColor Cyan } }
 function Err($m){ if($JsonLogs){ Write-JsonLog -Level 'ERROR' -Message $m } else { Write-Host "[ERROR] $m" -ForegroundColor Red } }
 function Write-JsonLog {
@@ -101,6 +116,14 @@ function Ensure-BackendRunning {
 
 if(-not (Get-Command gh -ErrorAction SilentlyContinue)){ Err 'gh CLI no encontrado'; exit 1 }
 
+# Respetar ventana de cooldown si previamente hubo rate limit (429)
+$until = Read-RateLimitUntil
+if($until -and $until -gt (Get-Date)){
+  $waitMinutes = [int]([Math]::Ceiling(($until - (Get-Date)).TotalMinutes))
+  Err "Se detectó rate limit previo. Espera ~${waitMinutes}m antes de reintentar."
+  exit 1
+}
+
 # Verificar autenticación gh antes de continuar (para evitar fallo tardío)
 gh auth status 1>$null 2>$null
 if($LASTEXITCODE -ne 0){
@@ -162,7 +185,9 @@ for($attempt=1; $attempt -le $RetryCount -and -not $url; $attempt++){
 
 if(-not $url){
   if($rateLimited){
-    Err 'No se obtuvo URL por rate limit (429). Espera al menos 10 minutos antes de reintentar.'
+    $cooldown = (Get-Date).AddMinutes(60)
+    Write-RateLimitUntil $cooldown
+    Err 'No se obtuvo URL por rate limit (429). Se establece cooldown de 60 minutos antes de nuevos intentos.'
   } else {
     Err 'No se obtuvo URL del túnel tras reintentos.'
   }
