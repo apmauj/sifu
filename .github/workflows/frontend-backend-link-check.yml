@@ -21,6 +21,10 @@ permissions:
   issues: write  # Para crear issues si hay problemas
   actions: write  # Para disparar workflow de recuperación de túnel
 
+concurrency:
+  group: frontend-backend-link-check
+  cancel-in-progress: true
+
 jobs:
   check-tunnel-url:
     runs-on: [self-hosted, sifu-local]

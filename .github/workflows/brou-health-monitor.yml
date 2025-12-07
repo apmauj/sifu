@@ -20,6 +20,10 @@ permissions:
   contents: read
   issues: write  # Para crear issues si hay problemas
 
+concurrency:
+  group: brou-health-monitor
+  cancel-in-progress: true
+
 jobs:
   monitor-brou:
     runs-on: ubuntu-latest
