@@ -119,6 +119,7 @@ if(-not (Test-Path './config/docker/docker-compose.tunnel.yml')){ Err 'config/do
 
 $regex = 'https://[a-zA-Z0-9-]+\.trycloudflare\.com'
 $url = $null
+$rateLimited = $false
 
 for($attempt=1; $attempt -le $RetryCount -and -not $url; $attempt++){
   if($attempt -gt 1){ Info "Reintento $attempt/$RetryCount (reiniciando contenedor túnel)" }
@@ -136,8 +137,10 @@ for($attempt=1; $attempt -le $RetryCount -and -not $url; $attempt++){
   $start = Get-Date
   while((Get-Date)-$start -lt [TimeSpan]::FromSeconds($TimeoutSeconds)){
     $logs = docker logs --tail 160 sifu-tunnel 2>&1
-    if($logs -match 'Error unmarshaling QuickTunnel response'){
-      Err 'Cloudflare devolvió respuesta inválida (HTML). Se reintentará.'
+    if($logs -match 'Error unmarshaling QuickTunnel response'){ Err 'Cloudflare devolvió respuesta inválida (HTML). Se reintentará.'; break }
+    if($logs -match 'status_code="429"' -or $logs -match 'Too Many Requests' -or $logs -match 'cf-error-code">1015<'){
+      Err 'Cloudflare rate limit (429).'
+      $rateLimited = $true
       break
     }
     if($logs -match 'cf-error-code">(\d+)<'){ $cfCode=$Matches[1]; Err "Código Cloudflare detectado: $cfCode" }
@@ -158,10 +161,14 @@ for($attempt=1; $attempt -le $RetryCount -and -not $url; $attempt++){
 }
 
 if(-not $url){
-  Err 'No se obtuvo URL del túnel tras reintentos.'
+  if($rateLimited){
+    Err 'No se obtuvo URL por rate limit (429). Espera al menos 10 minutos antes de reintentar.'
+  } else {
+    Err 'No se obtuvo URL del túnel tras reintentos.'
+  }
   docker logs --tail 200 sifu-tunnel | Out-String | Write-Host
   Write-Host 'Sugerencias:' -ForegroundColor Yellow
-  Write-Host '  - Esperar 1-2 minutos y reintentar (rate limit temporal o error 1101)' -ForegroundColor DarkYellow
+  Write-Host '  - Esperar 10 minutos y reintentar si fue rate limit' -ForegroundColor DarkYellow
   Write-Host '  - Probar script alternativo: scripts/deploy/local_run_tunnel_backend.ps1 -TunnelProvider ngrok' -ForegroundColor DarkYellow
   Write-Host '  - Considerar un túnel nombrado con cuenta Cloudflare para mayor estabilidad' -ForegroundColor DarkYellow
   exit 1

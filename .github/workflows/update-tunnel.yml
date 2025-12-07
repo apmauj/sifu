@@ -25,6 +25,10 @@ permissions:
   contents: read
   actions: write
 
+concurrency:
+  group: update-cloudflare-tunnel
+  cancel-in-progress: true
+
 jobs:
   update-tunnel:
     runs-on: [self-hosted, sifu-local]  # Usar runner local con Docker
