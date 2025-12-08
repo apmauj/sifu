@@ -148,12 +148,39 @@ jobs:
 
       - name: Determine Active Backend URL
         id: backend_url
+        env:
+          GH_PAT: ${{ secrets.GH_PAT }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           SECRET_URL="${{ secrets.VITE_PUBLIC_API_URL }}"
           CURRENT_URL="${{ needs.check-tunnel-url.outputs.current_url }}"
 
-          if [ -z "$SECRET_URL" ]; then
-            echo "❌ ERROR: VITE_PUBLIC_API_URL no está configurado"
+          # Si no hay URL en secret ni en logs, dispara actualización de túnel y cancela
+          if [ -z "$SECRET_URL" ] && [ -z "$CURRENT_URL" ]; then
+            echo "⚠️  VITE_PUBLIC_API_URL vacío y sin URL detectada; intentando regenerar túnel..."
+
+            TOKEN="$GH_PAT"
+            if [ -z "$TOKEN" ]; then
+              TOKEN="$GITHUB_TOKEN"
+            fi
+
+            echo "resolved_url=" >> $GITHUB_OUTPUT
+            echo "url_source=missing" >> $GITHUB_OUTPUT
+
+            if [ -n "$TOKEN" ]; then
+              export GH_TOKEN="$TOKEN"
+              if gh workflow run ".github/workflows/update-tunnel.yml" -R "${{ github.repository }}" --ref "${{ github.ref_name }}"; then
+                echo "recovery_triggered=true" >> $GITHUB_OUTPUT
+                echo "ℹ️  Workflow de recuperación disparado"
+              else
+                echo "recovery_triggered=false" >> $GITHUB_OUTPUT
+                echo "❌ No se pudo disparar el workflow de recuperación"
+              fi
+            else
+              echo "recovery_triggered=false" >> $GITHUB_OUTPUT
+              echo "⚠️  GH_TOKEN no disponible; no se pudo disparar recuperación"
+            fi
+
             exit 1
           fi
 
