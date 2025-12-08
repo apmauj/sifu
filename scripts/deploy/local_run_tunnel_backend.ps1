@@ -124,12 +124,16 @@ function Get-TunnelUrl-Ngrok {
 
 function Get-TunnelUrl-Cloudflared {
   $logFile = Join-Path $env:TEMP "cloudflared_sifu.log"
+  $errFile = Join-Path $env:TEMP "cloudflared_sifu.err.log"
   if (Test-Path $logFile) { Remove-Item $logFile -Force }
-  Start-Process cloudflared -ArgumentList 'tunnel --url http://localhost:8000' -RedirectStandardOutput $logFile -RedirectStandardError $logFile -WindowStyle Hidden
+  if (Test-Path $errFile) { Remove-Item $errFile -Force }
+  Start-Process cloudflared -ArgumentList 'tunnel --url http://localhost:8000' -RedirectStandardOutput $logFile -RedirectStandardError $errFile -WindowStyle Hidden
   $url = $null
   for ($i=0; $i -lt 40; $i++) {
-    if (Test-Path $logFile) {
-      $content = Get-Content $logFile -Raw
+    if ((Test-Path $logFile) -or (Test-Path $errFile)) {
+      $content = ''
+      if (Test-Path $logFile) { $content += Get-Content $logFile -Raw }
+      if (Test-Path $errFile) { $content += "`n" + (Get-Content $errFile -Raw) }
       if ($content -match 'https://[a-zA-Z0-9-]+\.trycloudflare\.com') {
         $url = $Matches[0]; break
       }

@@ -424,10 +424,10 @@ vi.mock('recharts', () => ({
     });
   },
   Tooltip: (props) => {
-    const { formatter, labelFormatter, ...validProps } = props;
-    return React.createElement('div', { 
-      'data-testid': 'tooltip', 
-      ...validProps 
+    const { formatter, labelFormatter, contentStyle, labelStyle, itemStyle, wrapperStyle, ...validProps } = props;
+    return React.createElement('div', {
+      'data-testid': 'tooltip',
+      ...validProps
     });
   },
   Legend: (props) => {

@@ -99,7 +99,8 @@
     "ui_evolution": "Evolución del valor de la UI",
     "daily_percentage_variation": "Variación porcentual diaria",
     "variation_percentage": "Variación %",
-    "no_data_found": "No se encontraron datos"
+    "no_data_found": "No se encontraron datos",
+    "no_results_description": "Realiza una consulta para ver los valores de UI."
   },
   "ur": {
     "title": "Calculadora de Unidades Reajustables (UR)",
@@ -170,6 +171,8 @@
     "search_title": "Consultar Cotizaciones",
     "currency_filter": "Filtrar por moneda (opcional)",
     "all_currencies": "Todas las monedas",
+    "select_multiple": "Seleccionar múltiples monedas",
+    "select_all_currencies": "Seleccionar todas",
     "latest_rates": "Últimas cotizaciones",
     "search_type": "Tipo de consulta",
     "latest": "Últimas",
@@ -202,6 +205,14 @@
   "source_note": "Fuente: INE (histórico, último día hábil publicado)",
     "results_subtitle": "Resumen de resultados",
     "status_error": "Error al obtener estado de datos",
+    "data_status_title": "Estado de los datos de Cotizaciones",
+    "available": "disponibles",
+    "currencies_label": "Monedas",
+    "latest_day": "Último día disponible",
+    "source_note_fallback": "Fuente: INE (histórico, último día hábil publicado)",
+    "latest_hint": "No hay datos publicados para hoy todavía; se muestran los últimos disponibles.",
+    "initial_bootstrap_loading": "Cargando cotizaciones iniciales (proceso en background)...",
+    "refresh_started": "Actualización de cotizaciones iniciada...",
     "latest_data": "Últimos datos",
     "specific_date": "Fecha específica",
     "date": "Fecha",

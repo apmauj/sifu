@@ -5,12 +5,26 @@ Ref: https://tools.ietf.org/html/rfc7807
 """
 
 from typing import Optional
-from pydantic import BaseModel, Field
+
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ProblemDetail(BaseModel):
     """RFC 7807 Problem Details JSON object."""
-    
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "type": "https://api.example.com/errors/validation",
+                "title": "Validation Error",
+                "status": 400,
+                "detail": "Invalid date format in UR range query.",
+                "instance": "/api/ur/range?from=2025-13-01&to=2025-12-31",
+                "trace_id": "550e8400-e29b-41d4-a716-446655440000",
+            }
+        }
+    )
+
     type: str = Field(
         default="about:blank",
         description="A URI reference identifying the problem type."
@@ -33,16 +47,6 @@ class ProblemDetail(BaseModel):
         default=None,
         description="Correlation/trace ID for this request (for debugging)."
     )
-    
-    class Config:
-        example = {
-            "type": "https://api.example.com/errors/validation",
-            "title": "Validation Error",
-            "status": 400,
-            "detail": "Invalid date format in UR range query.",
-            "instance": "/api/ur/range?from=2025-13-01&to=2025-12-31",
-            "trace_id": "550e8400-e29b-41d4-a716-446655440000"
-        }
 
 
 class ProblemResponse(BaseModel):

@@ -31,20 +31,39 @@ function Wait-CiCdFrontend {
   return $false
 }
 
-Write-Host "=== Menu Deploy ===" -ForegroundColor Cyan
-Write-Host "1) Frontend (deploy Pages con force_frontend_deploy=true)"
-Write-Host "2) Backend (pull) + Frontend (redeploy)"
-Write-Host "3) Backend (build imagen CI/CD) + Frontend"
-Write-Host "4) Refresh Exchange (INE histórico)"
-Write-Host "5) Frontend sólo (sin esperar)"
-Write-Host "6) Actualizar túnel + redeploy Frontend (wait)"
-Write-Host "7) Salir"
+Write-Host "=== Menu Deploy (workflows activos) ===" -ForegroundColor Cyan
+Write-Host "1) Frontend via CI/CD (force_frontend_deploy=true, espera)"
+Write-Host "2) Backend imagen + Frontend (CI/CD force_image=true, force_frontend_deploy=true, espera)"
+Write-Host "3) Backend imagen solo (CI/CD force_image=true, espera)"
+Write-Host "4) Actualizar túnel + redeploy Frontend (CI/CD) con espera"
+Write-Host "5) Refresh Exchange (INE histórico)"
+Write-Host "6) Salir"
 $choice = Read-Host "Opción"
 switch ($choice) {
   "1" { & "$PSScriptRoot\deploy_frontend.ps1" -Wait }
-  "2" { & "$PSScriptRoot\deploy_backend.ps1" -RedeployFrontend -WaitWorkflows }
-  "3" { & "$PSScriptRoot\deploy_backend.ps1" -BuildImage -RedeployFrontend -WaitWorkflows }
+  "2" { & "$PSScriptRoot\deploy_backend.ps1" -BuildImage -RedeployFrontend -WaitWorkflows }
+  "3" { & "$PSScriptRoot\deploy_backend.ps1" -BuildImage -WaitWorkflows }
   "4" {
+        Write-Host "[INFO] Actualizando túnel y disparando redeploy (si corresponde)..." -ForegroundColor Cyan
+        $logFile = Join-Path $PSScriptRoot 'recent-dispatch-run.log'
+        if(Test-Path $logFile){ Remove-Item $logFile -Force -ErrorAction SilentlyContinue }
+        try {
+          pwsh -File "$PSScriptRoot\update_tunnel_secret.ps1" -TriggerDeploy -SkipIfUnchanged 2>&1 | Tee-Object -FilePath $logFile | Write-Host
+          $dispatched = Select-String -Path $logFile -Pattern 'Redeploy solicitado' -Quiet
+          if($dispatched){
+            Write-Host "[INFO] Workflow CI/CD disparado. Esperando finalización..." -ForegroundColor Cyan
+            $ok = Wait-CiCdFrontend
+            if(-not $ok){ Write-Host "[WARN] Verifica manualmente en GitHub Actions." -ForegroundColor Yellow }
+          } else {
+            Write-Host "[INFO] No se disparó workflow (URL sin cambios)." -ForegroundColor Yellow
+          }
+        } catch {
+          Write-Host "[ERR] Falló actualización del túnel: $($_.Exception.Message)" -ForegroundColor Red
+        } finally {
+          if(Test-Path $logFile){ Remove-Item $logFile -Force -ErrorAction SilentlyContinue }
+        }
+      }
+  "5" {
         # Refresco histórico INE con robustez (async + fallback sync) y verificación de backend
         $base = "http://localhost:8000"
         function Get-Json($method, $url) {
@@ -122,27 +141,6 @@ switch ($choice) {
           Write-Host "FALLO: " $status.message -ForegroundColor Red
         }
       }
-  "5" { & "$PSScriptRoot\deploy_frontend.ps1" }
-  "6" {
-        Write-Host "[INFO] Actualizando túnel y disparando redeploy (si corresponde)..." -ForegroundColor Cyan
-        $logFile = Join-Path $PSScriptRoot 'recent-dispatch-run.log'
-        if(Test-Path $logFile){ Remove-Item $logFile -Force -ErrorAction SilentlyContinue }
-        try {
-          pwsh -File "$PSScriptRoot\update_tunnel_secret.ps1" -TriggerDeploy -SkipIfUnchanged 2>&1 | Tee-Object -FilePath $logFile | Write-Host
-          $dispatched = Select-String -Path $logFile -Pattern 'Redeploy solicitado' -Quiet
-          if($dispatched){
-            Write-Host "[INFO] Workflow disparado. Esperando finalización..." -ForegroundColor Cyan
-            $ok = Wait-CiCdFrontend
-            if(-not $ok){ Write-Host "[WARN] Verifica manualmente en GitHub Actions." -ForegroundColor Yellow }
-          } else {
-            Write-Host "[INFO] No se disparó workflow (URL sin cambios)." -ForegroundColor Yellow
-          }
-        } catch {
-          Write-Host "[ERR] Falló actualización del túnel: $($_.Exception.Message)" -ForegroundColor Red
-        } finally {
-          if(Test-Path $logFile){ Remove-Item $logFile -Force -ErrorAction SilentlyContinue }
-        }
-      }
-  "7" { Write-Host "Salir"; exit 0 }
+  "6" { Write-Host "Salir"; exit 0 }
   default { Write-Host "Opción inválida" -ForegroundColor Yellow }
 }

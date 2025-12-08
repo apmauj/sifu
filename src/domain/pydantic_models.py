@@ -1,7 +1,9 @@
-from pydantic import BaseModel, Field, validator
-from typing import Optional, List, Any
 from datetime import date
-from src.utils.constants import VALID_CURRENCY_CODES, MIN_VALID_YEAR, MAX_VALID_YEAR
+from typing import Any, List, Optional
+
+from pydantic import BaseModel, Field, field_validator, model_validator
+
+from src.utils.constants import MAX_VALID_YEAR, MIN_VALID_YEAR, VALID_CURRENCY_CODES
 
 
 class UIValueModel(BaseModel):
@@ -14,8 +16,8 @@ class URValueModel(BaseModel):
     month: int = Field(ge=1, le=12)
     value: float = Field(gt=0, description="UR value must be positive")
 
-    @validator("month")
-    def validate_month(cls, v):
+    @field_validator("month")
+    def validate_month(cls, v: int) -> int:
         if not 1 <= v <= 12:
             raise ValueError("Month must be between 1 and 12")
         return v
@@ -25,11 +27,11 @@ class UIRangeRequestModel(BaseModel):
     start_date: date
     end_date: date
 
-    @validator("end_date")
-    def validate_date_range(cls, v, values):
-        if "start_date" in values and v < values["start_date"]:
+    @model_validator(mode="after")
+    def validate_date_range(self):
+        if self.end_date < self.start_date:
             raise ValueError("End date must be after or equal to start date")
-        return v
+        return self
 
 
 class URRangeRequestModel(BaseModel):
@@ -38,20 +40,16 @@ class URRangeRequestModel(BaseModel):
     end_year: Optional[int] = Field(None, ge=MIN_VALID_YEAR, le=MAX_VALID_YEAR)
     end_month: int = Field(ge=1, le=12, default=12)
 
-    @validator("end_year", always=True)
-    def set_end_year(cls, v, values):
-        return v or values.get("start_year", 2024)
+    @model_validator(mode="after")
+    def validate_range(self):
+        if self.end_year is None:
+            self.end_year = self.start_year
 
-    @validator("end_month")
-    def validate_range(cls, v, values):
-        start_year = values.get("start_year")
-        start_month = values.get("start_month")
-        end_year = values.get("end_year")
-
-        if start_year and end_year and start_month is not None:
-            if (end_year < start_year) or (end_year == start_year and v < start_month):
-                raise ValueError("End period must be after start period")
-        return v
+        if (self.end_year < self.start_year) or (
+            self.end_year == self.start_year and self.end_month < self.start_month
+        ):
+            raise ValueError("End period must be after start period")
+        return self
 
 
 class ExchangeRateValueModel(BaseModel):
@@ -62,8 +60,8 @@ class ExchangeRateValueModel(BaseModel):
     average_rate: Optional[float] = Field(None, gt=0)
     arbitrage: Optional[str] = Field(None, max_length=50)
 
-    @validator("currency")
-    def validate_currency(cls, v):
+    @field_validator("currency")
+    def validate_currency(cls, v: str) -> str:
         if v.upper() not in VALID_CURRENCY_CODES:
             raise ValueError(
                 f'Invalid currency code. Must be one of: {", ".join(VALID_CURRENCY_CODES)}'
@@ -76,14 +74,14 @@ class ExchangeRateRangeRequestModel(BaseModel):
     end_date: date
     currency: Optional[str] = Field(None, min_length=3, max_length=3)
 
-    @validator("end_date")
-    def validate_date_range(cls, v, values):
-        if "start_date" in values and v < values["start_date"]:
+    @model_validator(mode="after")
+    def validate_date_range(self):
+        if self.end_date < self.start_date:
             raise ValueError("End date must be after or equal to start date")
-        return v
+        return self
 
-    @validator("currency")
-    def validate_currency(cls, v):
+    @field_validator("currency")
+    def validate_currency(cls, v: Optional[str]) -> Optional[str]:
         if v and v.upper() not in VALID_CURRENCY_CODES:
             raise ValueError(
                 f'Invalid currency code. Must be one of: {", ".join(VALID_CURRENCY_CODES)}'
@@ -111,8 +109,8 @@ class TOTPVerifyRequest(BaseModel):
 
     code: str = Field(min_length=6, max_length=6, pattern=r"^\d{6}$")
 
-    @validator("code")
-    def validate_code_format(cls, v):
+    @field_validator("code")
+    def validate_code_format(cls, v: str) -> str:
         if not v.isdigit():
             raise ValueError("TOTP code must contain only digits")
         return v

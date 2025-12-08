@@ -126,20 +126,9 @@ if ($BuildImage -or ($RedeployFrontend -and -not $BuildImage)) {
   $forceFront = if ($RedeployFrontend) { 'true' } else { 'false' }
   $dispatchOut = gh workflow run $ciWorkflowFile -r $Branch -f force_image=$forceImg -f force_frontend_deploy=$forceFront 2>&1
   if ($LASTEXITCODE -ne 0) {
-    if ($BuildImage) {
-      Write-Warning "Fallo ci-cd.yml. Intentando workflow viejo de imagen como fallback..."
-      $fallback = 'publish-backend-image.yml'
-      $dispatchOut = gh workflow run $fallback -r $Branch 2>&1
-      if ($LASTEXITCODE -ne 0) { throw "No se pudo despachar ni ci-cd.yml ni $fallback" }
-      $selectedWorkflow = 'Publish Backend Image (deprecated)'
-    } elseif ($RedeployFrontend) {
-      Write-Warning "Fallo ci-cd.yml para frontend; intentando workflow viejo de frontend..."
-      $fallbackFront = 'deploy-frontend.yml'
-      $dispatchOut = gh workflow run $fallbackFront -r $Branch 2>&1
-      if ($LASTEXITCODE -ne 0) { throw "No se pudo despachar ni ci-cd.yml ni $fallbackFront" }
-      $selectedWorkflow = 'Deploy Frontend to GitHub Pages (deprecated)'
-    }
-  } else { $selectedWorkflow = 'CI/CD' }
+    throw "No se pudo despachar ci-cd.yml (force_image=$forceImg, force_frontend_deploy=$forceFront). Revisa autenticación gh o permisos."
+  }
+  $selectedWorkflow = 'CI/CD'
   Write-Host "[INFO] Workflow dispatch enviado ($selectedWorkflow) force_image=$forceImg force_frontend_deploy=$forceFront" -ForegroundColor DarkCyan
   $runId = $null
   if ($dispatchOut -match 'runs/(\d+)') { $runId = $Matches[1] }
