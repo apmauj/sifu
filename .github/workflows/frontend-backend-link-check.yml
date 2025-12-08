@@ -201,7 +201,14 @@ jobs:
         continue-on-error: true
         run: |
           BACKEND_URL="${{ steps.backend_url.outputs.resolved_url }}"
-          HEALTH_ENDPOINT="$BACKEND_URL/api/health"
+
+          # Normalizar endpoint para evitar /api/api/health si la URL ya incluye /api
+          BASE_URL="${BACKEND_URL%/}"
+          if echo "$BASE_URL" | grep -qE "/api$"; then
+            HEALTH_ENDPOINT="$BASE_URL/health"
+          else
+            HEALTH_ENDPOINT="$BASE_URL/api/health"
+          fi
           
           echo "🔧 Verificando Backend en: $HEALTH_ENDPOINT"
 
@@ -515,12 +522,20 @@ jobs:
         run: |
           BACKEND_URL="${{ secrets.VITE_PUBLIC_API_URL }}"
           FRONTEND_ORIGIN="https://${{ github.repository_owner }}.github.io"
+
+          BASE_URL="${BACKEND_URL%/}"
+          if echo "$BASE_URL" | grep -qE "/api$"; then
+            HEALTH_ENDPOINT="$BASE_URL/health"
+          else
+            HEALTH_ENDPOINT="$BASE_URL/api/health"
+          fi
           
           echo "🌍 Verificando configuración CORS..."
           echo "Frontend Origin: $FRONTEND_ORIGIN"
+          echo "Usando endpoint: $HEALTH_ENDPOINT"
           
           # Hacer request con Origin header
-          RESPONSE=$(curl -s -I -H "Origin: $FRONTEND_ORIGIN" "$BACKEND_URL/api/health")
+          RESPONSE=$(curl -s -I -H "Origin: $FRONTEND_ORIGIN" "$HEALTH_ENDPOINT")
           
           CORS_HEADER=$(echo "$RESPONSE" | grep -i "access-control-allow-origin" || echo "")
           
