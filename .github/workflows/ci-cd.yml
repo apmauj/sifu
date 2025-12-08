@@ -56,11 +56,32 @@ jobs:
         env:
           SECRET_API_URL: ${{ secrets.VITE_PUBLIC_API_URL }}
           EVENT_NAME: ${{ github.event_name }}
+          GH_PAT: ${{ secrets.GH_PAT }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          WORKFLOW_REPO: ${{ github.repository }}
+          WORKFLOW_REF: ${{ github.ref_name }}
         run: |
           set -e
+
+          trigger_recovery() {
+            TOKEN="$GH_PAT"
+            if [ -z "$TOKEN" ]; then TOKEN="$GITHUB_TOKEN"; fi
+            if [ -z "$TOKEN" ]; then
+              echo "⚠️  GH_TOKEN no disponible; no se puede disparar update-tunnel" >> $GITHUB_STEP_SUMMARY
+              return
+            fi
+            export GH_TOKEN="$TOKEN"
+            if gh workflow run .github/workflows/update-tunnel.yml -R "$WORKFLOW_REPO" --ref "$WORKFLOW_REF"; then
+              echo "🔄 Se disparó update-tunnel.yml automáticamente" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "❌ No se pudo disparar update-tunnel.yml" >> $GITHUB_STEP_SUMMARY
+            fi
+          }
+
           if [ -z "$SECRET_API_URL" ]; then
             echo "Secret VITE_PUBLIC_API_URL vacío" >> $GITHUB_STEP_SUMMARY
             echo "tunnel_ok=false" >> $GITHUB_OUTPUT
+            trigger_recovery
             exit 0
           fi
           # Normalizar quitando /api final si existe
@@ -105,6 +126,9 @@ jobs:
               echo "tunnel_ok=false" >> $GITHUB_OUTPUT
             else
               echo "tunnel_ok=false" >> $GITHUB_OUTPUT
+            fi
+            if [ "$IS_TUNNEL" -eq 1 ]; then
+              trigger_recovery
             fi
           fi
   security-backend:

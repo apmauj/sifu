@@ -4,6 +4,15 @@
 
 ✅ **PIPELINE FUNCIONANDO CORRECTAMENTE**
 
+### Workflows activos (únicos)
+- `ci-cd.yml` (pipeline unificado: pruebas, build imagen, deploy Pages)
+- `frontend-backend-link-check.yml` (monitoreo conexión Pages↔API)
+- `brou-health-monitor.yml` (monitoring)
+- `security-audit.yml` (escaneos manuales)
+- `update-tunnel.yml` (recuperación de túnel)
+
+Se retiraron los workflows legacy (`ci-backend.yml`, `ci-frontend.yml`, `deploy-frontend.yml`, `publish-backend-image.yml`); todo el build/deploy pasa por `ci-cd.yml`.
+
 ### Resumen de Tests
 - **238 tests ejecutables**
 - **236 tests PASSED** (99.2% de éxito)
