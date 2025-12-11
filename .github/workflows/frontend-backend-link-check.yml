@@ -494,73 +494,77 @@ jobs:
         if: always()
         shell: pwsh
         run: |
-          $Summary = @"
-### 🔗 Frontend-Backend Link Check Summary
-
-**Timestamp:** $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssZ')
-
-"@
-
+          # Build summary with simple string concatenation (YAML-safe)
+          $lines = @()
+          $lines += "### 🔗 Frontend-Backend Link Check Summary"
+          $lines += ""
+          $lines += "**Timestamp:** $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssZ')"
+          $lines += ""
+          
           # Frontend Status
-          if ("${{ steps.frontend_check.outputs.frontend_accessible }}" -eq "true") {
-            $Summary += "✅ **Frontend:** Accessible (HTTP ${{ steps.frontend_check.outputs.frontend_status }})`n"
+          $frontendAccessible = "${{ steps.frontend_check.outputs.frontend_accessible }}"
+          $frontendStatus = "${{ steps.frontend_check.outputs.frontend_status }}"
+          if ($frontendAccessible -eq "true") {
+            $lines += "✅ **Frontend:** Accessible (HTTP $frontendStatus)"
           } else {
-            $Summary += "❌ **Frontend:** Not Accessible (HTTP ${{ steps.frontend_check.outputs.frontend_status }})`n"
+            $lines += "❌ **Frontend:** Not Accessible (HTTP $frontendStatus)"
           }
           
           # Backend Status
-          if ("${{ steps.backend_check.outputs.backend_accessible }}" -eq "true") {
-            $Summary += "✅ **Backend:** Healthy (HTTP ${{ steps.backend_check.outputs.backend_status }})`n"
-            $Summary += "   - Health Status: ${{ steps.backend_check.outputs.health_status }}`n"
+          $backendAccessible = "${{ steps.backend_check.outputs.backend_accessible }}"
+          $backendStatus = "${{ steps.backend_check.outputs.backend_status }}"
+          $healthStatus = "${{ steps.backend_check.outputs.health_status }}"
+          $tunnelDetected = "${{ steps.tunnel_check.outputs.tunnel_detected }}"
+          $tunnelUrl = "${{ steps.tunnel_check.outputs.tunnel_url }}"
+          $recoveryAttempted = "${{ steps.tunnel_recovery.outputs.recovery_attempted }}"
+          $recoveryTime = "${{ steps.tunnel_recovery.outputs.recovery_time }}"
+          $recoverySuccessful = "${{ steps.tunnel_recovery.outputs.recovery_successful }}"
+          
+          if ($backendAccessible -eq "true") {
+            $lines += "✅ **Backend:** Healthy (HTTP $backendStatus)"
+            $lines += "   - Health Status: $healthStatus"
           } else {
-            $Summary += "❌ **Backend:** Not Accessible (HTTP ${{ steps.backend_check.outputs.backend_status }})`n"
-            
-            if ("${{ steps.tunnel_check.outputs.tunnel_detected }}" -eq "true") {
-              $Summary += "   - 🔍 Túnel Cloudflare detectado: ``${{ steps.tunnel_check.outputs.tunnel_url }}```n"
-              
-              if ("${{ steps.tunnel_recovery.outputs.recovery_attempted }}" -eq "true") {
-                $Summary += "   - 🔄 Recuperación intentada: ${{ steps.tunnel_recovery.outputs.recovery_time }}`n"
-                
-                if ("${{ steps.tunnel_recovery.outputs.recovery_successful }}" -eq "true") {
-                  $Summary += "   - ✅ Recuperación exitosa`n"
+            $lines += "❌ **Backend:** Not Accessible (HTTP $backendStatus)"
+            if ($tunnelDetected -eq "true") {
+              $lines += "   - 🔍 Túnel Cloudflare detectado: ``$tunnelUrl``"
+              if ($recoveryAttempted -eq "true") {
+                $lines += "   - 🔄 Recuperación intentada: $recoveryTime"
+                if ($recoverySuccessful -eq "true") {
+                  $lines += "   - ✅ Recuperación exitosa"
                 } else {
-                  $Summary += "   - ❌ Recuperación fallida (se requiere intervención manual)`n"
+                  $lines += "   - ❌ Recuperación fallida (se requiere intervención manual)"
                 }
               }
             }
           }
           
           # Integration Status
-          $Summary += "`n**Integration Status:** ${{ steps.integration_check.outputs.integration_status }}`n"
-          $Summary += "**Backend URL:** ``${{ steps.integration_check.outputs.backend_url }}```n"
+          $integrationStatus = "${{ steps.integration_check.outputs.integration_status }}"
+          $backendUrl = "${{ steps.integration_check.outputs.backend_url }}"
+          $corsConfigured = "${{ steps.cors_check.outputs.cors_configured }}"
           
-          # CORS Status
-          if (![string]::IsNullOrEmpty("${{ steps.cors_check.outputs.cors_configured }}")) {
-            $Summary += "**CORS:** ${{ steps.cors_check.outputs.cors_configured }}`n"
-          }
-          
-          # Endpoints Status
-          if (![string]::IsNullOrEmpty("${{ steps.endpoints_check.outputs.endpoints_success }}")) {
-            $Summary += "`n**Endpoints Check:**`n"
-            $Summary += "- ✅ Success: ${{ steps.endpoints_check.outputs.endpoints_success }}`n"
-            $Summary += "- ❌ Failed: ${{ steps.endpoints_check.outputs.endpoints_fail }}`n"
+          $lines += ""
+          $lines += "**Integration Status:** $integrationStatus"
+          $lines += "**Backend URL:** ``$backendUrl``"
+          if ($corsConfigured) {
+            $lines += "**CORS:** $corsConfigured"
           }
           
           # Overall Status
-          $Summary += "`n"
-          if ("${{ steps.frontend_check.outputs.frontend_accessible }}" -eq "true" -and "${{ steps.backend_check.outputs.backend_accessible }}" -eq "true") {
-            $Summary += "### ✅ Overall Status: HEALTHY`n"
-            $Summary += "Frontend y Backend están conectados y funcionando correctamente.`n"
-          } elseif ("${{ steps.tunnel_recovery.outputs.recovery_successful }}" -eq "true") {
-            $Summary += "### ✅ Overall Status: RECOVERED`n"
-            $Summary += "El túnel fue recuperado automáticamente.`n"
+          $lines += ""
+          if ($frontendAccessible -eq "true" -and $backendAccessible -eq "true") {
+            $lines += "### ✅ Overall Status: HEALTHY"
+            $lines += "Frontend y Backend están conectados y funcionando correctamente."
+          } elseif ($recoverySuccessful -eq "true") {
+            $lines += "### ✅ Overall Status: RECOVERED"
+            $lines += "El túnel fue recuperado automáticamente."
           } else {
-            $Summary += "### ❌ Overall Status: DEGRADED`n"
-            $Summary += "Hay problemas con la conexión Frontend-Backend.`n"
-            
-            if ("${{ steps.tunnel_check.outputs.tunnel_detected }}" -eq "true") {
-              $Summary += "`n**Acción sugerida:** Ejecutar manualmente el workflow 'Update Cloudflare Tunnel'`n"
+            $lines += "### ❌ Overall Status: DEGRADED"
+            $lines += "Hay problemas con la conexión Frontend-Backend."
+            if ($tunnelDetected -eq "true") {
+              $lines += ""
+              $lines += "**Acción sugerida:** Ejecutar manualmente el workflow 'Update Cloudflare Tunnel'"
             }
           }
           
-          $Summary | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Encoding utf8 -Append
+          $lines -join "`n" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Encoding utf8 -Append
