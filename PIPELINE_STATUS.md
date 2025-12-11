@@ -13,6 +13,44 @@
 
 Se retiraron los workflows legacy (`ci-backend.yml`, `ci-frontend.yml`, `deploy-frontend.yml`, `publish-backend-image.yml`); todo el build/deploy pasa por `ci-cd.yml`.
 
+### Requisitos del Self-Hosted Runner
+
+⚠️ **IMPORTANTE**: Los workflows `frontend-backend-link-check.yml` y `update-tunnel.yml` corren en un **runner self-hosted con Windows (PowerShell)**.
+
+| Componente | Requisito |
+|------------|-----------|
+| **OS** | Windows 10/11 o Windows Server |
+| **Shell** | PowerShell 7+ (pwsh) |
+| **Docker** | Docker Desktop con WSL2 |
+| **GitHub CLI** | `gh` autenticado |
+| **Labels** | `self-hosted`, `sifu-local` |
+
+#### Migración a Linux (Futuro)
+
+Si se migra el runner a Linux, será necesario:
+
+1. **Convertir scripts PowerShell a Bash** en:
+   - `frontend-backend-link-check.yml` (todos los steps con `shell: pwsh`)
+   - `update-tunnel.yml` (steps de actualización de túnel)
+   - `scripts/deploy/update_tunnel_secret.ps1` → `update_tunnel_secret.sh`
+
+2. **Cambiar shells en los workflows**:
+   ```yaml
+   # De:
+   shell: pwsh
+   # A:
+   shell: bash
+   ```
+
+3. **Actualizar comandos específicos**:
+   | PowerShell | Bash |
+   |------------|------|
+   | `Invoke-WebRequest` | `curl` |
+   | `$env:VAR` | `$VAR` |
+   | `echo "x=y" >> $env:GITHUB_OUTPUT` | `echo "x=y" >> $GITHUB_OUTPUT` |
+   | `[string]::IsNullOrEmpty()` | `[ -z "$var" ]` |
+   | `Start-Sleep -Seconds N` | `sleep N` |
+
 ### Resumen de Tests
 - **238 tests ejecutables**
 - **236 tests PASSED** (99.2% de éxito)
