@@ -336,17 +336,29 @@ jobs:
           Write-Host "Host API (secret): $host_"
           Write-Host "Using build metadata SHA=$env:VITE_APP_BUILD_SHA DATE=$env:VITE_APP_BUILD_DATE"
           
-          # Clean stale node_modules (self-hosted runners persist state)
-          if (Test-Path node_modules) {
-            Write-Host "Removing stale node_modules..."
-            Remove-Item node_modules -Recurse -Force
+          # Debug: show current directory and contents
+          Write-Host "Current directory: $(Get-Location)"
+          Write-Host "Contents: $(Get-ChildItem -Name | Join-String -Separator ', ')"
+          
+          # Clean everything for fresh install (self-hosted runners persist state)
+          Write-Host "Cleaning npm cache and node_modules..."
+          npm cache clean --force 2>$null
+          if (Test-Path node_modules) { Remove-Item node_modules -Recurse -Force -ErrorAction SilentlyContinue }
+          if (Test-Path package-lock.json) { Remove-Item package-lock.json -Force -ErrorAction SilentlyContinue }
+          
+          # Fresh install (not npm ci since we deleted lock file)
+          Write-Host "Installing dependencies..."
+          npm install --ignore-scripts
+          
+          $pkgCount = (Get-ChildItem node_modules -Directory -ErrorAction SilentlyContinue | Measure-Object).Count
+          Write-Host "Installed $pkgCount top-level packages in node_modules"
+          
+          # Verify vite is available
+          if (-not (Test-Path "node_modules/.bin/vite.cmd")) {
+            Write-Host "ERROR: vite not found in node_modules/.bin"
+            Get-ChildItem node_modules/.bin -ErrorAction SilentlyContinue | Select-Object -First 20
+            exit 1
           }
-          
-          # Install fresh deps (--ignore-scripts skips husky bash syntax)
-          npm ci --ignore-scripts
-          
-          $pkgCount = (npm ls --depth=0 --json 2>$null | ConvertFrom-Json).dependencies.Count
-          Write-Host "Installed $pkgCount packages"
           
           npm run build --silent
           
