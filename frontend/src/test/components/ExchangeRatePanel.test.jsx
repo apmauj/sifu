@@ -57,11 +57,31 @@ const mockRatesData = DEFAULT_MOCK_RATES;
 
 describe('ExchangeRatePanel', () => {
   let mockExchangeService;
+  let pendingTimeouts = [];
+  
+  // Override setTimeout to track pending timeouts
+  const originalSetTimeout = global.setTimeout;
   
   beforeEach(async () => {
     vi.clearAllMocks();
     resetMock();
+    pendingTimeouts = [];
+    
+    // Track timeouts created during tests
+    global.setTimeout = (fn, delay) => {
+      const id = originalSetTimeout(fn, delay);
+      pendingTimeouts.push(id);
+      return id;
+    };
+    
     mockExchangeService = (await import('../../shared/services/exchangeService')).default;
+  });
+
+  afterEach(() => {
+    // Clear any pending timeouts to prevent "window is not defined" errors
+    pendingTimeouts.forEach(id => clearTimeout(id));
+    pendingTimeouts = [];
+    global.setTimeout = originalSetTimeout;
   });
 
   describe('Loading State', () => {
