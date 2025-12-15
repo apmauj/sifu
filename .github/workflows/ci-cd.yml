@@ -336,8 +336,12 @@ jobs:
           Write-Host "Host API (secret): $host_"
           Write-Host "Using build metadata SHA=$env:VITE_APP_BUILD_SHA DATE=$env:VITE_APP_BUILD_DATE"
           
-          # Use --ignore-scripts to skip husky install (bash syntax incompatible with Windows)
+          # Clean npm cache and install deps (--ignore-scripts skips husky bash syntax)
+          npm cache clean --force
           npm ci --ignore-scripts
+          
+          Write-Host "Installed packages: $(npm ls --depth=0 2>&1 | Select-String -Pattern 'packages')"
+          
           npm run build --silent
           
           # Prepare SPA 404 redirect
