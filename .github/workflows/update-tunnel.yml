@@ -86,10 +86,13 @@ jobs:
         run: |
           Write-Host "🔄 Ejecutando script de actualización de túnel..."
           
+          $TriggerDeploy = ('${{ github.event.inputs.trigger_deploy }}' -eq 'true') -or ('${{ inputs.trigger_deploy }}' -eq 'true')
+          $SkipIfUnchanged = ('${{ github.event.inputs.skip_if_unchanged }}' -eq 'true')
+          
           $params = @{
             Repo = '${{ github.repository }}'
-            TriggerDeploy = $${{ github.event.inputs.trigger_deploy == 'true' || inputs.trigger_deploy == true }}
-            SkipIfUnchanged = $${{ github.event.inputs.skip_if_unchanged == 'true' }}
+            TriggerDeploy = $TriggerDeploy
+            SkipIfUnchanged = $SkipIfUnchanged
           }
           
           & ".\scripts\deploy\update_tunnel_secret.ps1" @params
@@ -116,7 +119,8 @@ jobs:
             echo "✅ **Status:** Túnel actualizado exitosamente" >> $env:GITHUB_STEP_SUMMARY
             echo "" >> $env:GITHUB_STEP_SUMMARY
             echo "### Next Steps" >> $env:GITHUB_STEP_SUMMARY
-            if ($${{ github.event.inputs.trigger_deploy == 'true' || inputs.trigger_deploy == true }}) {
+            $triggerDeploy = ('${{ github.event.inputs.trigger_deploy }}' -eq 'true') -or ('${{ inputs.trigger_deploy }}' -eq 'true')
+            if ($triggerDeploy) {
               echo "- ⏳ Workflow de deploy frontend disparado automáticamente" >> $env:GITHUB_STEP_SUMMARY
               echo "- 🔍 Verificar [Actions](https://github.com/${{ github.repository }}/actions) para monitorear progreso" >> $env:GITHUB_STEP_SUMMARY
             }

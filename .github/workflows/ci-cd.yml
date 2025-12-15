@@ -44,128 +44,143 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # ============================================
+  # TUNNEL GUARD - Verificar conectividad API
+  # ============================================
   tunnel-guard:
     name: Tunnel Guard
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, sifu-local]
     timeout-minutes: 3
     outputs:
       tunnel_ok: ${{ steps.evaluate.outputs.tunnel_ok }}
     steps:
       - name: Evaluar estado del túnel/API
         id: evaluate
+        shell: pwsh
         env:
-          SECRET_API_URL: ${{ secrets.VITE_PUBLIC_API_URL }}
-          EVENT_NAME: ${{ github.event_name }}
           GH_PAT: ${{ secrets.GH_PAT }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          WORKFLOW_REPO: ${{ github.repository }}
-          WORKFLOW_REF: ${{ github.ref_name }}
         run: |
-          set -e
-
-          trigger_recovery() {
-            TOKEN="$GH_PAT"
-            if [ -z "$TOKEN" ]; then TOKEN="$GITHUB_TOKEN"; fi
-            if [ -z "$TOKEN" ]; then
-              echo "⚠️  GH_TOKEN no disponible; no se puede disparar update-tunnel" >> $GITHUB_STEP_SUMMARY
+          $SecretApiUrl = "${{ secrets.VITE_PUBLIC_API_URL }}"
+          $EventName = "${{ github.event_name }}"
+          
+          function Trigger-Recovery {
+            $Token = $env:GH_PAT
+            if ([string]::IsNullOrEmpty($Token)) { $Token = "${{ secrets.GITHUB_TOKEN }}" }
+            if ([string]::IsNullOrEmpty($Token)) {
+              Write-Host "⚠️  GH_TOKEN no disponible; no se puede disparar update-tunnel"
               return
-            fi
-            export GH_TOKEN="$TOKEN"
-            if gh workflow run .github/workflows/update-tunnel.yml -R "$WORKFLOW_REPO" --ref "$WORKFLOW_REF"; then
-              echo "🔄 Se disparó update-tunnel.yml automáticamente" >> $GITHUB_STEP_SUMMARY
-            else
-              echo "❌ No se pudo disparar update-tunnel.yml" >> $GITHUB_STEP_SUMMARY
-            fi
+            }
+            $env:GH_TOKEN = $Token
+            try {
+              gh workflow run .github/workflows/update-tunnel.yml -R "${{ github.repository }}" --ref "${{ github.ref_name }}"
+              Write-Host "🔄 Se disparó update-tunnel.yml automáticamente"
+            } catch {
+              Write-Host "❌ No se pudo disparar update-tunnel.yml"
+            }
+          }
+          
+          if ([string]::IsNullOrEmpty($SecretApiUrl)) {
+            Write-Host "Secret VITE_PUBLIC_API_URL vacío"
+            echo "tunnel_ok=false" >> $env:GITHUB_OUTPUT
+            Trigger-Recovery
+            exit 0
+          }
+          
+          # Normalizar URL
+          $BaseUrl = $SecretApiUrl.TrimEnd('/')
+          if ($BaseUrl -match '/api$') {
+            $Origin = $BaseUrl -replace '/api$', ''
+          } else {
+            $Origin = $BaseUrl
+          }
+          
+          $Host_ = ([Uri]$Origin).Host
+          $IsTunnel = $Host_ -match 'trycloudflare'
+          $Target = "$Origin/api/health/simple"
+          
+          # Probar conectividad
+          try {
+            $response = Invoke-WebRequest -Uri $Target -UseBasicParsing -TimeoutSec 8 -ErrorAction SilentlyContinue
+            $Code = $response.StatusCode
+          } catch {
+            # Intentar endpoint alternativo
+            try {
+              $Target = "$Origin/api/health"
+              $response = Invoke-WebRequest -Uri $Target -UseBasicParsing -TimeoutSec 8 -ErrorAction SilentlyContinue
+              $Code = $response.StatusCode
+            } catch {
+              $Code = 0
+            }
+          }
+          
+          $OK = ($Code -gt 0 -and $Code -lt 500)
+          
+          Write-Host "Host: $Host_"
+          Write-Host "Endpoint probado: $Target (HTTP $Code)"
+          if ($IsTunnel) { Write-Host "Tipo: trycloudflare (dinámico)" } else { Write-Host "Tipo: host estable" }
+          
+          if ($OK) {
+            Write-Host "Resultado guard: OK"
+            echo "tunnel_ok=true" >> $env:GITHUB_OUTPUT
+          } else {
+            Write-Host "Resultado guard: FALLÓ (no alcanzable / código >=500)"
+            echo "tunnel_ok=false" >> $env:GITHUB_OUTPUT
+            if ($IsTunnel) { Trigger-Recovery }
           }
 
-          if [ -z "$SECRET_API_URL" ]; then
-            echo "Secret VITE_PUBLIC_API_URL vacío" >> $GITHUB_STEP_SUMMARY
-            echo "tunnel_ok=false" >> $GITHUB_OUTPUT
-            trigger_recovery
-            exit 0
-          fi
-          # Normalizar quitando /api final si existe
-          BASE_URL="$SECRET_API_URL"
-          BASE_URL="${BASE_URL%/}"
-          if echo "$BASE_URL" | grep -qE '/api$'; then
-            ORIGIN="${BASE_URL%/api}"
-          else
-            ORIGIN="$BASE_URL"
-          fi
-          HOST=$(echo "$ORIGIN" | sed -E 's#https?://([^/]+).*#\1#')
-          IS_TUNNEL=0
-          if echo "$HOST" | grep -qi 'trycloudflare'; then IS_TUNNEL=1; fi
-          TARGET="${ORIGIN}/api/health/simple"
-          # Fallback si endpoint simple no existe
-          CODE=$(curl -sS -m 8 -o /dev/null -w '%{http_code}' "$TARGET" || true)
-          if [ -z "$CODE" ] || [ "$CODE" = "000" ]; then
-            # Intentar básico /api/health
-            TARGET="${ORIGIN}/api/health"
-            CODE=$(curl -sS -m 8 -o /dev/null -w '%{http_code}' "$TARGET" || true)
-          fi
-          # Considerar OK si respondió cualquier código <500
-          if [ -n "$CODE" ] && [ "$CODE" -lt 500 ]; then
-            OK=true
-          else
-            OK=false
-          fi
-          echo "Host: $HOST" >> $GITHUB_STEP_SUMMARY
-          echo "Endpoint probado: $TARGET (HTTP $CODE)" >> $GITHUB_STEP_SUMMARY
-          if [ $IS_TUNNEL -eq 1 ]; then
-            echo "Tipo: trycloudflare (dinámico)" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "Tipo: host estable" >> $GITHUB_STEP_SUMMARY
-          fi
-          if [ "$OK" = true ]; then
-            echo "Resultado guard: OK" >> $GITHUB_STEP_SUMMARY
-            echo "tunnel_ok=true" >> $GITHUB_OUTPUT
-          else
-            echo "Resultado guard: FALLÓ (no alcanzable / código >=500)" >> $GITHUB_STEP_SUMMARY
-            # Solo bloquear en push automático a master si es túnel y está caído; en PR/dispatch permitir override
-            if [ "$EVENT_NAME" = "push" ] && [ "$IS_TUNNEL" -eq 1 ]; then
-              echo "tunnel_ok=false" >> $GITHUB_OUTPUT
-            else
-              echo "tunnel_ok=false" >> $GITHUB_OUTPUT
-            fi
-            if [ "$IS_TUNNEL" -eq 1 ]; then
-              trigger_recovery
-            fi
-          fi
+  # ============================================
+  # SECURITY AUDITS
+  # ============================================
   security-backend:
     name: Security Audit Backend
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, sifu-local]
     timeout-minutes: 8
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-          cache: pip
-      - name: Install deps
+      
+      - name: Setup Python environment
+        shell: pwsh
         run: |
-          python -m pip install --upgrade pip 'setuptools>=78.1.1'
-          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-          if [ -f requirements-dev.txt ]; then pip install -r requirements-dev.txt; fi
+          # Usar el venv existente o crear uno
+          if (Test-Path ".venv/Scripts/Activate.ps1") {
+            . .venv/Scripts/Activate.ps1
+          }
+          python -m pip install --upgrade pip setuptools
+          if (Test-Path "requirements.txt") { pip install -r requirements.txt }
+          if (Test-Path "requirements-dev.txt") { pip install -r requirements-dev.txt }
           pip install --upgrade pip-audit
+      
       - name: pip-audit
         id: audit
+        shell: pwsh
         run: |
-          set +e
-          pip-audit -r requirements.txt -f json > pip_audit_backend.json 2>/dev/null
-          code=$?
-          echo "exit_code=$code" >> $GITHUB_OUTPUT
-          # Contar vulnerabilidades high/critical
-          if command -v jq >/dev/null 2>&1; then
-            HC=$(jq '[ .[] | .vulns[]? | select((.severity.value // .severity) | ascii_downcase | IN("high","critical")) ] | length' pip_audit_backend.json 2>/dev/null || echo 0)
-          else
-            HC=0
-          fi
-          echo "hc=$HC" >> $GITHUB_OUTPUT
-          if [ "${HC:-0}" -gt 0 ]; then
-            echo "High/Critical vulns: $HC" >> $GITHUB_STEP_SUMMARY
+          if (Test-Path ".venv/Scripts/Activate.ps1") { . .venv/Scripts/Activate.ps1 }
+          
+          # Run pip-audit
+          pip-audit -r requirements.txt -f json 2>$null | Out-File -FilePath pip_audit_backend.json -Encoding utf8
+          
+          # Count high/critical vulnerabilities
+          $HC = 0
+          if (Test-Path pip_audit_backend.json) {
+            try {
+              $audit = Get-Content pip_audit_backend.json | ConvertFrom-Json
+              foreach ($pkg in $audit) {
+                foreach ($vuln in $pkg.vulns) {
+                  $severity = if ($vuln.severity.value) { $vuln.severity.value } else { $vuln.severity }
+                  if ($severity -match 'high|critical') { $HC++ }
+                }
+              }
+            } catch { }
+          }
+          
+          echo "hc=$HC" >> $env:GITHUB_OUTPUT
+          
+          if ($HC -gt 0) {
+            Write-Host "High/Critical vulns: $HC"
             exit 1
-          fi
-          echo "Backend audit PASS sin High/Critical" >> $GITHUB_STEP_SUMMARY
+          }
+          Write-Host "Backend audit PASS sin High/Critical"
+      
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -174,101 +189,120 @@ jobs:
 
   security-frontend:
     name: Security Audit Frontend
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, sifu-local]
     timeout-minutes: 6
     defaults:
       run:
         working-directory: frontend
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: npm
-          cache-dependency-path: frontend/package-lock.json
-      - run: npm ci --no-audit
+      
       - name: npm audit prod
         id: audit
+        shell: pwsh
         run: |
-          set +e
-            npm audit --omit=dev --json > audit.prod.json 2>/dev/null || true
-          if command -v jq >/dev/null 2>&1; then
-            HC=$(jq '[ (.vulnerabilities // {}) | to_entries[] | select(.value.severity=="high" or .value.severity=="critical") ] | length' audit.prod.json 2>/dev/null || echo 0)
-          else
-            HC=0
-          fi
-          echo "hc=$HC" >> $GITHUB_OUTPUT
-          if [ "${HC:-0}" -gt 0 ]; then
-            echo "High/Critical vulns Frontend: $HC" >> $GITHUB_STEP_SUMMARY
+          npm ci --no-audit 2>$null
+          npm audit --omit=dev --json 2>$null | Out-File -FilePath audit.prod.json -Encoding utf8
+          
+          # Count high/critical vulnerabilities
+          $HC = 0
+          if (Test-Path audit.prod.json) {
+            try {
+              $audit = Get-Content audit.prod.json | ConvertFrom-Json
+              if ($audit.vulnerabilities) {
+                foreach ($key in $audit.vulnerabilities.PSObject.Properties.Name) {
+                  $vuln = $audit.vulnerabilities.$key
+                  if ($vuln.severity -match 'high|critical') { $HC++ }
+                }
+              }
+            } catch { }
+          }
+          
+          echo "hc=$HC" >> $env:GITHUB_OUTPUT
+          
+          if ($HC -gt 0) {
+            Write-Host "High/Critical vulns Frontend: $HC"
             exit 1
-          fi
-          echo "Frontend audit PASS sin High/Critical" >> $GITHUB_STEP_SUMMARY
+          }
+          Write-Host "Frontend audit PASS sin High/Critical"
+      
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: frontend-audit
           path: frontend/audit.prod.json
 
+  # ============================================
+  # TESTS
+  # ============================================
   backend-tests:
     name: Backend Tests
     needs: [ security-backend ]
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, sifu-local]
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-          cache: pip
-      - name: Install deps
-        run: |
-          python -m pip install --upgrade pip
-          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-          if [ -f requirements-dev.txt ]; then pip install -r requirements-dev.txt; fi
-          pip install ruff
-      - name: Lint (ruff)
-        run: ruff check .
-      - name: Static message duplication check
-        run: python scripts/util/check_messages.py
-      - name: Verify Alembic migrations
-        run: |
-          # Verify migrations are properly configured (generates SQL without executing)
-          alembic -c config/alembic.ini upgrade head --sql > /dev/null
-          echo "Alembic migrations validated successfully"
-      - name: Run backend tests
+      
+      - name: Install deps and run tests
+        shell: pwsh
         env:
           PYTHONUNBUFFERED: '1'
           SIFU_SKIP_BOOTSTRAP: '1'
           PYTEST_DISABLE_PLUGIN_AUTOLOAD: '1'
-        run: pytest -q --maxfail=1 --disable-warnings --tb=short
+        run: |
+          if (Test-Path ".venv/Scripts/Activate.ps1") { . .venv/Scripts/Activate.ps1 }
+          python -m pip install --upgrade pip
+          if (Test-Path "requirements.txt") { pip install -r requirements.txt }
+          if (Test-Path "requirements-dev.txt") { pip install -r requirements-dev.txt }
+          pip install ruff
+          
+          Write-Host "=== Lint (ruff) ==="
+          ruff check .
+          
+          Write-Host "=== Static message duplication check ==="
+          python scripts/util/check_messages.py
+          
+          Write-Host "=== Verify Alembic migrations ==="
+          alembic -c config/alembic.ini upgrade head --sql | Out-Null
+          Write-Host "Alembic migrations validated successfully"
+          
+          Write-Host "=== Run backend tests ==="
+          pytest -q --maxfail=1 --disable-warnings --tb=short
 
   frontend-tests:
     name: Frontend Tests
     needs: [ security-frontend ]
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, sifu-local]
     timeout-minutes: 12
     defaults:
       run:
         working-directory: frontend
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: npm
-          cache-dependency-path: frontend/package.json
-      - name: Install deps
-        run: npm ci
-      - name: Lint & Tests
+      
+      - name: Install deps and run tests
+        shell: pwsh
         run: |
+          npm ci
+          
+          Write-Host "=== Lint ==="
           npm run lint
+          
+          Write-Host "=== Tests ==="
           npm test -- --run --reporter=verbose
 
+  # ============================================
+  # BUILD FRONTEND (artifact para Pages)
+  # ============================================
   build-frontend:
     name: Build Frontend (artifact)
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, sifu-local]
     needs: [ frontend-tests, tunnel-guard ]
-    if: ((github.event_name == 'push' && github.ref == 'refs/heads/master') || (github.event_name == 'workflow_dispatch' && inputs.force_frontend_deploy == 'true')) && (needs.tunnel-guard.outputs.tunnel_ok == 'true' || (github.event_name == 'workflow_dispatch' && inputs.override_tunnel_guard == 'true'))
+    if: |
+      ((github.event_name == 'push' && github.ref == 'refs/heads/master') || 
+       (github.event_name == 'workflow_dispatch' && inputs.force_frontend_deploy == 'true')) && 
+      (needs.tunnel-guard.outputs.tunnel_ok == 'true' || 
+       (github.event_name == 'workflow_dispatch' && inputs.override_tunnel_guard == 'true'))
     permissions:
       contents: read
       pages: write
@@ -278,52 +312,45 @@ jobs:
         working-directory: frontend
     steps:
       - uses: actions/checkout@v4
-      - name: (Optional) Mostrar host actual del secret
-        run: |
-          if [ -n "${{ secrets.VITE_PUBLIC_API_URL }}" ]; then
-            host=$(echo "${{ secrets.VITE_PUBLIC_API_URL }}" | sed -E 's#https?://([^/]+)/?.*#\1#')
-            echo "Host API (secret): $host" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "Secret VITE_PUBLIC_API_URL vacío" >> $GITHUB_STEP_SUMMARY
-          fi
-      - name: Resolve API URL (secret)
-        id: resolve_api
-        env:
-          SECRET_API_URL: ${{ secrets.VITE_PUBLIC_API_URL }}
-        run: |
-          API_URL="${SECRET_API_URL}"
-          if [ -z "$API_URL" ]; then
-            echo "ERROR: Secret VITE_PUBLIC_API_URL no definido." >> $GITHUB_STEP_SUMMARY
-            exit 1
-          fi
-          API_URL=$(echo "$API_URL" | sed -E 's#(/api)?/?$##')
-          API_URL="$API_URL/api"
-          echo "VITE_PUBLIC_API_URL=$API_URL" >> $GITHUB_ENV
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: npm
-          cache-dependency-path: frontend/package.json
-      - name: Install deps
-        run: npm ci
-      - name: Build
+      
+      - name: Resolve API URL and Build
+        shell: pwsh
         env:
           NODE_ENV: production
           VITE_APP_BUILD_SHA: ${{ github.sha }}
-          VITE_APP_BUILD_DATE: ${{ github.run_id }}-${{ github.run_number }}
+          VITE_APP_BUILD_DATE: "${{ github.run_id }}-${{ github.run_number }}"
         run: |
-          echo "Using build metadata SHA=${VITE_APP_BUILD_SHA} DATE=${VITE_APP_BUILD_DATE}" >> $GITHUB_STEP_SUMMARY
+          $ApiUrl = "${{ secrets.VITE_PUBLIC_API_URL }}"
+          if ([string]::IsNullOrEmpty($ApiUrl)) {
+            Write-Host "ERROR: Secret VITE_PUBLIC_API_URL no definido."
+            exit 1
+          }
+          # Normalizar URL
+          $ApiUrl = $ApiUrl.TrimEnd('/') -replace '/api$', ''
+          $ApiUrl = "$ApiUrl/api"
+          $env:VITE_PUBLIC_API_URL = $ApiUrl
+          
+          $host_ = ([Uri]$ApiUrl).Host
+          Write-Host "Host API (secret): $host_"
+          Write-Host "Using build metadata SHA=$env:VITE_APP_BUILD_SHA DATE=$env:VITE_APP_BUILD_DATE"
+          
+          npm ci
           npm run build --silent
-      - name: Prepare SPA 404 redirect
-        run: cp dist/index.html dist/404.html
+          
+          # Prepare SPA 404 redirect
+          Copy-Item dist/index.html dist/404.html
+      
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: frontend/dist
 
+  # ============================================
+  # BUILD & PUSH BACKEND IMAGE
+  # ============================================
   publish-backend-image:
     name: Build & Push Backend Image
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, sifu-local]
     needs: [ backend-tests ]
     if: (github.event_name == 'push' && github.ref == 'refs/heads/master') || (github.event_name == 'workflow_dispatch' && inputs.force_image == 'true')
     permissions:
@@ -331,35 +358,48 @@ jobs:
       packages: write
     steps:
       - uses: actions/checkout@v4
-      - uses: docker/setup-buildx-action@v3
-      - uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - name: Extract metadata (tags, labels)
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: apmauj/sifu-backend
-          tags: |
-            type=raw,value=latest
-            type=sha
-            type=raw,value={{date '2006-01-02'}}
-            type=raw,value={{date '20060102'}}
-      - name: Build and push
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: config/docker/Dockerfile
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+      
+      - name: Build and push Docker image
+        shell: pwsh
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+        run: |
+          # Login to Docker Hub
+          echo $env:DOCKERHUB_TOKEN | docker login -u $env:DOCKERHUB_USERNAME --password-stdin
+          
+          # Generate tags
+          $sha = "${{ github.sha }}".Substring(0, 7)
+          $dateTag = Get-Date -Format 'yyyy-MM-dd'
+          $dateTagShort = Get-Date -Format 'yyyyMMdd'
+          
+          $imageName = "apmauj/sifu-backend"
+          $tags = @(
+            "${imageName}:latest",
+            "${imageName}:sha-${sha}",
+            "${imageName}:${dateTag}",
+            "${imageName}:${dateTagShort}"
+          )
+          
+          # Build image
+          Write-Host "Building image..."
+          docker build -t "${imageName}:latest" -f config/docker/Dockerfile .
+          
+          # Tag and push
+          foreach ($tag in $tags) {
+            Write-Host "Tagging and pushing: $tag"
+            docker tag "${imageName}:latest" $tag
+            docker push $tag
+          }
+          
+          Write-Host "✅ Image pushed successfully"
 
+  # ============================================
+  # DEPLOY FRONTEND TO GITHUB PAGES
+  # ============================================
   deploy-frontend:
     name: Deploy Frontend to GitHub Pages
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, sifu-local]
     needs: [ build-frontend ]
     if: (github.event_name == 'push' && github.ref == 'refs/heads/master') || (github.event_name == 'workflow_dispatch' && inputs.force_frontend_deploy == 'true')
     environment:
@@ -373,37 +413,63 @@ jobs:
         id: deployment
         uses: actions/deploy-pages@v4
 
+  # ============================================
+  # PIPELINE SUMMARY
+  # ============================================
   summary:
     name: Pipeline Summary
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, sifu-local]
     if: always()
     needs:
-    - tunnel-guard
-    - security-backend
-    - security-frontend
-    - backend-tests
-    - frontend-tests
-    - publish-backend-image
-    - build-frontend
-    - deploy-frontend
+      - tunnel-guard
+      - security-backend
+      - security-frontend
+      - backend-tests
+      - frontend-tests
+      - publish-backend-image
+      - build-frontend
+      - deploy-frontend
     steps:
       - name: Build summary
+        shell: pwsh
         run: |
-          echo "### CI/CD Summary" >> $GITHUB_STEP_SUMMARY
-          echo "| Job | Result |" >> $GITHUB_STEP_SUMMARY
-          echo "|-----|--------|" >> $GITHUB_STEP_SUMMARY
-          echo "| tunnel-guard | ${{ needs.tunnel-guard.result }} (ok=${{ needs.tunnel-guard.outputs.tunnel_ok }}) |" >> $GITHUB_STEP_SUMMARY
-          echo "| security-backend | ${{ needs.security-backend.result }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| security-frontend | ${{ needs.security-frontend.result }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| backend-tests | ${{ needs.backend-tests.result }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| frontend-tests | ${{ needs.frontend-tests.result }} |" >> $GITHUB_STEP_SUMMARY
-          if [ '${{ needs.publish-backend-image.result }}' != '' ]; then echo "| publish-backend-image | ${{ needs.publish-backend-image.result }} |" >> $GITHUB_STEP_SUMMARY; fi
-          if [ '${{ needs.build-frontend.result }}' != '' ]; then echo "| build-frontend | ${{ needs.build-frontend.result }} |" >> $GITHUB_STEP_SUMMARY; fi
-          if [ '${{ needs.deploy-frontend.result }}' != '' ]; then echo "| deploy-frontend | ${{ needs.deploy-frontend.result }} |" >> $GITHUB_STEP_SUMMARY; fi
-          echo "" >> $GITHUB_STEP_SUMMARY
-          overall=success
-          for r in ${{ needs.security-backend.result }} ${{ needs.security-frontend.result }} ${{ needs.backend-tests.result }} ${{ needs.frontend-tests.result }}; do
-            if [ "$r" != "success" ]; then overall=failure; fi
-          done
-          echo "Overall core result: $overall" >> $GITHUB_STEP_SUMMARY
-          if [ "$overall" != "success" ]; then exit 1; fi
+          $lines = @()
+          $lines += "### CI/CD Summary"
+          $lines += "| Job | Result |"
+          $lines += "|-----|--------|"
+          $lines += "| tunnel-guard | ${{ needs.tunnel-guard.result }} (ok=${{ needs.tunnel-guard.outputs.tunnel_ok }}) |"
+          $lines += "| security-backend | ${{ needs.security-backend.result }} |"
+          $lines += "| security-frontend | ${{ needs.security-frontend.result }} |"
+          $lines += "| backend-tests | ${{ needs.backend-tests.result }} |"
+          $lines += "| frontend-tests | ${{ needs.frontend-tests.result }} |"
+          
+          $pubResult = "${{ needs.publish-backend-image.result }}"
+          if ($pubResult) { $lines += "| publish-backend-image | $pubResult |" }
+          
+          $buildResult = "${{ needs.build-frontend.result }}"
+          if ($buildResult) { $lines += "| build-frontend | $buildResult |" }
+          
+          $deployResult = "${{ needs.deploy-frontend.result }}"
+          if ($deployResult) { $lines += "| deploy-frontend | $deployResult |" }
+          
+          $lines += ""
+          
+          # Determine overall result
+          $overall = "success"
+          $results = @(
+            "${{ needs.security-backend.result }}",
+            "${{ needs.security-frontend.result }}",
+            "${{ needs.backend-tests.result }}",
+            "${{ needs.frontend-tests.result }}"
+          )
+          foreach ($r in $results) {
+            if ($r -ne "success" -and $r -ne "skipped" -and ![string]::IsNullOrEmpty($r)) {
+              $overall = "failure"
+            }
+          }
+          
+          $lines += "Overall core result: $overall"
+          
+          $lines -join "`n" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Encoding utf8 -Append
+          
+          if ($overall -ne "success") { exit 1 }
