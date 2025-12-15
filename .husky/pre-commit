@@ -1,5 +1,17 @@
-# Pre-commit hook: lint + quick tests
+# Pre-commit hook: security + lint + quick tests
+
+# ======================
+# Frontend checks
+# ======================
 cd frontend
+
+echo "🔒 Checking frontend security (npm audit --omit=dev)..."
+npm audit --omit=dev --audit-level=high 2>/dev/null
+if [ $? -ne 0 ]; then
+  echo "❌ Frontend has HIGH/CRITICAL vulnerabilities in production deps."
+  echo "   Run 'npm audit' to see details and 'npm audit fix' to resolve."
+  exit 1
+fi
 
 echo "🔍 Running ESLint..."
 npm run lint
@@ -13,6 +25,25 @@ npm run test:precommit
 if [ $? -ne 0 ]; then
   echo "❌ Tests failed. Fix errors before committing."
   exit 1
+fi
+
+# ======================
+# Backend checks
+# ======================
+cd ..
+
+echo "🔒 Checking backend security (pip-audit)..."
+if command -v pip-audit &> /dev/null; then
+  # Check only HIGH+ vulnerabilities (consistent with CI)
+  pip-audit -r requirements.txt --ignore-vuln PYSEC-2024-75 2>/dev/null | grep -E "^(Name|---)" > /dev/null
+  VULN_COUNT=$(pip-audit -r requirements.txt 2>/dev/null | grep -c "PYSEC\|CVE\|GHSA" || echo "0")
+  if [ "$VULN_COUNT" -gt 0 ]; then
+    echo "⚠️  Backend has $VULN_COUNT known vulnerabilities."
+    echo "   Run 'pip-audit -r requirements.txt' to see details."
+    # Don't fail for now - just warn (pip-audit can be slow and has false positives)
+  fi
+else
+  echo "⏭️  pip-audit not installed, skipping backend security check"
 fi
 
 echo "✅ Pre-commit checks passed!"

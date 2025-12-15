@@ -336,11 +336,17 @@ jobs:
           Write-Host "Host API (secret): $host_"
           Write-Host "Using build metadata SHA=$env:VITE_APP_BUILD_SHA DATE=$env:VITE_APP_BUILD_DATE"
           
-          # Clean npm cache and install deps (--ignore-scripts skips husky bash syntax)
-          npm cache clean --force
+          # Clean stale node_modules (self-hosted runners persist state)
+          if (Test-Path node_modules) {
+            Write-Host "Removing stale node_modules..."
+            Remove-Item node_modules -Recurse -Force
+          }
+          
+          # Install fresh deps (--ignore-scripts skips husky bash syntax)
           npm ci --ignore-scripts
           
-          Write-Host "Installed packages: $(npm ls --depth=0 2>&1 | Select-String -Pattern 'packages')"
+          $pkgCount = (npm ls --depth=0 --json 2>$null | ConvertFrom-Json).dependencies.Count
+          Write-Host "Installed $pkgCount packages"
           
           npm run build --silent
           
