@@ -318,7 +318,6 @@ jobs:
       - name: Resolve API URL and Build
         shell: pwsh
         env:
-          NODE_ENV: production
           VITE_APP_BUILD_SHA: ${{ github.sha }}
           VITE_APP_BUILD_DATE: "${{ github.run_id }}-${{ github.run_number }}"
         run: |
@@ -336,18 +335,14 @@ jobs:
           Write-Host "Host API (secret): $host_"
           Write-Host "Using build metadata SHA=$env:VITE_APP_BUILD_SHA DATE=$env:VITE_APP_BUILD_DATE"
           
-          # Debug: show current directory and contents
-          Write-Host "Current directory: $(Get-Location)"
-          Write-Host "Contents: $(Get-ChildItem -Name | Join-String -Separator ', ')"
-          
           # Clean everything for fresh install (self-hosted runners persist state)
           Write-Host "Cleaning npm cache and node_modules..."
           npm cache clean --force 2>$null
           if (Test-Path node_modules) { Remove-Item node_modules -Recurse -Force -ErrorAction SilentlyContinue }
           if (Test-Path package-lock.json) { Remove-Item package-lock.json -Force -ErrorAction SilentlyContinue }
           
-          # Fresh install (not npm ci since we deleted lock file)
-          Write-Host "Installing dependencies..."
+          # Fresh install - WITHOUT NODE_ENV=production so devDependencies are installed
+          Write-Host "Installing dependencies (including devDependencies for vite)..."
           npm install --ignore-scripts
           
           $pkgCount = (Get-ChildItem node_modules -Directory -ErrorAction SilentlyContinue | Measure-Object).Count
@@ -360,6 +355,8 @@ jobs:
             exit 1
           }
           
+          # NOW set production mode for the build
+          $env:NODE_ENV = "production"
           npm run build --silent
           
           # Prepare SPA 404 redirect
