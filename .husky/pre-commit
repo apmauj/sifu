@@ -1,0 +1,18 @@
+# Pre-commit hook: lint + quick tests
+cd frontend
+
+echo "🔍 Running ESLint..."
+npm run lint
+if [ $? -ne 0 ]; then
+  echo "❌ Lint failed. Fix errors before committing."
+  exit 1
+fi
+
+echo "🧪 Running quick tests..."
+npm run test:precommit
+if [ $? -ne 0 ]; then
+  echo "❌ Tests failed. Fix errors before committing."
+  exit 1
+fi
+
+echo "✅ Pre-commit checks passed!"
