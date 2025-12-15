@@ -201,7 +201,8 @@ jobs:
         id: audit
         shell: pwsh
         run: |
-          npm ci --no-audit 2>$null
+          # Use --ignore-scripts to skip husky install (bash syntax incompatible with Windows)
+          npm ci --ignore-scripts --no-audit 2>$null
           npm audit --omit=dev --json 2>$null | Out-File -FilePath audit.prod.json -Encoding utf8
           
           # Count high/critical vulnerabilities
@@ -283,7 +284,8 @@ jobs:
       - name: Install deps and run tests
         shell: pwsh
         run: |
-          npm ci
+          # Use --ignore-scripts to skip husky install (bash syntax incompatible with Windows)
+          npm ci --ignore-scripts
           
           Write-Host "=== Lint ==="
           npm run lint
@@ -334,7 +336,8 @@ jobs:
           Write-Host "Host API (secret): $host_"
           Write-Host "Using build metadata SHA=$env:VITE_APP_BUILD_SHA DATE=$env:VITE_APP_BUILD_DATE"
           
-          npm ci
+          # Use --ignore-scripts to skip husky install (bash syntax incompatible with Windows)
+          npm ci --ignore-scripts
           npm run build --silent
           
           # Prepare SPA 404 redirect

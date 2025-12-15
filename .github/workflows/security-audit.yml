@@ -164,7 +164,9 @@ jobs:
       
       - name: Install deps
         shell: pwsh
-        run: npm ci
+        run: |
+          # Use --ignore-scripts to skip husky install (bash syntax incompatible with Windows)
+          npm ci --ignore-scripts
       
       - name: npm audit (prod)
         id: audit
