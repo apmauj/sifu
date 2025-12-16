@@ -31,6 +31,7 @@ const ExchangeRatePanel = () => {
   const { showError } = useToast();
   const didInitRef = useRef(false);
   const manualRefreshRef = useRef(false); // retained for minimal change though manual trigger removed
+  const glowTimeoutRef = useRef(null); // Cleanup ref for glow timeout
 
   // Currency info via centralized helper (panel = bcu)
   const currencyInfo = useMemo(() => getCurrencyDisplayMap(t, 'bcu'), [t]);
@@ -53,7 +54,9 @@ const ExchangeRatePanel = () => {
           setGlow(true);
           // Respeta preferencia del usuario: no reactivar si eligió ocultarlo
           if (!dotHidden) setDotActive(true);
-          setTimeout(() => setGlow(false), 2000);
+          // Clear previous timeout before setting new one
+          if (glowTimeoutRef.current) clearTimeout(glowTimeoutRef.current);
+          glowTimeoutRef.current = setTimeout(() => setGlow(false), 2000);
         }
   // Success toast removed: no notification on update or currency change
         lastDataHashRef.current = dataHash;
@@ -72,6 +75,13 @@ const ExchangeRatePanel = () => {
       manualRefreshRef.current = false;
     }
   }, [t, showError, dotHidden]);
+
+  // Cleanup glow timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (glowTimeoutRef.current) clearTimeout(glowTimeoutRef.current);
+    };
+  }, []);
 
   // First load on mount (manteniendo compatibilidad StrictMode sin doble fetch)
   useEffect(() => {
