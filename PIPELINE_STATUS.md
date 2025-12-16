@@ -6,16 +6,22 @@
 
 ### Workflows activos (únicos)
 - `ci-cd.yml` (pipeline unificado: pruebas, build imagen, deploy Pages)
-- `frontend-backend-link-check.yml` (monitoreo conexión Pages↔API)
-- `brou-health-monitor.yml` (monitoring)
-- `security-audit.yml` (escaneos manuales)
+- `frontend-backend-link-check.yml` *(cron deshabilitado por defecto; activar con `vars.ENABLE_LINK_CHECK=true` o ejecutar manualmente)*
+- `brou-health-monitor.yml` *(cron deshabilitado por defecto; activar con `vars.ENABLE_BROU_MONITOR=true` o ejecutar manualmente)*
+- `security-audit.yml` (escaneos manuales + cron semanal, ahora en **GitHub-hosted `windows-latest`**)
 - `update-tunnel.yml` (recuperación de túnel)
 
 Se retiraron los workflows legacy (`ci-backend.yml`, `ci-frontend.yml`, `deploy-frontend.yml`, `publish-backend-image.yml`); todo el build/deploy pasa por `ci-cd.yml`.
 
 ### Requisitos del Self-Hosted Runner
 
-⚠️ **IMPORTANTE**: Los workflows `frontend-backend-link-check.yml` y `update-tunnel.yml` corren en un **runner self-hosted con Windows (PowerShell)**.
+⚠️ **IMPORTANTE**: Los workflows `ci-cd.yml`, `frontend-backend-link-check.yml` (cuando se habilita) y `update-tunnel.yml` requieren un **runner self-hosted con Windows (PowerShell)**. `security-audit.yml` ahora usa `windows-latest` hospedado por GitHub para evitar cargos por self-hosted.
+
+#### Feature flags de monitoreo
+
+- `vars.ENABLE_LINK_CHECK`: controla si el workflow de verificación Frontend↔Backend se ejecuta automáticamente en el cron (`false`/vacío = solo manual).
+- `vars.ENABLE_BROU_MONITOR`: habilita/deshabilita el cron del monitor de BROU (`false`/vacío = solo manual).
+- `vars.LOCAL_DOCKER_TAGS_TO_KEEP`: cantidad de tags locales del backend que se conservan en el runner tras cada build (default 6). El resto se elimina automáticamente para ahorrar espacio en disco.
 
 | Componente | Requisito |
 |------------|-----------|

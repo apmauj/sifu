@@ -28,7 +28,7 @@ concurrency:
 
 jobs:
   backend-pip-audit:
-    runs-on: [self-hosted, sifu-local]
+    runs-on: windows-latest
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
@@ -154,7 +154,7 @@ jobs:
             backend_vulns_flat.json
 
   frontend-npm-audit:
-    runs-on: [self-hosted, sifu-local]
+    runs-on: windows-latest
     timeout-minutes: 8
     defaults:
       run:

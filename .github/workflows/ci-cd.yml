@@ -78,6 +78,26 @@ jobs:
               Write-Host "❌ No se pudo disparar update-tunnel.yml"
             }
           }
+
+          function Get-TunnelHostFromDocker {
+            param(
+              [string]$ContainerName = 'sifu-tunnel',
+              [int]$Tail = 160
+            )
+
+            try {
+              $logs = docker logs --tail $Tail $ContainerName 2>$null
+              if ([string]::IsNullOrWhiteSpace($logs)) { return $null }
+              $regex = 'https://[a-zA-Z0-9-]+\.trycloudflare\.com'
+              $matches = [regex]::Matches($logs, $regex)
+              if ($matches.Count -gt 0) {
+                return $matches[$matches.Count - 1].Value
+              }
+            } catch {
+              Write-Host "⚠️  No se pudo leer logs de $ContainerName: $_"
+            }
+            return $null
+          }
           
           if ([string]::IsNullOrEmpty($SecretApiUrl)) {
             Write-Host "Secret VITE_PUBLIC_API_URL vacío"
@@ -97,6 +117,23 @@ jobs:
           $Host_ = ([Uri]$Origin).Host
           $IsTunnel = $Host_ -match 'trycloudflare'
           $Target = "$Origin/api/health/simple"
+
+          if ($IsTunnel) {
+            $DetectedTunnel = Get-TunnelHostFromDocker
+            if ($DetectedTunnel) {
+              try {
+                $DetectedHost = ([Uri]$DetectedTunnel).Host
+                if ($DetectedHost -ne $Host_) {
+                  Write-Host "⚠️  Secret apunta a $Host_ pero el túnel activo es $DetectedHost"
+                  echo "tunnel_ok=false" >> $env:GITHUB_OUTPUT
+                  Trigger-Recovery
+                  exit 0
+                }
+              } catch {
+                Write-Host "⚠️  No se pudo comparar host detectado: $_"
+              }
+            }
+          }
           
           # Probar conectividad
           try {
@@ -440,6 +477,45 @@ jobs:
           }
           
           Write-Host "✅ Image pushed successfully"
+
+      - name: Cleanup old local Docker tags
+        if: always()
+        shell: pwsh
+        run: |
+          $keepCount = [int]"${{ vars.LOCAL_DOCKER_TAGS_TO_KEEP || '6' }}"
+          if ($keepCount -lt 1) { $keepCount = 1 }
+          $imageName = 'apmauj/sifu-backend'
+          $raw = docker images $imageName --format "{{.Repository}}|{{.Tag}}|{{.CreatedAt}}"
+          if (-not $raw) {
+            Write-Host "No local images found for cleanup"
+            exit 0
+          }
+          $images = @()
+          foreach ($line in $raw) {
+            if ([string]::IsNullOrWhiteSpace($line)) { continue }
+            $parts = $line -split '\|'
+            if ($parts.Length -lt 3) { continue }
+            $repo = $parts[0].Trim()
+            $tagName = $parts[1].Trim()
+            if ($tagName -eq '<none>') { continue }
+            $tagFull = "$repo:$tagName"
+            try {
+              $created = Get-Date ($parts[2].Trim())
+            } catch {
+              $created = Get-Date
+            }
+            $images += [pscustomobject]@{ Tag = $tagFull; Created = $created }
+          }
+          if ($images.Count -le $keepCount) {
+            Write-Host "Nothing to prune; only $($images.Count) tags present"
+            exit 0
+          }
+          $toRemove = $images | Sort-Object Created -Descending | Select-Object -Skip $keepCount
+          foreach ($item in $toRemove) {
+            Write-Host "Removing local tag $($item.Tag)"
+            docker rmi $item.Tag 2>$null | Out-Null
+          }
+          Write-Host "🧹 Removed $($toRemove.Count) old local tags (kept $keepCount)"
 
   # ============================================
   # PIPELINE SUMMARY

@@ -3,6 +3,7 @@ name: Frontend-Backend Link Check
 on:
   schedule:
     - cron: '*/15 * * * *'  # Cada 15 minutos
+      # Controlado por vars.ENABLE_LINK_CHECK (default deshabilitado)
   workflow_dispatch:
     inputs:
       check_all_endpoints:
@@ -27,6 +28,7 @@ concurrency:
 
 jobs:
   check-tunnel-url:
+    if: ${{ vars.ENABLE_LINK_CHECK == 'true' || github.event_name == 'workflow_dispatch' }}
     runs-on: [self-hosted, sifu-local]
     timeout-minutes: 2
     outputs:
@@ -109,6 +111,7 @@ jobs:
   check-connection:
     # Run on self-hosted to avoid GitHub Actions billing limits
     # Self-hosted runner has Docker, Python, and can regenerate tunnel directly
+    if: ${{ vars.ENABLE_LINK_CHECK == 'true' || github.event_name == 'workflow_dispatch' }}
     runs-on: [self-hosted, sifu-local]
     needs: check-tunnel-url
     timeout-minutes: 5
