@@ -94,7 +94,7 @@ jobs:
                 return $matches[$matches.Count - 1].Value
               }
             } catch {
-              Write-Host "⚠️  No se pudo leer logs de $ContainerName: $_"
+              Write-Host "⚠️  No se pudo leer logs de ${ContainerName}: $_"
             }
             return $null
           }
