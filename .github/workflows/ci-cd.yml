@@ -343,7 +343,7 @@ jobs:
       (needs.tunnel-guard.outputs.tunnel_ok == 'true' || 
        (github.event_name == 'workflow_dispatch' && inputs.override_tunnel_guard == 'true'))
     permissions:
-      contents: write
+      contents: read
     defaults:
       run:
         working-directory: frontend
@@ -396,38 +396,29 @@ jobs:
           
           # Prepare SPA 404 redirect
           Copy-Item dist/index.html dist/404.html
-      
+          New-Item -Path "dist/.nojekyll" -ItemType File -Force | Out-Null
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy-frontend:
+    name: Deploy Frontend (Pages)
+    runs-on: ubuntu-latest
+    needs: [ build-frontend ]
+    if: needs.build-frontend.result == 'success'
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
       - name: Deploy to GitHub Pages
-        shell: pwsh
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          # Configure git
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git config --global user.name "github-actions[bot]"
-          
-          # Create a temp directory for gh-pages
-          $tempDir = New-Item -ItemType Directory -Path "$env:RUNNER_TEMP\gh-pages" -Force
-          
-          # Copy dist contents
-          Copy-Item -Path "dist\*" -Destination $tempDir -Recurse -Force
-          
-          # Add .nojekyll to bypass Jekyll processing
-          New-Item -Path "$tempDir\.nojekyll" -ItemType File -Force | Out-Null
-          
-          # Initialize git in temp directory
-          Push-Location $tempDir
-          git init
-          git checkout -b gh-pages
-          git add -A
-          git commit -m "Deploy to GitHub Pages - ${{ github.sha }}"
-          
-          # Push to gh-pages branch
-          $repoUrl = "https://x-access-token:$env:GITHUB_TOKEN@github.com/${{ github.repository }}.git"
-          git push $repoUrl gh-pages --force
-          
-          Pop-Location
-          Write-Host "✅ Deployed to GitHub Pages"
+        id: deployment
+        uses: actions/deploy-pages@v4
 
   # ============================================
   # BUILD & PUSH BACKEND IMAGE
@@ -532,6 +523,7 @@ jobs:
       - frontend-tests
       - publish-backend-image
       - build-frontend
+      - deploy-frontend
     steps:
       - name: Build summary
         shell: pwsh
@@ -551,6 +543,9 @@ jobs:
           
           $buildResult = "${{ needs.build-frontend.result }}"
           if ($buildResult) { $lines += "| build-frontend | $buildResult |" }
+
+          $deployResult = "${{ needs.deploy-frontend.result }}"
+          if ($deployResult) { $lines += "| deploy-frontend | $deployResult |" }
           
           $lines += ""
           
