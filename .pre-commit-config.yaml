@@ -9,7 +9,7 @@ repos:
     hooks:
       - id: pytest-fast
         name: pytest fast subset
-        entry: bash -c 'SIFU_SKIP_BOOTSTRAP=1 pytest -q tests/test_api_simple.py test_ur.py::TestURAPI::test_get_latest_ur || exit 1'
+        entry: python scripts/precommit_pytest_fast.py
         language: system
         pass_filenames: false
         stages: [commit]

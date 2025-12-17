@@ -33,17 +33,24 @@ fi
 cd ..
 
 echo "🔒 Checking backend security (pip-audit)..."
-if command -v pip-audit &> /dev/null; then
-  # Check only HIGH+ vulnerabilities (consistent with CI)
-  pip-audit -r requirements.txt --ignore-vuln PYSEC-2024-75 2>/dev/null | grep -E "^(Name|---)" > /dev/null
-  VULN_COUNT=$(pip-audit -r requirements.txt 2>/dev/null | grep -c "PYSEC\|CVE\|GHSA" || echo "0")
-  if [ "$VULN_COUNT" -gt 0 ]; then
-    echo "⚠️  Backend has $VULN_COUNT known vulnerabilities."
-    echo "   Run 'pip-audit -r requirements.txt' to see details."
-    # Don't fail for now - just warn (pip-audit can be slow and has false positives)
+PIP_AUDIT_BIN="pip-audit"
+if ! command -v "$PIP_AUDIT_BIN" &> /dev/null; then
+  if [ -x ".venv/Scripts/pip-audit.exe" ]; then
+    PIP_AUDIT_BIN=".venv/Scripts/pip-audit.exe"
+  else
+    echo "⏭️  pip-audit not installed, skipping backend security check"
+    echo "✅ Pre-commit checks passed!"
+    exit 0
   fi
+fi
+
+AUDIT_OUTPUT=$("$PIP_AUDIT_BIN" -r requirements.txt --ignore-vuln PYSEC-2024-75 2>/dev/null)
+VULN_COUNT=$(printf "%s" "$AUDIT_OUTPUT" | grep -c "PYSEC\|CVE\|GHSA" || true)
+if [ "$VULN_COUNT" -gt 0 ]; then
+  echo "⚠️  Backend has $VULN_COUNT known vulnerabilities."
+  echo "   Run 'pip-audit -r requirements.txt' to see details."
 else
-  echo "⏭️  pip-audit not installed, skipping backend security check"
+  echo "✅ Backend dependencies look clean"
 fi
 
 echo "✅ Pre-commit checks passed!"
