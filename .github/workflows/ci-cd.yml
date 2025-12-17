@@ -398,15 +398,36 @@ jobs:
           Copy-Item dist/index.html dist/404.html
           New-Item -Path "dist/.nojekyll" -ItemType File -Force | Out-Null
 
-      - name: Upload dist artifact
+      - name: Package GitHub Pages artifact
+        shell: pwsh
+        run: |
+          $artifactPath = Join-Path $env:RUNNER_TEMP 'artifact.tar'
+          if (Test-Path $artifactPath) {
+            Remove-Item $artifactPath -Force
+          }
+          if (-not (Test-Path 'dist')) {
+            Write-Host 'ERROR: dist folder not found'
+            exit 1
+          }
+          tar --dereference --hard-dereference -C dist -cf $artifactPath .
+          Write-Host "Packaged dist into $artifactPath"
+
+      - name: Upload GitHub Pages artifact
         uses: actions/upload-artifact@v4
+        with:
+          name: github-pages
+          path: ${{ runner.temp }}/artifact.tar
+
+      - name: Upload dist artifact (debug)
+        uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: frontend-dist
           path: dist
 
   deploy-frontend:
     name: Deploy Frontend (Pages)
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, sifu-local]
     needs: [ build-frontend ]
     if: needs.build-frontend.result == 'success'
     permissions:
@@ -417,17 +438,6 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - name: Download dist artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: frontend-dist
-          path: dist
-
-      - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: dist
-
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
