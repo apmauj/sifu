@@ -398,28 +398,10 @@ jobs:
           Copy-Item dist/index.html dist/404.html
           New-Item -Path "dist/.nojekyll" -ItemType File -Force | Out-Null
 
-      - name: Ensure Git Bash for tar
-        shell: pwsh
-        run: |
-          $gitBin = "C:\Program Files\Git\bin"
-          $gitUsrBin = "C:\Program Files\Git\usr\bin"
-          $bashExe = Join-Path $gitBin "bash.exe"
-          if (-not (Test-Path $bashExe)) {
-            Write-Host "ERROR: Git Bash no encontrado en $gitBin"
-            exit 1
-          }
-          $pathsToPrepend = @($gitBin, $gitUsrBin) | Where-Object { Test-Path $_ }
-          if (-not $pathsToPrepend) {
-            Write-Host "ERROR: No hay rutas válidas para Git"
-            exit 1
-          }
-          $newPath = ($pathsToPrepend -join ';') + ';' + $env:PATH
-          "PATH=$newPath" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-          Write-Host "Git Bash y tar se posicionaron al inicio del PATH para el archivado."
-
-      - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
+      - name: Upload dist artifact
+        uses: actions/upload-artifact@v4
         with:
+          name: frontend-dist
           path: dist
 
   deploy-frontend:
@@ -435,6 +417,17 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
+      - name: Download dist artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-dist
+          path: dist
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
