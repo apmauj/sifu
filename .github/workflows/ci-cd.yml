@@ -409,7 +409,7 @@ jobs:
             Write-Host 'ERROR: dist folder not found'
             exit 1
           }
-          tar --dereference --hard-dereference -C dist -cf $artifactPath .
+          tar -C dist -cf $artifactPath .
           Write-Host "Packaged dist into $artifactPath"
 
       - name: Upload GitHub Pages artifact
