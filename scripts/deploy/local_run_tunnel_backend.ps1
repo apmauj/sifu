@@ -1,6 +1,6 @@
 <#
  .SYNOPSIS
-  Inicia el backend local, crea un túnel público (ngrok o cloudflared) y opcionalmente actualiza el secret VITE_PUBLIC_API_URL en GitHub y dispara el deploy del frontend Pages.
+  Inicia el backend local, crea un túnel público (ngrok o cloudflared) y opcionalmente actualiza el secret VITE_PUBLIC_API_URL en GitHub y dispara CI/CD para redeploy del frontend Pages.
 
  .DESCRIPTION
   Automatiza el flujo "usar backend local desde frontend publicado en GitHub Pages".
@@ -8,7 +8,7 @@
   - Abre túnel con ngrok (API local) o cloudflared (parseando log)
   - Extrae la URL pública segura (https)
   - (Opcional) Actualiza el secret VITE_PUBLIC_API_URL con gh CLI
-  - (Opcional) Dispara workflow deploy-frontend.yml
+  - (Opcional) Dispara workflow ci-cd.yml (force_frontend_deploy=true)
 
  .PARAMETER TunnelProvider
   Proveedor del túnel: ngrok | cloudflared (por defecto ngrok)
@@ -20,7 +20,7 @@
   Si se indica, se ejecuta 'gh secret set VITE_PUBLIC_API_URL'. Requiere gh autenticado y permisos.
 
  .PARAMETER TriggerDeploy
-  Si se indica y se actualiza el secret, dispara el workflow 'deploy-frontend.yml'.
+  Si se indica y se actualiza el secret, dispara el workflow 'ci-cd.yml' con force_frontend_deploy=true.
 
  .PARAMETER SkipBackend
   No inicia el backend (asume que ya corre en :8000) y solo crea túnel y/o actualiza secret.
@@ -165,9 +165,9 @@ if ($UpdateSecret) {
   $secretResult = gh secret set VITE_PUBLIC_API_URL -b $fullApi 2>&1
   if ($LASTEXITCODE -eq 0) { Write-Host "✅ Secret actualizado" -ForegroundColor Green } else { Write-Host "⚠️ Falló actualizar secret: $secretResult" -ForegroundColor Yellow }
   if ($TriggerDeploy) {
-    Write-Host "🚀 Disparando workflow deploy-frontend.yml" -ForegroundColor Magenta
-    gh workflow run deploy-frontend.yml 2>&1 | Out-Null
-    if ($LASTEXITCODE -eq 0) { Write-Host "✅ Workflow disparado" -ForegroundColor Green } else { Write-Host "⚠️ Falló disparar workflow" -ForegroundColor Yellow }
+    Write-Host "🚀 Disparando workflow ci-cd.yml (force_frontend_deploy=true)" -ForegroundColor Magenta
+    gh workflow run .github/workflows/ci-cd.yml -f force_frontend_deploy=true 2>&1 | Out-Null
+    if ($LASTEXITCODE -eq 0) { Write-Host "✅ Workflow CI/CD disparado" -ForegroundColor Green } else { Write-Host "⚠️ Falló disparar workflow CI/CD" -ForegroundColor Yellow }
   }
 }
 

@@ -25,7 +25,10 @@ param(
   [switch]$SkipIfUnchanged
 )
 
-$rateLimitFile = Join-Path $PSScriptRoot '..' '..' '.tunnel_rate_limit_until.txt'
+$ErrorActionPreference = 'Continue'
+try { $global:PSNativeCommandUseErrorActionPreference = $false } catch {}
+
+$rateLimitFile = Join-Path (Join-Path (Join-Path $PSScriptRoot '..') '..') '.tunnel_rate_limit_until.txt'
 
 function Read-RateLimitUntil {
   if(-not (Test-Path $rateLimitFile)){ return $null }
@@ -145,17 +148,26 @@ $url = $null
 $rateLimited = $false
 
 for($attempt=1; $attempt -le $RetryCount -and -not $url; $attempt++){
-  if($attempt -gt 1){ Info "Reintento $attempt/$RetryCount (reiniciando contenedor túnel)" }
-  Info 'Levantando túnel con config/docker/docker-compose.tunnel.yml'
-  $existingTunnel = docker ps -aq --filter "name=^/sifu-tunnel$"
-  if($existingTunnel){
-    Info 'Deteniendo túnel previo para evitar conflictos'
-    docker rm -f sifu-tunnel | Out-Null
-  }
-  docker compose -f config/docker/docker-compose.tunnel.yml up -d --no-deps --force-recreate --remove-orphans tunnel | Out-Null
-  if($LASTEXITCODE -ne 0){
-    Err 'docker compose falló al recrear el servicio tunnel. Reintentando...'
-    continue
+  $runningTunnel = docker ps --filter "name=^/sifu-tunnel$" --format '{{.ID}}'
+
+  if($attempt -eq 1 -and -not [string]::IsNullOrWhiteSpace($runningTunnel)){
+    Info 'Usando túnel existente (sin reiniciar) para evitar latencia de propagación DNS.'
+  } else {
+    if($attempt -gt 1){ Info "Reintento $attempt/$RetryCount (reiniciando contenedor túnel)" }
+    Info 'Levantando túnel con config/docker/docker-compose.tunnel.yml'
+    $existingTunnel = docker ps -aq --filter "name=^/sifu-tunnel$"
+    if($existingTunnel){
+      Info 'Deteniendo túnel previo para evitar conflictos'
+      docker rm -f sifu-tunnel | Out-Null
+    }
+    $composeOut = docker compose -f config/docker/docker-compose.tunnel.yml up -d --no-deps --force-recreate --remove-orphans tunnel 2>&1
+    $composeExit = $LASTEXITCODE
+    if($composeExit -ne 0){
+      $composeText = ($composeOut | Out-String).Trim()
+      if(-not [string]::IsNullOrWhiteSpace($composeText)){ Err "docker compose output: $composeText" }
+      Err 'docker compose falló al recrear el servicio tunnel. Reintentando...'
+      continue
+    }
   }
   $start = Get-Date
   while((Get-Date)-$start -lt [TimeSpan]::FromSeconds($TimeoutSeconds)){
@@ -202,8 +214,9 @@ Info "URL túnel: $url"
 
 Ensure-BackendRunning
 
-# Validar health del backend antes de publicar la URL (evita guardar una URL aún no lista)
-$healthOk = Test-BackendHealth -BaseUrl $url -Delays @(4,8,16,20)
+# Validar health del backend antes de publicar la URL.
+# Quick tunnels pueden tardar en propagar DNS; usar ventana más amplia para evitar falsos negativos.
+$healthOk = Test-BackendHealth -BaseUrl $url -Delays @(8,15,30,45,60,90)
 if(-not $healthOk){
   Err 'Backend no respondió OK tras reintentos de health. Abortando actualización de secret.'
   exit 1
@@ -211,7 +224,7 @@ if(-not $healthOk){
 
 # El workflow CI/CD normaliza y agrega /api automáticamente, así que el secret es solo la URL base
 $apiUrl = "$url"
-$stateFile = Join-Path $PSScriptRoot '..' '..' '.tunnel_last_url.txt'
+$stateFile = Join-Path (Join-Path (Join-Path $PSScriptRoot '..') '..') '.tunnel_last_url.txt'
 try { $prev = (Get-Content $stateFile -ErrorAction SilentlyContinue).Trim() } catch { $prev = $null }
 
 if($SkipIfUnchanged -and $prev -and $prev -eq $apiUrl){
