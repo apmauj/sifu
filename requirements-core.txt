@@ -15,8 +15,8 @@ APScheduler==3.10.4
 pytz==2024.1
 openpyxl==3.1.2
 xlrd==2.0.1
-# GHSA-h4gh-qq45-vh27 / CVE-2024-12797 mitigation requires >=44.0.1
-cryptography==44.0.1
+# GHSA-r6ph-v2qm-q3c2 / CVE-2026-26007 mitigation requires >=46.0.5
+cryptography==46.0.5
 python-dotenv==1.0.0
 PyJWT==2.8.0
 bcrypt==4.1.2
@@ -26,12 +26,13 @@ psutil==5.9.8
 slowapi==0.1.9
 
 # OpenTelemetry instrumentation (OSS, no licensing cost)
-opentelemetry-api==1.26.0
-opentelemetry-sdk==1.26.0
-opentelemetry-instrumentation==0.47b0
-opentelemetry-instrumentation-fastapi==0.47b0
-opentelemetry-instrumentation-requests==0.47b0
-opentelemetry-instrumentation-sqlalchemy==0.47b0
-opentelemetry-instrumentation-logging==0.47b0
-opentelemetry-exporter-otlp==1.26.0
+opentelemetry-api==1.39.1
+opentelemetry-sdk==1.39.1
+opentelemetry-instrumentation==0.60b1
+opentelemetry-instrumentation-fastapi==0.60b1
+opentelemetry-instrumentation-requests==0.60b1
+opentelemetry-instrumentation-sqlalchemy==0.60b1
+opentelemetry-instrumentation-logging==0.60b1
+opentelemetry-exporter-otlp==1.39.1
+protobuf==6.33.5
 prometheus-client==0.21.0

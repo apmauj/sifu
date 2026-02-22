@@ -17,13 +17,16 @@
   "dependencies": {
     "@headlessui/react": "^1.7.17",
     "@heroicons/react": "^2.0.18",
-    "axios": "^1.6.2",
+    "axios": "^1.13.5",
     "date-fns": "^2.30.0",
     "react": "^18.2.0",
     "react-datepicker": "^8.4.0",
     "react-dom": "^18.2.0",
     "react-hook-form": "^7.48.2",
     "recharts": "^2.15.3"
+  },
+  "overrides": {
+    "lodash": "4.17.23"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.6.3",

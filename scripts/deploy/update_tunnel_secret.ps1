@@ -203,7 +203,7 @@ Info "URL túnel: $url"
 Ensure-BackendRunning
 
 # Validar health del backend antes de publicar la URL (evita guardar una URL aún no lista)
-$healthOk = Test-BackendHealth -BaseUrl $url -Attempts 4 -InitialDelaySeconds 4 -Backoff 2 -MaxDelaySeconds 20
+$healthOk = Test-BackendHealth -BaseUrl $url -Delays @(4,8,16,20)
 if(-not $healthOk){
   Err 'Backend no respondió OK tras reintentos de health. Abortando actualización de secret.'
   exit 1
