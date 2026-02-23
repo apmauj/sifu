@@ -54,14 +54,18 @@ $taskCommand = "powershell.exe $runArgs"
 if ($UseCurrentUserLogon) {
   $currentUser = "$env:USERDOMAIN\$env:USERNAME"
   Info "Creando tarea '$TaskName' ($currentUser, ONLOGON)"
-  $createOutput = schtasks.exe /Create /TN $TaskName /TR $taskCommand /SC ONLOGON /RU $currentUser /RL LIMITED /F 2>&1
+  $createArgs = @('/Create','/TN',$TaskName,'/TR',$taskCommand,'/SC','ONLOGON','/RU',$currentUser,'/RL','LIMITED','/F')
+  if ($StartupDelayMinutes -gt 0) { $createArgs += @('/DELAY',$delay) }
+  $createOutput = schtasks.exe @createArgs 2>&1
 } elseif ($isAdmin) {
   Info "Creando tarea '$TaskName' (SYSTEM, ONSTART, delay=$delay)"
   $createOutput = schtasks.exe /Create /TN $TaskName /TR $taskCommand /SC ONSTART /DELAY $delay /RU SYSTEM /RL HIGHEST /F 2>&1
 } elseif ($AllowUserLogonFallback) {
   $currentUser = "$env:USERDOMAIN\$env:USERNAME"
   Warn "Sin privilegios de administrador. Creando fallback ONLOGON para usuario actual: $currentUser"
-  $createOutput = schtasks.exe /Create /TN $TaskName /TR $taskCommand /SC ONLOGON /RU $currentUser /RL LIMITED /F 2>&1
+  $createArgs = @('/Create','/TN',$TaskName,'/TR',$taskCommand,'/SC','ONLOGON','/RU',$currentUser,'/RL','LIMITED','/F')
+  if ($StartupDelayMinutes -gt 0) { $createArgs += @('/DELAY',$delay) }
+  $createOutput = schtasks.exe @createArgs 2>&1
 } else {
   Err 'Este script requiere PowerShell como administrador para tarea ONSTART/SYSTEM. Reintenta como admin o usa -AllowUserLogonFallback.'
   exit 1

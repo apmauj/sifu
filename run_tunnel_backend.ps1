@@ -110,7 +110,7 @@ if($healthy){ Ok 'Backend local saludable' } else { Info 'Backend aún calentand
 
 try {
 	$logs = docker logs --tail 120 sifu-tunnel 2>&1
-	$m = Select-String -InputObject $logs -Pattern 'https://[a-zA-Z0-9-]+\.trycloudflare\.com' -AllMatches | Select-Object -First 1
+	$m = Select-String -InputObject $logs -Pattern 'https://[a-zA-Z0-9-]+\.trycloudflare\.com' -AllMatches | Select-Object -Last 1
 	if($m){
 		$tunnelUrl = $m.Matches[0].Value
 		Ok "Túnel detectado: $tunnelUrl"

@@ -143,6 +143,8 @@ if($LASTEXITCODE -ne 0){
 # 1. Intentar obtener URL con reintentos (problemas intermitentes Cloudflare Quick Tunnel)
 if(-not (Test-Path './config/docker/docker-compose.tunnel.yml')){ Err 'config/docker/docker-compose.tunnel.yml no encontrado'; exit 1 }
 
+Ensure-BackendRunning
+
 $regex = 'https://[a-zA-Z0-9-]+\.trycloudflare\.com'
 $url = $null
 $rateLimited = $false
@@ -150,24 +152,20 @@ $rateLimited = $false
 for($attempt=1; $attempt -le $RetryCount -and -not $url; $attempt++){
   $runningTunnel = docker ps --filter "name=^/sifu-tunnel$" --format '{{.ID}}'
 
-  if($attempt -eq 1 -and -not [string]::IsNullOrWhiteSpace($runningTunnel)){
-    Info 'Usando túnel existente (sin reiniciar) para evitar latencia de propagación DNS.'
-  } else {
-    if($attempt -gt 1){ Info "Reintento $attempt/$RetryCount (reiniciando contenedor túnel)" }
-    Info 'Levantando túnel con config/docker/docker-compose.tunnel.yml'
-    $existingTunnel = docker ps -aq --filter "name=^/sifu-tunnel$"
-    if($existingTunnel){
-      Info 'Deteniendo túnel previo para evitar conflictos'
-      docker rm -f sifu-tunnel | Out-Null
-    }
-    $composeOut = docker compose -f config/docker/docker-compose.tunnel.yml up -d --no-deps --force-recreate --remove-orphans tunnel 2>&1
-    $composeExit = $LASTEXITCODE
-    if($composeExit -ne 0){
-      $composeText = ($composeOut | Out-String).Trim()
-      if(-not [string]::IsNullOrWhiteSpace($composeText)){ Err "docker compose output: $composeText" }
-      Err 'docker compose falló al recrear el servicio tunnel. Reintentando...'
-      continue
-    }
+  if($attempt -gt 1){ Info "Reintento $attempt/$RetryCount (reiniciando contenedor túnel)" }
+  Info 'Levantando túnel con config/docker/docker-compose.tunnel.yml'
+  $existingTunnel = docker ps -aq --filter "name=^/sifu-tunnel$"
+  if($existingTunnel){
+    Info 'Deteniendo túnel previo para evitar conflictos'
+    docker rm -f sifu-tunnel | Out-Null
+  }
+  $composeOut = docker compose -f config/docker/docker-compose.tunnel.yml up -d --no-deps --force-recreate --remove-orphans tunnel 2>&1
+  $composeExit = $LASTEXITCODE
+  if($composeExit -ne 0){
+    $composeText = ($composeOut | Out-String).Trim()
+    if(-not [string]::IsNullOrWhiteSpace($composeText)){ Err "docker compose output: $composeText" }
+    Err 'docker compose falló al recrear el servicio tunnel. Reintentando...'
+    continue
   }
   $start = Get-Date
   while((Get-Date)-$start -lt [TimeSpan]::FromSeconds($TimeoutSeconds)){
@@ -179,10 +177,18 @@ for($attempt=1; $attempt -le $RetryCount -and -not $url; $attempt++){
       break
     }
     if($logs -match 'cf-error-code">(\d+)<'){ $cfCode=$Matches[1]; Err "Código Cloudflare detectado: $cfCode" }
-    $m = Select-String -InputObject $logs -Pattern $regex -AllMatches | Select-Object -First 1
+    $m = Select-String -InputObject $logs -Pattern $regex -AllMatches | Select-Object -Last 1
     if($m){
-      $url = $m.Matches[0].Value
-      if($JsonLogs){ Write-JsonLog -Level 'INFO' -Message 'URL detectada' -Event 'tunnel_url_found' -Attempt $attempt -Url $url }
+      $candidateUrl = $m.Matches[0].Value
+      Info "URL candidata: $candidateUrl"
+
+      $candidateHealthOk = Test-BackendHealth -BaseUrl $candidateUrl -Delays @(8,15,30,45,60,90)
+      if($candidateHealthOk){
+        $url = $candidateUrl
+        if($JsonLogs){ Write-JsonLog -Level 'INFO' -Message 'URL validada' -Event 'tunnel_url_valid' -Attempt $attempt -Url $url }
+      } else {
+        Err 'La URL candidata no pasó health tras ventana completa de espera. Se recreará túnel.'
+      }
       break
     }
     Start-Sleep 2
@@ -211,16 +217,6 @@ if(-not $url){
   exit 1
 }
 Info "URL túnel: $url"
-
-Ensure-BackendRunning
-
-# Validar health del backend antes de publicar la URL.
-# Quick tunnels pueden tardar en propagar DNS; usar ventana más amplia para evitar falsos negativos.
-$healthOk = Test-BackendHealth -BaseUrl $url -Delays @(8,15,30,45,60,90)
-if(-not $healthOk){
-  Err 'Backend no respondió OK tras reintentos de health. Abortando actualización de secret.'
-  exit 1
-}
 
 # El workflow CI/CD normaliza y agrega /api automáticamente, así que el secret es solo la URL base
 $apiUrl = "$url"
