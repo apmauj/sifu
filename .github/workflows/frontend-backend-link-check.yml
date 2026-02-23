@@ -530,7 +530,7 @@ jobs:
             }
 
       - name: Auto-close Issue on Recovery
-        if: always() && (steps.frontend_check.outputs.frontend_accessible == 'true') && (steps.backend_check.outputs.backend_accessible == 'true') && (steps.integration_check.outputs.integration_status == 'success')
+        if: always() && (steps.frontend_check.outputs.frontend_accessible == 'true') && (steps.backend_check.outputs.backend_accessible == 'true') && (steps.integration_check.outputs.integration_status != 'error')
         uses: actions/github-script@v7
         with:
           script: |

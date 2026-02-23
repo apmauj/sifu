@@ -213,7 +213,7 @@ jobs:
             }
 
       - name: Auto-close Issue on Recovery
-        if: always() && steps.brou_check.outputs.status == 'success'
+        if: always() && steps.brou_check.outputs.status != 'error'
         uses: actions/github-script@v7
         with:
           script: |
