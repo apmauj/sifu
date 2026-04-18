@@ -32,6 +32,9 @@ permissions:
   issues: write  # Para crear issues si hay problemas
   actions: write  # Para disparar workflow de recuperación de túnel
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+
 concurrency:
   group: frontend-backend-link-check
   cancel-in-progress: true
@@ -128,7 +131,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Check Frontend Accessibility
         id: frontend_check
@@ -427,7 +430,7 @@ jobs:
 
       - name: Create Issue on Failure
         if: failure() && (github.event.inputs.create_issue_on_failure != 'false')
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           script: |
             const thresholdInput = '${{ github.event.inputs.issue_failure_threshold }}';
@@ -543,7 +546,7 @@ jobs:
 
       - name: Auto-close Issue on Recovery
         if: always() && (steps.frontend_check.outputs.frontend_accessible == 'true') && (steps.backend_check.outputs.backend_accessible == 'true') && (steps.integration_check.outputs.integration_status != 'error')
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           script: |
             const { data } = await github.rest.issues.listForRepo({

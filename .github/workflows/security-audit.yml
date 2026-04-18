@@ -22,6 +22,9 @@ on:
 permissions:
   contents: read
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+
 concurrency:
   group: security-audit
   cancel-in-progress: false
@@ -31,7 +34,7 @@ jobs:
     runs-on: windows-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       
       - name: Install deps
         shell: pwsh
@@ -141,7 +144,7 @@ jobs:
             $summary -join "`n" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Encoding utf8 -Append
           }
       
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: backend-pip-audit-json
@@ -157,7 +160,7 @@ jobs:
       run:
         working-directory: frontend
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       
       - name: Install deps
         shell: pwsh
@@ -211,7 +214,7 @@ jobs:
             echo "Frontend: PASS (audit parse warning)" >> $env:GITHUB_STEP_SUMMARY
           }
       
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: frontend-npm-audit-json

@@ -45,6 +45,9 @@ permissions:
   pages: write      # Pages deploy
   id-token: write   # Pages OIDC
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+
 concurrency:
   group: ci-cd-${{ github.ref }}
   cancel-in-progress: true
@@ -179,7 +182,7 @@ jobs:
     runs-on: [self-hosted, sifu-local]
     timeout-minutes: 8
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       
       - name: Setup Python environment
         shell: pwsh
@@ -228,7 +231,7 @@ jobs:
           Write-Host "Backend audit PASS sin High/Critical"
           exit 0
       
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: backend-audit
@@ -242,7 +245,7 @@ jobs:
       run:
         working-directory: frontend
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       
       - name: npm audit prod
         id: audit
@@ -277,7 +280,7 @@ jobs:
           Write-Host "Frontend audit PASS sin High/Critical"
           exit 0
       
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: frontend-audit
@@ -292,7 +295,7 @@ jobs:
     runs-on: [self-hosted, sifu-local]
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       
       - name: Install deps and run tests
         shell: pwsh
@@ -328,7 +331,7 @@ jobs:
       run:
         working-directory: frontend
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       
       - name: Install deps and run tests
         shell: pwsh
@@ -360,7 +363,7 @@ jobs:
       run:
         working-directory: frontend
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       
       - name: Resolve API URL and Build
         shell: pwsh
@@ -424,13 +427,13 @@ jobs:
           Write-Host "Packaged dist into $artifactPath"
 
       - name: Upload GitHub Pages artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: github-pages
           path: ${{ runner.temp }}/artifact.tar
 
       - name: Upload dist artifact (debug)
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: frontend-dist
@@ -451,7 +454,7 @@ jobs:
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
 
   # ============================================
   # BUILD & PUSH BACKEND IMAGE
@@ -465,7 +468,7 @@ jobs:
       contents: read
       packages: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       
       - name: Build and push Docker image
         shell: pwsh
