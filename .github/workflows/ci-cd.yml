@@ -195,13 +195,15 @@ jobs:
           
           # Run pip-audit
           pip-audit -r requirements.txt -f json 2>$null | Out-File -FilePath pip_audit_backend.json -Encoding utf8
+          $auditExit = $LASTEXITCODE
           
           # Count high/critical vulnerabilities
           $HC = 0
           if (Test-Path pip_audit_backend.json) {
             try {
-              $audit = Get-Content pip_audit_backend.json | ConvertFrom-Json
-              foreach ($pkg in $audit) {
+              $audit = Get-Content pip_audit_backend.json -Raw | ConvertFrom-Json
+              $packages = if ($audit.dependencies) { $audit.dependencies } else { $audit }
+              foreach ($pkg in $packages) {
                 foreach ($vuln in $pkg.vulns) {
                   $severity = if ($vuln.severity.value) { $vuln.severity.value } else { $vuln.severity }
                   if ($severity -match 'high|critical') { $HC++ }
@@ -211,12 +213,14 @@ jobs:
           }
           
           echo "hc=$HC" >> $env:GITHUB_OUTPUT
+          Write-Host "pip-audit exit code: $auditExit"
           
           if ($HC -gt 0) {
             Write-Host "High/Critical vulns: $HC"
             exit 1
           }
           Write-Host "Backend audit PASS sin High/Critical"
+          exit 0
       
       - uses: actions/upload-artifact@v4
         if: always()
@@ -241,12 +245,13 @@ jobs:
           # Use --ignore-scripts to skip husky install (bash syntax incompatible with Windows)
           npm ci --ignore-scripts --no-audit 2>$null
           npm audit --omit=dev --json 2>$null | Out-File -FilePath audit.prod.json -Encoding utf8
+          $auditExit = $LASTEXITCODE
           
           # Count high/critical vulnerabilities
           $HC = 0
           if (Test-Path audit.prod.json) {
             try {
-              $audit = Get-Content audit.prod.json | ConvertFrom-Json
+              $audit = Get-Content audit.prod.json -Raw | ConvertFrom-Json
               if ($audit.vulnerabilities) {
                 foreach ($key in $audit.vulnerabilities.PSObject.Properties.Name) {
                   $vuln = $audit.vulnerabilities.$key
@@ -257,12 +262,14 @@ jobs:
           }
           
           echo "hc=$HC" >> $env:GITHUB_OUTPUT
+          Write-Host "npm audit exit code: $auditExit"
           
           if ($HC -gt 0) {
             Write-Host "High/Critical vulns Frontend: $HC"
             exit 1
           }
           Write-Host "Frontend audit PASS sin High/Critical"
+          exit 0
       
       - uses: actions/upload-artifact@v4
         if: always()
