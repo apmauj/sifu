@@ -8,12 +8,14 @@ Bienvenido al centro de documentación del proyecto **SIFU - Sistema de Índices
 - [📖 README Principal](../README.md) - Introducción y guía de inicio
 - [🏗️ Arquitectura Técnica](./ARCHITECTURE.md) - Diseño completo del sistema
 - [📊 Resumen Técnico](./TECHNICAL_SUMMARY.md) - Visión general del proyecto
+- [🐍 Plan Upgrade Python](./PYTHON_UPGRADE_ARCHITECTURE_PLAN.md) - Diagnóstico y plan por fases para evolución de runtime
 
 ### 🔧 **Documentación de Desarrollo**
 - [📡 API Reference](./API_REFERENCE.md) - Documentación completa de endpoints
 - [🌐 Guía Frontend](./FRONTEND_GUIDE.md) - Desarrollo del frontend React
 - [🧪 Setup de Testing](../README.md#-testing) - Comandos de ejecución de pruebas
 - [🚀 Deploy Backend](./DEPLOY_BACKEND.md) - Guía de despliegue del backend
+- [🐍 Upgrade Local Seguro](./PYTHON_LOCAL_SAFE_UPGRADE.md) - Migración de entorno local en paralelo (3.11/3.12)
 
 ### 📊 **Análisis Técnico**
 - [⚙️ Arquitectura de Componentes](./ARCHITECTURE.md#componentes-principales) - Detalles de cada capa
