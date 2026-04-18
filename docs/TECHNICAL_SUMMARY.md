@@ -136,7 +136,7 @@ Uvicorn                 # ASGI server
 
 # Development
 Python 3.11+            # Runtime
-Node.js 18+             # Frontend tooling
+Node.js 24+             # Frontend tooling
 ```
 
 ## 🚀 Capacidades Implementadas
