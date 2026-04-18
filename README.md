@@ -70,7 +70,7 @@ npm --prefix frontend exec npx serve -s dist -l 5174
 ├── main.py              # FastAPI app (endpoints + lifespan)
 ├── services.py          # Lógica de negocio UI/UR/Exchange/BROU
 ├── models.py            # Pydantic / ORM models
-├── brou_processor.py    # Scraper/processor BROU (cambios recientes)
+├── brou_processor.py    # Scraper/processor BROU
 ├── excel_processor.py   # Procesamiento Excel (UI/UR)
 ├── database.py          # Conexión y helpers DB
 ├── constants.py         # Mensajes y tags centralizados
@@ -212,12 +212,6 @@ El proyecto soporta múltiples idiomas:
 
 Los archivos de traducción se sirven desde `frontend/public/i18n` en producción (Pages) y se incluyen fallbacks embebidos en `frontend/src/locales` por si el hosting no entrega `/i18n/*.json`.
 
-### 2025-09-06 (Dashboard i18n)
-- Se integró completamente el panel de monitoreo (`Dashboard.jsx`) al sistema i18n con namespace `dashboard.*` (estado general, métricas, budgets, throughput, acciones).
-- Se eliminó el uso temporal de allowlist para estas claves en la prueba de claves huérfanas (`i18nOrphanedKeys.test.js`).
-- Se añadió un fallback puntual que marca las claves `dashboard.*` como usadas si existe el componente, mientras se investiga por qué el regex original no las detecta en algunos entornos Windows.
-- Próximo paso recomendado: revisar el extractor regex para remover el fallback y asegurar detección estándar.
-
 ## 🧪 Testing
 
 ```bash
@@ -237,56 +231,10 @@ npm test
 - Mensajes y tags centralizados en `constants.py` para respuestas homogéneas.
 - Script de control de duplicados: `python scripts/check_messages.py` (añade exit code 1 si encuentra repeticiones).
 
-### 🧪 Mejoras Recientes en Testing (2025-01-15)
+### Historial y Planificación
 
-#### **Problemas Resueltos**
-- ✅ **RangeError en date-fns**: Eliminados errores de "Invalid time value" en operaciones de fecha
-- ✅ **Act() Warnings**: Corregidos warnings de React Testing Library en componentes asíncronos
-- ✅ **ParseISO Errors**: Mejorado manejo robusto de fechas inválidas/undefined en componentes
-- ✅ **Test Coverage**: Mejorada cobertura de casos edge en funciones de formateo de fecha
-
-#### **Mejoras Implementadas**
-
-**1. Enhanced Date-Fns Mock (`frontend/src/test/setup.jsx`)**
-```javascript
-// Validación robusta para fechas inválidas
-parseISO: vi.fn((dateString) => {
-  if (!dateString || typeof dateString !== 'string') {
-    console.warn('Invalid date string provided to parseISO:', dateString)
-    return new Date() // Return current date as fallback
-  }
-  const parsed = new Date(dateString)
-  if (isNaN(parsed.getTime())) {
-    console.warn('Invalid date string parsed:', dateString)
-    return new Date() // Return current date as fallback
-  }
-  return parsed
-})
-```
-
-**2. Componentes con Manejo Mejorado de Fechas**
-- **SearchForm.jsx**: Validación de tipo y contenido antes de `parseISO`
-- **ResultsDisplay.jsx**: Función `formatDate` con try-catch y fallbacks
-- **ExchangeResultsDisplay.jsx**: Función `formatDateForChart` con manejo de errores
-
-**3. Tests con Act() Wrappers**
-- **URSearchForm.test.jsx**: Wrappers en tests de quick selectors y clear buttons
-- **SearchForm.test.jsx**: Wrappers en tests de clear button y form submission
-
-#### **Métricas de Testing**
-- **598 tests** pasando exitosamente
-- **35 archivos** de test ejecutándose sin errores
-- **Cobertura completa** de casos edge en manejo de fechas
-- **0 warnings** críticos en test suite
-
-### Cambios Recientes (2025-08-15)
-- Refactor caché BROU: soporte dict seguro + flag `preferential`.
-- Fallback a muestra cuando 0 monedas tras scraping.
-- Nuevo parámetro `?full=true` en `/api/brou/current` (metadatos + mensaje).
-- Test de estructura y flag preferencial agregado.
-- Workflow publicación backend estabilizado (tags: latest, fecha, SHA).
-- `docker-compose.yml` productivo ahora usa imagen publicada (removido bind mount de código que ocultaba cambios).
-- README alineado con layout real (sin subcarpeta backend/).
+- Para cambios completados y releases: ver `CHANGELOG_2026-04-18.md` y `CHANGELOG_2025-10-11.md`.
+- Para planes operativos de continuidad: ver `NEXT_SESSION.md` y `docs/NEXT_SESSION.MD`.
 
 ### Automatización de túnel temporal (Pages → Backend local)
 
@@ -412,22 +360,4 @@ Notas:
 - Alternativa ngrok: descomentá el servicio `ngrok` en `docker-compose.tunnel.yml`, definí `NGROK_AUTHTOKEN` en un `.env` y comentá el servicio `tunnel` de cloudflared.
 - Para producción real preferí un dominio propio + reverse proxy (ver `docker-compose.gateway.yml`).
 - Podés ajustar CORS cambiando `ALLOW_ORIGINS` en el servicio `backend`.
-
-## 🗓️ Próxima Sesión (Plan Tentativo)
-
-### ✅ Completado - Mejoras en Testing (2025-01-15)
-- [x] **RangeError en date-fns**: Eliminados errores de "Invalid time value" en operaciones de fecha
-- [x] **Act() Warnings**: Corregidos warnings de React Testing Library en componentes asíncronos  
-- [x] **ParseISO Errors**: Mejorado manejo robusto de fechas inválidas/undefined en componentes
-- [x] **Test Coverage**: Mejorada cobertura de casos edge en funciones de formateo de fecha
-- [x] **Suite Verde**: 598 tests pasando exitosamente, 35 archivos sin errores
-
-### Próximos Pasos Planificados
-1. Automatizar (script/workflow) `docker pull` + recreación backend antes de actualizar secret del túnel.
-2. Workflow programado que verifique `/api/brou/current?full=true` y alerte si `data.length == 0`.
-3. Frontend: usar `?full=true` para mostrar timestamp y mensaje en panel BROU.
-4. Extender healthcheck para incluir frescura de caché BROU.
-5. Revisar documentación de exchange para unificar terminología.
-
-Registrar decisiones nuevas aquí para continuidad.
 
