@@ -1,5 +1,16 @@
 # NEXT SESSION PLAN
 
+## P0 - Primera Pendiente: Migración Node 24 en Actions
+
+Meta: eliminar riesgo por deprecación de Node 20 en runners y dejar los workflows listos para Node 24.
+
+Checklist de ejecución:
+- [ ] Revisar todos los workflows en `.github/workflows/` y listar acciones JS usadas.
+- [ ] Actualizar versiones de acciones a variantes compatibles con Node 24.
+- [ ] Ejecutar corrida de validación con `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true`.
+- [ ] Confirmar `CI/CD` y `Security Audit` en verde sin warning de deprecación.
+- [ ] Registrar evidencias y lecciones en roadmap de migración.
+
 Fecha de preparación: 2025-08-14
 Contexto actual: Se añadieron cachés en memoria (BCU/BROU), bootstrap automático en `startup_event`, endpoints de /current sirven desde cache, se eliminó el botón de refresh manual en el frontend y se añadieron tests de caché (aún no ejecutados por bloqueo de dependencias en Python 3.13). `pandas` y `pydantic-core` no instalan wheels precompilados en 3.13 (requieren toolchain). Excel processors fueron endurecidos para funcionar sin pandas (modo degradado), pero para datos reales se necesita pandas.
 

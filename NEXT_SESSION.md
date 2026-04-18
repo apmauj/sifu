@@ -1,5 +1,20 @@
 # Próxima Sesión - SIFU Roadmap & Planning
 
+## 🚨 P0 - Primera Tarea Pendiente (Node 24 en GitHub Actions)
+
+Objetivo: migrar y validar workflows para ejecución estable con Node 24 antes de la fecha de corte de Node 20.
+
+### Alcance inmediato (sesión siguiente)
+1. Inventariar workflows que usan acciones JavaScript (`actions/checkout`, `actions/upload-artifact`, `actions/setup-*`).
+2. Actualizar versiones a releases compatibles con Node 24 en todos los workflows activos.
+3. Ejecutar prueba controlada con `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true` para detectar incompatibilidades tempranas.
+4. Corregir warnings/fallos y volver a correr `CI/CD`, `Security Audit`, `Update Tunnel`, `Frontend-Backend Link Check`.
+5. Documentar resultado y cerrar con checklist de validación en roadmap técnico.
+
+### Criterio de cierre
+- 0 warnings de deprecación Node 20 en jobs principales.
+- Workflows críticos en verde con SHA de la rama de migración.
+
 ## 🎯 Estado Actual del Proyecto
 
 ### ✅ Completado - Mejoras Críticas en Testing (2025-01-15)
