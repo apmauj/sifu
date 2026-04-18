@@ -6,19 +6,19 @@ on:
       trigger_deploy:
         description: 'Disparar redeploy de frontend después de actualizar'
         required: false
-        default: true
+        default: false
         type: boolean
       skip_if_unchanged:
         description: 'Saltar si la URL no cambió'
         required: false
-        default: false
+        default: true
         type: boolean
   workflow_call:
     inputs:
       trigger_deploy:
         description: 'Disparar redeploy de frontend después de actualizar'
         required: false
-        default: true
+        default: false
         type: boolean
 
 permissions:

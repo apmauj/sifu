@@ -22,7 +22,8 @@ param(
   [int]$MaxRetryDelaySeconds = 40,
   [switch]$JsonLogs,
   [switch]$TriggerDeploy,
-  [switch]$SkipIfUnchanged
+  [switch]$SkipIfUnchanged,
+  [switch]$ForceDeployOnUnchanged
 )
 
 $ErrorActionPreference = 'Continue'
@@ -257,11 +258,15 @@ $stateFile = Join-Path (Join-Path (Join-Path $PSScriptRoot '..') '..') '.tunnel_
 try { $prev = (Get-Content $stateFile -ErrorAction SilentlyContinue).Trim() } catch { $prev = $null }
 
 if($SkipIfUnchanged -and $prev -and $prev -eq $apiUrl){
-  if($TriggerDeploy){
-    Info "URL sin cambios ($apiUrl). Saltando actualización de secret pero igualmente disparando redeploy (porque -TriggerDeploy)."
+  if($TriggerDeploy -and $ForceDeployOnUnchanged){
+    Info "URL sin cambios ($apiUrl). Saltando actualización de secret y forzando redeploy por -ForceDeployOnUnchanged."
     $skipSecretUpdate = $true
   } else {
-    Info "URL sin cambios ($apiUrl). Nada que hacer (no se solicitó redeploy)."
+    if($TriggerDeploy){
+      Info "URL sin cambios ($apiUrl). No se dispara redeploy para evitar loops (usar -ForceDeployOnUnchanged para override)."
+    } else {
+      Info "URL sin cambios ($apiUrl). Nada que hacer (no se solicitó redeploy)."
+    }
     exit 0
   }
 }

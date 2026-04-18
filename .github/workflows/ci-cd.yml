@@ -381,11 +381,10 @@ jobs:
           Write-Host "Cleaning npm cache and node_modules..."
           npm cache clean --force 2>$null
           if (Test-Path node_modules) { Remove-Item node_modules -Recurse -Force -ErrorAction SilentlyContinue }
-          if (Test-Path package-lock.json) { Remove-Item package-lock.json -Force -ErrorAction SilentlyContinue }
           
-          # Fresh install - WITHOUT NODE_ENV=production so devDependencies are installed
-          Write-Host "Installing dependencies (including devDependencies for vite)..."
-          npm install --ignore-scripts
+          # Deterministic install from lockfile (includes devDependencies needed for build)
+          Write-Host "Installing dependencies from lockfile..."
+          npm ci --ignore-scripts --no-audit
           
           $pkgCount = (Get-ChildItem node_modules -Directory -ErrorAction SilentlyContinue | Measure-Object).Count
           Write-Host "Installed $pkgCount top-level packages in node_modules"

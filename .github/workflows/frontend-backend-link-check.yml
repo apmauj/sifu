@@ -11,6 +11,11 @@ on:
         required: false
         default: false
         type: boolean
+      trigger_deploy_on_recovery:
+        description: 'Disparar deploy frontend si la recuperación del túnel fue exitosa'
+        required: false
+        default: false
+        type: boolean
       create_issue_on_failure:
         description: 'Crear issue si falla'
         required: false
@@ -277,11 +282,18 @@ jobs:
           GH_TOKEN: ${{ secrets.GH_PAT }}
         run: |
           Write-Host "🔄 Intentando recuperar túnel automáticamente (ejecución directa)..."
+          $TriggerDeploy = ('${{ github.event.inputs.trigger_deploy_on_recovery }}' -eq 'true')
           
           # Ejecutar script de actualización de túnel directamente
           # Ya estamos en self-hosted, tenemos Docker disponible
           try {
-            & "$env:GITHUB_WORKSPACE\scripts\deploy\update_tunnel_secret.ps1" -Repo '${{ github.repository }}' -TriggerDeploy
+            $scriptParams = @{
+              Repo = '${{ github.repository }}'
+              SkipIfUnchanged = $true
+            }
+            if ($TriggerDeploy) { $scriptParams.TriggerDeploy = $true }
+
+            & "$env:GITHUB_WORKSPACE\scripts\deploy\update_tunnel_secret.ps1" @scriptParams
             
             if ($LASTEXITCODE -eq 0) {
               Write-Host "✅ Túnel recuperado exitosamente"
