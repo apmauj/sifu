@@ -63,24 +63,57 @@ function Write-JsonLog {
 function Test-BackendHealth {
   param(
     [string]$BaseUrl,
-    [int[]]$Delays = @(30,60,90,120,180)
+    [int[]]$Delays = @(8,15,30,45,60,90)
   )
 
   $attempts = $Delays.Count
+  $endpoints = @(
+    "$BaseUrl/api/health/simple",
+    "$BaseUrl/api/health"
+  )
+
   for($i = 0; $i -lt $attempts; $i++){
-    $endpoint = "$BaseUrl/api/health/simple"
     $attemptNum = $i + 1
-    Info "Verificando health ($attemptNum/$attempts): $endpoint"
-    try {
-      $resp = Invoke-RestMethod -Method Get -Uri $endpoint -TimeoutSec 10
-      $status = $resp.status
-      if($status -eq 'ok' -or $status -eq 'healthy'){
-        Info "Health OK en intento $attemptNum"
-        return $true
+
+    foreach($endpoint in $endpoints){
+      Info "Verificando health ($attemptNum/$attempts): $endpoint"
+      try {
+        $response = Invoke-WebRequest -Method Get -Uri $endpoint -TimeoutSec 12 -UseBasicParsing
+        $body = $response.Content
+        $status = $null
+
+        try {
+          $parsed = $body | ConvertFrom-Json -ErrorAction Stop
+          if($parsed -and $parsed.PSObject.Properties.Name -contains 'status'){
+            $status = "$($parsed.status)".ToLowerInvariant()
+          }
+        } catch {
+          # Algunos edge responses no son JSON en los primeros segundos del túnel.
+        }
+
+        if($response.StatusCode -eq 200 -and ($status -eq 'ok' -or $status -eq 'healthy')){
+          Info "Health OK en intento $attemptNum"
+          return $true
+        }
+
+        if($response.StatusCode -eq 200 -and [string]::IsNullOrWhiteSpace($status) -and $endpoint.EndsWith('/api/health')){
+          Info "Health respondió 200 en endpoint alternativo; se considera OK"
+          return $true
+        }
+
+        if($body -match 'FAIL|cf-error-code|cloudflare'){
+          Err "Health devolvió respuesta transitoria de túnel/edge. Reintentando..."
+        } else {
+          Err "Health devolvió estado inesperado: $status"
+        }
+      } catch {
+        $errText = $_.Exception.Message
+        if($errText -match 'Host desconocido|No such host is known|NameResolutionFailure|Name or service not known'){
+          Err "DNS del túnel aún no propagó. Reintentando..."
+        } else {
+          Err "Health request falló (intento $attemptNum): $_"
+        }
       }
-      Err "Health devolvió estado inesperado: $status"
-    } catch {
-      Err "Health request falló (intento $attemptNum): $_"
     }
 
     if($attemptNum -lt $attempts){

@@ -70,6 +70,11 @@ jobs:
         run: |
           Write-Host "🔍 Verificando que el secret VITE_PUBLIC_API_URL existe..."
           $secrets = gh secret list -R '${{ github.repository }}' 2>&1
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "⚠️ No se pudo listar secrets con gh (continuando): $secrets"
+            echo "secret_exists=unknown" >> $env:GITHUB_OUTPUT
+            exit 0
+          }
           if ($secrets -match 'VITE_PUBLIC_API_URL') {
             Write-Host "✅ Secret VITE_PUBLIC_API_URL encontrado"
             echo "secret_exists=true" >> $env:GITHUB_OUTPUT

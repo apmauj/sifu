@@ -47,26 +47,22 @@ jobs:
         shell: pwsh
         run: |
           if (Test-Path ".venv/Scripts/Activate.ps1") { . .venv/Scripts/Activate.ps1 }
-          $exitCode = 0
-          try {
-            pip-audit -r requirements-core.txt -r requirements-dev.txt -r requirements.txt -f json 2>$null | Out-File -FilePath pip_audit_requirements.json -Encoding utf8
-          } catch {
-            $exitCode = 1
-          }
+          pip-audit -r requirements-core.txt -r requirements-dev.txt -r requirements.txt -f json 2>$null | Out-File -FilePath pip_audit_requirements.json -Encoding utf8
+          $exitCode = $LASTEXITCODE
           echo "exit_code=$exitCode" >> $env:GITHUB_OUTPUT
+          # No cortar aquí: el umbral se evalúa en el step siguiente.
+          exit 0
       
       - name: pip-audit (installed)
         id: audit_installed
         shell: pwsh
         run: |
           if (Test-Path ".venv/Scripts/Activate.ps1") { . .venv/Scripts/Activate.ps1 }
-          $exitCode = 0
-          try {
-            pip-audit -l -f json 2>$null | Out-File -FilePath pip_audit_installed.json -Encoding utf8
-          } catch {
-            $exitCode = 1
-          }
+          pip-audit -l -f json 2>$null | Out-File -FilePath pip_audit_installed.json -Encoding utf8
+          $exitCode = $LASTEXITCODE
           echo "exit_code=$exitCode" >> $env:GITHUB_OUTPUT
+          # No cortar aquí: el umbral se evalúa en el step siguiente.
+          exit 0
       
       - name: Evaluar severidad y decidir
         shell: pwsh
@@ -97,7 +93,8 @@ jobs:
             if (Test-Path $file) {
               try {
                 $content = Get-Content $file -Raw | ConvertFrom-Json
-                foreach ($pkg in $content) {
+                $packages = if ($content.dependencies) { $content.dependencies } else { $content }
+                foreach ($pkg in $packages) {
                   foreach ($vuln in $pkg.vulns) {
                     $severity = if ($vuln.severity.value) { $vuln.severity.value } else { $vuln.severity }
                     if ([string]::IsNullOrEmpty($severity)) { $severity = "unknown" }

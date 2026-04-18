@@ -12,4 +12,4 @@
 -r requirements-excel.txt
 
 # Dependencia adicional para uploads/multipart
-python-multipart==0.0.22  # GHSA-wp53-j4wj-2cfg / CVE-2026-24486
+python-multipart==0.0.26  # CVE-2026-40347 fixed in 0.0.26
