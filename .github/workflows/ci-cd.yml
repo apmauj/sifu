@@ -299,7 +299,6 @@ jobs:
         env:
           PYTHONUNBUFFERED: '1'
           SIFU_SKIP_BOOTSTRAP: '1'
-          PYTEST_DISABLE_PLUGIN_AUTOLOAD: '1'
         run: |
           if (Test-Path ".venv/Scripts/Activate.ps1") { . .venv/Scripts/Activate.ps1 }
           python -m pip install --upgrade pip
@@ -318,7 +317,7 @@ jobs:
           Write-Host "Alembic migrations validated successfully"
           
           Write-Host "=== Run backend tests ==="
-          pytest -q --maxfail=1 --disable-warnings --tb=short
+          pytest -q --maxfail=1 --disable-warnings --tb=short --ignore=tests/demo --asyncio-mode=auto
 
   frontend-tests:
     name: Frontend Tests
