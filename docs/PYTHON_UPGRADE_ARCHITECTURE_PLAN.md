@@ -148,3 +148,9 @@ En esta rama se incorpora visibilidad de semver en el footer junto a SHA/date de
 - Render en UI: BuildInfoFooter
 
 Esto mejora trazabilidad entre release GitHub (v1.2.0) y versión visible en la app.
+
+## 8. Guía operativa local
+
+Para ejecutar el upgrade de forma no destructiva en estaciones de trabajo:
+- Ver `docs/PYTHON_LOCAL_SAFE_UPGRADE.md`
+- Script helper: `scripts/setup/new_python_venv.ps1`

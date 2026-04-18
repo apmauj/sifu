@@ -15,6 +15,7 @@ Bienvenido al centro de documentación del proyecto **SIFU - Sistema de Índices
 - [🌐 Guía Frontend](./FRONTEND_GUIDE.md) - Desarrollo del frontend React
 - [🧪 Setup de Testing](../README.md#-testing) - Comandos de ejecución de pruebas
 - [🚀 Deploy Backend](./DEPLOY_BACKEND.md) - Guía de despliegue del backend
+- [🐍 Upgrade Local Seguro](./PYTHON_LOCAL_SAFE_UPGRADE.md) - Migración de entorno local en paralelo (3.11/3.12)
 
 ### 📊 **Análisis Técnico**
 - [⚙️ Arquitectura de Componentes](./ARCHITECTURE.md#componentes-principales) - Detalles de cada capa
