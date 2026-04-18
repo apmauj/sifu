@@ -12,8 +12,8 @@ Bienvenido al centro de documentación del proyecto **SIFU - Sistema de Índices
 ### 🔧 **Documentación de Desarrollo**
 - [📡 API Reference](./API_REFERENCE.md) - Documentación completa de endpoints
 - [🌐 Guía Frontend](./FRONTEND_GUIDE.md) - Desarrollo del frontend React
-- [🧪 Testing Guide](./TESTING_GUIDE.md) - Estrategias de testing *(pendiente)*
-- [🚀 Deployment Guide](./DEPLOYMENT_GUIDE.md) - Guía de despliegue *(pendiente)*
+- [🧪 Setup de Testing](../README.md#-testing) - Comandos de ejecución de pruebas
+- [🚀 Deploy Backend](./DEPLOY_BACKEND.md) - Guía de despliegue del backend
 
 ### 📊 **Análisis Técnico**
 - [⚙️ Arquitectura de Componentes](./ARCHITECTURE.md#componentes-principales) - Detalles de cada capa
@@ -35,12 +35,12 @@ Bienvenido al centro de documentación del proyecto **SIFU - Sistema de Índices
 1. **Diseño del sistema**: [Arquitectura Técnica](./ARCHITECTURE.md)
 2. **Análisis técnico**: [Resumen Técnico](./TECHNICAL_SUMMARY.md)
 3. **Patrones aplicados**: [Patrones de Diseño](./ARCHITECTURE.md#patrones-de-diseño-aplicados)
-4. **Escalabilidad**: [Roadmap Técnico](./TECHNICAL_SUMMARY.md#roadmap-técnico)
+4. **Escalabilidad**: [Roadmap Node 24 Actions](./ROADMAP_NODE24_ACTIONS.md)
 
 ### 🚀 **Para DevOps**
-1. **Instalación**: [README Principal](../README.md#instalación-y-ejecución)
+1. **Instalación**: [README Principal](../README.md#-instalación-y-uso)
 2. **Docker**: [Instalación con Docker](../README.md#-instalación-con-docker)
-3. **Despliegue**: [Deployment Guide](./DEPLOYMENT_GUIDE.md) *(pendiente)*
+3. **Despliegue**: [Deploy Backend](./DEPLOY_BACKEND.md)
 4. **Monitoreo**: [Performance Metrics](./TECHNICAL_SUMMARY.md#métricas-de-performance)
 
 ### 📊 **Para Analistas**
@@ -110,7 +110,7 @@ open http://localhost:8000/api/docs
          ↓
 📡 API Layer (FastAPI - 23 endpoints)
          ↓
-🌐 Frontend Layer (React - en desarrollo)
+🌐 Frontend Layer (React)
 ```
 
 ## 📊 Módulos del Sistema
@@ -135,32 +135,11 @@ open http://localhost:8000/api/docs
 
 ---
 
-## 🔄 Estado del Proyecto
+## 🔄 Estado y Seguimiento
 
-### ✅ **Completado**
-- [x] Arquitectura backend completa
-- [x] API REST con 23 endpoints
-- [x] Integración de 3 fuentes de datos
-- [x] Base de datos optimizada
-- [x] Documentación completa
-- [x] Testing de servicios
-- [x] Migración lifecycle FastAPI a `lifespan`
-- [x] Centralización de mensajes y tags en constantes
-- [x] Script de verificación de mensajes repetidos
-- [x] Suite completa de pruebas verde (231 tests)
-- [x] CI Backend automatizado (pytest + verificación de mensajes)
-
-### 🚧 **En Desarrollo**
-- [ ] Frontend React (próximo)
-- [ ] Interfaz de usuario
-- [ ] Visualizaciones de datos
-- [ ] Testing frontend
-
-### 🔮 **Planificado**
-- [ ] Optimizaciones de performance
-- [ ] Características avanzadas
-- [ ] Deployment automatizado
-- [ ] Monitoreo y métricas
+- Para cambios completados y releases: ver `CHANGELOG_2026-04-18.md` y `CHANGELOG_2025-10-11.md` (en la raíz del repositorio).
+- Para continuidad operativa de corto plazo: ver `../NEXT_SESSION.md` y `./NEXT_SESSION.MD`.
+- Para evolución de workflows y migración Node 24: ver `./ROADMAP_NODE24_ACTIONS.md`.
 
 ---
 
@@ -183,8 +162,4 @@ open http://localhost:8000/api/docs
 
 ---
 
-**📚 Última actualización de documentación: 2025-06-16**
-\
-Actualizado roadmap y estado técnico: 2025-08-15
-
-Esta documentación refleja el estado actual del proyecto y se mantiene actualizada con cada cambio significativo en la arquitectura o funcionalidad. 
+Esta documentación funciona como índice navegable. El detalle histórico y los planes de ejecución se mantienen en changelogs y documentos de continuidad para evitar desactualización del índice.
