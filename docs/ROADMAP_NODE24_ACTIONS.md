@@ -38,6 +38,8 @@ Workflows objetivo:
 2. Recovery de tunel en monitor de enlace ya no dispara deploy automaticamente por defecto.
 3. `update-tunnel.yml` ahora parte con defaults conservadores (`trigger_deploy=false`, `skip_if_unchanged=true`).
 4. Script de update de tunel evita redeploy cuando la URL no cambio, salvo override explicito (`-ForceDeployOnUnchanged`).
+5. Actions oficiales actualizadas a majors vigentes (checkout v6, upload-artifact v7, deploy-pages v5, github-script v9).
+6. Workflows principales y monitores configurados con `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true` para validacion anticipada.
 
 Estado: en curso (Fase 1 tecnica iniciada y aplicada parcialmente).
 
