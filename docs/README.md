@@ -8,6 +8,7 @@ Bienvenido al centro de documentación del proyecto **SIFU - Sistema de Índices
 - [📖 README Principal](../README.md) - Introducción y guía de inicio
 - [🏗️ Arquitectura Técnica](./ARCHITECTURE.md) - Diseño completo del sistema
 - [📊 Resumen Técnico](./TECHNICAL_SUMMARY.md) - Visión general del proyecto
+- [🐍 Plan Upgrade Python](./PYTHON_UPGRADE_ARCHITECTURE_PLAN.md) - Diagnóstico y plan por fases para evolución de runtime
 
 ### 🔧 **Documentación de Desarrollo**
 - [📡 API Reference](./API_REFERENCE.md) - Documentación completa de endpoints

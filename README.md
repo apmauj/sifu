@@ -18,7 +18,7 @@ Sistema web para consulta de índices financieros y tasas de cambio en Uruguay.
 
 - Docker y Docker Compose
 - Node.js 24+ (para desarrollo local y alineación con GitHub Actions)
-- Python 3.9+ (para desarrollo local)
+- Python 3.11+ (para desarrollo local)
 
 ## 🛠️ Instalación y Uso
 
