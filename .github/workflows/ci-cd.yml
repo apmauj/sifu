@@ -32,6 +32,12 @@ on:
         default: 'false'
         type: choice
         options: ['false','true']
+      local_docker_tags_to_keep:
+        description: 'Cantidad de tags locales Docker a mantener (cleanup de runner)'
+        required: false
+        default: '6'
+        type: choice
+        options: ['3','4','5','6','8','10']
 
 permissions:
   contents: read
@@ -500,8 +506,20 @@ jobs:
       - name: Cleanup old local Docker tags
         if: always()
         shell: pwsh
+        env:
+          LOCAL_DOCKER_TAGS_TO_KEEP: ${{ github.event.inputs.local_docker_tags_to_keep }}
         run: |
-          $keepCount = [int]"${{ vars.LOCAL_DOCKER_TAGS_TO_KEEP || '6' }}"
+          $keepCountRaw = "$env:LOCAL_DOCKER_TAGS_TO_KEEP"
+          if ([string]::IsNullOrWhiteSpace($keepCountRaw)) {
+            $keepCount = 6
+          } else {
+            try {
+              $keepCount = [int]$keepCountRaw
+            } catch {
+              Write-Host "Invalid LOCAL_DOCKER_TAGS_TO_KEEP value '$keepCountRaw', using default 6"
+              $keepCount = 6
+            }
+          }
           if ($keepCount -lt 1) { $keepCount = 1 }
           $imageName = 'apmauj/sifu-backend'
           $raw = docker images $imageName --format "{{.Repository}}|{{.Tag}}|{{.CreatedAt}}"

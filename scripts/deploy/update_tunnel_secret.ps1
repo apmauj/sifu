@@ -50,12 +50,12 @@ function Write-JsonLog {
   param(
     [string]$Level,
     [string]$Message,
-    [string]$Event,
+    [string]$EventName,
     [int]$Attempt,
     [string]$Url
   )
   $obj = [ordered]@{ ts = (Get-Date).ToString('o'); level = $Level; message = $Message }
-  if($Event){ $obj.event = $Event }
+  if($EventName){ $obj.event = $EventName }
   if($Attempt){ $obj.attempt = $Attempt }
   if($Url){ $obj.url = $Url }
   $obj | ConvertTo-Json -Compress | Write-Host
@@ -126,7 +126,7 @@ function Test-BackendHealth {
   return $false
 }
 
-function Ensure-BackendRunning {
+function Start-BackendIfNeeded {
   param(
     [string]$ComposeFile = 'config/docker/docker-compose.tunnel.yml',
     [string]$BackendService = 'sifu-backend'
@@ -177,15 +177,13 @@ if($LASTEXITCODE -ne 0){
 # 1. Intentar obtener URL con reintentos (problemas intermitentes Cloudflare Quick Tunnel)
 if(-not (Test-Path './config/docker/docker-compose.tunnel.yml')){ Err 'config/docker/docker-compose.tunnel.yml no encontrado'; exit 1 }
 
-Ensure-BackendRunning
+Start-BackendIfNeeded
 
 $regex = 'https://[a-zA-Z0-9-]+\.trycloudflare\.com'
 $url = $null
 $rateLimited = $false
 
 for($attempt=1; $attempt -le $RetryCount -and -not $url; $attempt++){
-  $runningTunnel = docker ps --filter "name=^/sifu-tunnel$" --format '{{.ID}}'
-
   if($attempt -gt 1){ Info "Reintento $attempt/$RetryCount (reiniciando contenedor túnel)" }
   Info 'Levantando túnel con config/docker/docker-compose.tunnel.yml'
   $existingTunnel = docker ps -aq --filter "name=^/sifu-tunnel$"
@@ -219,7 +217,7 @@ for($attempt=1; $attempt -le $RetryCount -and -not $url; $attempt++){
       $candidateHealthOk = Test-BackendHealth -BaseUrl $candidateUrl -Delays @(8,15,30,45,60,90)
       if($candidateHealthOk){
         $url = $candidateUrl
-        if($JsonLogs){ Write-JsonLog -Level 'INFO' -Message 'URL validada' -Event 'tunnel_url_valid' -Attempt $attempt -Url $url }
+        if($JsonLogs){ Write-JsonLog -Level 'INFO' -Message 'URL validada' -EventName 'tunnel_url_valid' -Attempt $attempt -Url $url }
       } else {
         Err 'La URL candidata no pasó health tras ventana completa de espera. Se recreará túnel.'
       }

@@ -36,7 +36,7 @@ function Info($m){ Write-Host "[INFO] $m" -ForegroundColor Cyan }
 function Ok($m){ Write-Host "[OK]   $m" -ForegroundColor Green }
 function Err($m){ Write-Host "[ERR]  $m" -ForegroundColor Red }
 
-function Ensure-ContainerRunning {
+function Start-ContainerIfNeeded {
 	param(
 		[string]$ContainerName,
 		[string]$ComposeService,
@@ -89,8 +89,8 @@ if(-not (Test-Path $resolvedComposeFile)) {
 }
 
 Info "Asegurando backend+túnel"
-Ensure-ContainerRunning -ContainerName 'sifu-backend' -ComposeService 'backend' -ComposeFilePath $resolvedComposeFile
-Ensure-ContainerRunning -ContainerName 'sifu-tunnel' -ComposeService 'tunnel' -ComposeFilePath $resolvedComposeFile
+Start-ContainerIfNeeded -ContainerName 'sifu-backend' -ComposeService 'backend' -ComposeFilePath $resolvedComposeFile
+Start-ContainerIfNeeded -ContainerName 'sifu-tunnel' -ComposeService 'tunnel' -ComposeFilePath $resolvedComposeFile
 
 Info "Esperando health local en http://127.0.0.1:8000/api/health/simple"
 $healthy = $false
