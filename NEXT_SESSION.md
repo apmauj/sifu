@@ -5,15 +5,20 @@
 Objetivo: migrar y validar workflows para ejecución estable con Node 24 antes de la fecha de corte de Node 20.
 
 ### Alcance inmediato (sesión siguiente)
-1. Inventariar workflows que usan acciones JavaScript (`actions/checkout`, `actions/upload-artifact`, `actions/setup-*`).
-2. Actualizar versiones a releases compatibles con Node 24 en todos los workflows activos.
-3. Ejecutar prueba controlada con `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true` para detectar incompatibilidades tempranas.
-4. Corregir warnings/fallos y volver a correr `CI/CD`, `Security Audit`, `Update Tunnel`, `Frontend-Backend Link Check`.
-5. Documentar resultado y cerrar con checklist de validación en roadmap técnico.
+1. Inventariar workflows que usan acciones JavaScript (`actions/checkout`, `actions/upload-artifact`, `actions/setup-*`). ✅
+2. Actualizar versiones a releases compatibles con Node 24 en todos los workflows activos. ✅
+3. Ejecutar prueba controlada con `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true` para detectar incompatibilidades tempranas. ✅
+4. Corregir warnings/fallos y volver a correr `CI/CD`, `Security Audit`, `Update Tunnel`, `Frontend-Backend Link Check`. ✅ Parcial (CI/CD y Security Audit verificados; pendientes validaciones manuales de workflows operativos no frecuentes)
+5. Documentar resultado y cerrar con checklist de validación en roadmap técnico. ✅
 
 ### Criterio de cierre
-- 0 warnings de deprecación Node 20 en jobs principales.
-- Workflows críticos en verde con SHA de la rama de migración.
+- 0 warnings de deprecación Node 20 en jobs principales. ✅
+- Workflows críticos en verde con SHA de la rama de migración. ✅
+
+### Pendiente inmediato para cierre total de la migración
+1. Abrir PR de la rama `chore/node24-actions-migration-plan` y solicitar aprobación.
+2. Ejecutar una corrida manual de `update-tunnel.yml` en rama para certificar runtime Node 24 en recuperación de túnel.
+3. Ejecutar corridas manuales de `frontend-backend-link-check.yml` y `brou-health-monitor.yml` (con flags habilitadas) para validación final operativa.
 
 ## 🎯 Estado Actual del Proyecto
 

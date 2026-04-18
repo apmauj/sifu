@@ -5,11 +5,17 @@
 Meta: eliminar riesgo por deprecación de Node 20 en runners y dejar los workflows listos para Node 24.
 
 Checklist de ejecución:
-- [ ] Revisar todos los workflows en `.github/workflows/` y listar acciones JS usadas.
-- [ ] Actualizar versiones de acciones a variantes compatibles con Node 24.
-- [ ] Ejecutar corrida de validación con `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true`.
-- [ ] Confirmar `CI/CD` y `Security Audit` en verde sin warning de deprecación.
-- [ ] Registrar evidencias y lecciones en roadmap de migración.
+- [x] Revisar todos los workflows en `.github/workflows/` y listar acciones JS usadas.
+- [x] Actualizar versiones de acciones a variantes compatibles con Node 24.
+- [x] Ejecutar corrida de validación con `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true`.
+- [x] Confirmar `CI/CD` y `Security Audit` en verde sin warning de deprecación.
+- [x] Registrar evidencias y lecciones en roadmap de migración.
+
+Pendientes de cierre operativo (post-checklist):
+- [ ] Ejecutar `update-tunnel.yml` en rama y verificar runtime Node 24 en flujo de recuperación.
+- [ ] Ejecutar `frontend-backend-link-check.yml` de forma manual con variable habilitante para validar rama.
+- [ ] Ejecutar `brou-health-monitor.yml` manualmente y confirmar issue lifecycle bajo Node 24.
+- [ ] Abrir y mergear PR `chore/node24-actions-migration-plan` a `master`.
 
 Fecha de preparación: 2025-08-14
 Contexto actual: Se añadieron cachés en memoria (BCU/BROU), bootstrap automático en `startup_event`, endpoints de /current sirven desde cache, se eliminó el botón de refresh manual en el frontend y se añadieron tests de caché (aún no ejecutados por bloqueo de dependencias en Python 3.13). `pandas` y `pydantic-core` no instalan wheels precompilados en 3.13 (requieren toolchain). Excel processors fueron endurecidos para funcionar sin pandas (modo degradado), pero para datos reales se necesita pandas.
