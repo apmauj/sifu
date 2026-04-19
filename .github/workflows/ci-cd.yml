@@ -409,7 +409,7 @@ jobs:
           Write-Host "Alembic migrations validated successfully"
           
           Write-Host "=== Run backend tests ==="
-          & $PyExe -m pytest -q --maxfail=1 --disable-warnings --tb=short --ignore=tests/demo --asyncio-mode=auto
+          & $PyExe -m pytest tests -q --maxfail=1 --disable-warnings --tb=short --ignore=tests/demo --asyncio-mode=auto
 
   frontend-tests:
     name: Frontend Tests
