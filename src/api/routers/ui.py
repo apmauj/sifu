@@ -9,13 +9,19 @@ from src.infrastructure.database import get_db
 from src.domain.models import UIResponse, RefreshResponse
 from src.domain.services import UIService
 from src.domain.excel_processor import ExcelProcessor
+from src.application.security_utils import InputValidator
 from src.utils.constants import (
     TAG_UI,
     MSG_LATEST_UI_SUCCESS,
     MSG_NO_UI_DATA,
+    MSG_NO_UI_DATE_DATA,
+    MSG_NO_UI_FOUND,
     MSG_UI_DATE_SUCCESS,
     MSG_UI_RANGE_SUCCESS,
+    MSG_INTERNAL_SERVER_ERROR,
+    MSG_INVALID_DATE_RANGE,
     HTTP_500_INTERNAL_SERVER_ERROR,
+    HTTP_400_BAD_REQUEST,
 )
 
 logger = logging.getLogger(__name__)
@@ -77,7 +83,7 @@ async def get_ui_by_date(date: date, db: Session = Depends(get_db)):
             if closest_ui:
                 return UIResponse(
                     success=True,
-                    message=f"No data for {date}. Showing closest previous value",
+                    message=MSG_NO_UI_DATE_DATA.format(date=date),
                     data=closest_ui.dict()
                     if hasattr(closest_ui, "dict")
                     else closest_ui,
@@ -85,13 +91,16 @@ async def get_ui_by_date(date: date, db: Session = Depends(get_db)):
             else:
                 raise HTTPException(
                     status_code=404,
-                    detail=f"No UI data found for {date} or previous dates",
+                    detail=MSG_NO_UI_FOUND.format(date=date),
                 )
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Error getting UI by date {date}: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(
+            status_code=HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=MSG_INTERNAL_SERVER_ERROR,
+        )
 
 
 @router.get("/range/{start_date}/{end_date}")
@@ -103,10 +112,13 @@ async def get_ui_by_range(
     Valida que start_date <= end_date.
     """
     try:
-        if start_date > end_date:
+        is_valid, _error_msg = InputValidator.validate_range_params(
+            str(start_date), str(end_date)
+        )
+        if not is_valid:
             raise HTTPException(
-                status_code=400,
-                detail="Start date must be less than or equal to end date",
+                status_code=HTTP_400_BAD_REQUEST,
+                detail=MSG_INVALID_DATE_RANGE,
             )
 
         service = UIService(db)
@@ -124,7 +136,10 @@ async def get_ui_by_range(
         raise
     except Exception as e:
         logger.error(f"Error getting UI by range {start_date} - {end_date}: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(
+            status_code=HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=MSG_INTERNAL_SERVER_ERROR,
+        )
 
 
 @router.post("/refresh")
