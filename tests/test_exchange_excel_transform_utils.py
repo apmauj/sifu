@@ -1,4 +1,5 @@
 from src.domain.exchange_excel_transform_utils import (
+    parse_exchange_date_value,
     EXCHANGE_RATE_CURRENCY_MAPPINGS,
     parse_exchange_rate_value,
 )
@@ -25,3 +26,17 @@ def test_parse_exchange_rate_value_rejects_invalid_and_out_of_range_values():
     assert parse_exchange_rate_value("not-a-number") is None
     assert parse_exchange_rate_value(-1) is None
     assert parse_exchange_rate_value(20000) is None
+
+
+def test_parse_exchange_date_value_accepts_supported_string_formats():
+    assert str(parse_exchange_date_value("31-12-2025")) == "2025-12-31"
+    assert str(parse_exchange_date_value("31/12/2025")) == "2025-12-31"
+    assert str(parse_exchange_date_value("2025-12-31")) == "2025-12-31"
+
+
+def test_parse_exchange_date_value_handles_datetime_and_invalid_inputs():
+    from datetime import datetime
+
+    assert str(parse_exchange_date_value(datetime(2026, 1, 5, 8, 30, 0))) == "2026-01-05"
+    assert parse_exchange_date_value("invalid-date") is None
+    assert parse_exchange_date_value(12345) is None

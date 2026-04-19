@@ -18,6 +18,7 @@ from urllib3.exceptions import InsecureRequestWarning
 from src.infrastructure.circuit_breaker import get_circuit_breaker, CircuitBreakerOpenException
 from src.domain.excel_parsing_utils import parse_date_value, parse_decimal_value
 from src.domain.exchange_excel_transform_utils import (
+    parse_exchange_date_value,
     EXCHANGE_RATE_CURRENCY_MAPPINGS,
     parse_exchange_rate_value,
 )
@@ -753,33 +754,10 @@ class ExchangeRateExcelProcessor:
                     if pd.isna(date_raw) or date_raw == "Fecha":  # Skip header rows
                         continue
 
-                    # Parse date (DD-MM-YYYY format)
-                    try:
-                        if isinstance(date_raw, str):
-                            # Try different date formats
-                            date_formats = ["%d-%m-%Y", "%d/%m/%Y", "%Y-%m-%d"]
-                            parsed_date = None
-                            for fmt in date_formats:
-                                try:
-                                    parsed_date = datetime.strptime(
-                                        date_raw, fmt
-                                    ).date()
-                                    break
-                                except ValueError:
-                                    continue
-
-                            if parsed_date is None:
-                                logger.debug(f"Could not parse date: {date_raw}")
-                                continue
-                        elif isinstance(date_raw, datetime):
-                            parsed_date = date_raw.date()
-                        else:
-                            logger.debug(
-                                f"Unknown date format: {date_raw} (type: {type(date_raw)})"
-                            )
-                            continue
-                    except Exception as e:
-                        logger.debug(f"Error parsing date {date_raw}: {e}")
+                    # Parse date (DD-MM-YYYY format and variants)
+                    parsed_date = parse_exchange_date_value(date_raw)
+                    if parsed_date is None:
+                        logger.debug(f"Could not parse date: {date_raw}")
                         continue
 
                     # Extract exchange rates for each currency

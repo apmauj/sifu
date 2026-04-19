@@ -1,4 +1,5 @@
 import math
+from datetime import datetime
 from typing import Optional
 
 
@@ -8,6 +9,29 @@ EXCHANGE_RATE_CURRENCY_MAPPINGS = [
     ("ARS", "Peso.Argentino.Compra", "Peso.Argentino.Venta"),
     ("BRL", "Real.Compra", "Real.Venta"),
 ]
+
+EXCHANGE_RATE_DATE_FORMATS = ("%d-%m-%Y", "%d/%m/%Y", "%Y-%m-%d")
+
+
+def parse_exchange_date_value(date_raw) -> Optional[datetime.date]:
+    """Parse a raw exchange date value from INE spreadsheets."""
+    if isinstance(date_raw, datetime):
+        return date_raw.date()
+
+    if not isinstance(date_raw, str):
+        return None
+
+    cleaned = date_raw.split(" ")[0].strip()
+    if not cleaned:
+        return None
+
+    for fmt in EXCHANGE_RATE_DATE_FORMATS:
+        try:
+            return datetime.strptime(cleaned, fmt).date()
+        except ValueError:
+            continue
+
+    return None
 
 
 def parse_exchange_rate_value(value) -> Optional[float]:
