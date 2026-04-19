@@ -406,6 +406,23 @@ jobs:
 
           Write-Host "=== Architecture guardrail (layer imports, warn mode) ==="
           & ./scripts/architecture/check_layer_imports.ps1 -Mode warn -ReportPath logs/architecture/layer_violations.json
+
+          Write-Host "=== Legacy alias anti-regression guard (tests) ==="
+          $legacyPattern = 'UR(Value|Record)\(año=|\.año\b|\.mes\b|\.valor\b|\["año"\]|\["mes"\]|\["valor"\]'
+          $matches = @()
+          foreach ($f in (Get-ChildItem tests -Recurse -Filter *.py)) {
+            $found = Select-String -Path $f.FullName -Pattern $legacyPattern
+            if ($found) { $matches += $found }
+          }
+
+          if ($matches.Count -gt 0) {
+            Write-Host "Found legacy alias references (not allowed in v1.5.0):"
+            $matches | ForEach-Object {
+              Write-Host "  $($_.Path):$($_.LineNumber): $($_.Line.Trim())"
+            }
+            exit 1
+          }
+          Write-Host "Legacy alias guard PASS"
           
           Write-Host "=== Verify Alembic migrations ==="
           & $PyExe -m alembic -c config/alembic.ini upgrade head --sql | Out-Null

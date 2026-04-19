@@ -10,7 +10,7 @@ from typing import Optional
 from src.api.error_handling import log_and_raise_http_exception
 from src.infrastructure.database import get_db, SessionLocal
 from src.domain.models import ExchangeRateResponse
-from src.domain.services import ExchangeRateService
+from src.domain.exchange_rate_service import ExchangeRateService
 from src.domain.excel_processor import ExchangeRateExcelProcessor
 from src.application.security_utils import InputValidator
 from src.utils.constants import (

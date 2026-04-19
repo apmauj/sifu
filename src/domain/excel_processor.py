@@ -1051,7 +1051,7 @@ class ExchangeRateBCUProcessor:
     ) -> List[Tuple[str, float, float, Optional[float]]]:
         """Get latest historical exchange rates from database as fallback"""
         try:
-            from src.domain.services import ExchangeRateService
+            from src.domain.exchange_rate_service import ExchangeRateService
             from src.infrastructure.database import get_db
 
             # Get database session

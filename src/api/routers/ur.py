@@ -8,7 +8,7 @@ from datetime import datetime as _dt
 from src.api.error_handling import log_and_raise_http_exception
 from src.infrastructure.database import get_db
 from src.domain.models import URResponse, RefreshResponse
-from src.domain.services import URService
+from src.domain.ur_service import URService
 from src.domain.excel_processor import URExcelProcessor
 from src.domain.pydantic_models import URRangeRequestModel
 from src.application.security_utils import SecurityValidator, InputValidator
