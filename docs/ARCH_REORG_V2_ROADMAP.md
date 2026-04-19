@@ -10,7 +10,7 @@ Estado: Completado (Fase 4 cerrada)
 La rama historica `chore/arch-reorg-plan` contenia una buena intencion tecnica, pero quedo obsoleta por:
 
 - Desfase alto contra la linea principal.
-- Arquitectura actual consolidada en `src/` (hexagonal), no en `backend/`.
+- Arquitectura actual consolidada en `src/` (hexagonal), no en la antigua carpeta `backend/`.
 - Alto costo de merge directo y riesgo de regresion.
 
 Decision:

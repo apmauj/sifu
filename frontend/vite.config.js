@@ -6,11 +6,15 @@ const packageJson = JSON.parse(
   readFileSync(new URL('./package.json', import.meta.url), 'utf-8')
 )
 const appVersion = process.env.VITE_APP_VERSION || packageJson.version || '0.0.0'
+const repository = process.env.GITHUB_REPOSITORY || 'apmauj/sifu'
+const releaseUrl =
+  process.env.VITE_APP_RELEASE_URL || `https://github.com/${repository}/releases/tag/v${appVersion}`
 
 export default defineConfig({
   base: process.env.NODE_ENV === 'production' ? '/sifu/' : '/',
   define: {
     'import.meta.env.VITE_APP_VERSION': JSON.stringify(appVersion),
+    'import.meta.env.VITE_APP_RELEASE_URL': JSON.stringify(releaseUrl),
   },
   plugins: [react()],
   server: {

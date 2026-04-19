@@ -11,8 +11,8 @@ from pathlib import Path
 def run_tests_isolated():
     """Ejecuta los tests en lotes para evitar problemas de aislamiento"""
 
-    # Directorio del proyecto
-    project_dir = Path(__file__).parent
+    # Script moved under scripts/util; run commands from repo root.
+    project_dir = Path(__file__).resolve().parents[2]
 
     print("🧪 Ejecutando tests de SIFU con aislamiento...")
 
@@ -90,7 +90,7 @@ def run_linting():
     """Ejecuta verificación de linting"""
     print("\n🔍 Ejecutando verificación de linting...")
 
-    project_dir = Path(__file__).parent
+    project_dir = Path(__file__).resolve().parents[2]
     cmd_lint = [sys.executable, "-m", "ruff", "check", ".", "--output-format=concise"]
 
     result_lint = subprocess.run(

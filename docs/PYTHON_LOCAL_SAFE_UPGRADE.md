@@ -1,11 +1,11 @@
 # Python Local Safe Upgrade Guide
 
 ## Goal
-Migrate local development runtime safely toward Python 3.12 without breaking the current environment.
+Keep local development aligned with the current Python 3.12 baseline using a single `.venv`.
 
 ## Current recommendation
-- Keep `.venv` on stable Python 3.11 while compatibility work progresses.
-- Validate Python 3.12 in a parallel environment (`.venv312-safe`).
+- Use `.venv` on Python 3.12 as the primary local environment.
+- The previous fallback stages with `.venv311-safe` and `.venv312-safe` are closed and can be removed.
 
 ## 1) Check installed Python interpreters (Windows)
 
@@ -15,32 +15,39 @@ py -0p
 
 Look for a stable 3.12 installation path.
 
-## 2) Create a parallel venv (non-destructive)
+## 2) Create `.venv` on Python 3.12
 
 ```powershell
 .\scripts\setup\new_python_venv.ps1 \
   -PythonExe "C:\Path\To\Python312\python.exe" \
-  -VenvPath ".venv312-safe" \
+  -VenvPath ".venv" \
   -InstallDependencies
 ```
 
-This does not modify your existing `.venv`.
+This recreates `.venv` with Python 3.12.
 
 ## 3) Validate basic compatibility
 
 ```powershell
-.\.venv312-safe\Scripts\Activate.ps1
+\.\.venv\Scripts\Activate.ps1
 python --version
 pytest -q --maxfail=1 --disable-warnings --tb=short --ignore=tests/demo --asyncio-mode=auto
 ```
 
 ## 4) If validation fails
-- Keep using `.venv` (3.11 stable).
-- Report failing dependency/test and keep 3.12 as experimental.
+- Recreate `.venv` with Python 3.12 and rerun dependency install + tests.
+- Keep failures documented and fix incrementally (deps/tests).
 
 ## 5) Promote 3.12 locally only when green
-- Once compatibility passes, recreate `.venv` from Python 3.12 and rerun full checks.
-- Keep a fallback environment (`.venv311-safe`) until CI and Docker are aligned.
+- Once compatibility passes, keep `.venv` as the only active local environment.
+
+## 6) Cleanup old fallback environment
+If old fallback environments still exist locally, it is safe to remove them:
+
+```powershell
+Remove-Item -Recurse -Force .venv311-safe
+Remove-Item -Recurse -Force .venv312-safe
+```
 
 ## CI alignment
-Use the manual workflow `Python Compatibility Check` to test 3.11/3.12 in GitHub Actions before promoting baseline.
+CI and runtime are already aligned on Python 3.12 baseline.

@@ -131,15 +131,15 @@ docker-compose.simple.yml
 docker-compose.gateway.yml
 docker-compose.prod.yml
 docker-compose.tunnel.yml
-docker_update_tunnel_secret.ps1
+scripts/deploy/docker_update_tunnel_secret.ps1
 ```
 
 #### 📜 **Scripts in ROOT (~5 files):**
 ```
-start_server.ps1
 start_server.bat
-run_tunnel_backend.ps1
-run_pipeline_tests.py
+scripts/deploy/run_tunnel_backend.ps1
+scripts/setup/start_server.ps1
+scripts/util/run_pipeline_tests.py
 ```
 
 #### 💾 **Data Files in ROOT (~6 files):**
@@ -148,17 +148,12 @@ run_pipeline_tests.py
 ur_refresh_resp.json
 ```
 
-#### 📚 **Documentation in ROOT (~20+ files):**
+#### 📚 **Documentation in ROOT (residual):**
 ```
 README.md
 LICENSE
-SECURITY_CONFIG.md
-NEXT_SESSION.md
-TOTP_SETUP.md
-ARCHITECTURE_IMPLEMENTATION_COMPLETE.md
 CHANGELOG_*.md
-PIPELINE_STATUS.md
-(and more)
+Notes moved to docs/ and docs/archive/
 ```
 
 #### Other: `.github/`, `logs/`, `reports/`, `htmlcov/`, etc.

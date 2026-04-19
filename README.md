@@ -142,7 +142,7 @@ El acceso al dashboard de monitoreo está protegido con autenticación de dos fa
 
 ### Documentación Completa:
 
-Ver **[TOTP_SETUP.md](TOTP_SETUP.md)** para:
+Ver **[docs/TOTP_SETUP.md](docs/TOTP_SETUP.md)** para:
 - Instrucciones detalladas de configuración
 - Setup en producción
 - Configuración de Authy/Google Authenticator
@@ -233,8 +233,8 @@ npm test
 
 ### Historial y Planificación
 
-- Para cambios completados y releases: ver `CHANGELOG_2026-04-18.md` y `CHANGELOG_2025-10-11.md`.
-- Para planes operativos de continuidad: ver `NEXT_SESSION.md` y `docs/NEXT_SESSION.MD`.
+- Para cambios completados y releases: ver `CHANGELOG.md`.
+- Para planes operativos de continuidad: ver `docs/NEXT_SESSION.MD` y `docs/archive/NEXT_SESSION_ROOT.md`.
 
 ### Automatización de túnel temporal (Pages → Backend local)
 
@@ -242,10 +242,10 @@ Para regenerar una URL pública y actualizar el secret `VITE_PUBLIC_API_URL`:
 
 ```powershell
 # Método completo (levanta backend local + túnel ngrok/cloudflared)
-./run_tunnel_backend.ps1 -TunnelProvider cloudflared -UpdateSecret -TriggerDeploy
+./scripts/deploy/run_tunnel_backend.ps1 -TunnelProvider cloudflared -UpdateSecret -TriggerDeploy
 
 # Solo recrear túnel cloudflared con docker-compose.tunnel.yml y actualizar secret + redeploy
-./docker_update_tunnel_secret.ps1 -TriggerDeploy
+./scripts/deploy/docker_update_tunnel_secret.ps1 -TriggerDeploy
 ```
 
 Tras unos ~60s el frontend en Pages se redeploya y comienza a usar la nueva URL.
@@ -334,7 +334,7 @@ Notas importantes:
 - Cada vez que reinicies el túnel, la URL cambia (salvo cuenta paga); deberás actualizar el secret y redeploy.
 - No uses esto para producción real; es solo para demostraciones o debugging rápido.
 - Alternativa sin rebuild: levantar localmente el frontend (`npm run dev`) y abrirlo en tu máquina; esa versión puede apuntar directamente a `http://localhost:8000/api` via proxy ya configurado en `vite.config.js`.
- - Script auxiliar: `./run_tunnel_backend.ps1 -TunnelProvider ngrok -UpdateSecret -TriggerDeploy` automatiza backend + túnel + secret + redeploy.
+ - Script auxiliar: `./scripts/deploy/run_tunnel_backend.ps1 -TunnelProvider ngrok -UpdateSecret -TriggerDeploy` automatiza backend + túnel + secret + redeploy.
 
 #### Modo totalmente Docker (backend + túnel sin scripts locales)
 

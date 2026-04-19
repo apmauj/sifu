@@ -107,7 +107,7 @@ DOCUMENTATION:
 ├── PIPELINE_STATUS.md
 ├── ARCHITECTURE_IMPLEMENTATION_COMPLETE.md
 ├── NEXT_SESSION.md
-├── CHANGELOG_2025-10-11.md
+├── docs/archive/history-2025-10-11-debugging.md
 └── TOTP_SETUP.md
 ```
 

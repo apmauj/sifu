@@ -51,7 +51,7 @@ function Wait-DockerReady {
 }
 
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
-$runScript = Join-Path $repoRoot 'run_tunnel_backend.ps1'
+$runScript = Join-Path $repoRoot 'scripts/deploy/run_tunnel_backend.ps1'
 $logPath = if([System.IO.Path]::IsPathRooted($LogFile)) { $LogFile } else { Join-Path $repoRoot $LogFile }
 $logDir = Split-Path -Parent $logPath
 New-Item -ItemType Directory -Force -Path $logDir | Out-Null

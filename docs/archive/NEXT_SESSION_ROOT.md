@@ -17,7 +17,7 @@ Proximo paso operativo:
 - Ejecutar cortes pequenos de cleanup para remover compatibilidad residual no usada (shims/aliases), manteniendo `src/domain/services.py` solo como capa transicional externa hasta su retiro final.
 - Ruta UR completada: aliases `año/mes/valor` removidos de `URValue`/`URRecord`; tests y assertions legacy retirados.
 - Guardia CI en `backend-tests` endurecida: no se permiten referencias legacy en tests.
-- Changelog de remoción final (`v1.5.0`) agregado en `CHANGELOG_2026-04-19.md`.
+- Changelog de remoción final (`v1.5.0`) consolidado en `../CHANGELOG.md`.
 - Cierre formal completado en PR #24 con CI/CD + Security Audit en verde.
 
 ## 🚨 P0 - Primera Tarea Pendiente (Node 24 en GitHub Actions)

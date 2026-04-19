@@ -32,7 +32,7 @@
   Argumentos adicionales para pip install (por ej. --upgrade --no-cache-dir)
 
  .EXAMPLE
-  ./run_tunnel_backend.ps1 -TunnelProvider ngrok -UpdateSecret -TriggerDeploy
+  ./scripts/deploy/run_tunnel_backend.ps1 -TunnelProvider ngrok -UpdateSecret -TriggerDeploy
 
  .NOTES
   Requisitos:

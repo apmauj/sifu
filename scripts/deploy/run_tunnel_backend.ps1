@@ -27,6 +27,8 @@ param(
 	[int]$HealthWaitSeconds = 45
 )
 
+$repoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
+
 # Este script puede ejecutarse desde wrappers con ErrorActionPreference=Stop.
 # Para comandos nativos (docker/gh), evitar que stderr informativo se eleve como excepción.
 $ErrorActionPreference = 'Continue'
@@ -80,7 +82,7 @@ function Initialize-ContainerIfNeeded {
 
 $resolvedComposeFile = $ComposeFile
 if (-not [System.IO.Path]::IsPathRooted($resolvedComposeFile)) {
-	$resolvedComposeFile = Join-Path $PSScriptRoot $resolvedComposeFile
+	$resolvedComposeFile = Join-Path $repoRoot $resolvedComposeFile
 }
 
 if(-not (Test-Path $resolvedComposeFile)) {
@@ -122,7 +124,7 @@ try {
 }
 
 if($SyncFrontend -or $TriggerDeploy){
-	$syncScript = Join-Path $PSScriptRoot 'scripts/deploy/update_tunnel_secret.ps1'
+	$syncScript = Join-Path $PSScriptRoot 'update_tunnel_secret.ps1'
 	if(-not (Test-Path $syncScript)){
 		Err "No se encontró script de sincronización: $syncScript"
 		exit 1

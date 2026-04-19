@@ -140,8 +140,8 @@ open http://localhost:8000/api/docs
 
 ## 🔄 Estado y Seguimiento
 
-- Para cambios completados y releases: ver `CHANGELOG_2026-04-18.md` y `CHANGELOG_2025-10-11.md` (en la raíz del repositorio).
-- Para continuidad operativa de corto plazo: ver `../NEXT_SESSION.md` y `./NEXT_SESSION.MD`.
+- Para cambios completados y releases: ver `../CHANGELOG.md`.
+- Para continuidad operativa de corto plazo: ver `./NEXT_SESSION.MD` y `./archive/NEXT_SESSION_ROOT.md`.
 - Para evolución de workflows y migración Node 24: ver `./ROADMAP_NODE24_ACTIONS.md`.
 
 ---

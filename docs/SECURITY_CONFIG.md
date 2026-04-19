@@ -140,7 +140,7 @@ See `.env.production.template` for production-ready configuration with secure de
 ### Verification Commands
 ```bash
 # Full security verification
-python verify_security.py
+python scripts/setup/verify_security.py
 
 # Dependency audit
 pip-audit --format json

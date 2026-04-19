@@ -71,7 +71,7 @@ Estado: completado para CI/CD y Security Audit, con validacion remota en verde.
 ## 6. Entregables
 - PR de migracion Node 24 en Actions. ⏳ En preparacion
 - Evidencia de runs exitosos.
-- Actualizacion de `NEXT_SESSION.md` y `docs/NEXT_SESSION.MD`.
+- Actualizacion de `NEXT_SESSION.md`, `docs/NEXT_SESSION.MD` y consolidacion del historial en `../CHANGELOG.md`.
 
 ## 7. Ajustes Extra Detectados y Resueltos
 - Falla en backend tests por `async def` sin plugin activo en CI: se removio `PYTEST_DISABLE_PLUGIN_AUTOLOAD` y se fijo `--asyncio-mode=auto`.

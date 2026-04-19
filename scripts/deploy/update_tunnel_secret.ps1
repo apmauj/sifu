@@ -6,7 +6,7 @@ Automatiza:
   4. Opcional: dispara redeploy frontend
 
 Uso:
-  ./docker_update_tunnel_secret.ps1 -Repo apmauj/sifu -TriggerDeploy
+  ./scripts/deploy/docker_update_tunnel_secret.ps1 -Repo apmauj/sifu -TriggerDeploy
 
 Requisitos:
   - gh autenticado
@@ -169,7 +169,7 @@ if($LASTEXITCODE -ne 0){
   Write-Host "  1) gh auth login" -ForegroundColor DarkYellow
   Write-Host "     - GitHub.com -> HTTPS -> Y (git) -> Login via browser" -ForegroundColor DarkYellow
   Write-Host "  2) Scope mínimo PAT (si usas token manual): repo, workflow" -ForegroundColor DarkYellow
-  Write-Host "  3) Reintenta: ./docker_update_tunnel_secret.ps1 -TriggerDeploy" -ForegroundColor DarkYellow
+  Write-Host "  3) Reintenta: ./scripts/deploy/docker_update_tunnel_secret.ps1 -TriggerDeploy" -ForegroundColor DarkYellow
   Write-Host "Alternativa: exporta GH_TOKEN (PAT con scopes repo, workflow) y reintenta" -ForegroundColor DarkYellow
   exit 1
 }

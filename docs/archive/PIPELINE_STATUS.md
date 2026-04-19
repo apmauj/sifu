@@ -69,7 +69,7 @@ Si se migra el runner a Linux, será necesario:
 Para ejecutar todos los tests correctamente y evitar problemas de aislamiento, usa el script dedicado:
 
 ```bash
-python run_pipeline_tests.py
+python scripts/util/run_pipeline_tests.py
 ```
 
 Este script:
@@ -80,7 +80,7 @@ Este script:
 
 ### Problema de Aislamiento Resuelto
 
-Los 2 tests que mostraban "errores" en la ejecución normal son en realidad problemas de aislamiento de base de datos entre tests, no fallos reales. El script `run_pipeline_tests.py` ejecuta estos tests en procesos separados para garantizar el aislamiento completo.
+Los 2 tests que mostraban "errores" en la ejecución normal son en realidad problemas de aislamiento de base de datos entre tests, no fallos reales. El script `scripts/util/run_pipeline_tests.py` ejecuta estos tests en procesos separados para garantizar el aislamiento completo.
 
 ### Estado de Calidad del Código
 - ✅ **Linting**: 0 errores (ruff)
@@ -91,7 +91,7 @@ Los 2 tests que mostraban "errores" en la ejecución normal son en realidad prob
 
 ### Próximos Pasos
 1. El pipeline está listo para CI/CD
-2. Usar `python run_pipeline_tests.py` en lugar de `pytest` directo
+2. Usar `python scripts/util/run_pipeline_tests.py` en lugar de `pytest` directo
 3. Monitorear la cobertura de tests
 4. Considerar migración de Pydantic V1 a V2 (warnings no críticos)
 
