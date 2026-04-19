@@ -1,10 +1,11 @@
 """UR (Unidad Reajustable) router endpoints."""
 
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 import logging
 from datetime import datetime as _dt
 
+from src.api.error_handling import log_and_raise_http_exception
 from src.infrastructure.database import get_db
 from src.domain.models import URResponse, RefreshResponse
 from src.domain.services import URService
@@ -56,8 +57,13 @@ async def get_latest_ur(db: Session = Depends(get_db)):
             return URResponse(success=False, message=MSG_NO_UR_DATA, data=None).dict()
 
     except Exception as e:
-        logger.error(f"Error in get_latest_ur: {e}")
-        raise HTTPException(status_code=500, detail="Internal server error")
+        log_and_raise_http_exception(
+            logger=logger,
+            status_code=500,
+            log_message="Error in get_latest_ur",
+            error=e,
+            detail="Internal server error",
+        )
 
 
 @router.get("/year-month/{year}/{month}")
@@ -87,8 +93,13 @@ async def get_ur_by_year_month(year: int, month: int, db: Session = Depends(get_
             ).dict()
 
     except Exception as e:
-        logger.error(f"Error in get_ur_by_year_month: {e}")
-        raise HTTPException(status_code=500, detail="Internal server error")
+        log_and_raise_http_exception(
+            logger=logger,
+            status_code=500,
+            log_message="Error in get_ur_by_year_month",
+            error=e,
+            detail="Internal server error",
+        )
 
 
 @router.get("/year/{year}")
@@ -112,8 +123,13 @@ async def get_ur_by_year(year: int, db: Session = Depends(get_db)):
             ).dict()
 
     except Exception as e:
-        logger.error(f"Error in get_ur_by_year: {e}")
-        raise HTTPException(status_code=500, detail="Internal server error")
+        log_and_raise_http_exception(
+            logger=logger,
+            status_code=500,
+            log_message="Error in get_ur_by_year",
+            error=e,
+            detail="Internal server error",
+        )
 
 
 @router.get("/range/{start_year}/{start_month}/{end_year}/{end_month}")
@@ -174,8 +190,13 @@ async def get_ur_by_range(
             ).dict()
 
     except Exception as e:
-        logger.error(f"Error in get_ur_by_range: {e}")
-        raise HTTPException(status_code=500, detail="Internal server error")
+        log_and_raise_http_exception(
+            logger=logger,
+            status_code=500,
+            log_message="Error in get_ur_by_range",
+            error=e,
+            detail="Internal server error",
+        )
 
 
 @router.post("/range")
@@ -255,8 +276,13 @@ async def refresh_ur_data(db: Session = Depends(get_db)):
         ).dict()
 
     except Exception as e:
-        logger.error(f"Error in refresh_ur_data: {e}")
-        raise HTTPException(status_code=500, detail="Internal server error")
+        log_and_raise_http_exception(
+            logger=logger,
+            status_code=500,
+            log_message="Error in refresh_ur_data",
+            error=e,
+            detail="Internal server error",
+        )
 
 
 @router.get("/info")
@@ -295,5 +321,10 @@ async def get_ur_info(db: Session = Depends(get_db)):
         }
 
     except Exception as e:
-        logger.error(f"Error in get_ur_info: {e}")
-        raise HTTPException(status_code=500, detail="Internal server error")
+        log_and_raise_http_exception(
+            logger=logger,
+            status_code=500,
+            log_message="Error in get_ur_info",
+            error=e,
+            detail="Internal server error",
+        )

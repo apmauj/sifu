@@ -7,6 +7,7 @@ from datetime import date, datetime
 import logging
 from typing import Optional
 
+from src.api.error_handling import log_and_raise_http_exception
 from src.infrastructure.database import get_db, SessionLocal
 from src.domain.models import ExchangeRateResponse
 from src.domain.services import ExchangeRateService
@@ -87,8 +88,12 @@ async def get_latest_exchange_rates(
             ).dict()
 
     except Exception as e:
-        logger.error(f"Error getting latest exchange rates: {e}")
-        raise HTTPException(status_code=HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+        log_and_raise_http_exception(
+            logger=logger,
+            status_code=HTTP_500_INTERNAL_SERVER_ERROR,
+            log_message="Error getting latest exchange rates",
+            error=e,
+        )
 
 
 @router.get(ENDPOINT_EXCHANGE_RATE_INFO)
@@ -113,8 +118,12 @@ async def get_exchange_rate_info(db: Session = Depends(get_db)):
         }
 
     except Exception as e:
-        logger.error(f"Error getting exchange rate information: {e}")
-        raise HTTPException(status_code=HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+        log_and_raise_http_exception(
+            logger=logger,
+            status_code=HTTP_500_INTERNAL_SERVER_ERROR,
+            log_message="Error getting exchange rate information",
+            error=e,
+        )
 
 
 @router.get(ENDPOINT_EXCHANGE_RATE_BY_CURRENCY)
@@ -151,8 +160,12 @@ async def get_exchange_rates_by_currency(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error getting exchange rates by currency {currency}: {e}")
-        raise HTTPException(status_code=HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+        log_and_raise_http_exception(
+            logger=logger,
+            status_code=HTTP_500_INTERNAL_SERVER_ERROR,
+            log_message=f"Error getting exchange rates by currency {currency}",
+            error=e,
+        )
 
 
 @router.get(ENDPOINT_EXCHANGE_RATE_RANGE)
@@ -193,10 +206,14 @@ async def get_exchange_rates_by_range(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(
-            f"Error getting exchange rates by range {start_date} - {end_date}: {e}"
+        log_and_raise_http_exception(
+            logger=logger,
+            status_code=HTTP_500_INTERNAL_SERVER_ERROR,
+            log_message=(
+                f"Error getting exchange rates by range {start_date} - {end_date}"
+            ),
+            error=e,
         )
-        raise HTTPException(status_code=HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
 
 # Note: /api/exchange-rate/current is defined in main.py BEFORE including this router
@@ -224,8 +241,12 @@ async def get_exchange_rates_by_date(
             ).dict()
 
     except Exception as e:
-        logger.error(f"Error getting exchange rates by date {date}: {e}")
-        raise HTTPException(status_code=HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+        log_and_raise_http_exception(
+            logger=logger,
+            status_code=HTTP_500_INTERNAL_SERVER_ERROR,
+            log_message=f"Error getting exchange rates by date {date}",
+            error=e,
+        )
 
 
 @router.post(ENDPOINT_EXCHANGE_RATE_REFRESH)

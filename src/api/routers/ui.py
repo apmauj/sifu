@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from datetime import date
 import logging
 
+from src.api.error_handling import log_and_raise_http_exception
 from src.infrastructure.database import get_db
 from src.domain.models import UIResponse, RefreshResponse
 from src.domain.services import UIService
@@ -57,8 +58,12 @@ async def get_latest_ui(db: Session = Depends(get_db)):
             return UIResponse(success=False, message=MSG_NO_UI_DATA).dict()
 
     except Exception as e:
-        logger.error(f"Error getting latest UI value: {e}")
-        raise HTTPException(status_code=HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+        log_and_raise_http_exception(
+            logger=logger,
+            status_code=HTTP_500_INTERNAL_SERVER_ERROR,
+            log_message="Error getting latest UI value",
+            error=e,
+        )
 
 
 @router.get("/{date}")
@@ -96,9 +101,11 @@ async def get_ui_by_date(date: date, db: Session = Depends(get_db)):
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error getting UI by date {date}: {e}")
-        raise HTTPException(
+        log_and_raise_http_exception(
+            logger=logger,
             status_code=HTTP_500_INTERNAL_SERVER_ERROR,
+            log_message=f"Error getting UI by date {date}",
+            error=e,
             detail=MSG_INTERNAL_SERVER_ERROR,
         )
 
@@ -135,9 +142,11 @@ async def get_ui_by_range(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error getting UI by range {start_date} - {end_date}: {e}")
-        raise HTTPException(
+        log_and_raise_http_exception(
+            logger=logger,
             status_code=HTTP_500_INTERNAL_SERVER_ERROR,
+            log_message=f"Error getting UI by range {start_date} - {end_date}",
+            error=e,
             detail=MSG_INTERNAL_SERVER_ERROR,
         )
 
