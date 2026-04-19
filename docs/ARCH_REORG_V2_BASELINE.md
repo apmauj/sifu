@@ -12,6 +12,7 @@ Mediciones incluidas:
 1. Tamano actual del backend en src/.
 2. Top modulos por lineas.
 3. Violaciones de dependencias entre capas segun ADR-0001.
+4. Tiempos de referencia de tests backend/frontend.
 
 ## 2. Tamano actual en src/
 
@@ -48,13 +49,30 @@ Resultado baseline:
 Reporte JSON (CI/local):
 - logs/architecture/layer_violations.json
 
-## 5. Implicancias para Fase 1
+## 5. Baseline de tiempos de tests (referencia inicial)
+
+Fecha de medicion: 2026-04-19
+
+Comandos medidos:
+
+1. Backend
+- `C:/Users/apmauj/repos/sifu/.venv/Scripts/python.exe -m pytest tests -q --maxfail=1 --disable-warnings --tb=short --ignore=tests/demo --asyncio-mode=auto`
+- Tiempo observado: 26.77 s
+
+2. Frontend
+- `cd frontend && npm test -- --run --reporter=verbose`
+- Tiempo observado: 28.04 s
+
+Nota:
+- Son tiempos de referencia inicial para comparar mejoras/regresiones por fase.
+
+## 6. Implicancias para Fase 1
 
 1. El layout de capas actual esta sano respecto a imports directos por capa.
 2. Fase 1 puede enfocarse en consolidacion de limites funcionales y modularizacion (no en corregir violaciones masivas de imports).
 3. El guardrail queda activo para prevenir regresiones futuras.
 
-## 6. Referencias
+## 7. Referencias
 
 - ADR: docs/adr/ADR-0001-layer-boundaries.md
 - Checklist Fase 0: docs/ARCH_REORG_V2_PHASE0_CHECKLIST.md

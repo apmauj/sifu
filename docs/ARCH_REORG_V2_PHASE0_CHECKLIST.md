@@ -12,7 +12,7 @@ Objetivo fase: guardrails y baseline
 - [x] Aprobar ADR en PR.
 
 2. Baseline tecnico
-- [ ] Medir tiempos de test backend/frontend (referencia inicial).
+- [x] Medir tiempos de test backend/frontend (referencia inicial).
 - [x] Identificar top 10 modulos por tamano/complejidad percibida.
 - [x] Inventariar imports cruzados que violen limites de capas.
 
