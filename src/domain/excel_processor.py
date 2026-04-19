@@ -17,6 +17,10 @@ import io
 from urllib3.exceptions import InsecureRequestWarning
 from src.infrastructure.circuit_breaker import get_circuit_breaker, CircuitBreakerOpenException
 from src.domain.excel_parsing_utils import parse_date_value, parse_decimal_value
+from src.domain.ur_excel_transform_utils import (
+    is_ine_ur_list_format,
+    map_ur_month_columns,
+)
 from src.utils.constants import (
     UR_MONTH_NAMES,
     URL_BCU_EXCHANGE_RATES,
@@ -392,10 +396,7 @@ class URExcelProcessor:
             sample_values = first_col.dropna().head(10).astype(str)
             
             # Check if it looks like INE format (dates in first column)
-            is_ine_format = any(
-                '-' in str(val) and any(char.isdigit() for char in str(val))
-                for val in sample_values
-            )
+            is_ine_format = is_ine_ur_list_format(sample_values)
             
             if is_ine_format:
                 logger.info("Detected INE list format (date, value)")
@@ -517,43 +518,7 @@ class URExcelProcessor:
             logger.info(f"Using first column as years: {year_column}")
 
         # Map month columns
-        month_columns = {}
-        for col in data_section.columns:
-            if pd.isna(col):
-                continue
-
-            col_str = str(col).upper().strip()
-
-            # Specific mapping for each month
-            if "ENERO" in col_str or col_str == "ENE":
-                month_columns[1] = col
-            elif "FEBRERO" in col_str or col_str == "FEB":
-                month_columns[2] = col
-            elif "MARZO" in col_str or col_str == "MAR":
-                month_columns[3] = col
-            elif "ABRIL" in col_str or col_str == "ABR":
-                month_columns[4] = col
-            elif "MAYO" in col_str or col_str == "MAY":
-                month_columns[5] = col
-            elif "JUNIO" in col_str or col_str == "JUN":
-                month_columns[6] = col
-            elif "JULIO" in col_str or col_str == "JUL":
-                month_columns[7] = col
-            elif "AGOSTO" in col_str or col_str == "AGO":
-                month_columns[8] = col
-            elif (
-                "SEPTIEMBRE" in col_str
-                or "SETIEMBRE" in col_str
-                or col_str == "SEP"
-                or col_str == "SET"
-            ):
-                month_columns[9] = col
-            elif "OCTUBRE" in col_str or col_str == "OCT":
-                month_columns[10] = col
-            elif "NOVIEMBRE" in col_str or col_str == "NOV":
-                month_columns[11] = col
-            elif "DICIEMBRE" in col_str or col_str == "DIC":
-                month_columns[12] = col
+        month_columns = map_ur_month_columns(data_section.columns)
 
         logger.info(f"Mapped month columns: {month_columns}")
 
