@@ -403,6 +403,9 @@ jobs:
           
           Write-Host "=== Static message duplication check ==="
           & $PyExe scripts/util/check_messages.py
+
+          Write-Host "=== Architecture guardrail (layer imports, warn mode) ==="
+          & ./scripts/architecture/check_layer_imports.ps1 -Mode warn -ReportPath logs/architecture/layer_violations.json
           
           Write-Host "=== Verify Alembic migrations ==="
           & $PyExe -m alembic -c config/alembic.ini upgrade head --sql | Out-Null
@@ -410,6 +413,13 @@ jobs:
           
           Write-Host "=== Run backend tests ==="
           & $PyExe -m pytest tests -q --maxfail=1 --disable-warnings --tb=short --ignore=tests/demo --asyncio-mode=auto
+
+      - name: Upload architecture guardrail report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: backend-architecture-guardrail
+          path: logs/architecture/layer_violations.json
 
   frontend-tests:
     name: Frontend Tests

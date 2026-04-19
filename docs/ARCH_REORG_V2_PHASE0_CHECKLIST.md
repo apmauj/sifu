@@ -7,24 +7,24 @@ Objetivo fase: guardrails y baseline
 ## Checklist
 
 1. ADR de fronteras entre capas
-- [ ] Definir dependencias permitidas entre `src/api`, `src/application`, `src/domain`, `src/infrastructure`, `src/utils`.
-- [ ] Definir dependencias prohibidas y excepciones temporales.
-- [ ] Aprobar ADR en PR.
+- [x] Definir dependencias permitidas entre `src/api`, `src/application`, `src/domain`, `src/infrastructure`, `src/utils`.
+- [x] Definir dependencias prohibidas y excepciones temporales.
+- [x] Aprobar ADR en PR.
 
 2. Baseline tecnico
-- [ ] Medir tiempos de test backend/frontend (referencia inicial).
-- [ ] Identificar top 10 modulos por tamano/complejidad percibida.
-- [ ] Inventariar imports cruzados que violen limites de capas.
+- [x] Medir tiempos de test backend/frontend (referencia inicial).
+- [x] Identificar top 10 modulos por tamano/complejidad percibida.
+- [x] Inventariar imports cruzados que violen limites de capas.
 
 3. Guardrails automatizados
-- [ ] Crear script de chequeo de imports por capas (modo reporte).
-- [ ] Integrar script a CI como warning (sin bloquear).
-- [ ] Generar reporte en artefacto de CI.
+- [x] Crear script de chequeo de imports por capas (modo reporte).
+- [x] Integrar script a CI como warning (sin bloquear).
+- [x] Generar reporte en artefacto de CI.
 
 4. Plan de ejecucion fase 1
-- [ ] Priorizar 5-10 violaciones de capas de mayor impacto.
-- [ ] Definir PRs chicos para correccion incremental.
-- [ ] Acordar regla de tamano maximo de PR.
+- [x] Priorizar 5-10 violaciones de capas de mayor impacto.
+- [x] Definir PRs chicos para correccion incremental.
+- [x] Acordar regla de tamano maximo de PR.
 
 ## Definition of Done - Fase 0
 
