@@ -4,7 +4,7 @@
 
 ### Re-arquitectura incremental V2 (desde develop)
 
-Estado: Iniciada
+Estado: Fase 2 iniciada
 
 - Rama programa: `chore/arch-reorg-v2`
 - Roadmap: `docs/ARCH_REORG_V2_ROADMAP.md`
@@ -14,7 +14,7 @@ Objetivo:
 - Consolidar fronteras de capas en `src/`, reducir acoplamiento y endurecer guardrails de arquitectura sin cambios big-bang.
 
 Proximo paso operativo:
-- Ejecutar Fase 0 (ADR de limites, baseline tecnico y check automatico de imports por capas en CI).
+- Continuar Fase 2 con siguiente corte pequeno de modularizacion (PR-B), manteniendo diffs acotados y tests focalizados por modulo.
 
 ## 🚨 P0 - Primera Tarea Pendiente (Node 24 en GitHub Actions)
 

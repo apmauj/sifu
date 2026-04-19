@@ -5,6 +5,10 @@ import logging
 from sqlalchemy import and_
 from sqlalchemy.orm import Session
 
+from src.domain.exchange_rate_mapping_utils import (
+    map_exchange_rate_record,
+    map_exchange_rate_records,
+)
 from src.domain.models import ExchangeRateValue
 from src.infrastructure.database import ExchangeRateRecord
 
@@ -33,17 +37,7 @@ class ExchangeRateService:
 
             records = query.order_by(ExchangeRateRecord.currency).all()
 
-            return [
-                ExchangeRateValue(
-                    date=record.date,
-                    currency=record.currency,
-                    buy_rate=record.buy_rate,
-                    sell_rate=record.sell_rate,
-                    average_rate=record.average_rate,
-                    arbitrage=record.arbitrage,
-                )
-                for record in records
-            ]
+            return map_exchange_rate_records(records)
 
         except Exception as e:
             logger.error(f"Error getting exchange rates by date {date}: {e}")
@@ -62,17 +56,7 @@ class ExchangeRateService:
                 .all()
             )
 
-            return [
-                ExchangeRateValue(
-                    date=record.date,
-                    currency=record.currency,
-                    buy_rate=record.buy_rate,
-                    sell_rate=record.sell_rate,
-                    average_rate=record.average_rate,
-                    arbitrage=record.arbitrage,
-                )
-                for record in records
-            ]
+            return map_exchange_rate_records(records)
 
         except Exception as e:
             logger.error(f"Error getting exchange rates by currency {currency}: {e}")
@@ -101,17 +85,7 @@ class ExchangeRateService:
                 ExchangeRateRecord.date, ExchangeRateRecord.currency
             ).all()
 
-            return [
-                ExchangeRateValue(
-                    date=record.date,
-                    currency=record.currency,
-                    buy_rate=record.buy_rate,
-                    sell_rate=record.sell_rate,
-                    average_rate=record.average_rate,
-                    arbitrage=record.arbitrage,
-                )
-                for record in records
-            ]
+            return map_exchange_rate_records(records)
 
         except Exception as e:
             logger.error(
@@ -145,17 +119,7 @@ class ExchangeRateService:
 
             records = query.order_by(ExchangeRateRecord.currency).all()
 
-            return [
-                ExchangeRateValue(
-                    date=record.date,
-                    currency=record.currency,
-                    buy_rate=record.buy_rate,
-                    sell_rate=record.sell_rate,
-                    average_rate=record.average_rate,
-                    arbitrage=record.arbitrage,
-                )
-                for record in records
-            ]
+            return map_exchange_rate_records(records)
 
         except Exception as e:
             logger.error(f"Error getting latest exchange rates: {e}")
@@ -178,14 +142,7 @@ class ExchangeRateService:
             )
 
             if exact_record:
-                return ExchangeRateValue(
-                    date=exact_record.date,
-                    currency=exact_record.currency,
-                    buy_rate=exact_record.buy_rate,
-                    sell_rate=exact_record.sell_rate,
-                    average_rate=exact_record.average_rate,
-                    arbitrage=exact_record.arbitrage,
-                )
+                return map_exchange_rate_record(exact_record)
 
             closest_record = (
                 self.db.query(ExchangeRateRecord)
@@ -200,14 +157,7 @@ class ExchangeRateService:
             )
 
             if closest_record:
-                return ExchangeRateValue(
-                    date=closest_record.date,
-                    currency=closest_record.currency,
-                    buy_rate=closest_record.buy_rate,
-                    sell_rate=closest_record.sell_rate,
-                    average_rate=closest_record.average_rate,
-                    arbitrage=closest_record.arbitrage,
-                )
+                return map_exchange_rate_record(closest_record)
             return None
 
         except Exception as e:
