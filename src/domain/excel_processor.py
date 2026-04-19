@@ -17,6 +17,10 @@ import io
 from urllib3.exceptions import InsecureRequestWarning
 from src.infrastructure.circuit_breaker import get_circuit_breaker, CircuitBreakerOpenException
 from src.domain.excel_parsing_utils import parse_date_value, parse_decimal_value
+from src.domain.exchange_excel_transform_utils import (
+    EXCHANGE_RATE_CURRENCY_MAPPINGS,
+    parse_exchange_rate_value,
+)
 from src.domain.ur_excel_transform_utils import (
     is_ine_ur_list_format,
     map_ur_month_columns,
@@ -736,14 +740,7 @@ class ExchangeRateExcelProcessor:
             logger.info(f"Detected columns: {list(excel_data.columns)}")
             logger.info(f"First 5 rows:\n{excel_data.head()}")
 
-            # Currency mappings based on INE Excel structure
-            currency_mappings = [
-                ("USD", "Dólar.USA.Compra", "Dólar.USA.Venta"),
-                ("EUR", "Euro.Compra", "Euro.Venta"),
-                ("ARS", "Peso.Argentino.Compra", "Peso.Argentino.Venta"),
-                ("BRL", "Real.Compra", "Real.Venta"),
-                # Note: Dólar.eBROU is a different modality, we'll map it as USD_EBROU if needed
-            ]
+            currency_mappings = EXCHANGE_RATE_CURRENCY_MAPPINGS
 
             for _, row in excel_data.iterrows():
                 try:
@@ -798,12 +795,12 @@ class ExchangeRateExcelProcessor:
                                 continue
 
                             # Parse buy rate
-                            buy_rate = self._parse_rate_value(buy_rate_raw)
+                            buy_rate = parse_exchange_rate_value(buy_rate_raw)
                             if buy_rate is None:
                                 continue
 
                             # Parse sell rate
-                            sell_rate = self._parse_rate_value(sell_rate_raw)
+                            sell_rate = parse_exchange_rate_value(sell_rate_raw)
                             if sell_rate is None:
                                 continue
 
@@ -848,45 +845,6 @@ class ExchangeRateExcelProcessor:
 
             logger.error(traceback.format_exc())
             return []
-
-    def _parse_rate_value(self, value) -> Optional[float]:
-        """Parse a rate value from the Excel, handling various formats"""
-        if pd is None:
-            logger.warning("pandas not available; skipping exchange save_to_database")
-            return -1
-        try:
-            # Handle missing values
-            if pd.isna(value) or value == ".." or value == "":
-                return None
-
-            # Convert to string and clean
-            if not isinstance(value, str):
-                value = str(value)
-
-            # Remove any non-numeric characters except decimal separators
-            cleaned = value.strip()
-
-            # Handle different decimal separators
-            if "," in cleaned and "." in cleaned:
-                # Assume comma is thousands separator, dot is decimal
-                cleaned = cleaned.replace(",", "")
-            elif "," in cleaned and "." not in cleaned:
-                # Assume comma is decimal separator
-                cleaned = cleaned.replace(",", ".")
-
-            # Try to convert to float
-            rate = float(cleaned)
-
-            # Validate reasonable range (exchange rates should be positive and reasonable)
-            if rate <= 0 or rate > 10000:
-                logger.debug(f"Rate value out of reasonable range: {rate}")
-                return None
-
-            return round(rate, 4)
-
-        except (ValueError, TypeError) as e:
-            logger.debug(f"Could not parse rate value '{value}': {e}")
-            return None
 
     def save_to_database(
         self,
