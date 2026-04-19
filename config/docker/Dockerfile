@@ -1,5 +1,5 @@
-# Usar Python 3.11 slim como imagen base
-FROM python:3.11-slim
+# Usar Python 3.12 slim como imagen base
+FROM python:3.12-slim
 
 # Establecer el directorio de trabajo
 WORKDIR /app

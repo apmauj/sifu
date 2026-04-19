@@ -183,27 +183,24 @@ jobs:
     timeout-minutes: 8
     steps:
       - uses: actions/checkout@v6
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
       
       - name: Setup Python environment
         shell: pwsh
         run: |
-          # Usar el venv existente o crear uno
-          if (Test-Path ".venv/Scripts/Activate.ps1") {
-            . .venv/Scripts/Activate.ps1
-          }
           python -m pip install --upgrade pip setuptools
-          if (Test-Path "requirements.txt") { pip install -r requirements.txt }
-          if (Test-Path "requirements-dev.txt") { pip install -r requirements-dev.txt }
-          pip install --upgrade pip-audit
+          if (Test-Path "requirements.txt") { python -m pip install -r requirements.txt }
+          if (Test-Path "requirements-dev.txt") { python -m pip install -r requirements-dev.txt }
+          python -m pip install --upgrade pip-audit
       
       - name: pip-audit
         id: audit
         shell: pwsh
         run: |
-          if (Test-Path ".venv/Scripts/Activate.ps1") { . .venv/Scripts/Activate.ps1 }
-          
           # Run pip-audit
-          pip-audit -r requirements.txt -f json 2>$null | Out-File -FilePath pip_audit_backend.json -Encoding utf8
+          python -m pip_audit -r requirements.txt -f json 2>$null | Out-File -FilePath pip_audit_backend.json -Encoding utf8
           $auditExit = $LASTEXITCODE
           
           # Count high/critical vulnerabilities
@@ -296,6 +293,9 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v6
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
       
       - name: Install deps and run tests
         shell: pwsh
@@ -303,14 +303,13 @@ jobs:
           PYTHONUNBUFFERED: '1'
           SIFU_SKIP_BOOTSTRAP: '1'
         run: |
-          if (Test-Path ".venv/Scripts/Activate.ps1") { . .venv/Scripts/Activate.ps1 }
           python -m pip install --upgrade pip
-          if (Test-Path "requirements.txt") { pip install -r requirements.txt }
-          if (Test-Path "requirements-dev.txt") { pip install -r requirements-dev.txt }
-          pip install ruff
+          if (Test-Path "requirements.txt") { python -m pip install -r requirements.txt }
+          if (Test-Path "requirements-dev.txt") { python -m pip install -r requirements-dev.txt }
+          python -m pip install ruff
           
           Write-Host "=== Lint (ruff) ==="
-          ruff check .
+          python -m ruff check .
           
           Write-Host "=== Static message duplication check ==="
           python scripts/util/check_messages.py
