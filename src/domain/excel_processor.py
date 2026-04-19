@@ -16,6 +16,7 @@ from src.infrastructure.database import UIRecord, URRecord, ExchangeRateRecord
 import io
 from urllib3.exceptions import InsecureRequestWarning
 from src.infrastructure.circuit_breaker import get_circuit_breaker, CircuitBreakerOpenException
+from src.domain.excel_parsing_utils import parse_date_value, parse_decimal_value
 from src.utils.constants import (
     UR_MONTH_NAMES,
     URL_BCU_EXCHANGE_RATES,
@@ -126,43 +127,13 @@ class ExcelProcessor:
                     if pd.isna(date_raw) or pd.isna(value_raw):
                         continue
 
-                    # Convert date
-                    if isinstance(date_raw, str):
-                        # Try various date formats
-                        for fmt in DATE_FORMATS:
-                            try:
-                                parsed_date = datetime.strptime(date_raw, fmt).date()
-                                break
-                            except ValueError:
-                                continue
-                        else:
-                            continue
-                    elif isinstance(date_raw, datetime):
-                        parsed_date = date_raw.date()
-                    else:
+                    parsed_date = parse_date_value(date_raw, DATE_FORMATS)
+                    if parsed_date is None:
                         continue
 
                     # Convert value
-                    try:
-                        # Handle string values with comma decimal or thousand separators
-                        if isinstance(value_raw, str):
-                            raw = value_raw.strip()
-                            if raw == "":
-                                skipped_rows += 1
-                                continue
-                            # European decimal: 6,3655 -> 6.3655
-                            # Remove spaces; if both '.' and ',' appear assume '.' thousands separator
-                            if "," in raw:
-                                if "." in raw:
-                                    # 1.234,56 -> 1234.56
-                                    raw = raw.replace(".", "").replace(",", ".")
-                                else:
-                                    # 1234,56 -> 1234.56
-                                    raw = raw.replace(",", ".")
-                            parsed_value = float(raw)
-                        else:
-                            parsed_value = float(value_raw)
-                    except (ValueError, TypeError):
+                    parsed_value = parse_decimal_value(value_raw)
+                    if parsed_value is None:
                         skipped_rows += 1
                         continue
 
@@ -477,20 +448,9 @@ class URExcelProcessor:
                     year = date_val.year
                     month = date_val.month
                 
-                # Parse value - handle European format (1.234,56 or 1234,56)
-                if isinstance(value_val, str):
-                    value_str = value_val.strip()
-                    if "," in value_str:
-                        # European format with comma as decimal separator
-                        if "." in value_str:
-                            # Format: 1.234,56 -> 1234.56 (dot is thousands separator)
-                            value_str = value_str.replace(".", "").replace(",", ".")
-                        else:
-                            # Format: 1234,56 -> 1234.56
-                            value_str = value_str.replace(",", ".")
-                    value = float(value_str)
-                else:
-                    value = float(value_val)
+                value = parse_decimal_value(value_val)
+                if value is None:
+                    continue
                 
                 # Validate
                 if MIN_VALID_YEAR <= year <= MAX_VALID_YEAR and 1 <= month <= 12:
@@ -622,26 +582,9 @@ class URExcelProcessor:
                         if pd.isna(value_raw) or value_raw == "":
                             continue
 
-                        # Clean and convert value
-                        if isinstance(value_raw, str):
-                            # Clean spaces and strange characters
-                            value_raw = value_raw.strip()
-
-                            # Handle European format: 1.234,56 or 1234,56
-                            if "," in value_raw:
-                                # European format with comma as decimal
-                                if "." in value_raw:
-                                    # Format: 1.234,56 -> 1234.56
-                                    value_raw = value_raw.replace(".", "").replace(
-                                    ",", "."
-                                )
-                            else:
-                                # Format: 1234,56 -> 1234.56
-                                value_raw = value_raw.replace(",", ".")
-
-                            value = float(value_raw)
-                        else:
-                            value = float(value_raw)
+                        value = parse_decimal_value(value_raw)
+                        if value is None:
+                            continue
 
                         # Check that the value is reasonable for UR
                         if (
