@@ -171,6 +171,7 @@ Responsables:
 
 - Fase 0 completada (ADR, guardrails y baseline integrados en CI).
 - Fase 1 completada (fronteras principales corregidas por PRs pequenos).
-- Fase 2 iniciada en `feat/arch-v2-phase2-module-split`.
-- Primer corte Fase 2 aplicado: extraccion de utilidades de transformacion para Exchange (`exchange_rate_mapping_utils.py`) con tests focalizados.
-- Siguiente accion: ejecutar PR-B de Fase 2 con otro corte acotado de modularizacion por dominio.
+- Fase 2 completada e integrada en `develop` y `master`.
+- Fase 3 iniciada en `feat/arch-v2-phase3-observability-data`.
+- Primer corte Fase 3 aplicado: helper reutilizable para estandarizar logging + HTTPException en routers (`src/api/error_handling.py`).
+- Siguiente accion: extender estandarizacion de manejo de errores a routers restantes (exchange/ui/ur/brou).
