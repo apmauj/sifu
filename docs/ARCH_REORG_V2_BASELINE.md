@@ -76,4 +76,5 @@ Nota:
 
 - ADR: docs/adr/ADR-0001-layer-boundaries.md
 - Checklist Fase 0: docs/ARCH_REORG_V2_PHASE0_CHECKLIST.md
+- Backlog Fase 1: docs/ARCH_REORG_V2_PHASE1_BACKLOG.md
 - Roadmap V2: docs/ARCH_REORG_V2_ROADMAP.md

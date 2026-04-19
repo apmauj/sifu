@@ -22,9 +22,9 @@ Objetivo fase: guardrails y baseline
 - [x] Generar reporte en artefacto de CI.
 
 4. Plan de ejecucion fase 1
-- [ ] Priorizar 5-10 violaciones de capas de mayor impacto.
-- [ ] Definir PRs chicos para correccion incremental.
-- [ ] Acordar regla de tamano maximo de PR.
+- [x] Priorizar 5-10 violaciones de capas de mayor impacto.
+- [x] Definir PRs chicos para correccion incremental.
+- [x] Acordar regla de tamano maximo de PR.
 
 ## Definition of Done - Fase 0
 
