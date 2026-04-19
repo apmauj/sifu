@@ -1,18 +1,34 @@
 # Plan de Arquitectura - Upgrade de Python
 
-Fecha: 2026-04-18
-Rama: chore/python-upgrade-architecture-plan
+Fecha base: 2026-04-18 (actualizado: 2026-04-19)
+Rama: master
 
 ## Estado de ejecución (2026-04-19)
 
 - Compatibilidad 3.11/3.12 validada en workflow dedicado (`Python Compatibility Check`) en `master`.
-- Se preparó promoción de baseline oficial a 3.12 en PR `#7` (`chore/promote-python-3.12-baseline`) con cambios en:
-	- `config/docker/Dockerfile` (base `python:3.12-slim`)
-	- `README.md` y `docs/TECHNICAL_SUMMARY.md` (baseline 3.12+)
-	- workflows backend (`ci-cd.yml`, `security-audit.yml`) con `actions/setup-python` en 3.12.
-- La limpieza de referencias históricas a 3.11/3.10 no es total por diseño: algunos documentos conservan contexto histórico de migración.
+- Promoción de baseline oficial a 3.12 completada y mergeada en PR `#7` (`chore/promote-python-3.12-baseline`).
+- Runtime backend oficial en Docker: `python:3.12-slim`.
+- Baseline documental actualizado a 3.12+ en `README.md` y `docs/TECHNICAL_SUMMARY.md`.
+- Workflows backend actualizados para ejecutar con Python 3.12 (`ci-cd.yml`, `security-audit.yml`).
 
-## 1. Estado Actual (evidencia)
+## Cierre formal del objetivo
+
+Estado: CERRADO (objetivo "bump a Python 3.12" completado)
+
+Criterios de cierre cumplidos:
+- Produccion backend alineada en 3.12 (Docker).
+- Seguridad backend y pruebas backend en CI ejecutando con 3.12.
+- Baseline publico del repositorio actualizado a 3.12+.
+
+Reenfoque recomendado (nuevo objetivo):
+- Hardening operativo de CI self-hosted (estabilidad de runner, tiempos y simplificacion de pasos defensivos).
+- Limpieza documental final de referencias historicas a 3.11 solo donde generen ambiguedad.
+
+Nota:
+- Este documento conserva secciones historicas del analisis previo para trazabilidad.
+- Cuando exista contradiccion entre secciones historicas y estado actual, prevalece este bloque de cierre.
+
+## 1. Estado previo (snapshot 2026-04-18, historico)
 
 ### Local (developer machine)
 - Entorno virtual local: Python 3.11.0b4 (beta)
@@ -47,7 +63,9 @@ Conclusión de estado:
 - README previo (3.9+) estaba desalineado.
 - El baseline efectivo real hoy es Python 3.11.
 
-## 2. Recomendación de Target
+## 2. Recomendacion de Target (historico)
+
+Estas recomendaciones quedaron superadas por el cierre formal del objetivo en 2026-04-19.
 
 Recomendación principal:
 - Baseline operativo inmediato: Python 3.11.x estable y pinneado.
@@ -58,7 +76,7 @@ Razonamiento:
 - 3.13 puede tener mayor riesgo de compatibilidad de ecosistema en algunas dependencias.
 - 3.12 permite modernizar sin asumir riesgo de frontera.
 
-## 3. Riesgos Arquitectónicos a Resolver
+## 3. Riesgos Arquitectonicos a Resolver (historico)
 
 1. Drift de runtime en CI
 - Sin setup-python, el pipeline depende del estado del host.
@@ -72,7 +90,7 @@ Razonamiento:
 4. Dependencias nativas / wheels
 - Upgrade a 3.12 requiere validar wheels para pandas, cryptography, lxml, grpcio, etc.
 
-## 4. Plan Propuesto por Fases
+## 4. Plan Propuesto por Fases (historico)
 
 ### Fase 0 - Normalización (rápida, bajo riesgo)
 Objetivo: alinear documentación y declarar baseline actual.
@@ -130,7 +148,7 @@ Tareas:
 Criterio de salida:
 - Un único baseline sin deuda de transición.
 
-## 5. Validaciones Técnicas Recomendadas
+## 5. Validaciones Tecnicas Recomendadas (historico)
 
 Checklist mínimo previo a promover 3.12:
 - Backend tests: pytest completo (incluyendo async y endpoints críticos).
@@ -139,7 +157,7 @@ Checklist mínimo previo a promover 3.12:
 - Smoke APIs: /api/health, /api/ui/latest, /api/ur/latest, /api/exchange-rate/current, /api/brou/current.
 - Frontend smoke: carga de paneles y llamadas API principales.
 
-## 6. Entregables sugeridos para siguientes PRs
+## 6. Entregables sugeridos para siguientes PRs (historico)
 
 PR A (hardening runtime):
 - Pin de Python en workflows + archivo de versión local + mejoras bootstrap.
