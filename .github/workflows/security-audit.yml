@@ -35,22 +35,23 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
       
       - name: Install deps
         shell: pwsh
         run: |
-          if (Test-Path ".venv/Scripts/Activate.ps1") { . .venv/Scripts/Activate.ps1 }
           python -m pip install --upgrade pip 'setuptools>=78.1.1'
-          pip install -r requirements.txt 2>$null
-          if (Test-Path "requirements-dev.txt") { pip install -r requirements-dev.txt 2>$null }
-          pip install --upgrade pip-audit
+          python -m pip install -r requirements.txt 2>$null
+          if (Test-Path "requirements-dev.txt") { python -m pip install -r requirements-dev.txt 2>$null }
+          python -m pip install --upgrade pip-audit
       
       - name: pip-audit (requirements)
         id: audit_files
         shell: pwsh
         run: |
-          if (Test-Path ".venv/Scripts/Activate.ps1") { . .venv/Scripts/Activate.ps1 }
-          pip-audit -r requirements-core.txt -r requirements-dev.txt -r requirements.txt -f json 2>$null | Out-File -FilePath pip_audit_requirements.json -Encoding utf8
+          python -m pip_audit -r requirements-core.txt -r requirements-dev.txt -r requirements.txt -f json 2>$null | Out-File -FilePath pip_audit_requirements.json -Encoding utf8
           $exitCode = $LASTEXITCODE
           echo "exit_code=$exitCode" >> $env:GITHUB_OUTPUT
           # No cortar aquí: el umbral se evalúa en el step siguiente.
@@ -60,8 +61,7 @@ jobs:
         id: audit_installed
         shell: pwsh
         run: |
-          if (Test-Path ".venv/Scripts/Activate.ps1") { . .venv/Scripts/Activate.ps1 }
-          pip-audit -l -f json 2>$null | Out-File -FilePath pip_audit_installed.json -Encoding utf8
+          python -m pip_audit -l -f json 2>$null | Out-File -FilePath pip_audit_installed.json -Encoding utf8
           $exitCode = $LASTEXITCODE
           echo "exit_code=$exitCode" >> $env:GITHUB_OUTPUT
           # No cortar aquí: el umbral se evalúa en el step siguiente.

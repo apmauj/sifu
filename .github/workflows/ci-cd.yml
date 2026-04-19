@@ -187,23 +187,68 @@ jobs:
       - name: Setup Python environment
         shell: pwsh
         run: |
-          # Usar el venv existente o crear uno
-          if (Test-Path ".venv/Scripts/Activate.ps1") {
-            . .venv/Scripts/Activate.ps1
+          function Resolve-HealthyPython312 {
+            $candidates = New-Object System.Collections.Generic.List[string]
+
+            # Prefer instalaciones del sistema.
+            foreach ($p in @("C:\Python312\python.exe", "C:\Program Files\Python312\python.exe")) {
+              if (Test-Path $p) { [void]$candidates.Add($p) }
+            }
+
+            # Si py launcher existe, usar su resolución para 3.12.
+            if (Get-Command py -ErrorAction SilentlyContinue) {
+              try {
+                $pyResolved = & py -3.12 -c "import sys; print(sys.executable)" 2>$null
+                $pyResolvedLine = ($pyResolved | Select-Object -Last 1)
+                if ($pyResolvedLine) { [void]$candidates.Add($pyResolvedLine.Trim()) }
+              } catch { }
+            }
+
+            # Incluir toolcache por si es la única opción disponible.
+            foreach ($p in @("C:\actions-runner\_work\_tool\Python\3.12.10\x64\python.exe")) {
+              if (Test-Path $p) { [void]$candidates.Add($p) }
+            }
+
+            $pythonCmds = Get-Command python -All -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source -Unique
+            foreach ($p in $pythonCmds) {
+              if ($p) { [void]$candidates.Add($p) }
+            }
+
+            foreach ($pyExe in ($candidates | Select-Object -Unique)) {
+              try {
+                # Validar versión 3.12.
+                & $pyExe -c "import sys; raise SystemExit(0 if sys.version_info[:2]==(3,12) else 1)" 2>$null | Out-Null
+                if ($LASTEXITCODE -ne 0) { continue }
+
+                # Si pip no está disponible, intentar repararlo con ensurepip.
+                & $pyExe -c "import pip" 2>$null | Out-Null
+                if ($LASTEXITCODE -ne 0) {
+                  & $pyExe -m ensurepip --upgrade 2>$null | Out-Null
+                }
+
+                & $pyExe -c "import pip" 2>$null | Out-Null
+                if ($LASTEXITCODE -eq 0) { return $pyExe }
+              } catch { }
+            }
+
+            throw "No se encontró Python 3.12 saludable (con pip) en runner self-hosted"
           }
-          python -m pip install --upgrade pip setuptools
-          if (Test-Path "requirements.txt") { pip install -r requirements.txt }
-          if (Test-Path "requirements-dev.txt") { pip install -r requirements-dev.txt }
-          pip install --upgrade pip-audit
+
+          $PyExe = Resolve-HealthyPython312
+          Write-Host "Usando Python: $PyExe"
+          & $PyExe --version
+          & $PyExe -m pip install --upgrade pip setuptools
+          if (Test-Path "requirements.txt") { & $PyExe -m pip install -r requirements.txt }
+          if (Test-Path "requirements-dev.txt") { & $PyExe -m pip install -r requirements-dev.txt }
+          & $PyExe -m pip install --upgrade pip-audit
+          "PY_EXE=$PyExe" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
       
       - name: pip-audit
         id: audit
         shell: pwsh
         run: |
-          if (Test-Path ".venv/Scripts/Activate.ps1") { . .venv/Scripts/Activate.ps1 }
-          
           # Run pip-audit
-          pip-audit -r requirements.txt -f json 2>$null | Out-File -FilePath pip_audit_backend.json -Encoding utf8
+          & $env:PY_EXE -m pip_audit -r requirements.txt -f json 2>$null | Out-File -FilePath pip_audit_backend.json -Encoding utf8
           $auditExit = $LASTEXITCODE
           
           # Count high/critical vulnerabilities
@@ -303,24 +348,68 @@ jobs:
           PYTHONUNBUFFERED: '1'
           SIFU_SKIP_BOOTSTRAP: '1'
         run: |
-          if (Test-Path ".venv/Scripts/Activate.ps1") { . .venv/Scripts/Activate.ps1 }
-          python -m pip install --upgrade pip
-          if (Test-Path "requirements.txt") { pip install -r requirements.txt }
-          if (Test-Path "requirements-dev.txt") { pip install -r requirements-dev.txt }
-          pip install ruff
+          function Resolve-HealthyPython312 {
+            $candidates = New-Object System.Collections.Generic.List[string]
+
+            foreach ($p in @("C:\Python312\python.exe", "C:\Program Files\Python312\python.exe")) {
+              if (Test-Path $p) { [void]$candidates.Add($p) }
+            }
+
+            if (Get-Command py -ErrorAction SilentlyContinue) {
+              try {
+                $pyResolved = & py -3.12 -c "import sys; print(sys.executable)" 2>$null
+                $pyResolvedLine = ($pyResolved | Select-Object -Last 1)
+                if ($pyResolvedLine) { [void]$candidates.Add($pyResolvedLine.Trim()) }
+              } catch { }
+            }
+
+            foreach ($p in @("C:\actions-runner\_work\_tool\Python\3.12.10\x64\python.exe")) {
+              if (Test-Path $p) { [void]$candidates.Add($p) }
+            }
+
+            $pythonCmds = Get-Command python -All -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source -Unique
+            foreach ($p in $pythonCmds) {
+              if ($p) { [void]$candidates.Add($p) }
+            }
+
+            foreach ($pyExe in ($candidates | Select-Object -Unique)) {
+              try {
+                & $pyExe -c "import sys; raise SystemExit(0 if sys.version_info[:2]==(3,12) else 1)" 2>$null | Out-Null
+                if ($LASTEXITCODE -ne 0) { continue }
+
+                & $pyExe -c "import pip" 2>$null | Out-Null
+                if ($LASTEXITCODE -ne 0) {
+                  & $pyExe -m ensurepip --upgrade 2>$null | Out-Null
+                }
+
+                & $pyExe -c "import pip" 2>$null | Out-Null
+                if ($LASTEXITCODE -eq 0) { return $pyExe }
+              } catch { }
+            }
+
+            throw "No se encontró Python 3.12 saludable (con pip) en runner self-hosted"
+          }
+
+          $PyExe = Resolve-HealthyPython312
+          Write-Host "Usando Python: $PyExe"
+          & $PyExe --version
+          & $PyExe -m pip install --upgrade pip
+          if (Test-Path "requirements.txt") { & $PyExe -m pip install -r requirements.txt }
+          if (Test-Path "requirements-dev.txt") { & $PyExe -m pip install -r requirements-dev.txt }
+          & $PyExe -m pip install ruff
           
           Write-Host "=== Lint (ruff) ==="
-          ruff check .
+          & $PyExe -m ruff check .
           
           Write-Host "=== Static message duplication check ==="
-          python scripts/util/check_messages.py
+          & $PyExe scripts/util/check_messages.py
           
           Write-Host "=== Verify Alembic migrations ==="
-          alembic -c config/alembic.ini upgrade head --sql | Out-Null
+          & $PyExe -m alembic -c config/alembic.ini upgrade head --sql | Out-Null
           Write-Host "Alembic migrations validated successfully"
           
           Write-Host "=== Run backend tests ==="
-          pytest -q --maxfail=1 --disable-warnings --tb=short --ignore=tests/demo --asyncio-mode=auto
+          & $PyExe -m pytest tests -q --maxfail=1 --disable-warnings --tb=short --ignore=tests/demo --asyncio-mode=auto
 
   frontend-tests:
     name: Frontend Tests

@@ -135,7 +135,7 @@ Nginx (Alpine)          # Reverse proxy
 Uvicorn                 # ASGI server
 
 # Development
-Python 3.11+            # Runtime
+Python 3.12+            # Runtime
 Node.js 24+             # Frontend tooling
 ```
 
