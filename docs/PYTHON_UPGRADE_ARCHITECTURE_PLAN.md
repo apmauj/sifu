@@ -3,6 +3,15 @@
 Fecha: 2026-04-18
 Rama: chore/python-upgrade-architecture-plan
 
+## Estado de ejecución (2026-04-19)
+
+- Compatibilidad 3.11/3.12 validada en workflow dedicado (`Python Compatibility Check`) en `master`.
+- Se preparó promoción de baseline oficial a 3.12 en PR `#7` (`chore/promote-python-3.12-baseline`) con cambios en:
+	- `config/docker/Dockerfile` (base `python:3.12-slim`)
+	- `README.md` y `docs/TECHNICAL_SUMMARY.md` (baseline 3.12+)
+	- workflows backend (`ci-cd.yml`, `security-audit.yml`) con `actions/setup-python` en 3.12.
+- La limpieza de referencias históricas a 3.11/3.10 no es total por diseño: algunos documentos conservan contexto histórico de migración.
+
 ## 1. Estado Actual (evidencia)
 
 ### Local (developer machine)
