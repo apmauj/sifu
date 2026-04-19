@@ -17,6 +17,15 @@ import io
 from urllib3.exceptions import InsecureRequestWarning
 from src.infrastructure.circuit_breaker import get_circuit_breaker, CircuitBreakerOpenException
 from src.domain.excel_parsing_utils import parse_date_value, parse_decimal_value
+from src.domain.exchange_excel_transform_utils import (
+    parse_exchange_date_value,
+    parse_exchange_rate_pair,
+    EXCHANGE_RATE_CURRENCY_MAPPINGS,
+)
+from src.domain.ur_excel_transform_utils import (
+    is_ine_ur_list_format,
+    map_ur_month_columns,
+)
 from src.utils.constants import (
     UR_MONTH_NAMES,
     URL_BCU_EXCHANGE_RATES,
@@ -392,10 +401,7 @@ class URExcelProcessor:
             sample_values = first_col.dropna().head(10).astype(str)
             
             # Check if it looks like INE format (dates in first column)
-            is_ine_format = any(
-                '-' in str(val) and any(char.isdigit() for char in str(val))
-                for val in sample_values
-            )
+            is_ine_format = is_ine_ur_list_format(sample_values)
             
             if is_ine_format:
                 logger.info("Detected INE list format (date, value)")
@@ -517,43 +523,7 @@ class URExcelProcessor:
             logger.info(f"Using first column as years: {year_column}")
 
         # Map month columns
-        month_columns = {}
-        for col in data_section.columns:
-            if pd.isna(col):
-                continue
-
-            col_str = str(col).upper().strip()
-
-            # Specific mapping for each month
-            if "ENERO" in col_str or col_str == "ENE":
-                month_columns[1] = col
-            elif "FEBRERO" in col_str or col_str == "FEB":
-                month_columns[2] = col
-            elif "MARZO" in col_str or col_str == "MAR":
-                month_columns[3] = col
-            elif "ABRIL" in col_str or col_str == "ABR":
-                month_columns[4] = col
-            elif "MAYO" in col_str or col_str == "MAY":
-                month_columns[5] = col
-            elif "JUNIO" in col_str or col_str == "JUN":
-                month_columns[6] = col
-            elif "JULIO" in col_str or col_str == "JUL":
-                month_columns[7] = col
-            elif "AGOSTO" in col_str or col_str == "AGO":
-                month_columns[8] = col
-            elif (
-                "SEPTIEMBRE" in col_str
-                or "SETIEMBRE" in col_str
-                or col_str == "SEP"
-                or col_str == "SET"
-            ):
-                month_columns[9] = col
-            elif "OCTUBRE" in col_str or col_str == "OCT":
-                month_columns[10] = col
-            elif "NOVIEMBRE" in col_str or col_str == "NOV":
-                month_columns[11] = col
-            elif "DICIEMBRE" in col_str or col_str == "DIC":
-                month_columns[12] = col
+        month_columns = map_ur_month_columns(data_section.columns)
 
         logger.info(f"Mapped month columns: {month_columns}")
 
@@ -771,14 +741,7 @@ class ExchangeRateExcelProcessor:
             logger.info(f"Detected columns: {list(excel_data.columns)}")
             logger.info(f"First 5 rows:\n{excel_data.head()}")
 
-            # Currency mappings based on INE Excel structure
-            currency_mappings = [
-                ("USD", "Dólar.USA.Compra", "Dólar.USA.Venta"),
-                ("EUR", "Euro.Compra", "Euro.Venta"),
-                ("ARS", "Peso.Argentino.Compra", "Peso.Argentino.Venta"),
-                ("BRL", "Real.Compra", "Real.Venta"),
-                # Note: Dólar.eBROU is a different modality, we'll map it as USD_EBROU if needed
-            ]
+            currency_mappings = EXCHANGE_RATE_CURRENCY_MAPPINGS
 
             for _, row in excel_data.iterrows():
                 try:
@@ -791,33 +754,10 @@ class ExchangeRateExcelProcessor:
                     if pd.isna(date_raw) or date_raw == "Fecha":  # Skip header rows
                         continue
 
-                    # Parse date (DD-MM-YYYY format)
-                    try:
-                        if isinstance(date_raw, str):
-                            # Try different date formats
-                            date_formats = ["%d-%m-%Y", "%d/%m/%Y", "%Y-%m-%d"]
-                            parsed_date = None
-                            for fmt in date_formats:
-                                try:
-                                    parsed_date = datetime.strptime(
-                                        date_raw, fmt
-                                    ).date()
-                                    break
-                                except ValueError:
-                                    continue
-
-                            if parsed_date is None:
-                                logger.debug(f"Could not parse date: {date_raw}")
-                                continue
-                        elif isinstance(date_raw, datetime):
-                            parsed_date = date_raw.date()
-                        else:
-                            logger.debug(
-                                f"Unknown date format: {date_raw} (type: {type(date_raw)})"
-                            )
-                            continue
-                    except Exception as e:
-                        logger.debug(f"Error parsing date {date_raw}: {e}")
+                    # Parse date (DD-MM-YYYY format and variants)
+                    parsed_date = parse_exchange_date_value(date_raw)
+                    if parsed_date is None:
+                        logger.debug(f"Could not parse date: {date_raw}")
                         continue
 
                     # Extract exchange rates for each currency
@@ -832,18 +772,13 @@ class ExchangeRateExcelProcessor:
                             ):
                                 continue
 
-                            # Parse buy rate
-                            buy_rate = self._parse_rate_value(buy_rate_raw)
-                            if buy_rate is None:
+                            parsed_pair = parse_exchange_rate_pair(
+                                buy_rate_raw, sell_rate_raw
+                            )
+                            if parsed_pair is None:
                                 continue
 
-                            # Parse sell rate
-                            sell_rate = self._parse_rate_value(sell_rate_raw)
-                            if sell_rate is None:
-                                continue
-
-                            # Calculate average rate
-                            average_rate = round((buy_rate + sell_rate) / 2, 4)
+                            buy_rate, sell_rate, average_rate = parsed_pair
 
                             # Add record
                             records.append(
@@ -883,45 +818,6 @@ class ExchangeRateExcelProcessor:
 
             logger.error(traceback.format_exc())
             return []
-
-    def _parse_rate_value(self, value) -> Optional[float]:
-        """Parse a rate value from the Excel, handling various formats"""
-        if pd is None:
-            logger.warning("pandas not available; skipping exchange save_to_database")
-            return -1
-        try:
-            # Handle missing values
-            if pd.isna(value) or value == ".." or value == "":
-                return None
-
-            # Convert to string and clean
-            if not isinstance(value, str):
-                value = str(value)
-
-            # Remove any non-numeric characters except decimal separators
-            cleaned = value.strip()
-
-            # Handle different decimal separators
-            if "," in cleaned and "." in cleaned:
-                # Assume comma is thousands separator, dot is decimal
-                cleaned = cleaned.replace(",", "")
-            elif "," in cleaned and "." not in cleaned:
-                # Assume comma is decimal separator
-                cleaned = cleaned.replace(",", ".")
-
-            # Try to convert to float
-            rate = float(cleaned)
-
-            # Validate reasonable range (exchange rates should be positive and reasonable)
-            if rate <= 0 or rate > 10000:
-                logger.debug(f"Rate value out of reasonable range: {rate}")
-                return None
-
-            return round(rate, 4)
-
-        except (ValueError, TypeError) as e:
-            logger.debug(f"Could not parse rate value '{value}': {e}")
-            return None
 
     def save_to_database(
         self,
