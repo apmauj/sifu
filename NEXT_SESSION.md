@@ -1,5 +1,21 @@
 # Próxima Sesión - SIFU Roadmap & Planning
 
+## 🧭 Nueva Iniciativa Activa (2026-04-19)
+
+### Re-arquitectura incremental V2 (desde develop)
+
+Estado: Iniciada
+
+- Rama programa: `chore/arch-reorg-v2`
+- Roadmap: `docs/ARCH_REORG_V2_ROADMAP.md`
+- Checklist Fase 0: `docs/ARCH_REORG_V2_PHASE0_CHECKLIST.md`
+
+Objetivo:
+- Consolidar fronteras de capas en `src/`, reducir acoplamiento y endurecer guardrails de arquitectura sin cambios big-bang.
+
+Proximo paso operativo:
+- Ejecutar Fase 0 (ADR de limites, baseline tecnico y check automatico de imports por capas en CI).
+
 ## 🚨 P0 - Primera Tarea Pendiente (Node 24 en GitHub Actions)
 
 Objetivo: migrar y validar workflows para ejecución estable con Node 24 antes de la fecha de corte de Node 20.
