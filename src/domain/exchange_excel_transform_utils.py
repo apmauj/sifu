@@ -63,3 +63,17 @@ def parse_exchange_rate_value(value) -> Optional[float]:
         return None
 
     return round(rate, 4)
+
+
+def parse_exchange_rate_pair(buy_raw, sell_raw) -> Optional[tuple[float, float, float]]:
+    """Parse buy/sell raw values and return (buy, sell, average) when valid."""
+    buy_rate = parse_exchange_rate_value(buy_raw)
+    if buy_rate is None:
+        return None
+
+    sell_rate = parse_exchange_rate_value(sell_raw)
+    if sell_rate is None:
+        return None
+
+    average_rate = round((buy_rate + sell_rate) / 2, 4)
+    return buy_rate, sell_rate, average_rate

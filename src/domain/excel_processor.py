@@ -19,8 +19,8 @@ from src.infrastructure.circuit_breaker import get_circuit_breaker, CircuitBreak
 from src.domain.excel_parsing_utils import parse_date_value, parse_decimal_value
 from src.domain.exchange_excel_transform_utils import (
     parse_exchange_date_value,
+    parse_exchange_rate_pair,
     EXCHANGE_RATE_CURRENCY_MAPPINGS,
-    parse_exchange_rate_value,
 )
 from src.domain.ur_excel_transform_utils import (
     is_ine_ur_list_format,
@@ -772,18 +772,13 @@ class ExchangeRateExcelProcessor:
                             ):
                                 continue
 
-                            # Parse buy rate
-                            buy_rate = parse_exchange_rate_value(buy_rate_raw)
-                            if buy_rate is None:
+                            parsed_pair = parse_exchange_rate_pair(
+                                buy_rate_raw, sell_rate_raw
+                            )
+                            if parsed_pair is None:
                                 continue
 
-                            # Parse sell rate
-                            sell_rate = parse_exchange_rate_value(sell_rate_raw)
-                            if sell_rate is None:
-                                continue
-
-                            # Calculate average rate
-                            average_rate = round((buy_rate + sell_rate) / 2, 4)
+                            buy_rate, sell_rate, average_rate = parsed_pair
 
                             # Add record
                             records.append(
