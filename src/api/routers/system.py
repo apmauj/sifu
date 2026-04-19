@@ -53,7 +53,7 @@ async def health_check(db: Session = Depends(get_db)):
 async def get_info_v2(db: Session = Depends(get_db)):
     """Informacion general del sistema (endpoint v2 - expandido)."""
     try:
-        from src.domain.services import UIService
+        from src.domain.ui_service import UIService
         
         service = UIService(db)
         total_records = service.get_total_records()

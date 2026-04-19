@@ -61,31 +61,6 @@ class URRecord(Base):
         {"sqlite_autoincrement": True},
     )
 
-    # Legacy Spanish alias properties (año/mes/valor)
-    @property
-    def año(self):  # type: ignore
-        return self.year
-
-    @año.setter
-    def año(self, v):  # type: ignore
-        self.year = v
-
-    @property
-    def mes(self):  # type: ignore
-        return self.month
-
-    @mes.setter
-    def mes(self, v):  # type: ignore
-        self.month = v
-
-    @property
-    def valor(self):  # type: ignore
-        return self.value
-
-    @valor.setter
-    def valor(self, v):  # type: ignore
-        self.value = v
-
 
 class ExchangeRateRecord(Base):
     """Exchange rate record model"""

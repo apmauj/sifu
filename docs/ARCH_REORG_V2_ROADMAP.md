@@ -172,6 +172,30 @@ Responsables:
 - Fase 0 completada (ADR, guardrails y baseline integrados en CI).
 - Fase 1 completada (fronteras principales corregidas por PRs pequenos).
 - Fase 2 completada e integrada en `develop` y `master`.
-- Fase 3 iniciada en `feat/arch-v2-phase3-observability-data`.
-- Primer corte Fase 3 aplicado: helper reutilizable para estandarizar logging + HTTPException en routers (`src/api/error_handling.py`).
-- Siguiente accion: extender estandarizacion de manejo de errores a routers restantes (exchange/ui/ur/brou).
+- Fase 3 completada e integrada en `develop` y `master`.
+- Fase 4 iniciada en `feat/arch-v2-phase4-cleanup`.
+- Primer corte Fase 4 aplicado: migracion de imports internos para usar servicios directos (`ui_service`, `ur_service`, `exchange_rate_service`) en lugar del modulo de compatibilidad `src/domain/services.py`.
+- Segundo corte Fase 4 aplicado: `src/application/bootstrap.py` deja de depender de helpers de conteo en `src/domain/services.py`.
+- Tercer corte Fase 4 aplicado: `src/domain/services.py` elimina duplicacion de helpers de conteo y mantiene compatibilidad via re-export desde `src/application/bootstrap.py`.
+- Cuarto corte Fase 4 aplicado: ruta de deprecacion para aliases legacy de UR (`año/mes/valor`) con warnings opt-in via variable de entorno `SIFU_LEGACY_ALIAS_WARNINGS=1`, sin romper compatibilidad por defecto.
+- Quinto corte Fase 4 aplicado: inicio de migracion de tests de integracion UR a claves canonicas (`year/month/value`) en secciones de modelos/workflow, manteniendo una verificacion de compatibilidad legacy.
+- Sexto corte Fase 4 aplicado: migracion completa de `tests/integration/test_ur.py` a claves canonicas (`year/month/value`) en fixtures, tests de servicio y assertions de API, manteniendo una verificacion legacy puntual.
+- Septimo corte Fase 4 aplicado (`v1.4.0` hardening): workflow `backend-tests` ejecuta con `SIFU_LEGACY_ALIAS_WARNINGS=1` y agrega guardia anti-regresion para bloquear nuevas referencias legacy fuera de allowlist.
+- Octavo corte Fase 4 aplicado (`v1.5.0`): aliases legacy `año/mes/valor` removidos de `URValue` y `URRecord`; tests legacy retirados; guardia CI endurecida para no permitir referencias legacy.
+- Siguiente accion: corrida CI completa en PR para cerrar formalmente Fase 4.
+
+## 11. Plan de retiro de aliases UR (versionado)
+
+Objetivo:
+- Retirar aliases legacy `año/mes/valor` sin ruptura abrupta para consumidores.
+
+Versionado propuesto:
+1. `v1.3.x` (actual): compatibilidad completa + warnings opt-in con `SIFU_LEGACY_ALIAS_WARNINGS=1`.
+2. `v1.4.0`: mantener compatibilidad, pero habilitar warnings en CI de backend para evitar nuevas regresiones hacia aliases legacy.
+3. `v1.5.0`: remover aliases legacy en modelos/record y actualizar tests restantes a canónico.
+
+Checklist ejecutable:
+1. Ver `docs/UR_ALIAS_RETIREMENT_CHECKLIST.md` y completar fase `v1.4.0`.
+2. Ejecutar suite focalizada UR + suite backend principal con warnings deprecados activos.
+3. Confirmar que no quedan referencias legacy en tests de integración y docs API.
+4. Ejecutar corte final `v1.5.0` eliminando aliases y tests de compatibilidad.

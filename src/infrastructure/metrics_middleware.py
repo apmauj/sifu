@@ -157,7 +157,7 @@ async def get_metrics():
     # UI freshness metrics (roadmap task) - lightweight query
     try:
         from src.infrastructure.database import SessionLocal
-        from src.domain.services import UIService
+        from src.domain.ui_service import UIService
         from datetime import datetime
         import os
         import pytz  # type: ignore

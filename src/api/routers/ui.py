@@ -8,7 +8,7 @@ import logging
 from src.api.error_handling import log_and_raise_http_exception
 from src.infrastructure.database import get_db
 from src.domain.models import UIResponse, RefreshResponse
-from src.domain.services import UIService
+from src.domain.ui_service import UIService
 from src.domain.excel_processor import ExcelProcessor
 from src.application.security_utils import InputValidator
 from src.utils.constants import (

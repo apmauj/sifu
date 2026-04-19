@@ -8,19 +8,52 @@ from __future__ import annotations
 
 from typing import Dict, Any
 import logging
-from src.infrastructure.database import SessionLocal
+from src.infrastructure.database import (
+    SessionLocal,
+    UIRecord,
+    URRecord,
+    ExchangeRateRecord,
+)
 from src.domain.excel_processor import (
     ExcelProcessor,
     URExcelProcessor,
     ExchangeRateExcelProcessor,
 )
-from src.domain.services import (
-    get_ui_table_record_count,
-    get_ur_table_record_count,
-    get_exchange_rate_table_record_count,
-)
 
 logger = logging.getLogger(__name__)
+
+
+def get_ui_table_record_count() -> int:
+    db = SessionLocal()
+    try:
+        return db.query(UIRecord).count()
+    except Exception as e:  # noqa: BLE001
+        logger.error("Error counting UI records in bootstrap: %s", e)
+        return 0
+    finally:
+        db.close()
+
+
+def get_ur_table_record_count() -> int:
+    db = SessionLocal()
+    try:
+        return db.query(URRecord).count()
+    except Exception as e:  # noqa: BLE001
+        logger.error("Error counting UR records in bootstrap: %s", e)
+        return 0
+    finally:
+        db.close()
+
+
+def get_exchange_rate_table_record_count() -> int:
+    db = SessionLocal()
+    try:
+        return db.query(ExchangeRateRecord).count()
+    except Exception as e:  # noqa: BLE001
+        logger.error("Error counting ExchangeRate records in bootstrap: %s", e)
+        return 0
+    finally:
+        db.close()
 
 
 def perform_bootstrap(

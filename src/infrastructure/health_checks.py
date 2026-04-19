@@ -17,7 +17,7 @@ from src.infrastructure.health_core import (
 )
 from src.domain.brou_processor import BROUProcessor
 from src.domain.excel_processor import ExchangeRateBCUProcessor
-from src.domain.services import UIService  # For UI freshness check
+from src.domain.ui_service import UIService  # For UI freshness check
 
 # Individual health check functions
 

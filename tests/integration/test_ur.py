@@ -85,13 +85,13 @@ def client(ur_test_db):
 def sample_ur_data(db_session):
     """Seed sample UR records for tests."""
     sample_records = [
-        URRecord(año=2023, mes=1, valor=1501.26),
-        URRecord(año=2023, mes=2, valor=1502.25),
-        URRecord(año=2023, mes=3, valor=1579.57),
-        URRecord(año=2024, mes=1, valor=1650.00),
-        URRecord(año=2024, mes=2, valor=1675.50),
-        URRecord(año=2025, mes=1, valor=1800.00),
-        URRecord(año=2025, mes=6, valor=1827.25),
+        URRecord(year=2023, month=1, value=1501.26),
+        URRecord(year=2023, month=2, value=1502.25),
+        URRecord(year=2023, month=3, value=1579.57),
+        URRecord(year=2024, month=1, value=1650.00),
+        URRecord(year=2024, month=2, value=1675.50),
+        URRecord(year=2025, month=1, value=1800.00),
+        URRecord(year=2025, month=6, value=1827.25),
     ]
 
     for record in sample_records:
@@ -110,9 +110,9 @@ class TestURService:
         result = service.get_ur_by_year_month(2023, 1)
 
         assert result is not None
-        assert result.año == 2023
-        assert result.mes == 1
-        assert result.valor == 1501.26
+        assert result.year == 2023
+        assert result.month == 1
+        assert result.value == 1501.26
 
     def test_get_ur_by_year_month_not_exists(self, db_session, sample_ur_data):
         """Get UR by year/month that does not exist."""
@@ -127,10 +127,10 @@ class TestURService:
         results = service.get_ur_by_year(2023)
 
         assert len(results) == 3
-        assert all(r.año == 2023 for r in results)
-        assert results[0].mes == 1  # Ordenados por mes
-        assert results[1].mes == 2
-        assert results[2].mes == 3
+        assert all(r.year == 2023 for r in results)
+        assert results[0].month == 1  # Ordered by month
+        assert results[1].month == 2
+        assert results[2].month == 3
 
     def test_get_ur_by_year_empty(self, db_session, sample_ur_data):
         """Get UR values for a year with no data."""
@@ -145,9 +145,9 @@ class TestURService:
         results = service.get_ur_by_range(2023, 1, 2023, 3)
 
         assert len(results) == 3
-        assert all(r.año == 2023 for r in results)
-        assert results[0].mes == 1
-        assert results[2].mes == 3
+        assert all(r.year == 2023 for r in results)
+        assert results[0].month == 1
+        assert results[2].month == 3
 
     def test_get_ur_by_range_multiple_years(self, db_session, sample_ur_data):
         """Get UR values across a multi-year range."""
@@ -155,9 +155,9 @@ class TestURService:
         results = service.get_ur_by_range(2023, 2, 2024, 1)
 
         assert len(results) == 3  # 2023: feb, mar + 2024: ene
-        assert results[0].año == 2023 and results[0].mes == 2
-        assert results[1].año == 2023 and results[1].mes == 3
-        assert results[2].año == 2024 and results[2].mes == 1
+        assert results[0].year == 2023 and results[0].month == 2
+        assert results[1].year == 2023 and results[1].month == 3
+        assert results[2].year == 2024 and results[2].month == 1
 
     def test_get_latest_ur(self, db_session, sample_ur_data):
         """Get most recent UR value."""
@@ -165,9 +165,9 @@ class TestURService:
         result = service.get_latest_ur()
 
         assert result is not None
-        assert result.año == 2025
-        assert result.mes == 6
-        assert result.valor == 1827.25
+        assert result.year == 2025
+        assert result.month == 6
+        assert result.value == 1827.25
 
     def test_get_total_records(self, db_session, sample_ur_data):
         """Count total UR records."""
@@ -202,9 +202,9 @@ class TestURAPI:
         assert response.status_code == 200
         data = response.json()
         assert data["success"] is True
-        assert data["data"]["año"] == 2025
-        assert data["data"]["mes"] == 6
-        assert data["data"]["valor"] == 1827.25
+        assert data["data"]["year"] == 2025
+        assert data["data"]["month"] == 6
+        assert data["data"]["value"] == 1827.25
 
     def test_get_ur_by_year_month_success(self, client, sample_ur_data):
         """Endpoint: UR by year/month success."""
@@ -213,9 +213,9 @@ class TestURAPI:
         assert response.status_code == 200
         data = response.json()
         assert data["success"] is True
-        assert data["data"]["año"] == 2023
-        assert data["data"]["mes"] == 1
-        assert data["data"]["valor"] == 1501.26
+        assert data["data"]["year"] == 2023
+        assert data["data"]["month"] == 1
+        assert data["data"]["value"] == 1501.26
 
     def test_get_ur_by_year_month_not_found(self, client, sample_ur_data):
         """Endpoint: UR by year/month not found."""
@@ -243,7 +243,7 @@ class TestURAPI:
         data = response.json()
         assert data["success"] is True
         assert len(data["data"]) == 3
-        assert all(item["año"] == 2023 for item in data["data"])
+        assert all(item["year"] == 2023 for item in data["data"])
 
     def test_get_ur_by_year_empty(self, client, sample_ur_data):
         """Endpoint: UR by year - no data."""
@@ -358,45 +358,45 @@ class TestURModels:
 
     def test_ur_value_creation(self):
         """Create URValue instance."""
-        ur_value = URValue(año=2023, mes=6, valor=1500.50)
+        ur_value = URValue(year=2023, month=6, value=1500.50)
 
-        assert ur_value.año == 2023
-        assert ur_value.mes == 6
-        assert ur_value.valor == 1500.50
+        assert ur_value.year == 2023
+        assert ur_value.month == 6
+        assert ur_value.value == 1500.50
 
     def test_ur_value_validation(self):
         """Validate URValue and serialization (bilingual keys)."""
         # Valid data
-        ur_value = URValue(año=2023, mes=12, valor=1500.50)
-        assert ur_value.mes == 12
+        ur_value = URValue(year=2023, month=12, value=1500.50)
+        assert ur_value.month == 12
 
         # Serialization (returns both Spanish & English keys)
         data = ur_value.dict()
-        assert data["año"] == 2023
-        assert data["mes"] == 12
-        assert data["valor"] == 1500.50
+        assert data["year"] == 2023
+        assert data["month"] == 12
+        assert data["value"] == 1500.50
 
     def test_ur_response_success(self):
         """URResponse with single value success."""
-        ur_value = URValue(año=2023, mes=6, valor=1500.50)
+        ur_value = URValue(year=2023, month=6, value=1500.50)
         response = URResponse(success=True, message="Test successful", data=ur_value)
 
         assert response.success is True
         assert response.message == "Test successful"
-        assert response.data.año == 2023
+        assert response.data.year == 2023
 
     def test_ur_response_list(self):
         """URResponse with list of values."""
         ur_values = [
-            URValue(año=2023, mes=1, valor=1500.50),
-            URValue(año=2023, mes=2, valor=1510.75),
+            URValue(year=2023, month=1, value=1500.50),
+            URValue(year=2023, month=2, value=1510.75),
         ]
         response = URResponse(success=True, message="List of values", data=ur_values)
 
         assert response.success is True
         assert len(response.data) == 2
-        assert response.data[0].mes == 1
-        assert response.data[1].mes == 2
+        assert response.data[0].month == 1
+        assert response.data[1].month == 2
 
 
 # Integration tests
@@ -407,8 +407,8 @@ class TestURIntegration:
         """Full workflow: insert records then query endpoints."""
         # 1. Add sample records directly
         sample_records = [
-            URRecord(año=2023, mes=6, valor=1500.00),
-            URRecord(año=2023, mes=7, valor=1510.00),
+            URRecord(year=2023, month=6, value=1500.00),
+            URRecord(year=2023, month=7, value=1510.00),
         ]
 
         for record in sample_records:
@@ -426,7 +426,7 @@ class TestURIntegration:
         assert response.status_code == 200
         data = response.json()
         assert data["success"] is True
-        assert data["data"]["valor"] == 1500.00
+        assert data["data"]["value"] == 1500.00
 
         # 4. Test year endpoint
         response = client.get("/api/ur/year/2023")
