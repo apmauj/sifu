@@ -4,7 +4,7 @@
 
 ### Re-arquitectura incremental V2 (desde develop)
 
-Estado: Fase 4 iniciada
+Estado: Fase 4 completada (cierre formal)
 
 - Rama programa: `chore/arch-reorg-v2`
 - Roadmap: `docs/ARCH_REORG_V2_ROADMAP.md`
@@ -18,7 +18,7 @@ Proximo paso operativo:
 - Ruta UR completada: aliases `año/mes/valor` removidos de `URValue`/`URRecord`; tests y assertions legacy retirados.
 - Guardia CI en `backend-tests` endurecida: no se permiten referencias legacy en tests.
 - Changelog de remoción final (`v1.5.0`) agregado en `CHANGELOG_2026-04-19.md`.
-- Cierre pendiente: ejecutar CI completa en PR.
+- Cierre formal completado en PR #24 con CI/CD + Security Audit en verde.
 
 ## 🚨 P0 - Primera Tarea Pendiente (Node 24 en GitHub Actions)
 

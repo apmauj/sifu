@@ -3,7 +3,7 @@
 Fecha: 2026-04-19
 Rama base: develop
 Rama programa: chore/arch-reorg-v2
-Estado: En curso
+Estado: Completado (Fase 4 cerrada)
 
 ## 1. Contexto y decision
 
@@ -173,7 +173,7 @@ Responsables:
 - Fase 1 completada (fronteras principales corregidas por PRs pequenos).
 - Fase 2 completada e integrada en `develop` y `master`.
 - Fase 3 completada e integrada en `develop` y `master`.
-- Fase 4 iniciada en `feat/arch-v2-phase4-cleanup`.
+- Fase 4 completada en `feat/arch-v2-phase4-cleanup`.
 - Primer corte Fase 4 aplicado: migracion de imports internos para usar servicios directos (`ui_service`, `ur_service`, `exchange_rate_service`) en lugar del modulo de compatibilidad `src/domain/services.py`.
 - Segundo corte Fase 4 aplicado: `src/application/bootstrap.py` deja de depender de helpers de conteo en `src/domain/services.py`.
 - Tercer corte Fase 4 aplicado: `src/domain/services.py` elimina duplicacion de helpers de conteo y mantiene compatibilidad via re-export desde `src/application/bootstrap.py`.
@@ -182,7 +182,7 @@ Responsables:
 - Sexto corte Fase 4 aplicado: migracion completa de `tests/integration/test_ur.py` a claves canonicas (`year/month/value`) en fixtures, tests de servicio y assertions de API, manteniendo una verificacion legacy puntual.
 - Septimo corte Fase 4 aplicado (`v1.4.0` hardening): workflow `backend-tests` ejecuta con `SIFU_LEGACY_ALIAS_WARNINGS=1` y agrega guardia anti-regresion para bloquear nuevas referencias legacy fuera de allowlist.
 - Octavo corte Fase 4 aplicado (`v1.5.0`): aliases legacy `año/mes/valor` removidos de `URValue` y `URRecord`; tests legacy retirados; guardia CI endurecida para no permitir referencias legacy.
-- Siguiente accion: corrida CI completa en PR para cerrar formalmente Fase 4.
+- Cierre formal completado: PR #24 con CI/CD y Security Audit en verde.
 
 ## 11. Plan de retiro de aliases UR (versionado)
 

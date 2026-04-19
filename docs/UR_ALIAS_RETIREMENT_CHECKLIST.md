@@ -45,4 +45,4 @@ Estado actual:
 Estado actual v1.5.0:
 - Validación local: `pytest tests -q --maxfail=1 --disable-warnings --tb=short --ignore=tests/demo --asyncio-mode=auto` → 274 passed, 10 skipped.
 - Changelog registrado: `CHANGELOG_2026-04-19.md` (sección "UR Alias Retirement (v1.5.0)").
-- Pendiente para cierre formal: corrida CI completa en PR.
+- Cierre formal completado: PR #24 con checks en verde (CI/CD y Security Audit).
