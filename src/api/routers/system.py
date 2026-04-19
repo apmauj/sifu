@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 import logging
 import uuid
 
+from src.api.error_handling import log_and_raise_http_exception
 from src.infrastructure.database import get_db
 from src.utils.constants import ENDPOINT_HEALTH
 
@@ -70,8 +71,12 @@ async def get_info_v2(db: Session = Depends(get_db)):
         }
 
     except Exception as e:
-        logger.error(f"Error getting information: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        log_and_raise_http_exception(
+            logger=logger,
+            status_code=500,
+            log_message="Error getting information",
+            error=e,
+        )
 
 
 @router.get("/api/metrics/prometheus")
@@ -90,8 +95,12 @@ async def get_prometheus_metrics():
         logger.warning("Prometheus client not available")
         return {"message": "Prometheus metrics not available"}, 503
     except Exception as e:
-        logger.error(f"Error generating Prometheus metrics: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        log_and_raise_http_exception(
+            logger=logger,
+            status_code=500,
+            log_message="Error generating Prometheus metrics",
+            error=e,
+        )
 
 
 @router.get("/api/health/detailed")
@@ -111,8 +120,12 @@ async def get_detailed_health(db: Session = Depends(get_db)):
         }
 
     except Exception as e:
-        logger.error(f"Error in detailed health check: {e}")
-        raise HTTPException(status_code=503, detail=str(e))
+        log_and_raise_http_exception(
+            logger=logger,
+            status_code=503,
+            log_message="Error in detailed health check",
+            error=e,
+        )
 
 
 @router.get("/api/health/live")
@@ -135,6 +148,10 @@ async def readiness_probe(db: Session = Depends(get_db)):
             raise HTTPException(status_code=503, detail="Service not ready")
 
     except Exception as e:
-        logger.error(f"Error in readiness probe: {e}")
-        raise HTTPException(status_code=503, detail=str(e))
+        log_and_raise_http_exception(
+            logger=logger,
+            status_code=503,
+            log_message="Error in readiness probe",
+            error=e,
+        )
 
