@@ -24,6 +24,8 @@ services:
 
     # Variables de entorno
     envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.4"
       - key: PYTHONPATH
         value: /app
       - key: PYTHONUNBUFFERED
