@@ -1,0 +1,45 @@
+# Keep Render Backend Awake
+#
+# Render free tier duerme tras 15 minutos sin tráfico.
+# Este workflow hace un ping cada 14 minutos para mantenerlo activo,
+# lo que permite que el APScheduler interno siga corriendo.
+#
+# Costo: $0 — repos públicos tienen minutos ilimitados en GitHub Actions.
+# Consumo estimado: ~103 jobs/día × ~20s = ~1,500 min/mes (despreciable).
+
+name: Keep Render Awake
+
+on:
+  schedule:
+    # Cada 14 minutos (justo antes del timeout de 15 min de Render)
+    - cron: '*/14 * * * *'
+  workflow_dispatch:  # Permite ejecutar manualmente desde Actions tab
+
+jobs:
+  ping:
+    name: Ping Backend
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Health check ping
+        run: |
+          # RENDER_BACKEND_URL debe configurarse como repository variable o secret
+          # Ejemplo: https://sifu-backend.onrender.com
+          BACKEND_URL="${{ vars.RENDER_BACKEND_URL || secrets.RENDER_BACKEND_URL }}"
+
+          if [ -z "$BACKEND_URL" ]; then
+            echo "::warning::RENDER_BACKEND_URL no configurado. Crear una repository variable o secret con la URL del backend en Render."
+            exit 0
+          fi
+
+          # Normalizar URL
+          BACKEND_URL="${BACKEND_URL%/}"
+
+          echo "Pinging ${BACKEND_URL}/api/health ..."
+          HTTP_CODE=$(curl -sS -o /dev/null -w "%{http_code}" --max-time 30 "${BACKEND_URL}/api/health" || true)
+
+          if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 500 ]; then
+            echo "OK — Backend responded with HTTP $HTTP_CODE"
+          else
+            echo "::warning::Backend responded with HTTP $HTTP_CODE (may be waking up from cold start)"
+          fi

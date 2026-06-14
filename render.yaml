@@ -1,0 +1,49 @@
+# Render Blueprint — SIFU Backend
+# https://render.com/docs/blueprint-spec
+#
+# Despliegue: Render detecta este archivo automáticamente al conectar el repo.
+# Costo: Free tier ($0/mes) con keep-alive vía GitHub Actions.
+#
+# Variables de entorno sensibles (secrets) se configuran en:
+#   https://dashboard.render.com → sifu-backend → Environment
+
+services:
+  - type: web
+    name: sifu-backend
+    runtime: python
+    # Render construye desde el repo directamente (no usa Docker Hub)
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    # Render inyecta $PORT dinámicamente (no es siempre 8000)
+    plan: free
+
+    # Deployment settings
+    region: oregon          # Más cercano a Uruguay dentro de las opciones de Render
+    branch: master
+    autoDeploy: true        # Deploy automático al push a master
+
+    # Variables de entorno
+    envVars:
+      - key: PYTHONPATH
+        value: /app
+      - key: PYTHONUNBUFFERED
+        value: "1"
+      - key: DATABASE_PATH
+        value: /tmp/sifu_data.db    # /tmp es escribible en Render free
+      - key: SCHEDULER_ENABLED
+        value: "true"
+      - key: SCHEDULER_TIMEZONE
+        value: "America/Montevideo"
+      - key: ENVIRONMENT
+        value: production
+      - key: ALLOW_ORIGINS
+        # Actualizar con la URL real de GitHub Pages
+        value: "https://apmauj.github.io"
+      # Secrets (configurar en Render Dashboard → Environment)
+      # - key: JWT_SECRET_KEY
+      #   sync: false    # Setear manualmente en Render
+      # - key: MONITORING_TOTP_SECRET
+      #   sync: false    # Setear manualmente en Render
+
+    # Health check (Render lo usa para saber si el servicio está vivo)
+    healthCheckPath: /api/health

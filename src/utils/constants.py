@@ -12,7 +12,12 @@ import os
 # DATABASE_URL can override fully (e.g., postgresql://...)
 DATABASE_PATH = os.getenv("DATABASE_PATH", "data/ui_data.db")
 DATABASE_URL = os.getenv("DATABASE_URL", f"sqlite:///{DATABASE_PATH}")
-DATABASE_CONNECT_ARGS = {"check_same_thread": False}
+# SQLite requires check_same_thread=False for multi-threaded ASGI servers.
+# PostgreSQL and other engines don't need (or accept) this argument.
+if DATABASE_URL.startswith("sqlite"):
+    DATABASE_CONNECT_ARGS = {"check_same_thread": False}
+else:
+    DATABASE_CONNECT_ARGS = {}
 
 # Table names
 TABLE_UI_RECORDS = "ui_records"
