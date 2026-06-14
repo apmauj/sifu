@@ -59,6 +59,7 @@ frontend/.vite/
 logs/
 *.log
 *.txt
+!runtime.txt
 
 # Runtime data
 pids
