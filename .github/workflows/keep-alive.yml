@@ -2,7 +2,7 @@
 #
 # Render free tier duerme tras 15 minutos sin tráfico.
 # Este workflow hace un ping cada 14 minutos para mantenerlo activo,
-# lo que permite que el APScheduler interno siga corriendo.
+# lo que permite que el APScheduler interno siga corriendo..
 #
 # Costo: $0 — repos públicos tienen minutos ilimitados en GitHub Actions.
 # Consumo estimado: ~103 jobs/día × ~20s = ~1,500 min/mes (despreciable).
