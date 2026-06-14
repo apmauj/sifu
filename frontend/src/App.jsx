@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 let APP_INIT_DONE = false;
 // Shared components
 import Header from './shared/components/Header';
+import BackendWakeOverlay from './shared/components/BackendWakeOverlay'; 
 import BuildInfoFooter from './shared/components/BuildInfoFooter.jsx';
 import Card, { CardBody } from './shared/components/ui/Card';
 import { Tabs, Tab } from './shared/components/ui/Tabs';
@@ -47,6 +48,12 @@ function App() {
   // Ref para evitar múltiples intentos de auto-inicialización
   const initialExchangeFetchAttemptedRef = useRef(false);
   
+   // Backend wake overlay state
+  const [showWakeOverlay, setShowWakeOverlay] = useState(false);
+  const [backendAwake, setBackendAwake] = useState(false);
+  const wakeTimerRef = useRef(null);
+  const firstFetchRef = useRef(true);
+		
   // Tab and refresh state
   const [activeTab, setActiveTab] = useState('ui'); // 'ui', 'ur', 'exchange', or 'brou'
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -101,10 +108,30 @@ function App() {
 
   const loadLatestExchange = async (options = {}) => {
     const { skipAutoInit = false } = options;
+    const isFirstFetch = firstFetchRef.current; 
+
     try {
       setIsExchangeLoading(true);
       setExchangeError(null);
+
+      // On first fetch, set a timer to show wake overlay if backend is slow
+      if (isFirstFetch && !backendAwake) {
+        wakeTimerRef.current = setTimeout(() => {
+          setShowWakeOverlay(true);
+        }, 2000); // Show overlay after 2s of no response
+      } 
+
       const latest = await exchangeService.getLatest();
+
+      // Backend responded — dismiss overlay and mark as awake
+      if (isFirstFetch) {
+        firstFetchRef.current = false;
+        clearTimeout(wakeTimerRef.current);
+        setBackendAwake(true);
+        if (showWakeOverlay) {
+          setShowWakeOverlay(false);
+        }
+      } 
 
       if (latest && latest.success && latest.data) {
         setExchangeResults(latest);
@@ -119,6 +146,12 @@ function App() {
       }
     } catch (error) {
       console.error('Error cargando últimas cotizaciones:', error);
+
+      // On first fetch timeout/error, show wake overlay if not already showing
+      if (isFirstFetch && !showWakeOverlay && !backendAwake) {
+        setShowWakeOverlay(true);
+      } 
+
       if (!skipAutoInit && !initialExchangeFetchAttemptedRef.current) {
         await attemptInitialExchangeBootstrap();
       } else {
@@ -200,6 +233,14 @@ function App() {
       }
     })();
   }, [i18nLoading, loadLatestExchange]);
+
+  // Cleanup wake timer on unmount
+  useEffect(() => {
+    return () => {
+      if (wakeTimerRef.current) clearTimeout(wakeTimerRef.current);
+    };
+  }, []); 
+
   // Refresco horario automático sólo cuando la pestaña de cotizaciones está activa y el tipo actual es 'latest'
   const hourlyExchangeRefresh = useCallback(async () => {
     if (activeTab === 'exchange' && exchangeSearchType === 'latest' && !isExchangeLoading) {
@@ -212,8 +253,7 @@ function App() {
   // Intento de bootstrap inicial si la base está vacía
   const attemptInitialExchangeBootstrap = async () => {
     initialExchangeFetchAttemptedRef.current = true;
-    // Remover toast informativo intrusivo durante inicialización automática
-    // showInfo(safeT('exchange.initial_bootstrap_loading', 'Cargando cotizaciones iniciales (job asíncrono)...'));
+    
     try {
       const jobStart = await exchangeService.startAsyncHistoricalRefresh();
       if (jobStart?.job_id) {
@@ -225,6 +265,11 @@ function App() {
       }
     } catch (err) {
       console.error('Error en bootstrap inicial de cotizaciones (async):', err);
+      // After bootstrap attempt, mark as awake (backend is up, just data was empty)
+      firstFetchRef.current = false;
+      setBackendAwake(true);
+      setShowWakeOverlay(false);
+      clearTimeout(wakeTimerRef.current); 
       const errorMessage = t('errors.exchange_refresh_failed') || 'Error al iniciar job de cotizaciones';
       setExchangeError(errorMessage);
       showError(errorMessage);
@@ -255,11 +300,11 @@ function App() {
         await new Promise(r => setTimeout(r, intervalMs));
       }
       if (statusData?.status === 'success') {
-        // Remover toast de éxito - el resultado se ve en pantalla
-        // if (successToast) {
-        //   const msg = translateBackendMessage(statusData.message) || t('common.exchange_refresh_success') || 'Actualización completada';
-        //   showSuccess(msg);
-        // }
+        // Backend responded — dismiss wake overlay
+        firstFetchRef.current = false;
+        setBackendAwake(true);
+        setShowWakeOverlay(false);
+        clearTimeout(wakeTimerRef.current);
         if (autoReload) {
           await loadLatestExchange({ skipAutoInit: true });
         }
@@ -352,6 +397,11 @@ function App() {
 
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900" data-testid="app-component">
+    {/* Backend wake overlay — shown during Render cold starts */}
+      <BackendWakeOverlay
+        isVisible={showWakeOverlay}
+        onDismiss={() => setShowWakeOverlay(false)}
+      /> 
       <Header 
         onRefresh={handleRefresh} 
         isRefreshing={isRefreshing}
