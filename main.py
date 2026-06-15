@@ -47,8 +47,8 @@ from src.application.opentelemetry_setup import (
     shutdown_otel,
 )
 
-# HTTPS Security Middleware
-from src.infrastructure.https_middleware import HTTPSRedirectMiddleware, SSLHeadersMiddleware
+# HTTPS is handled by Render's managed infrastructure.
+# Security headers (HSTS, CSP, etc.) are added inline below.
 
 # Authentication and Authorization
 from src.infrastructure.auth_routes import router as auth_router
@@ -440,9 +440,35 @@ app = FastAPI(
 # Add correlation ID middleware (must be first)
 app.add_middleware(CorrelationIdMiddleware)
 
-# Add HTTPS security middlewares
-app.add_middleware(HTTPSRedirectMiddleware)
-app.add_middleware(SSLHeadersMiddleware)
+# Add security headers middleware (replaces removed HTTPSRedirectMiddleware / SSLHeadersMiddleware)
+# Render terminates TLS at the load balancer, so HTTP→HTTPS redirect is unnecessary.
+from starlette.middleware.base import BaseHTTPMiddleware as _BaseHTTPMiddleware
+
+class SecurityHeadersMiddleware(_BaseHTTPMiddleware):
+    """Add security headers to every response (HSTS, CSP, XSS protection, etc.)."""
+    async def dispatch(self, request, call_next):
+        response = await call_next(request)
+        if os.getenv("ENVIRONMENT") == "production":
+            response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+            response.headers["X-Frame-Options"] = "DENY"
+            response.headers["X-Content-Type-Options"] = "nosniff"
+            response.headers["X-XSS-Protection"] = "1; mode=block"
+            response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+            response.headers["Content-Security-Policy-Report-Only"] = (
+                "default-src 'self'; "
+                "script-src 'self' 'wasm-unsafe-eval'; "
+                "style-src 'self' 'unsafe-inline'; "
+                "img-src 'self' data: https:; "
+                "font-src 'self' data:; "
+                "connect-src 'self'; "
+                "frame-ancestors 'none'; "
+                "base-uri 'self'; "
+                "form-action 'self'; "
+                "upgrade-insecure-requests"
+            )
+        return response
+
+app.add_middleware(SecurityHeadersMiddleware)
 
 # Configure CORS to allow frontend
 app.add_middleware(

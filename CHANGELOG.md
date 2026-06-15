@@ -2,6 +2,55 @@
 
 All notable changes in SIFU are listed here in chronological order. Historical session notes that were previously standalone changelog files now live under [docs/archive/](docs/archive/).
 
+## 2026-06-15
+
+### v2.0.0 - Migration to Cloud Hosting ($0/month)
+
+Complete migration from self-hosted NUC (Docker + Cloudflare Tunnel) to free cloud hosting.
+
+**Hosting changes:**
+- Frontend: GitHub Pages (static, auto-deploy on push to master)
+- Backend: Render Free Tier (auto-deploy from repo, hibernates after 15 min inactivity)
+- Database: SQLite on Render's ephemeral filesystem (/tmp/sifu_data.db)
+- Keep-alive: GitHub Actions workflow pings backend during business hours (Mon-Fri 7-21 UY)
+
+**Backend changes:**
+- Removed `src/infrastructure/https_middleware.py` — Render terminates TLS at load balancer; HTTP-to-HTTPS redirect unnecessary. Security headers (HSTS, CSP, X-Frame-Options, etc.) moved inline into `main.py` as `SecurityHeadersMiddleware`.
+- Removed `src/application/secret_manager.py` — Secrets managed via Render Dashboard → Environment, not local .env files.
+- Removed `scripts/setup/setup_https.py`, `scripts/setup/setup_rbac.py`, `scripts/setup/start_secure.py` — Docker/NUC-specific scripts no longer applicable.
+- Rewrote `src/application/config_validator.py` — Uses `os.getenv()` directly instead of `secret_manager`. Updated validations for Render environment (DATABASE_PATH, MONITORING_TOTP_SECRET, etc.).
+- Rewrote `src/application/verify_security.py` — Replaced `secret_manager` dependency with direct `os.getenv()` checks.
+- Added `BackendWakeOverlay` component — Shows informative overlay during Render cold starts (~30s first request).
+- Fixed stale closure bug in `App.jsx` — `setShowWakeOverlay(false)` called unconditionally to prevent invisible overlay blocking all UI.
+- Added `render.yaml` and `runtime.txt` for Render deployment configuration.
+- Updated `validate_deploy.py` for Render (checks env vars, requirements.txt, render.yaml instead of Docker artifacts).
+
+**Frontend changes:**
+- Fixed Husky pre-commit hooks on Windows — `npx --no-install` prefix for ESLint resolution, pinned `eslint@8.57.1` for peer dep compatibility.
+- Optimized lint-staged — Removed full test suite (627 tests, ~2min) from pre-commit; only ESLint (~15s). Tests run in CI instead.
+- Fixed `App.test.jsx` — `getAllByText()` instead of `getByText()` for elements appearing in both overlay and footer.
+
+**CI/CD changes:**
+- Updated all GitHub Actions workflows to `setup-node@v5`, `upload-pages-artifact@v4`, `deploy-pages@v5` — Addresses Node.js 20 deprecation warnings.
+- Removed `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24` env var from workflows.
+- Removed Docker Hub publish workflow (no longer needed).
+- Removed self-hosted runner workflow (no longer needed).
+- Removed tunnel-guard workflow (no longer needed).
+
+**Documentation:**
+- Rewrote `README.md` — Reflects current architecture (GitHub Pages + Render), removes Docker/tunnel references, adds Render env vars table.
+- Updated `CHANGELOG.md` — This entry.
+
+**Deleted files:**
+- `src/application/secret_manager.py`
+- `src/application/generate_security_docs.py`
+- `src/infrastructure/https_middleware.py`
+- `scripts/setup/setup_https.py`
+- `scripts/setup/setup_rbac.py`
+- `scripts/setup/start_secure.py`
+- `config/docker/` directory
+- `pip_audit_*.json` files
+
 ## 2026-04-19
 
 ### v1.5.0 - UR Alias Retirement (Release)

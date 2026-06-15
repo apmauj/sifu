@@ -2,362 +2,212 @@
 
 [![Deploy Frontend](https://github.com/apmauj/sifu/actions/workflows/deploy-frontend.yml/badge.svg)](https://github.com/apmauj/sifu/actions/workflows/deploy-frontend.yml)
 [![Backend CI](https://github.com/apmauj/sifu/actions/workflows/ci-backend.yml/badge.svg)](https://github.com/apmauj/sifu/actions/workflows/ci-backend.yml)
-[![Publish Backend Image](https://github.com/apmauj/sifu/actions/workflows/publish-backend-image.yml/badge.svg)](https://github.com/apmauj/sifu/actions/workflows/publish-backend-image.yml)
 
 Sistema web para consulta de índices financieros y tasas de cambio en Uruguay.
 
-## 🚀 Características
+## Arquitectura
 
-- **Backend**: FastAPI con Python
-- **Frontend**: React con Vite
-- **Base de Datos**: PostgreSQL
-- **Contenedores**: Docker y Docker Compose
-- **Internacionalización**: Soporte multiidioma (ES, EN, PT)
+| Componente | Hosting | Stack | Costo |
+|---|---|---|---|
+| Frontend | GitHub Pages | React + Vite | $0/mes |
+| Backend | Render Free Tier | FastAPI + Python 3.12 | $0/mes |
+| Database | Render (SQLite en /tmp) | SQLAlchemy | $0/mes |
+| CI/CD | GitHub Actions | Tests + Deploy automático | $0/mes |
 
-## 📋 Prerrequisitos
+> **Nota**: El backend en Render Free Tier se hiberna tras 15 min de inactividad.
+> El primer request puede tardar ~30s (cold start). El frontend muestra un overlay
+> informativo mientras el backend despierta.
 
-- Docker y Docker Compose
-- Node.js 24+ (para desarrollo local y alineación con GitHub Actions)
-- Python 3.12+ (para desarrollo local)
+## Características
 
-## 🛠️ Instalación y Uso
+- **Backend**: FastAPI con Python 3.12, SQLite, scraping automático de INE/BHU/BCU/BROU
+- **Frontend**: React con Vite, Tailwind CSS, soporte offline progresivo
+- **Internacionalización**: ES, EN, PT
+- **Monitoreo**: Dashboard protegido con TOTP 2FA (health, performance, alerts)
+- **CI/CD**: Tests + lint + deploy automático en cada push a `master`
 
-### Con Docker (Recomendado)
+## Prerrequisitos
+
+- Node.js 20+ (para desarrollo frontend y CI)
+- Python 3.12+ (para desarrollo backend)
+- Git
+
+## Desarrollo Local
+
+### Backend
 
 ```bash
-# Clonar el repositorio
-git clone <tu-repositorio>
-cd sifu
-
-# Iniciar todos los servicios
-docker-compose up -d
-
-# Acceder a la aplicación
-# Frontend: http://localhost:3000
-# Backend: http://localhost:8000
-# Gateway: http://localhost:8080
-```
-
-### Desarrollo Local (Windows)
-
-```powershell
-# Backend (raíz del repo)
+# Desde la raíz del repo
 python -m venv .venv
-.\.venv\Scripts\Activate.ps1
+source .venv/bin/activate   # Linux/Mac
+# .\.venv\Scripts\Activate.ps1  # Windows
+
 pip install -r requirements.txt
 uvicorn main:app --reload --host 0.0.0.0 --port 8000
+```
 
-# Frontend (otra terminal)
+### Frontend
+
+```bash
 cd frontend
 npm install
 npm run dev
+# Abre http://localhost:5173
 ```
+
+El frontend en desarrollo apunta al backend local (`localhost:8000`) via proxy configurado en `vite.config.js`.
 
 ### Probar el build de Pages en local
 
 Para reproducir GitHub Pages (base "/sifu/") en local:
 
-```powershell
+```bash
 npm --prefix frontend run build
 npm --prefix frontend exec npx serve -s dist -l 5174
 # Abrir: http://localhost:5174/sifu/
 ```
 
-## 📁 Estructura del Proyecto
+## Estructura del Proyecto
 
 ```text
 .
-├── main.py              # FastAPI app (endpoints + lifespan)
-├── services.py          # Lógica de negocio UI/UR/Exchange/BROU
-├── models.py            # Pydantic / ORM models
-├── brou_processor.py    # Scraper/processor BROU
-├── excel_processor.py   # Procesamiento Excel (UI/UR)
-├── database.py          # Conexión y helpers DB
-├── constants.py         # Mensajes y tags centralizados
-├── requirements.txt     # Dependencias
-├── docker-compose.yml   # Stack principal
-├── frontend/            # React (Vite)
-└── docs/                # Documentación adicional
+├── main.py                    # FastAPI app (endpoints + lifespan + middleware)
+├── render.yaml                # Configuración de Render
+├── runtime.txt                # Versión de Python para Render
+├── requirements.txt           # Dependencias Python
+├── src/
+│   ├── api/routers/           # Rutas modulares (ui, ur, exchange, brou, system)
+│   ├── application/           # Lógica de aplicación (totp, alerts, bootstrap, config)
+│   ├── domain/                # Modelos, servicios, procesadores Excel/BCU
+│   ├── infrastructure/        # DB, auth, metrics, circuit breakers, rate limit
+│   └── utils/                 # Constantes, error model
+├── frontend/                  # React (Vite + Tailwind CSS)
+│   ├── src/
+│   │   ├── features/          # ui, ur, exchange, brou, monitoring, dashboard
+│   │   └── shared/            # componentes, servicios, contexts, hooks, i18n
+│   └── package.json
+├── tests/                     # Tests backend (pytest)
+├── .github/workflows/         # CI/CD GitHub Actions
+└── docs/                      # Documentación adicional
 ```
 
-## 🌐 Endpoints API (Resumen)
+## Endpoints API (Resumen)
 
-Ver documentación interactiva en `/docs`.
+Ver documentación interactiva en `/docs` (Swagger UI) o `/redoc`.
 
-### Principales:
-- `GET /api/ui/latest` – Última UI
-- `GET /api/ur/latest` – Última UR
-- `GET /api/brou/current` – Cotizaciones actuales BROU (lista simple por defecto). `?full=true` añade `{ message, timestamp }`.
-- `GET /api/exchange-rate/current` – Panel tiempo real BCU/INE
-- `GET /api/exchange-rate/history` – Históricos por moneda/rango
-- `POST /api/refresh/*` – Forzar actualización (UI, UR, exchange)
+### Datos financieros:
 
-### Monitoreo (protegido con 2FA):
-- `POST /api/monitoring/verify` – Verificar código TOTP de 6 dígitos
-- `GET /api/monitoring/status` – Dashboard de monitoreo (requiere sesión)
-- `GET /api/monitoring/setup` – Generar QR para configurar autenticador (solo development)
-- `GET /api/monitoring/health` – Estado de autenticación actual
-- `GET /api/monitoring/metrics` – Métricas de autenticación (intentos, éxitos, fallos por IP)
-- `DELETE /api/monitoring/session` – Cerrar sesión
+- `GET /api/ui/latest` - Ultima UI
+- `GET /api/ur/latest` - Ultima UR
+- `GET /api/brou/current` - Cotizaciones BROU
+- `GET /api/exchange-rate/latest` - Cotizaciones BCU/INE
+- `GET /api/exchange-rate/currency/{code}` - Cotizacion por moneda
+- `POST /api/refresh` - Forzar actualizacion
 
-**Notas BROU:**
-- Siempre retorna lista si no se pide `full` (retro‑compatible).
-- Campo `preferential` marca `USD_EBROU` cuando existe.
-- Fallback automático con datos de muestra si la fuente real falla (evita lista vacía).
+### Monitoreo (protegido con 2FA TOTP):
 
-## 🔐 Autenticación 2FA (TOTP)
+- `POST /api/monitoring/verify` - Verificar codigo TOTP de 6 digitos
+- `GET /api/monitoring/status` - Dashboard de monitoreo (requiere sesion)
+- `GET /api/monitoring/setup` - Generar QR para configurar autenticador (solo development)
+- `GET /api/monitoring/metrics` - Metricas de autenticacion
+- `DELETE /api/monitoring/session` - Cerrar sesion
 
-El acceso al dashboard de monitoreo está protegido con autenticación de dos factores (TOTP).
+### Sistema:
 
-### Setup Rápido:
+- `GET /api/health` - Health check
+- `GET /api/health/advanced` - Chequeos detallados
+- `GET /api/metrics` - Metricas de rendimiento
 
-1. **En Development:**
-   ```bash
-   # Acceder a la página de setup
-   http://localhost:8000/static/totp-setup.html
-   
-   # Escanear el QR code con tu app de autenticación
-   # (Google Authenticator, Authy, etc.)
-   ```
+## Despliegue
 
-2. **Configurar secret en `.env`:**
-   ```bash
-   MONITORING_TOTP_SECRET=tu-secret-aqui
-   ENVIRONMENT=development  # 'production' en prod
-   ```
+### Frontend (GitHub Pages)
 
-3. **Acceder al dashboard:**
-   - Hacer click en el **❤️** del footer del sitio
-   - Ingresar código de 6 dígitos de tu app de autenticación
-   - Sesión válida por 1 hora
+Se publica automaticamente en cada push a `master` que modifique `frontend/`.
 
-### Features Incluidas:
+- URL: <https://apmauj.github.io/sifu/>
+- La URL del backend se configura via `VITE_PUBLIC_API_URL` (secret del repo)
 
-- ✅ **Auditoría completa:** Todos los intentos de autenticación se registran en `logs/totp_audit.log`
-- ✅ **Métricas en tiempo real:** `/api/monitoring/metrics` expone estadísticas de éxito/fallo
-- ✅ **Detección de ataques:** Trackeo de intentos fallidos por IP
-- ✅ **Tests comprehensivos:** 20 tests backend + 40 tests frontend
-- ✅ **i18n completo:** Soporte para ES/EN/PT
-- ✅ **Sesiones temporales:** 1 hora de duración (configurable)
+### Backend (Render)
 
-### Documentación Completa:
+Render detecta `render.yaml` y despliega automaticamente en cada push a `master`.
 
-Ver **[docs/TOTP_SETUP.md](docs/TOTP_SETUP.md)** para:
-- Instrucciones detalladas de configuración
-- Setup en producción
-- Configuración de Authy/Google Authenticator
-- Troubleshooting
-- Regeneración de secrets
+- Free tier: 750 horas/mes, hiberna tras 15 min de inactividad
+- Health check en `/api/health`
+- Variables de entorno sensibles se configuran en Render Dashboard → Environment
 
-**Características:**
-- ✅ Códigos TOTP de 6 dígitos (cambian cada 30 segundos)
-- ✅ Sesiones de 1 hora (configurable)
-- ✅ Endpoint de setup desactivado automáticamente en producción
-- ✅ Rate limiting integrado
-- ✅ Sin base de datos de usuarios (simplificado para admin único)
+#### Variables de entorno requeridas
 
-## 🔧 Scripts Útiles
+| Variable | Descripcion | Ejemplo |
+|---|---|---|
+| `PYTHON_VERSION` | Version de Python | `3.12.4` |
+| `PYTHONPATH` | Path del modulo | `/app` |
+| `DATABASE_PATH` | Path DB SQLite | `/tmp/sifu_data.db` |
+| `ENVIRONMENT` | Entorno de ejecucion | `production` |
+| `ALLOW_ORIGINS` | Origins CORS | `https://apmauj.github.io` |
+| `SCHEDULER_ENABLED` | Scheduler activo | `true` |
 
-### PowerShell (Windows)
+#### Variables de entorno recomendadas
 
-```powershell
-# Iniciar todo el stack
-.\start_app.ps1
+| Variable | Descripcion |
+|---|---|
+| `MONITORING_TOTP_SECRET` | Secret TOTP para dashboard (si no se setea, se genera uno nuevo en cada deploy) |
+| `JWT_SECRET_KEY` | Secret para JWT (auth features) |
 
-# Solo backend
-.\run_backend.ps1
+### Keep-Alive
 
-# Solo frontend
-.\run_frontend.ps1
+El backend en Render Free Tier hiberna tras 15 min de inactividad. Un workflow de GitHub Actions (`brou-health-monitor.yml`) hace ping periodicamente para mantenerlo despierto durante horario laboral (Lun-Vie 7-21 UY).
 
-# Detener servicios
-.\stop_services.ps1
-```
+## Autenticacion 2FA (TOTP)
 
-## 🐳 Docker
+El acceso al dashboard de monitoreo esta protegido con autenticacion de dos factores (TOTP).
 
-### Servicios Disponibles
+### Setup:
 
-- **backend**: FastAPI en puerto 8000
-- **frontend**: React en puerto 3000
-- **gateway**: Nginx proxy en puerto 8080
-- **database**: PostgreSQL (opcional)
+1. Setear `MONITORING_TOTP_SECRET` en Render Dashboard (generar con `python -c "import pyotp; print(pyotp.random_base32())"`)
+2. En modo development, acceder a `http://localhost:8000/static/totp-setup.html` para escanear el QR
+3. En produccion, usar el secret para configurar manualmente la app de autenticador
 
-### Comandos Docker
+### Acceso:
 
-```bash
-# Construir imágenes
-docker-compose build
+1. Hacer click en el corazon del footer del sitio
+2. Ingresar codigo de 6 digitos de la app de autenticador
+3. Sesion valida por 1 hora (configurable via `MONITORING_SESSION_HOURS`)
 
-# Iniciar servicios
-docker-compose up -d
+Ver [docs/TOTP_SETUP.md](docs/TOTP_SETUP.md) para instrucciones detalladas.
 
-# Ver logs
-docker-compose logs -f
+## Internacionalizacion
 
-# Detener servicios
-docker-compose down
+Soporte para multiples idiomas (ES, EN, PT). Los archivos de traduccion se sirven desde `frontend/public/i18n` en produccion con fallbacks embebidos en `frontend/src/locales`.
 
-# Reconstruir sin cache
-docker-compose build --no-cache
-```
-
-## 🌍 Internacionalización
-
-El proyecto soporta múltiples idiomas:
-
-- Español (ES)
-- Inglés (EN)
-- Portugués (PT)
-
-Los archivos de traducción se sirven desde `frontend/public/i18n` en producción (Pages) y se incluyen fallbacks embebidos en `frontend/src/locales` por si el hosting no entrega `/i18n/*.json`.
-
-## 🧪 Testing
+## Testing
 
 ```bash
 # Backend tests
 pytest
 
 # Frontend tests
-cd frontend
-npm test
+cd frontend && npm test
+
+# Lint
+cd frontend && npm run lint
 ```
 
-## ✅ Calidad & CI
+## Calidad y CI
 
-- Workflow Backend CI: ejecuta pytest y `scripts/check_messages.py` en cada push/PR.
-- Workflow Deploy Frontend: build + deploy a GitHub Pages con API URL normalizada.
-- Workflow Publish Backend Image: construye y publica imagen Docker (tags latest, fecha y SHA) en Docker Hub.
-- Mensajes y tags centralizados en `constants.py` para respuestas homogéneas.
-- Script de control de duplicados: `python scripts/check_messages.py` (añade exit code 1 si encuentra repeticiones).
+- **Backend CI**: pytest + ruff + verificacion de migraciones Alembic + check de mensajes duplicados
+- **Frontend CI/CD**: ESLint + build + deploy a GitHub Pages
+- **Security Audit**: pip-audit semanal
+- **BROU Health Monitor**: keep-alive + verificacion de cotizaciones BROU
 
-### Historial y Planificación
+### Historial y Planificacion
 
 - Para cambios completados y releases: ver `CHANGELOG.md`.
-- Para planes operativos de continuidad: ver `docs/NEXT_SESSION.MD` y `docs/archive/NEXT_SESSION_ROOT.md`.
+- Para planes operativos: ver `docs/` directory.
 
-### Automatización de túnel temporal (Pages → Backend local)
+## Licencia
 
-Para regenerar una URL pública y actualizar el secret `VITE_PUBLIC_API_URL`:
-
-```powershell
-# Método completo (levanta backend local + túnel ngrok/cloudflared)
-./scripts/deploy/run_tunnel_backend.ps1 -TunnelProvider cloudflared -UpdateSecret -TriggerDeploy
-
-# Solo recrear túnel cloudflared con docker-compose.tunnel.yml y actualizar secret + redeploy
-./scripts/deploy/docker_update_tunnel_secret.ps1 -TriggerDeploy
-```
-
-Tras unos ~60s el frontend en Pages se redeploya y comienza a usar la nueva URL.
-
-
-## 📊 Monitoreo
-
-- **Health Check**: `GET /health`
-- **API Docs**: `GET /docs` (Swagger UI)
-- **ReDoc**: `GET /redoc`
-
-## 🤝 Contribución
-
-1. Fork el proyecto
-2. Crea una rama para tu feature (`git checkout -b feature/AmazingFeature`)
-3. Commit tus cambios (`git commit -m 'Add some AmazingFeature'`)
-4. Push a la rama (`git push origin feature/AmazingFeature`)
-5. Abre un Pull Request
-
-## 📝 Licencia
-
-Este proyecto está bajo la Licencia MIT. Ver el archivo `LICENSE` para más detalles.
-
-## 🆘 Soporte
-
-Si encuentras algún problema o tienes preguntas, por favor abre un issue en el repositorio.
+Este proyecto esta bajo la Licencia MIT. Ver el archivo `LICENSE` para mas detalles.
 
 ---
 
-### Desarrollado con ❤️ para Uruguay
-
----
-
-### GitHub Pages
-
-El frontend se publica automáticamente en GitHub Pages en cada push a `master` dentro de `frontend/`.
-
-- URL: <https://apmauj.github.io/sifu/>
-- Backend configurable con `VITE_PUBLIC_API_URL` (secret del repo) si no se sirve en `/sifu/api`.
-
-Por qué no corre el backend en Pages: GitHub Pages solo sirve archivos estáticos. El backend (FastAPI/Python) debe hospedarse aparte y exponerse por HTTPS. Luego el frontend se construye con `VITE_PUBLIC_API_URL` apuntando a `https://TU-BACKEND/api`.
-
-Guía: ver `docs/DEPLOY_BACKEND.md` para opciones rápidas (Render, VPS con Docker Compose o túnel temporal).
-
-#### Conectar el frontend de GitHub Pages a un backend local (desde tu PC)
-
-Si querés que la versión publicada en GitHub Pages (`https://apmauj.github.io/sifu/`) use **tu backend corriendo en esta PC**, necesitás exponer temporalmente el puerto 8000 a Internet mediante un túnel seguro y luego reconstruir el frontend indicando esa URL pública.
-
-Pasos rápidos:
-
-1. Iniciar backend local con CORS correcto (opcional porque por defecto es `*`):
-	```powershell
-	# (Dentro del repo raíz)
-	python -m venv .venv
-	.\.venv\Scripts\Activate.ps1
-	pip install -r requirements.txt
-	# (Opcional) Limitar orígenes permitidos solo a GitHub Pages
-	$env:ALLOW_ORIGINS="https://apmauj.github.io"
-	uvicorn main:app --host 0.0.0.0 --port 8000
-	```
-
-2. Crear un túnel público (elige uno):
-	- **ngrok**:
-	  ```powershell
-	  # Instalar si no lo tenés (https://ngrok.com/download) y luego:
-	  ngrok http 8000
-	  ```
-	  Te dará una URL como `https://abcd-1234.ngrok-free.app`.
-	- **Cloudflare Tunnel (cloudflared)**:
-	  ```powershell
-	  cloudflared tunnel --url http://localhost:8000
-	  ```
-	  Obtendrás una URL `https://<algo>.trycloudflare.com`.
-
-3. Probar la URL del túnel: abrí `https://TU-TUNEL/api/health` en el navegador; deberías ver `{ "status": "ok", ... }`.
-
-4. Configurar el frontend para usarla: en GitHub repositorio → Settings → Secrets and variables → Actions → New repository secret:
-	- Name: `VITE_PUBLIC_API_URL`
-	- Value: `https://TU-TUNEL/api`
-
-5. Forzar un redeploy del frontend: hacé un commit mínimo (por ejemplo actualizar este README) o re‑ejecutá el workflow `Deploy Frontend to GitHub Pages`.
-
-6. Una vez publicado nuevamente, abrí `https://apmauj.github.io/sifu/` y verificá en la consola de red del navegador que las requests van a tu dominio del túnel (`/api/...`).
-
-Notas importantes:
-- Cada vez que reinicies el túnel, la URL cambia (salvo cuenta paga); deberás actualizar el secret y redeploy.
-- No uses esto para producción real; es solo para demostraciones o debugging rápido.
-- Alternativa sin rebuild: levantar localmente el frontend (`npm run dev`) y abrirlo en tu máquina; esa versión puede apuntar directamente a `http://localhost:8000/api` via proxy ya configurado en `vite.config.js`.
- - Script auxiliar: `./scripts/deploy/run_tunnel_backend.ps1 -TunnelProvider ngrok -UpdateSecret -TriggerDeploy` automatiza backend + túnel + secret + redeploy.
-
-#### Modo totalmente Docker (backend + túnel sin scripts locales)
-
-Si preferís no instalar ngrok/cloudflared ni correr Python directamente en tu host:
-
-1. Usá el nuevo archivo `docker-compose.tunnel.yml`:
-	```powershell
-	docker compose -f docker-compose.tunnel.yml up -d --build
-	```
-2. Ver logs del túnel (cloudflared por defecto) para obtener la URL pública:
-	```powershell
-	docker logs -f sifu-tunnel | Select-String trycloudflare
-	```
-	Verás una línea con `https://<algo>.trycloudflare.com`.
-3. Probar health:
-	```powershell
-	curl https://<algo>.trycloudflare.com/api/health
-	```
-4. Actualizar el secret `VITE_PUBLIC_API_URL` en GitHub con `https://<algo>.trycloudflare.com/api` y redeploy del frontend.
-5. Cuando cambie la URL (reinicio del túnel), repetir solo pasos 2–4.
-
-Notas:
-- Alternativa ngrok: descomentá el servicio `ngrok` en `docker-compose.tunnel.yml`, definí `NGROK_AUTHTOKEN` en un `.env` y comentá el servicio `tunnel` de cloudflared.
-- Para producción real preferí un dominio propio + reverse proxy (ver `docker-compose.gateway.yml`).
-- Podés ajustar CORS cambiando `ALLOW_ORIGINS` en el servicio `backend`.
-
+Desarrollado con amor para Uruguay

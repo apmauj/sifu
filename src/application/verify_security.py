@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """
 Security verification script for SIFU
-Tests all security components and provides recommendations
+Tests security components and provides recommendations
+
+Adapted for Render deployment: uses os.getenv() directly instead of secret_manager.
 """
 
 import os
@@ -15,7 +17,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 def test_configuration_validation():
     """Test configuration validation"""
-    print("🔍 Testing configuration validation...")
+    print("Testing configuration validation...")
 
     try:
         from src.application.config_validator import ConfigurationValidator
@@ -24,45 +26,47 @@ def test_configuration_validation():
         success, errors, warnings = validator.validate_all()
 
         if success:
-            print("✅ Configuration validation: PASSED")
+            print("  Configuration validation: PASSED")
             return True, errors, warnings
         else:
-            print("❌ Configuration validation: FAILED")
+            print("  Configuration validation: FAILED")
             for error in errors:
-                print(f"   • {error}")
+                print(f"   - {error}")
             return False, errors, warnings
     except Exception as e:
-        print(f"❌ Configuration validation error: {e}")
+        print(f"  Configuration validation error: {e}")
         return False, [str(e)], []
 
 
-def test_secret_management():
-    """Test secret management"""
-    print("🔐 Testing secret management...")
+def test_environment_variables():
+    """Test critical environment variables"""
+    print("Testing environment variables...")
 
-    try:
-        from src.application.secret_manager import secret_manager
+    critical_vars = ["ENVIRONMENT", "ALLOW_ORIGINS"]
+    recommended_vars = ["MONITORING_TOTP_SECRET", "JWT_SECRET_KEY"]
 
-        secrets = secret_manager.load_secrets()
-        is_valid, validation_errors = secret_manager.validate_secrets()
+    missing_critical = [v for v in critical_vars if not os.getenv(v)]
+    missing_recommended = [v for v in recommended_vars if not os.getenv(v)]
 
-        if is_valid:
-            print("✅ Secret management: PASSED")
-            print(f"   • Loaded {len(secrets)} secrets")
-            return True, validation_errors
-        else:
-            print("❌ Secret management: FAILED")
-            for error in validation_errors:
-                print(f"   • {error}")
-            return False, validation_errors
-    except Exception as e:
-        print(f"❌ Secret management error: {e}")
-        return False, [str(e)]
+    errors = []
+    if missing_critical:
+        errors.append(f"Missing critical env vars: {', '.join(missing_critical)}")
+
+    if missing_recommended:
+        errors.append(f"Missing recommended env vars: {', '.join(missing_recommended)}")
+
+    if errors:
+        for error in errors:
+            print(f"  - {error}")
+        return False, errors
+
+    print("  Environment variables: PASSED")
+    return True, []
 
 
 def test_secure_logging():
     """Test secure logging setup"""
-    print("📊 Testing secure logging...")
+    print("Testing secure logging...")
 
     try:
         from src.infrastructure.secure_logging import init_security_logging
@@ -82,47 +86,45 @@ def test_secure_logging():
         security_logger.log_security_event("TEST", "Security verification test")
         security_logger.log_authentication(True, "test_user", "127.0.0.1")
 
-        print("✅ Secure logging: PASSED")
+        print("  Secure logging: PASSED")
         return True, []
     except Exception as e:
-        print(f"❌ Secure logging error: {e}")
+        print(f"  Secure logging error: {e}")
         return False, [str(e)]
 
 
 def test_security_imports():
-    """Test that all security modules can be imported"""
-    print("📦 Testing security module imports...")
+    """Test that security modules can be imported"""
+    print("Testing security module imports...")
 
     modules_to_test = [
-        "secret_manager",
-        "secure_logging",
-        "config_validator",
-        "pydantic_models",
-        "security_utils",
-        "rate_limit",
+        ("src.application.config_validator", "config_validator"),
+        ("src.application.security_utils", "security_utils"),
+        ("src.infrastructure.rate_limit", "rate_limit"),
+        ("src.application.simple_totp", "simple_totp"),
     ]
 
     failed_imports = []
 
-    for module in modules_to_test:
+    for module_path, display_name in modules_to_test:
         try:
-            __import__(module)
-            print(f"✅ {module}: OK")
+            __import__(module_path)
+            print(f"  {display_name}: OK")
         except ImportError as e:
-            print(f"❌ {module}: FAILED - {e}")
-            failed_imports.append(module)
+            print(f"  {display_name}: FAILED - {e}")
+            failed_imports.append(display_name)
         except Exception as e:
-            print(f"⚠️  {module}: ERROR - {e}")
-            failed_imports.append(module)
+            print(f"  {display_name}: ERROR - {e}")
+            failed_imports.append(display_name)
 
     return len(failed_imports) == 0, failed_imports
 
 
 def check_file_permissions():
     """Check file permissions for sensitive files"""
-    print("🔒 Checking file permissions...")
+    print("Checking file permissions...")
 
-    sensitive_files = [".env", "secrets.json", "security_audit.log", "sifu.log"]
+    sensitive_files = [".env", "security_audit.log", "sifu.log"]
 
     issues = []
 
@@ -133,14 +135,14 @@ def check_file_permissions():
                 # Check if file is world-readable
                 if stat_info.st_mode & 0o004:
                     issues.append(f"{file_path} is world-readable")
-                    print(f"⚠️  {file_path}: World-readable (security risk)")
+                    print(f"  {file_path}: World-readable (security risk)")
                 else:
-                    print(f"✅ {file_path}: OK")
+                    print(f"  {file_path}: OK")
             except OSError as e:
                 issues.append(f"Cannot check {file_path}: {e}")
-                print(f"⚠️  {file_path}: Cannot check permissions")
+                print(f"  {file_path}: Cannot check permissions")
         else:
-            print(f"ℹ️  {file_path}: Not found")
+            print(f"  {file_path}: Not found")
 
     return len(issues) == 0, issues
 
@@ -148,51 +150,47 @@ def check_file_permissions():
 def generate_security_report(results: Dict[str, Any]):
     """Generate security report"""
     print("\n" + "=" * 60)
-    print("🛡️  SIFU SECURITY VERIFICATION REPORT")
+    print("SIFU SECURITY VERIFICATION REPORT")
     print("=" * 60)
 
     all_passed = all(result["status"] for result in results.values())
 
     for test_name, result in results.items():
-        status = "✅ PASSED" if result["status"] else "❌ FAILED"
+        status = "PASSED" if result["status"] else "FAILED"
         print(f"\n{test_name}:")
         print(f"  Status: {status}")
 
         if result.get("errors"):
             print("  Errors:")
             for error in result["errors"]:
-                print(f"    • {error}")
+                print(f"    - {error}")
 
         if result.get("warnings"):
             print("  Warnings:")
             for warning in result["warnings"]:
-                print(f"    • {warning}")
-
-        if result.get("details"):
-            for key, value in result["details"].items():
-                print(f"    {key}: {value}")
+                print(f"    - {warning}")
 
     print("\n" + "=" * 60)
     print(
-        f"OVERALL STATUS: {'✅ ALL TESTS PASSED' if all_passed else '❌ ISSUES DETECTED'}"
+        f"OVERALL STATUS: {'ALL TESTS PASSED' if all_passed else 'ISSUES DETECTED'}"
     )
     print("=" * 60)
 
     if all_passed:
-        print("🎉 Your SIFU installation is secure!")
+        print("SIFU installation is secure!")
         print("\nNext steps:")
-        print("1. Review the generated .env.template file")
-        print("2. Configure your production secrets")
-        print("3. Run: python start_secure.py")
+        print("1. Review environment variables in Render Dashboard")
+        print("2. Set MONITORING_TOTP_SECRET for TOTP dashboard access")
+        print("3. Set JWT_SECRET_KEY for authentication features")
     else:
-        print("⚠️  Security issues detected. Please address them before deploying.")
+        print("Security issues detected. Please address them before deploying.")
 
     return all_passed
 
 
 def main():
     """Main verification function"""
-    print("🛡️  SIFU Security Verification")
+    print("SIFU Security Verification")
     print("=" * 50)
 
     results = {}
@@ -202,7 +200,6 @@ def main():
     results["Module Imports"] = {
         "status": status,
         "errors": failed_imports if not status else [],
-        "details": {"failed_modules": failed_imports} if not status else {},
     }
 
     # Test 2: Configuration validation
@@ -213,9 +210,9 @@ def main():
         "warnings": warnings,
     }
 
-    # Test 3: Secret management
-    status, errors = test_secret_management()
-    results["Secret Management"] = {"status": status, "errors": errors}
+    # Test 3: Environment variables
+    status, errors = test_environment_variables()
+    results["Environment Variables"] = {"status": status, "errors": errors}
 
     # Test 4: Secure logging
     status, errors = test_secure_logging()
@@ -234,5 +231,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
