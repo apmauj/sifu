@@ -129,9 +129,7 @@ function App() {
         firstFetchRef.current = false;
         clearTimeout(wakeTimerRef.current);
         setBackendAwake(true);
-        if (showWakeOverlay) {
-          setShowWakeOverlay(false);
-        }
+        setShowWakeOverlay(false); // Always dismiss — safe to call when already false
       }
 
       if (latest && latest.success && latest.data) {

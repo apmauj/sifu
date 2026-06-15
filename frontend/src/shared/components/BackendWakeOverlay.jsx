@@ -79,7 +79,7 @@ const BackendWakeOverlay = ({ isVisible, onDismiss }) => {
         fixed inset-0 z-[9999]
         flex items-center justify-center
         transition-opacity duration-500 ease-out
-        ${fadeOut ? 'opacity-0' : 'opacity-100'}
+        ${fadeOut ? 'opacity-0 pointer-events-none' : 'opacity-100'}
       `}
       role="alert"
       aria-live="polite"
