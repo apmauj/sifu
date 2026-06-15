@@ -23,8 +23,8 @@ Revisar cada workflow con criterio de arquitectura de infraestructura y confiabi
 ### Inventario de Actions JavaScript detectadas (estado actual)
 
 - `actions/checkout@v4`
-- `actions/upload-artifact@v4`
-- `actions/deploy-pages@v4`
+- `actions/upload-artifact@v7`
+- `actions/deploy-pages@v5`
 - `actions/github-script@v7`
 
 Observacion:
