@@ -47,8 +47,10 @@ from src.application.opentelemetry_setup import (
     shutdown_otel,
 )
 
+from starlette.middleware.base import BaseHTTPMiddleware
+
 # HTTPS is handled by Render's managed infrastructure.
-# Security headers (HSTS, CSP, etc.) are added inline below.
+# Security headers (HSTS, CSP, etc.) are added via SecurityHeadersMiddleware below.
 
 # Authentication and Authorization
 from src.infrastructure.auth_routes import router as auth_router
@@ -442,10 +444,11 @@ app.add_middleware(CorrelationIdMiddleware)
 
 # Add security headers middleware (replaces removed HTTPSRedirectMiddleware / SSLHeadersMiddleware)
 # Render terminates TLS at the load balancer, so HTTP→HTTPS redirect is unnecessary.
-from starlette.middleware.base import BaseHTTPMiddleware as _BaseHTTPMiddleware
 
-class SecurityHeadersMiddleware(_BaseHTTPMiddleware):
+
+class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     """Add security headers to every response (HSTS, CSP, XSS protection, etc.)."""
+
     async def dispatch(self, request, call_next):
         response = await call_next(request)
         if os.getenv("ENVIRONMENT") == "production":
@@ -467,6 +470,7 @@ class SecurityHeadersMiddleware(_BaseHTTPMiddleware):
                 "upgrade-insecure-requests"
             )
         return response
+
 
 app.add_middleware(SecurityHeadersMiddleware)
 

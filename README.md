@@ -210,4 +210,4 @@ Este proyecto esta bajo la Licencia MIT. Ver el archivo `LICENSE` para mas detal
 
 ---
 
-Desarrollado con amor para Uruguay
+Desarrollado con ❤️ para Uruguay
