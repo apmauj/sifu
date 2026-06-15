@@ -21,7 +21,7 @@ concurrency:
 jobs:
   publish-release:
     name: Publish GitHub Release
-    runs-on: [self-hosted, sifu-local]
+    runs-on: ubuntu-latest
     timeout-minutes: 6
     steps:
       - name: Checkout repository
@@ -31,184 +31,86 @@ jobs:
 
       - name: Build release notes
         id: notes
-        shell: pwsh
         run: |
-          $tag = "${{ inputs.tag }}"
-          if ([string]::IsNullOrWhiteSpace($tag)) {
-            $tag = "${{ github.ref_name }}"
-          }
-
-          if ([string]::IsNullOrWhiteSpace($tag) -or $tag -notmatch '^v') {
-            Write-Host "Invalid tag value: '$tag'"
+          TAG="${{ inputs.tag }}"
+          if [ -z "$TAG" ]; then
+            TAG="${{ github.ref_name }}"
+          fi
+          
+          if [ -z "$TAG" ] || [[ ! "$TAG" =~ ^v ]]; then
+            echo "Invalid tag value: '$TAG'"
             exit 1
-          }
-
-          function Convert-ToAscii {
-            param([string]$Text)
-
-            if ([string]::IsNullOrWhiteSpace($Text)) {
-              return $Text
-            }
-
-            $normalized = $Text.Normalize([System.Text.NormalizationForm]::FormD)
-            $builder = New-Object System.Text.StringBuilder
-            foreach ($char in $normalized.ToCharArray()) {
-              $category = [System.Globalization.CharUnicodeInfo]::GetUnicodeCategory($char)
-              if ($category -ne [System.Globalization.UnicodeCategory]::NonSpacingMark) {
-                [void]$builder.Append($char)
-              }
-            }
-
-            return $builder.ToString().Normalize([System.Text.NormalizationForm]::FormC)
-          }
-
-          $tagMessage = (git for-each-ref "refs/tags/$tag" --format="%(contents)" | Out-String).Trim()
-
-          if ([string]::IsNullOrWhiteSpace($tagMessage)) {
-            $tagMessage = (git tag -l --format='%(contents:subject)' $tag | Out-String).Trim()
-          }
-
-          $changelogFile = $null
-          $sectionLines = @()
-          $changelogPath = Join-Path $PWD "CHANGELOG.md"
-          if (Test-Path $changelogPath) {
-            $changelogFile = Get-Item $changelogPath
-            $allLines = Get-Content -Path $changelogPath
-
-            $startIndex = -1
-            for ($i = 0; $i -lt $allLines.Count; $i++) {
-              $line = $allLines[$i].Trim()
-              if ($line -match ("^###\\s+" + [regex]::Escape($tag) + "\\b")) {
-                $startIndex = $i
-                break
-              }
-            }
-
-            if ($startIndex -ge 0) {
-              $endIndex = $allLines.Count
-              for ($j = $startIndex + 1; $j -lt $allLines.Count; $j++) {
-                if ($allLines[$j].Trim() -match '^###\s+v\d+\.\d+\.\d+\b') {
-                  $endIndex = $j
-                  break
-                }
-              }
-              $sectionLines = $allLines[$startIndex..($endIndex - 1)]
-            }
-          }
-
-            $summary = $null
-            if (-not [string]::IsNullOrWhiteSpace($tagMessage)) {
-              $summary = ($tagMessage -split "`r?`n" | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | Select-Object -First 1).Trim()
-            }
-            if ([string]::IsNullOrWhiteSpace($summary)) {
-              $summary = "Automated release generated from tag $tag."
-            }
-            $summary = Convert-ToAscii $summary
-
-            $includedItems = New-Object System.Collections.Generic.List[string]
-            $referenceItems = New-Object System.Collections.Generic.List[string]
-
-            if ($changelogFile) {
-              $referenceItems.Add($changelogFile.Name) | Out-Null
-
-              foreach ($line in $sectionLines) {
-                $trimmed = $line.Trim()
-
-                if ($trimmed -match '^[-*]\s+(.+)$') {
-                  $bullet = $Matches[1].Trim()
-                  $bullet = Convert-ToAscii $bullet
-                  $isPathOnly = $bullet -match '^`?[A-Za-z0-9_./-]+\.(md|yml|yaml|txt|json|py)`?$'
-                  if (-not [string]::IsNullOrWhiteSpace($bullet) -and $includedItems.Count -lt 8) {
-                    if (-not $isPathOnly -and -not $includedItems.Contains($bullet)) {
-                      $includedItems.Add($bullet) | Out-Null
-                    }
-                  }
-                }
-
-                $pathMatches = [regex]::Matches($trimmed, '[A-Za-z0-9_./-]+\.(md|yml|yaml|txt|json|py)')
-                foreach ($m in $pathMatches) {
-                  $path = $m.Value
-                  if (-not $referenceItems.Contains($path)) {
-                    $referenceItems.Add($path) | Out-Null
-                  }
-                }
-              }
-            }
-
-            if ($includedItems.Count -eq 0) {
-              if (-not [string]::IsNullOrWhiteSpace($tagMessage)) {
-                $msgLines = $tagMessage -split "`r?`n" | ForEach-Object { $_.Trim() } | Where-Object { -not [string]::IsNullOrWhiteSpace($_) }
-                foreach ($msgLine in $msgLines) {
-                  if ($msgLine -match '^-\s+') {
-                    $bullet = Convert-ToAscii (($msgLine -replace '^-\s+', '').Trim())
-                    if (-not [string]::IsNullOrWhiteSpace($bullet) -and -not $includedItems.Contains($bullet)) {
-                      $includedItems.Add($bullet) | Out-Null
-                    }
-                  }
-                }
-              }
-            }
-
-          $lines = @()
-            $lines += "### Summary"
-            $lines += $summary
-            $lines += ""
-            $lines += "### Included"
-
-            if ($includedItems.Count -gt 0) {
-              foreach ($item in $includedItems) {
-                $lines += "- $item"
-              }
-          } else {
-              $lines += "- Automated release generated from tag $tag."
-          }
-            $lines += ""
-            $lines += "### References"
-
-            if ($referenceItems.Count -gt 0) {
-              foreach ($ref in ($referenceItems | Select-Object -First 8)) {
-                if ($ref -match '^[A-Za-z0-9_./-]+\.(md|yml|yaml|txt|json|py)$') {
-                  $lines += "- [$ref]($ref)"
-                } else {
-                  $lines += "- $ref"
-                }
-              }
-            } else {
-              $lines += "- Repository tag: $tag"
-          }
-
-          $notesFile = "release-notes-$tag.md"
-          $lines -join "`n" | Set-Content -Path $notesFile -Encoding utf8
-          "tag=$tag" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
-          "notes_file=$notesFile" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          fi
+          
+          # Get tag message
+          TAG_MESSAGE=$(git for-each-ref "refs/tags/$TAG" --format="%(contents)" 2>/dev/null | head -1 || true)
+          
+          if [ -z "$TAG_MESSAGE" ]; then
+            TAG_MESSAGE=$(git tag -l --format='%(contents:subject)' "$TAG" 2>/dev/null | head -1 || true)
+          fi
+          
+          # Extract summary (first non-empty line)
+          SUMMARY=$(echo "$TAG_MESSAGE" | grep -v '^\s*$' | head -1 | sed 's/^[[:space:]]*//')
+          if [ -z "$SUMMARY" ]; then
+            SUMMARY="Automated release generated from tag $TAG."
+          fi
+          
+          # Strip accents for ASCII-safe summary
+          SUMMARY=$(echo "$SUMMARY" | iconv -f utf-8 -t ascii//TRANSLIT//IGNORE 2>/dev/null || echo "$SUMMARY")
+          
+          # Extract changelog section if available
+          INCLUDED_ITEMS=""
+          if [ -f CHANGELOG.md ]; then
+            # Extract section for this tag
+            SECTION=$(sed -n "/^###\s*${TAG}/,/^###\s*v[0-9]/p" CHANGELOG.md | head -n -1 | grep -E '^[-*]\s+' | sed 's/^[-*]\s*//' | head -8)
+            if [ -n "$SECTION" ]; then
+              INCLUDED_ITEMS="$SECTION"
+            fi
+          fi
+          
+          # Build release notes
+          {
+            echo "### Summary"
+            echo "$SUMMARY"
+            echo ""
+            echo "### Included"
+            if [ -n "$INCLUDED_ITEMS" ]; then
+              echo "$INCLUDED_ITEMS" | while IFS= read -r item; do
+                [ -n "$item" ] && echo "- $item"
+              done
+            else
+              echo "- Automated release generated from tag $TAG."
+            fi
+          } > "release-notes-${TAG}.md"
+          
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "notes_file=release-notes-${TAG}.md" >> "$GITHUB_OUTPUT"
 
       - name: Upsert release
-        shell: pwsh
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          $tag = "${{ steps.notes.outputs.tag }}"
-          $repo = "${{ github.repository }}"
-          $title = $tag
-          $notesFile = "${{ steps.notes.outputs.notes_file }}"
-
-          $semverTags = git tag --list "v*" |
-            Where-Object { $_ -match '^v\d+\.\d+\.\d+$' } |
-            Sort-Object { [version]($_.TrimStart('v')) } -Descending
-
-          $isLatest = ($semverTags.Count -gt 0 -and $semverTags[0] -eq $tag)
-
-          gh release view $tag --repo $repo --json tagName *> $null
-          if ($LASTEXITCODE -eq 0) {
-            if ($isLatest) {
-              gh release edit $tag --title $title --notes-file $notesFile --latest --repo $repo
-            } else {
-              gh release edit $tag --title $title --notes-file $notesFile --repo $repo
-            }
-          } else {
-            if ($isLatest) {
-              gh release create $tag --title $title --notes-file $notesFile --latest --repo $repo
-            } else {
-              gh release create $tag --title $title --notes-file $notesFile --repo $repo
-            }
-          }
+          TAG="${{ steps.notes.outputs.tag }}"
+          NOTES_FILE="${{ steps.notes.outputs.notes_file }}"
+          
+          # Check if this is the latest semver tag
+          LATEST_TAG=$(git tag --list "v*" | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -1)
+          IS_LATEST="false"
+          if [ "$LATEST_TAG" = "$TAG" ]; then
+            IS_LATEST="true"
+          fi
+          
+          # Check if release exists
+          if gh release view "$TAG" --repo "${{ github.repository }}" --json tagName > /dev/null 2>&1; then
+            if [ "$IS_LATEST" = "true" ]; then
+              gh release edit "$TAG" --title "$TAG" --notes-file "$NOTES_FILE" --latest --repo "${{ github.repository }}"
+            else
+              gh release edit "$TAG" --title "$TAG" --notes-file "$NOTES_FILE" --repo "${{ github.repository }}"
+            fi
+          else
+            if [ "$IS_LATEST" = "true" ]; then
+              gh release create "$TAG" --title "$TAG" --notes-file "$NOTES_FILE" --latest --repo "${{ github.repository }}"
+            else
+              gh release create "$TAG" --title "$TAG" --notes-file "$NOTES_FILE" --repo "${{ github.repository }}"
+            fi
+          fi

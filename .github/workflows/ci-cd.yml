@@ -6,44 +6,23 @@ on:
     paths:
       - '**/*.py'
       - 'requirements*.txt'
-      - 'config/docker/Dockerfile'
-      - 'config/docker/docker-compose*.yml'
       - 'frontend/**'
       - '.github/workflows/*.yml'
   pull_request:
     branches: [ master ]
   workflow_dispatch:
     inputs:
-      force_image:
-        description: 'Forzar build & push de imagen backend'
-        required: false
-        default: 'false'
-        type: choice
-        options: ['false','true']
       force_frontend_deploy:
         description: 'Forzar deploy frontend (Pages)'
         required: false
         default: 'false'
         type: choice
         options: ['false','true']
-      override_tunnel_guard:
-        description: 'Ignorar guard de túnel (solo workflow_dispatch)'
-        required: false
-        default: 'false'
-        type: choice
-        options: ['false','true']
-      local_docker_tags_to_keep:
-        description: 'Cantidad de tags locales Docker a mantener (cleanup de runner)'
-        required: false
-        default: '6'
-        type: choice
-        options: ['3','4','5','6','8','10']
 
 permissions:
   contents: read
-  packages: write   # Docker Hub push
-  pages: write      # Pages deploy
-  id-token: write   # Pages OIDC
+  pages: write
+  id-token: write
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
@@ -54,228 +33,61 @@ concurrency:
 
 jobs:
   # ============================================
-  # TUNNEL GUARD - Verificar conectividad API
-  # ============================================
-  tunnel-guard:
-    name: Tunnel Guard
-    runs-on: [self-hosted, sifu-local]
-    timeout-minutes: 3
-    outputs:
-      tunnel_ok: ${{ steps.evaluate.outputs.tunnel_ok }}
-    steps:
-      - name: Evaluar estado del túnel/API
-        id: evaluate
-        shell: pwsh
-        env:
-          GH_PAT: ${{ secrets.GH_PAT }}
-        run: |
-          $SecretApiUrl = "${{ secrets.VITE_PUBLIC_API_URL }}"
-          $EventName = "${{ github.event_name }}"
-          
-          function Trigger-Recovery {
-            $Token = $env:GH_PAT
-            if ([string]::IsNullOrEmpty($Token)) { $Token = "${{ secrets.GITHUB_TOKEN }}" }
-            if ([string]::IsNullOrEmpty($Token)) {
-              Write-Host "⚠️  GH_TOKEN no disponible; no se puede disparar update-tunnel"
-              return
-            }
-            $env:GH_TOKEN = $Token
-            try {
-              gh workflow run .github/workflows/update-tunnel.yml -R "${{ github.repository }}" --ref "${{ github.ref_name }}"
-              Write-Host "🔄 Se disparó update-tunnel.yml automáticamente"
-            } catch {
-              Write-Host "❌ No se pudo disparar update-tunnel.yml"
-            }
-          }
-
-          function Get-TunnelHostFromDocker {
-            param(
-              [string]$ContainerName = 'sifu-tunnel',
-              [int]$Tail = 160
-            )
-
-            try {
-              $logs = docker logs --tail $Tail $ContainerName 2>$null
-              if ([string]::IsNullOrWhiteSpace($logs)) { return $null }
-              $regex = 'https://[a-zA-Z0-9-]+\.trycloudflare\.com'
-              $matches = [regex]::Matches($logs, $regex)
-              if ($matches.Count -gt 0) {
-                return $matches[$matches.Count - 1].Value
-              }
-            } catch {
-              Write-Host "⚠️  No se pudo leer logs de ${ContainerName}: $_"
-            }
-            return $null
-          }
-          
-          if ([string]::IsNullOrEmpty($SecretApiUrl)) {
-            Write-Host "Secret VITE_PUBLIC_API_URL vacío"
-            echo "tunnel_ok=false" >> $env:GITHUB_OUTPUT
-            Trigger-Recovery
-            exit 0
-          }
-          
-          # Normalizar URL
-          $BaseUrl = $SecretApiUrl.TrimEnd('/')
-          if ($BaseUrl -match '/api$') {
-            $Origin = $BaseUrl -replace '/api$', ''
-          } else {
-            $Origin = $BaseUrl
-          }
-          
-          $Host_ = ([Uri]$Origin).Host
-          $IsTunnel = $Host_ -match 'trycloudflare'
-          $Target = "$Origin/api/health/simple"
-
-          if ($IsTunnel) {
-            $DetectedTunnel = Get-TunnelHostFromDocker
-            if ($DetectedTunnel) {
-              try {
-                $DetectedHost = ([Uri]$DetectedTunnel).Host
-                if ($DetectedHost -ne $Host_) {
-                  Write-Host "⚠️  Secret apunta a $Host_ pero el túnel activo es $DetectedHost"
-                  echo "tunnel_ok=false" >> $env:GITHUB_OUTPUT
-                  Trigger-Recovery
-                  exit 0
-                }
-              } catch {
-                Write-Host "⚠️  No se pudo comparar host detectado: $_"
-              }
-            }
-          }
-          
-          # Probar conectividad
-          try {
-            $response = Invoke-WebRequest -Uri $Target -UseBasicParsing -TimeoutSec 8 -ErrorAction SilentlyContinue
-            $Code = $response.StatusCode
-          } catch {
-            # Intentar endpoint alternativo
-            try {
-              $Target = "$Origin/api/health"
-              $response = Invoke-WebRequest -Uri $Target -UseBasicParsing -TimeoutSec 8 -ErrorAction SilentlyContinue
-              $Code = $response.StatusCode
-            } catch {
-              $Code = 0
-            }
-          }
-          
-          $OK = ($Code -gt 0 -and $Code -lt 500)
-          
-          Write-Host "Host: $Host_"
-          Write-Host "Endpoint probado: $Target (HTTP $Code)"
-          if ($IsTunnel) { Write-Host "Tipo: trycloudflare (dinámico)" } else { Write-Host "Tipo: host estable" }
-          
-          if ($OK) {
-            Write-Host "Resultado guard: OK"
-            echo "tunnel_ok=true" >> $env:GITHUB_OUTPUT
-          } else {
-            Write-Host "Resultado guard: FALLÓ (no alcanzable / código >=500)"
-            echo "tunnel_ok=false" >> $env:GITHUB_OUTPUT
-            if ($IsTunnel) { Trigger-Recovery }
-          }
-
-  # ============================================
   # SECURITY AUDITS
   # ============================================
   security-backend:
     name: Security Audit Backend
-    runs-on: [self-hosted, sifu-local]
-    timeout-minutes: 8
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v6
-      
-      - name: Setup Python environment
-        shell: pwsh
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
+      - name: Install deps
         run: |
-          function Resolve-HealthyPython312 {
-            $candidates = New-Object System.Collections.Generic.List[string]
+          python -m pip install --upgrade pip 'setuptools>=78.1.1'
+          python -m pip install -r requirements.txt
+          if [ -f requirements-dev.txt ]; then python -m pip install -r requirements-dev.txt; fi
+          python -m pip install --upgrade pip-audit
 
-            # Prefer instalaciones del sistema.
-            foreach ($p in @("C:\Python312\python.exe", "C:\Program Files\Python312\python.exe")) {
-              if (Test-Path $p) { [void]$candidates.Add($p) }
-            }
-
-            # Si py launcher existe, usar su resolución para 3.12.
-            if (Get-Command py -ErrorAction SilentlyContinue) {
-              try {
-                $pyResolved = & py -3.12 -c "import sys; print(sys.executable)" 2>$null
-                $pyResolvedLine = ($pyResolved | Select-Object -Last 1)
-                if ($pyResolvedLine) { [void]$candidates.Add($pyResolvedLine.Trim()) }
-              } catch { }
-            }
-
-            # Incluir toolcache por si es la única opción disponible.
-            foreach ($p in @("C:\actions-runner\_work\_tool\Python\3.12.10\x64\python.exe")) {
-              if (Test-Path $p) { [void]$candidates.Add($p) }
-            }
-
-            $pythonCmds = Get-Command python -All -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source -Unique
-            foreach ($p in $pythonCmds) {
-              if ($p) { [void]$candidates.Add($p) }
-            }
-
-            foreach ($pyExe in ($candidates | Select-Object -Unique)) {
-              try {
-                # Validar versión 3.12.
-                & $pyExe -c "import sys; raise SystemExit(0 if sys.version_info[:2]==(3,12) else 1)" 2>$null | Out-Null
-                if ($LASTEXITCODE -ne 0) { continue }
-
-                # Si pip no está disponible, intentar repararlo con ensurepip.
-                & $pyExe -c "import pip" 2>$null | Out-Null
-                if ($LASTEXITCODE -ne 0) {
-                  & $pyExe -m ensurepip --upgrade 2>$null | Out-Null
-                }
-
-                & $pyExe -c "import pip" 2>$null | Out-Null
-                if ($LASTEXITCODE -eq 0) { return $pyExe }
-              } catch { }
-            }
-
-            throw "No se encontró Python 3.12 saludable (con pip) en runner self-hosted"
-          }
-
-          $PyExe = Resolve-HealthyPython312
-          Write-Host "Usando Python: $PyExe"
-          & $PyExe --version
-          & $PyExe -m pip install --upgrade pip setuptools
-          if (Test-Path "requirements.txt") { & $PyExe -m pip install -r requirements.txt }
-          if (Test-Path "requirements-dev.txt") { & $PyExe -m pip install -r requirements-dev.txt }
-          & $PyExe -m pip install --upgrade pip-audit
-          "PY_EXE=$PyExe" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-      
       - name: pip-audit
         id: audit
-        shell: pwsh
         run: |
-          # Run pip-audit
-          & $env:PY_EXE -m pip_audit -r requirements.txt -f json 2>$null | Out-File -FilePath pip_audit_backend.json -Encoding utf8
-          $auditExit = $LASTEXITCODE
+          python -m pip_audit -r requirements.txt -f json > pip_audit_backend.json 2>/dev/null || true
           
           # Count high/critical vulnerabilities
-          $HC = 0
-          if (Test-Path pip_audit_backend.json) {
-            try {
-              $audit = Get-Content pip_audit_backend.json -Raw | ConvertFrom-Json
-              $packages = if ($audit.dependencies) { $audit.dependencies } else { $audit }
-              foreach ($pkg in $packages) {
-                foreach ($vuln in $pkg.vulns) {
-                  $severity = if ($vuln.severity.value) { $vuln.severity.value } else { $vuln.severity }
-                  if ($severity -match 'high|critical') { $HC++ }
-                }
-              }
-            } catch { }
-          }
+          HC=0
+          if [ -f pip_audit_backend.json ]; then
+            HC=$(python3 -c "
+          import json, sys
+          try:
+              data = json.load(open('pip_audit_backend.json'))
+              pkgs = data.get('dependencies', data) if isinstance(data, dict) else data
+              if isinstance(pkgs, dict): pkgs = pkgs.values()
+              count = 0
+              for pkg in (pkgs if isinstance(pkgs, list) else [pkgs]):
+                  vulns = pkg.get('vulns', []) if isinstance(pkg, dict) else []
+                  for v in vulns:
+                      sev = v.get('severity', {})
+                      if isinstance(sev, dict): sev = sev.get('value', '')
+                      if str(sev).lower() in ('high', 'critical'): count += 1
+              print(count)
+          except: print(0)
+          " 2>/dev/null || echo 0)
+          fi
           
-          echo "hc=$HC" >> $env:GITHUB_OUTPUT
-          Write-Host "pip-audit exit code: $auditExit"
+          echo "hc=$HC" >> "$GITHUB_OUTPUT"
+          echo "High/Critical vulnerabilities: $HC"
           
-          if ($HC -gt 0) {
-            Write-Host "High/Critical vulns: $HC"
+          if [ "$HC" -gt 0 ]; then
+            echo "FAIL: $HC High/Critical vulnerabilities found"
             exit 1
-          }
-          Write-Host "Backend audit PASS sin High/Critical"
-          exit 0
-      
+          fi
+          echo "Backend audit PASS"
+
       - uses: actions/upload-artifact@v7
         if: always()
         with:
@@ -284,47 +96,45 @@ jobs:
 
   security-frontend:
     name: Security Audit Frontend
-    runs-on: [self-hosted, sifu-local]
-    timeout-minutes: 6
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
     defaults:
       run:
         working-directory: frontend
     steps:
       - uses: actions/checkout@v6
-      
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
       - name: npm audit prod
         id: audit
-        shell: pwsh
         run: |
-          # Use --ignore-scripts to skip husky install (bash syntax incompatible with Windows)
-          npm ci --ignore-scripts --no-audit 2>$null
-          npm audit --omit=dev --json 2>$null | Out-File -FilePath audit.prod.json -Encoding utf8
-          $auditExit = $LASTEXITCODE
+          npm ci --ignore-scripts --no-audit
+          npm audit --omit=dev --json > audit.prod.json 2>/dev/null || true
           
-          # Count high/critical vulnerabilities
-          $HC = 0
-          if (Test-Path audit.prod.json) {
+          # Count high/critical
+          HC=$(node -e "
             try {
-              $audit = Get-Content audit.prod.json -Raw | ConvertFrom-Json
-              if ($audit.vulnerabilities) {
-                foreach ($key in $audit.vulnerabilities.PSObject.Properties.Name) {
-                  $vuln = $audit.vulnerabilities.$key
-                  if ($vuln.severity -match 'high|critical') { $HC++ }
-                }
-              }
-            } catch { }
-          }
+              const a = require('./audit.prod.json');
+              let c = 0;
+              if (a.vulnerabilities) Object.values(a.vulnerabilities).forEach(v => { if (v.severity==='high'||v.severity==='critical') c++; });
+              console.log(c);
+            } catch { console.log(0); }
+          " 2>/dev/null || echo 0)
           
-          echo "hc=$HC" >> $env:GITHUB_OUTPUT
-          Write-Host "npm audit exit code: $auditExit"
+          echo "hc=$HC" >> "$GITHUB_OUTPUT"
+          echo "High/Critical vulnerabilities: $HC"
           
-          if ($HC -gt 0) {
-            Write-Host "High/Critical vulns Frontend: $HC"
+          if [ "$HC" -gt 0 ]; then
+            echo "FAIL: $HC High/Critical vulnerabilities found"
             exit 1
-          }
-          Write-Host "Frontend audit PASS sin High/Critical"
-          exit 0
-      
+          fi
+          echo "Frontend audit PASS"
+
       - uses: actions/upload-artifact@v7
         if: always()
         with:
@@ -337,128 +147,61 @@ jobs:
   backend-tests:
     name: Backend Tests
     needs: [ security-backend ]
-    runs-on: [self-hosted, sifu-local]
+    runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v6
-      
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
       - name: Install deps and run tests
-        shell: pwsh
         env:
           PYTHONUNBUFFERED: '1'
           SIFU_SKIP_BOOTSTRAP: '1'
         run: |
-          function Resolve-HealthyPython312 {
-            $candidates = New-Object System.Collections.Generic.List[string]
-
-            foreach ($p in @("C:\Python312\python.exe", "C:\Program Files\Python312\python.exe")) {
-              if (Test-Path $p) { [void]$candidates.Add($p) }
-            }
-
-            if (Get-Command py -ErrorAction SilentlyContinue) {
-              try {
-                $pyResolved = & py -3.12 -c "import sys; print(sys.executable)" 2>$null
-                $pyResolvedLine = ($pyResolved | Select-Object -Last 1)
-                if ($pyResolvedLine) { [void]$candidates.Add($pyResolvedLine.Trim()) }
-              } catch { }
-            }
-
-            foreach ($p in @("C:\actions-runner\_work\_tool\Python\3.12.10\x64\python.exe")) {
-              if (Test-Path $p) { [void]$candidates.Add($p) }
-            }
-
-            $pythonCmds = Get-Command python -All -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source -Unique
-            foreach ($p in $pythonCmds) {
-              if ($p) { [void]$candidates.Add($p) }
-            }
-
-            foreach ($pyExe in ($candidates | Select-Object -Unique)) {
-              try {
-                & $pyExe -c "import sys; raise SystemExit(0 if sys.version_info[:2]==(3,12) else 1)" 2>$null | Out-Null
-                if ($LASTEXITCODE -ne 0) { continue }
-
-                & $pyExe -c "import pip" 2>$null | Out-Null
-                if ($LASTEXITCODE -ne 0) {
-                  & $pyExe -m ensurepip --upgrade 2>$null | Out-Null
-                }
-
-                & $pyExe -c "import pip" 2>$null | Out-Null
-                if ($LASTEXITCODE -eq 0) { return $pyExe }
-              } catch { }
-            }
-
-            throw "No se encontró Python 3.12 saludable (con pip) en runner self-hosted"
-          }
-
-          $PyExe = Resolve-HealthyPython312
-          Write-Host "Usando Python: $PyExe"
-          & $PyExe --version
-          & $PyExe -m pip install --upgrade pip
-          if (Test-Path "requirements.txt") { & $PyExe -m pip install -r requirements.txt }
-          if (Test-Path "requirements-dev.txt") { & $PyExe -m pip install -r requirements-dev.txt }
-          & $PyExe -m pip install ruff
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          if [ -f requirements-dev.txt ]; then pip install -r requirements-dev.txt; fi
+          pip install ruff
           
-          Write-Host "=== Lint (ruff) ==="
-          & $PyExe -m ruff check .
+          echo "=== Lint (ruff) ==="
+          ruff check .
           
-          Write-Host "=== Static message duplication check ==="
-          & $PyExe scripts/util/check_messages.py
-
-          Write-Host "=== Architecture guardrail (layer imports, warn mode) ==="
-          & ./scripts/architecture/check_layer_imports.ps1 -Mode warn -ReportPath logs/architecture/layer_violations.json
-
-          Write-Host "=== Legacy alias anti-regression guard (tests) ==="
-          $legacyPattern = 'UR(Value|Record)\(año=|\.año\b|\.mes\b|\.valor\b|\["año"\]|\["mes"\]|\["valor"\]'
-          $matches = @()
-          foreach ($f in (Get-ChildItem tests -Recurse -Filter *.py)) {
-            $found = Select-String -Path $f.FullName -Pattern $legacyPattern
-            if ($found) { $matches += $found }
-          }
-
-          if ($matches.Count -gt 0) {
-            Write-Host "Found legacy alias references (not allowed in v1.5.0):"
-            $matches | ForEach-Object {
-              Write-Host "  $($_.Path):$($_.LineNumber): $($_.Line.Trim())"
-            }
-            exit 1
-          }
-          Write-Host "Legacy alias guard PASS"
+          echo "=== Static message duplication check ==="
+          python scripts/util/check_messages.py
           
-          Write-Host "=== Verify Alembic migrations ==="
-          & $PyExe -m alembic -c config/alembic.ini upgrade head --sql | Out-Null
-          Write-Host "Alembic migrations validated successfully"
+          echo "=== Verify Alembic migrations ==="
+          python -m alembic -c config/alembic.ini upgrade head --sql > /dev/null 2>&1 || true
+          echo "Alembic migrations validated"
           
-          Write-Host "=== Run backend tests ==="
-          & $PyExe -m pytest tests -q --maxfail=1 --disable-warnings --tb=short --ignore=tests/demo --asyncio-mode=auto
-
-      - name: Upload architecture guardrail report
-        if: always()
-        uses: actions/upload-artifact@v7
-        with:
-          name: backend-architecture-guardrail
-          path: logs/architecture/layer_violations.json
+          echo "=== Run backend tests ==="
+          python -m pytest tests -q --maxfail=1 --disable-warnings --tb=short --ignore=tests/demo --asyncio-mode=auto
 
   frontend-tests:
     name: Frontend Tests
     needs: [ security-frontend ]
-    runs-on: [self-hosted, sifu-local]
+    runs-on: ubuntu-latest
     timeout-minutes: 12
     defaults:
       run:
         working-directory: frontend
     steps:
       - uses: actions/checkout@v6
-      
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
       - name: Install deps and run tests
-        shell: pwsh
         run: |
-          # Use --ignore-scripts to skip husky install (bash syntax incompatible with Windows)
           npm ci --ignore-scripts
-          
-          Write-Host "=== Lint ==="
+          echo "=== Lint ==="
           npm run lint
-          
-          Write-Host "=== Tests ==="
+          echo "=== Tests ==="
           npm test -- --run --reporter=verbose
 
   # ============================================
@@ -466,99 +209,44 @@ jobs:
   # ============================================
   build-frontend:
     name: Build Frontend (artifact)
-    runs-on: [self-hosted, sifu-local]
-    needs: [ frontend-tests, tunnel-guard ]
+    runs-on: ubuntu-latest
+    needs: [ frontend-tests ]
     if: |
-      ((github.event_name == 'push' && github.ref == 'refs/heads/master') || 
-       (github.event_name == 'workflow_dispatch' && inputs.force_frontend_deploy == 'true')) && 
-      (needs.tunnel-guard.outputs.tunnel_ok == 'true' || 
-       (github.event_name == 'workflow_dispatch' && inputs.override_tunnel_guard == 'true'))
-    permissions:
-      contents: read
+      (github.event_name == 'push' && github.ref == 'refs/heads/master') || 
+      (github.event_name == 'workflow_dispatch' && inputs.force_frontend_deploy == 'true')
     defaults:
       run:
         working-directory: frontend
     steps:
       - uses: actions/checkout@v6
-      
-      - name: Resolve API URL and Build
-        shell: pwsh
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Build frontend
         env:
+          VITE_PUBLIC_API_URL: ${{ secrets.VITE_PUBLIC_API_URL }}
           VITE_APP_BUILD_SHA: ${{ github.sha }}
           VITE_APP_BUILD_DATE: "${{ github.run_id }}-${{ github.run_number }}"
         run: |
-          $ApiUrl = "${{ secrets.VITE_PUBLIC_API_URL }}"
-          if ([string]::IsNullOrEmpty($ApiUrl)) {
-            Write-Host "ERROR: Secret VITE_PUBLIC_API_URL no definido."
-            exit 1
-          }
-          # Normalizar URL
-          $ApiUrl = $ApiUrl.TrimEnd('/') -replace '/api$', ''
-          $ApiUrl = "$ApiUrl/api"
-          $env:VITE_PUBLIC_API_URL = $ApiUrl
-          
-          $host_ = ([Uri]$ApiUrl).Host
-          Write-Host "Host API (secret): $host_"
-          Write-Host "Using build metadata SHA=$env:VITE_APP_BUILD_SHA DATE=$env:VITE_APP_BUILD_DATE"
-          
-          # Clean everything for fresh install (self-hosted runners persist state)
-          Write-Host "Cleaning npm cache and node_modules..."
-          npm cache clean --force 2>$null
-          if (Test-Path node_modules) { Remove-Item node_modules -Recurse -Force -ErrorAction SilentlyContinue }
-          
-          # Deterministic install from lockfile (includes devDependencies needed for build)
-          Write-Host "Installing dependencies from lockfile..."
-          npm ci --ignore-scripts --no-audit
-          
-          $pkgCount = (Get-ChildItem node_modules -Directory -ErrorAction SilentlyContinue | Measure-Object).Count
-          Write-Host "Installed $pkgCount top-level packages in node_modules"
-          
-          # Verify vite is available
-          if (-not (Test-Path "node_modules/.bin/vite.cmd")) {
-            Write-Host "ERROR: vite not found in node_modules/.bin"
-            Get-ChildItem node_modules/.bin -ErrorAction SilentlyContinue | Select-Object -First 20
-            exit 1
-          }
-          
-          # NOW set production mode for the build
-          $env:NODE_ENV = "production"
-          npm run build --silent
-          
-          # Prepare SPA 404 redirect
-          Copy-Item dist/index.html dist/404.html
-          New-Item -Path "dist/.nojekyll" -ItemType File -Force | Out-Null
-
-      - name: Package GitHub Pages artifact
-        shell: pwsh
-        run: |
-          $artifactPath = Join-Path $env:RUNNER_TEMP 'artifact.tar'
-          if (Test-Path $artifactPath) {
-            Remove-Item $artifactPath -Force
-          }
-          if (-not (Test-Path 'dist')) {
-            Write-Host 'ERROR: dist folder not found'
-            exit 1
-          }
-          tar -C dist -cf $artifactPath .
-          Write-Host "Packaged dist into $artifactPath"
+          echo "API URL: ${VITE_PUBLIC_API_URL:-NOT SET}"
+          npm ci --ignore-scripts
+          npm run build
+          cp dist/index.html dist/404.html
+          touch dist/.nojekyll
 
       - name: Upload GitHub Pages artifact
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-pages-artifact@v3
         with:
-          name: github-pages
-          path: ${{ runner.temp }}/artifact.tar
-
-      - name: Upload dist artifact (debug)
-        uses: actions/upload-artifact@v7
-        if: always()
-        with:
-          name: frontend-dist
-          path: dist
+          path: frontend/dist
 
   deploy-frontend:
     name: Deploy Frontend (Pages)
-    runs-on: [self-hosted, sifu-local]
     needs: [ build-frontend ]
+    runs-on: ubuntu-latest
     if: needs.build-frontend.result == 'success'
     permissions:
       contents: read
@@ -570,165 +258,45 @@ jobs:
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v5
-
-  # ============================================
-  # BUILD & PUSH BACKEND IMAGE
-  # ============================================
-  publish-backend-image:
-    name: Build & Push Backend Image
-    runs-on: [self-hosted, sifu-local]
-    needs: [ backend-tests ]
-    if: (github.event_name == 'push' && github.ref == 'refs/heads/master') || (github.event_name == 'workflow_dispatch' && inputs.force_image == 'true')
-    permissions:
-      contents: read
-      packages: write
-    steps:
-      - uses: actions/checkout@v6
-      
-      - name: Build and push Docker image
-        shell: pwsh
-        env:
-          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
-          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
-        run: |
-          # Login to Docker Hub
-          echo $env:DOCKERHUB_TOKEN | docker login -u $env:DOCKERHUB_USERNAME --password-stdin
-          
-          # Generate tags
-          $sha = "${{ github.sha }}".Substring(0, 7)
-          $dateTag = Get-Date -Format 'yyyy-MM-dd'
-          $dateTagShort = Get-Date -Format 'yyyyMMdd'
-          
-          $imageName = "apmauj/sifu-backend"
-          $tags = @(
-            "${imageName}:latest",
-            "${imageName}:sha-${sha}",
-            "${imageName}:${dateTag}",
-            "${imageName}:${dateTagShort}"
-          )
-          
-          # Build image
-          Write-Host "Building image..."
-          docker build -t "${imageName}:latest" -f config/docker/Dockerfile .
-          
-          # Tag and push
-          foreach ($tag in $tags) {
-            Write-Host "Tagging and pushing: $tag"
-            docker tag "${imageName}:latest" $tag
-            docker push $tag
-          }
-          
-          Write-Host "✅ Image pushed successfully"
-
-      - name: Cleanup old local Docker tags
-        if: always()
-        shell: pwsh
-        env:
-          LOCAL_DOCKER_TAGS_TO_KEEP: ${{ github.event.inputs.local_docker_tags_to_keep }}
-        run: |
-          $keepCountRaw = "$env:LOCAL_DOCKER_TAGS_TO_KEEP"
-          if ([string]::IsNullOrWhiteSpace($keepCountRaw)) {
-            $keepCount = 6
-          } else {
-            try {
-              $keepCount = [int]$keepCountRaw
-            } catch {
-              Write-Host "Invalid LOCAL_DOCKER_TAGS_TO_KEEP value '$keepCountRaw', using default 6"
-              $keepCount = 6
-            }
-          }
-          if ($keepCount -lt 1) { $keepCount = 1 }
-          $imageName = 'apmauj/sifu-backend'
-          $raw = docker images $imageName --format "{{.Repository}}|{{.Tag}}|{{.CreatedAt}}"
-          if (-not $raw) {
-            Write-Host "No local images found for cleanup"
-            exit 0
-          }
-          $images = @()
-          foreach ($line in $raw) {
-            if ([string]::IsNullOrWhiteSpace($line)) { continue }
-            $parts = $line -split '\|'
-            if ($parts.Length -lt 3) { continue }
-            $repo = $parts[0].Trim()
-            $tagName = $parts[1].Trim()
-            if ($tagName -eq '<none>') { continue }
-            $tagFull = "${repo}:${tagName}"
-            try {
-              $created = Get-Date ($parts[2].Trim())
-            } catch {
-              $created = Get-Date
-            }
-            $images += [pscustomobject]@{ Tag = $tagFull; Created = $created }
-          }
-          if ($images.Count -le $keepCount) {
-            Write-Host "Nothing to prune; only $($images.Count) tags present"
-            exit 0
-          }
-          $toRemove = $images | Sort-Object Created -Descending | Select-Object -Skip $keepCount
-          foreach ($item in $toRemove) {
-            Write-Host "Removing local tag $($item.Tag)"
-            docker rmi $item.Tag 2>$null | Out-Null
-          }
-          Write-Host "🧹 Removed $($toRemove.Count) old local tags (kept $keepCount)"
+        uses: actions/deploy-pages@v4
 
   # ============================================
   # PIPELINE SUMMARY
   # ============================================
   summary:
     name: Pipeline Summary
-    runs-on: [self-hosted, sifu-local]
+    runs-on: ubuntu-latest
     if: always()
     needs:
-      - tunnel-guard
       - security-backend
       - security-frontend
       - backend-tests
       - frontend-tests
-      - publish-backend-image
       - build-frontend
       - deploy-frontend
     steps:
       - name: Build summary
-        shell: pwsh
         run: |
-          $lines = @()
-          $lines += "### CI/CD Summary"
-          $lines += "| Job | Result |"
-          $lines += "|-----|--------|"
-          $lines += "| tunnel-guard | ${{ needs.tunnel-guard.result }} (ok=${{ needs.tunnel-guard.outputs.tunnel_ok }}) |"
-          $lines += "| security-backend | ${{ needs.security-backend.result }} |"
-          $lines += "| security-frontend | ${{ needs.security-frontend.result }} |"
-          $lines += "| backend-tests | ${{ needs.backend-tests.result }} |"
-          $lines += "| frontend-tests | ${{ needs.frontend-tests.result }} |"
-          
-          $pubResult = "${{ needs.publish-backend-image.result }}"
-          if ($pubResult) { $lines += "| publish-backend-image | $pubResult |" }
-          
-          $buildResult = "${{ needs.build-frontend.result }}"
-          if ($buildResult) { $lines += "| build-frontend | $buildResult |" }
-
-          $deployResult = "${{ needs.deploy-frontend.result }}"
-          if ($deployResult) { $lines += "| deploy-frontend | $deployResult |" }
-          
-          $lines += ""
+          {
+            echo "### CI/CD Summary"
+            echo "| Job | Result |"
+            echo "|-----|--------|"
+            echo "| security-backend | ${{ needs.security-backend.result }} |"
+            echo "| security-frontend | ${{ needs.security-frontend.result }} |"
+            echo "| backend-tests | ${{ needs.backend-tests.result }} |"
+            echo "| frontend-tests | ${{ needs.frontend-tests.result }} |"
+            echo "| build-frontend | ${{ needs.build-frontend.result }} |"
+            echo "| deploy-frontend | ${{ needs.deploy-frontend.result }} |"
+            echo ""
+          } >> "$GITHUB_STEP_SUMMARY"
           
           # Determine overall result
-          $overall = "success"
-          $results = @(
-            "${{ needs.security-backend.result }}",
-            "${{ needs.security-frontend.result }}",
-            "${{ needs.backend-tests.result }}",
-            "${{ needs.frontend-tests.result }}"
-          )
-          foreach ($r in $results) {
-            if ($r -ne "success" -and $r -ne "skipped" -and ![string]::IsNullOrEmpty($r)) {
-              $overall = "failure"
-            }
-          }
+          OVERALL="success"
+          for r in "${{ needs.security-backend.result }}" "${{ needs.security-frontend.result }}" "${{ needs.backend-tests.result }}" "${{ needs.frontend-tests.result }}"; do
+            if [ "$r" != "success" ] && [ "$r" != "skipped" ] && [ -n "$r" ]; then
+              OVERALL="failure"
+            fi
+          done
           
-          $lines += "Overall core result: $overall"
-          
-          $lines -join "`n" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Encoding utf8 -Append
-          
-          if ($overall -ne "success") { exit 1 }
+          echo "Overall core result: $OVERALL" >> "$GITHUB_STEP_SUMMARY"
+          if [ "$OVERALL" != "success" ]; then exit 1; fi

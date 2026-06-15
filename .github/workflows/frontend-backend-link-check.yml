@@ -7,12 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       check_all_endpoints:
-        description: 'Verificar todos los endpoints críticos'
-        required: false
-        default: false
-        type: boolean
-      trigger_deploy_on_recovery:
-        description: 'Disparar deploy frontend si la recuperación del túnel fue exitosa'
+        description: 'Verificar todos los endpoints criticos'
         required: false
         default: false
         type: boolean
@@ -29,8 +24,7 @@ on:
 
 permissions:
   contents: read
-  issues: write  # Para crear issues si hay problemas
-  actions: write  # Para disparar workflow de recuperación de túnel
+  issues: write
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
@@ -40,396 +34,81 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  check-tunnel-url:
+  check-link:
     if: ${{ vars.ENABLE_LINK_CHECK == 'true' || github.event_name == 'workflow_dispatch' }}
-    runs-on: [self-hosted, sifu-local]
-    timeout-minutes: 2
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
     outputs:
-      tunnel_changed: ${{ steps.url_check.outputs.tunnel_changed }}
-      current_url: ${{ steps.url_check.outputs.current_url }}
-      secret_created: ${{ steps.url_check.outputs.secret_created }}
+      status: ${{ steps.health_check.outputs.status }}
+      http_code: ${{ steps.health_check.outputs.http_code }}
       
     steps:
-      - name: Check Current Tunnel URL
-        id: url_check
-        shell: pwsh
-        env:
-          GH_TOKEN: ${{ secrets.GH_PAT }}
+      - name: Health Check
+        id: health_check
         run: |
-          # Verificar que GH_PAT está configurado
-          if ([string]::IsNullOrEmpty($env:GH_TOKEN)) {
-            Write-Host "⚠️  GH_PAT no configurado - no se puede crear/actualizar secrets automáticamente"
-            Write-Host "   Para habilitar auto-recovery, configura GH_PAT en Settings > Secrets"
-            echo "secret_created=false" >> $env:GITHUB_OUTPUT
-            echo "tunnel_changed=false" >> $env:GITHUB_OUTPUT
-            exit 0
-          }
+          API_URL="${{ secrets.VITE_PUBLIC_API_URL }}"
           
-          $StoredUrl = "${{ secrets.VITE_PUBLIC_API_URL }}"
-          Write-Host "🔍 Verificando URL del túnel..."
-          Write-Host "URL almacenada: $StoredUrl"
-          
-          # Obtener URL actual de logs de Docker primero
-          $CurrentUrl = $null
-          try {
-            $logs = docker logs sifu-tunnel 2>&1 | Select-String -Pattern 'https://[a-zA-Z0-9-]+\.trycloudflare\.com' | Select-Object -Last 1
-            if ($logs) {
-              $CurrentUrl = $logs.Matches[0].Value
-              Write-Host "URL actual del túnel: $CurrentUrl"
-            }
-          } catch {
-            Write-Host "⚠️  Error al obtener URL del túnel: $_"
-          }
-          
-          # Si el secret está vacío pero tenemos URL del túnel, crear el secret automáticamente
-          if ([string]::IsNullOrWhiteSpace($StoredUrl) -and $CurrentUrl) {
-            Write-Host "⚠️  Secret VITE_PUBLIC_API_URL está vacío - creando automáticamente..."
-            try {
-              echo $CurrentUrl | gh secret set VITE_PUBLIC_API_URL -R '${{ github.repository }}'
-              Write-Host "✅ Secret VITE_PUBLIC_API_URL creado con URL: $CurrentUrl"
-              echo "secret_created=true" >> $env:GITHUB_OUTPUT
-              echo "tunnel_changed=true" >> $env:GITHUB_OUTPUT
-              echo "current_url=$CurrentUrl" >> $env:GITHUB_OUTPUT
-              exit 0
-            } catch {
-              Write-Host "❌ Error al crear secret: $_"
-              echo "secret_created=false" >> $env:GITHUB_OUTPUT
-            }
-          }
-          
-          echo "secret_created=false" >> $env:GITHUB_OUTPUT
-          
-          # Solo verificar si es túnel Cloudflare
-          if ($StoredUrl -notmatch 'trycloudflare\.com') {
-            Write-Host "ℹ️  No es túnel Cloudflare, saltando"
-            echo "tunnel_changed=false" >> $env:GITHUB_OUTPUT
-            exit 0
-          }
-          
-          # Comparar URLs si ya tenemos la actual
-          if ($CurrentUrl) {
-            if ($StoredUrl -ne $CurrentUrl) {
-              Write-Host "🔄 URLs NO coinciden - actualización requerida"
-              echo "tunnel_changed=true" >> $env:GITHUB_OUTPUT
-              echo "current_url=$CurrentUrl" >> $env:GITHUB_OUTPUT
-            } else {
-              Write-Host "✅ URLs coinciden"
-              echo "tunnel_changed=false" >> $env:GITHUB_OUTPUT
-            }
-          } else {
-            Write-Host "⚠️  No se pudo obtener URL del túnel"
-            echo "tunnel_changed=unknown" >> $env:GITHUB_OUTPUT
-          }
-
-  check-connection:
-    # Run on self-hosted to avoid GitHub Actions billing limits
-    # Self-hosted runner has Docker, Python, and can regenerate tunnel directly
-    if: ${{ vars.ENABLE_LINK_CHECK == 'true' || github.event_name == 'workflow_dispatch' }}
-    runs-on: [self-hosted, sifu-local]
-    needs: check-tunnel-url
-    timeout-minutes: 5
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v6
-
-      - name: Check Frontend Accessibility
-        id: frontend_check
-        shell: pwsh
-        run: |
-          $FrontendUrl = "https://${{ github.repository_owner }}.github.io/sifu"
-          Write-Host "🌐 Verificando Frontend en: $FrontendUrl"
-          
-          try {
-            $response = Invoke-WebRequest -Uri $FrontendUrl -UseBasicParsing -MaximumRedirection 5
-            $statusCode = $response.StatusCode
-            Write-Host "✅ Frontend accesible (HTTP $statusCode)"
-            echo "frontend_status=$statusCode" >> $env:GITHUB_OUTPUT
-            echo "frontend_accessible=true" >> $env:GITHUB_OUTPUT
-          } catch {
-            $statusCode = if ($_.Exception.Response) { [int]$_.Exception.Response.StatusCode } else { 0 }
-            Write-Host "❌ ERROR: Frontend no accesible (HTTP $statusCode)"
-            echo "frontend_status=$statusCode" >> $env:GITHUB_OUTPUT
-            echo "frontend_accessible=false" >> $env:GITHUB_OUTPUT
+          if [ -z "$API_URL" ]; then
+            echo "ERROR: VITE_PUBLIC_API_URL secret not defined"
+            echo "status=error" >> "$GITHUB_OUTPUT"
+            echo "http_code=0" >> "$GITHUB_OUTPUT"
             exit 1
-          }
-
-      - name: Determine Active Backend URL
-        id: backend_url
-        shell: pwsh
-        env:
-          GH_PAT: ${{ secrets.GH_PAT }}
-        run: |
-          $SecretUrl = "${{ secrets.VITE_PUBLIC_API_URL }}"
-          $CurrentUrl = "${{ needs.check-tunnel-url.outputs.current_url }}"
+          fi
           
-          if ([string]::IsNullOrWhiteSpace($SecretUrl) -and [string]::IsNullOrWhiteSpace($CurrentUrl)) {
-            Write-Host "⚠️  VITE_PUBLIC_API_URL vacío y sin URL detectada"
-            echo "resolved_url=" >> $env:GITHUB_OUTPUT
-            echo "url_source=missing" >> $env:GITHUB_OUTPUT
+          # Normalize URL
+          API_URL="${API_URL%/}"
+          HEALTH_URL="${API_URL}/health/simple"
+          FALLBACK_URL="${API_URL}/health"
+          
+          echo "Checking: $HEALTH_URL"
+          
+          # Primary health check
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 30 "$HEALTH_URL" 2>/dev/null) || HTTP_CODE=0
+          
+          # Fallback if primary fails
+          if [ "$HTTP_CODE" -lt 200 ] || [ "$HTTP_CODE" -ge 500 ] 2>/dev/null; then
+            echo "Primary endpoint failed (HTTP $HTTP_CODE), trying fallback..."
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 30 "$FALLBACK_URL" 2>/dev/null) || HTTP_CODE=0
+          fi
+          
+          echo "HTTP Status: $HTTP_CODE"
+          echo "http_code=$HTTP_CODE" >> "$GITHUB_OUTPUT"
+          
+          if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 500 ] 2>/dev/null; then
+            echo "Link check OK"
+            echo "status=success" >> "$GITHUB_OUTPUT"
+          else
+            echo "Link check FAILED"
+            echo "status=error" >> "$GITHUB_OUTPUT"
             exit 1
-          }
-          
-          $ResolvedUrl = if (![string]::IsNullOrWhiteSpace($CurrentUrl)) { $CurrentUrl } else { $SecretUrl }
-          $Source = if (![string]::IsNullOrWhiteSpace($CurrentUrl)) { "tunnel_logs" } else { "secret" }
-          
-          Write-Host "🔗 URL backend activa: $ResolvedUrl (origen: $Source)"
-          echo "resolved_url=$ResolvedUrl" >> $env:GITHUB_OUTPUT
-          echo "url_source=$Source" >> $env:GITHUB_OUTPUT
+          fi
 
-      - name: Check Backend Health Endpoint
-        id: backend_check
-        shell: pwsh
-        continue-on-error: true
+      - name: Check Additional Endpoints
+        if: github.event.inputs.check_all_endpoints == 'true'
+        id: extra_checks
         run: |
-          $BackendUrl = "${{ steps.backend_url.outputs.resolved_url }}"
+          API_URL="${{ secrets.VITE_PUBLIC_API_URL }}"
+          API_URL="${API_URL%/}"
           
-          # Normalizar endpoint
-          $BaseUrl = $BackendUrl.TrimEnd('/')
-          if ($BaseUrl -match '/api$') {
-            $HealthEndpoint = "$BaseUrl/health"
-          } else {
-            $HealthEndpoint = "$BaseUrl/api/health"
-          }
+          ENDPOINTS=("/exchange-rate/latest" "/ui/latest" "/ur/latest")
+          FAILED=0
           
-          Write-Host "🔧 Verificando Backend en: $HealthEndpoint"
+          for endpoint in "${ENDPOINTS[@]}"; do
+            URL="${API_URL}${endpoint}"
+            CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 15 "$URL" 2>/dev/null) || CODE=0
+            echo "$endpoint: HTTP $CODE"
+            if [ "$CODE" -lt 200 ] || [ "$CODE" -ge 500 ] 2>/dev/null; then
+              FAILED=$((FAILED + 1))
+            fi
+          done
           
-          $Delays = @(30, 60, 90, 120, 180)
-          $Success = $false
-          $HttpStatus = 0
-          $Body = ""
-          
-          for ($i = 0; $i -lt $Delays.Count; $i++) {
-            try {
-              $response = Invoke-WebRequest -Uri $HealthEndpoint -UseBasicParsing -TimeoutSec 30
-              $HttpStatus = $response.StatusCode
-              $Body = $response.Content
-              
-              if ($HttpStatus -eq 200) {
-                $Success = $true
-                break
-              }
-              Write-Host "❌ ERROR: Backend HTTP $HttpStatus (intento $($i+1)/$($Delays.Count))"
-            } catch {
-              $HttpStatus = if ($_.Exception.Response) { [int]$_.Exception.Response.StatusCode } else { 0 }
-              Write-Host "❌ ERROR: Request falló (intento $($i+1)/$($Delays.Count)): $($_.Exception.Message)"
-            }
-            
-            if ($i -lt $Delays.Count - 1) {
-              Write-Host "⏳ Reintentando en $($Delays[$i])s..."
-              Start-Sleep -Seconds $Delays[$i]
-            }
-          }
-          
-          echo "backend_status=$HttpStatus" >> $env:GITHUB_OUTPUT
-          
-          if (-not $Success) {
-            echo "backend_accessible=false" >> $env:GITHUB_OUTPUT
-            echo "health_status=down" >> $env:GITHUB_OUTPUT
-            exit 0
-          }
-          
-          Write-Host "✅ Backend responde correctamente"
-          echo "backend_accessible=true" >> $env:GITHUB_OUTPUT
-          
-          try {
-            $data = $Body | ConvertFrom-Json
-            $status = if ($data.status) { $data.status } else { "unknown" }
-            echo "health_status=$status" >> $env:GITHUB_OUTPUT
-            if ($status -ne "healthy") {
-              Write-Host "⚠️  WARNING: Backend health status: $status"
-            }
-          } catch {
-            echo "health_status=parse_error" >> $env:GITHUB_OUTPUT
-          }
-
-      - name: Detect Tunnel Failure
-        id: tunnel_check
-        shell: pwsh
-        if: |
-          (steps.backend_check.outputs.backend_accessible == 'false' ||
-           needs.check-tunnel-url.outputs.tunnel_changed == 'true')
-        run: |
-          $BackendUrl = "${{ steps.backend_url.outputs.resolved_url }}"
-          $BackendAccessible = "${{ steps.backend_check.outputs.backend_accessible }}"
-          $TunnelChanged = "${{ needs.check-tunnel-url.outputs.tunnel_changed }}"
-          
-          if ($BackendAccessible -eq "false") {
-            Write-Host "🔍 Backend no accesible - verificando si es un túnel caído..."
-            $Reason = "backend_down"
-          } else {
-            Write-Host "🔍 URL del túnel cambió - se requiere actualización..."
-            $Reason = "url_mismatch"
-          }
-          
-          if ($BackendUrl -match 'trycloudflare\.com') {
-            echo "tunnel_detected=true" >> $env:GITHUB_OUTPUT
-            echo "failure_reason=$Reason" >> $env:GITHUB_OUTPUT
-            echo "tunnel_url=$BackendUrl" >> $env:GITHUB_OUTPUT
-            
-            if ($Reason -eq "backend_down") {
-              Write-Host "⚠️  Túnel Cloudflare detectado y caído"
-            } else {
-              Write-Host "⚠️  Túnel Cloudflare URL desactualizada en secret"
-            }
-          } else {
-            echo "tunnel_detected=false" >> $env:GITHUB_OUTPUT
-            Write-Host "ℹ️  No es un túnel Cloudflare (probablemente backend fijo)"
-          }
-
-      - name: Attempt Tunnel Recovery
-        id: tunnel_recovery
-        shell: pwsh
-        if: steps.tunnel_check.outputs.tunnel_detected == 'true'
-        env:
-          GH_TOKEN: ${{ secrets.GH_PAT }}
-        run: |
-          Write-Host "🔄 Intentando recuperar túnel automáticamente (ejecución directa)..."
-          $TriggerDeploy = ('${{ github.event.inputs.trigger_deploy_on_recovery }}' -eq 'true')
-          
-          # Ejecutar script de actualización de túnel directamente
-          # Ya estamos en self-hosted, tenemos Docker disponible
-          try {
-            $scriptParams = @{
-              Repo = '${{ github.repository }}'
-              SkipIfUnchanged = $true
-            }
-            if ($TriggerDeploy) { $scriptParams.TriggerDeploy = $true }
-
-            & "$env:GITHUB_WORKSPACE\scripts\deploy\update_tunnel_secret.ps1" @scriptParams
-            
-            if ($LASTEXITCODE -eq 0) {
-              Write-Host "✅ Túnel recuperado exitosamente"
-              echo "recovery_attempted=true" >> $env:GITHUB_OUTPUT
-              echo "recovery_successful=true" >> $env:GITHUB_OUTPUT
-              echo "recovery_time=$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssZ')" >> $env:GITHUB_OUTPUT
-            } else {
-              Write-Host "❌ Error al recuperar túnel (exit code: $LASTEXITCODE)"
-              echo "recovery_attempted=true" >> $env:GITHUB_OUTPUT
-              echo "recovery_successful=false" >> $env:GITHUB_OUTPUT
-            }
-          } catch {
-            Write-Host "❌ Excepción al recuperar túnel: $_"
-            echo "recovery_attempted=true" >> $env:GITHUB_OUTPUT
-            echo "recovery_successful=false" >> $env:GITHUB_OUTPUT
-          }
-
-      - name: Check Critical Endpoints
-        id: endpoints_check
-        shell: pwsh
-        if: |
-          steps.backend_check.outputs.backend_accessible == 'true' &&
-          (github.event.inputs.check_all_endpoints == 'true' || github.event_name == 'schedule')
-        run: |
-          $BackendUrl = "${{ steps.backend_url.outputs.resolved_url }}"
-          
-          $Endpoints = @(
-            "/api/info",
-            "/api/ur/info",
-            "/api/brou/current",
-            "/api/exchange-rate/latest"
-          )
-          
-          $FailedEndpoints = @()
-          $SuccessCount = 0
-          $FailCount = 0
-          
-          Write-Host "🔍 Verificando endpoints críticos..."
-          
-          foreach ($endpoint in $Endpoints) {
-            $Url = "$BackendUrl$endpoint"
-            Write-Host "Probando: $Url"
-            
-            try {
-              $response = Invoke-WebRequest -Uri $Url -UseBasicParsing -TimeoutSec 30
-              Write-Host "  ✅ $endpoint - OK ($($response.StatusCode))"
-              $SuccessCount++
-            } catch {
-              $status = if ($_.Exception.Response) { [int]$_.Exception.Response.StatusCode } else { 0 }
-              Write-Host "  ❌ $endpoint - FAILED ($status)"
-              $FailedEndpoints += "- $endpoint (HTTP $status)"
-              $FailCount++
-            }
-          }
-          
-          echo "endpoints_success=$SuccessCount" >> $env:GITHUB_OUTPUT
-          echo "endpoints_fail=$FailCount" >> $env:GITHUB_OUTPUT
-          
-          if ($FailCount -gt 0) {
-            $FailedList = $FailedEndpoints -join "`n"
-            echo "failed_endpoints<<EOF" >> $env:GITHUB_OUTPUT
-            echo "$FailedList" >> $env:GITHUB_OUTPUT
-            echo "EOF" >> $env:GITHUB_OUTPUT
-            Write-Host "❌ $FailCount endpoint(s) fallaron"
-            exit 1
-          } else {
-            Write-Host "✅ Todos los endpoints respondieron correctamente"
-          }
-
-      - name: Test Frontend-Backend Integration
-        id: integration_check
-        shell: pwsh
-        run: |
-          $BackendUrl = "${{ secrets.VITE_PUBLIC_API_URL }}"
-          
-          Write-Host "🔗 Verificando integración Frontend-Backend..."
-          Write-Host "Backend configurado en: $BackendUrl"
-          
-          if ([string]::IsNullOrWhiteSpace($BackendUrl)) {
-            Write-Host "❌ ERROR: VITE_PUBLIC_API_URL no está configurada"
-            echo "integration_status=error" >> $env:GITHUB_OUTPUT
-            echo "integration_error=Missing VITE_PUBLIC_API_URL" >> $env:GITHUB_OUTPUT
-            exit 1
-          }
-          
-          if ($BackendUrl -match '(localhost|127\.0\.0\.1|trycloudflare\.com)') {
-            Write-Host "⚠️  WARNING: Backend URL parece ser temporal o local: $BackendUrl"
-            echo "integration_status=warning" >> $env:GITHUB_OUTPUT
-            echo "integration_warning=Backend URL is temporary or local" >> $env:GITHUB_OUTPUT
-          } else {
-            Write-Host "✅ Backend URL es válida"
-            echo "integration_status=success" >> $env:GITHUB_OUTPUT
-          }
-          
-          echo "backend_url=$BackendUrl" >> $env:GITHUB_OUTPUT
-
-      - name: Check CORS Configuration
-        id: cors_check
-        shell: pwsh
-        run: |
-          $BackendUrl = "${{ secrets.VITE_PUBLIC_API_URL }}"
-          $FrontendOrigin = "https://${{ github.repository_owner }}.github.io"
-          
-          $BaseUrl = $BackendUrl.TrimEnd('/')
-          if ($BaseUrl -match '/api$') {
-            $HealthEndpoint = "$BaseUrl/health"
-          } else {
-            $HealthEndpoint = "$BaseUrl/api/health"
-          }
-          
-          Write-Host "🌍 Verificando configuración CORS..."
-          Write-Host "Frontend Origin: $FrontendOrigin"
-          Write-Host "Usando endpoint: $HealthEndpoint"
-          
-          try {
-            $response = Invoke-WebRequest -Uri $HealthEndpoint -UseBasicParsing -Method Head -Headers @{Origin = $FrontendOrigin}
-            $corsHeader = $response.Headers['Access-Control-Allow-Origin']
-            
-            if ($corsHeader) {
-              Write-Host "✅ Header CORS encontrado: $corsHeader"
-              echo "cors_configured=true" >> $env:GITHUB_OUTPUT
-              echo "cors_header=$corsHeader" >> $env:GITHUB_OUTPUT
-            } else {
-              Write-Host "⚠️  WARNING: No se encontró header CORS en la respuesta"
-              echo "cors_configured=unknown" >> $env:GITHUB_OUTPUT
-            }
-          } catch {
-            Write-Host "⚠️  WARNING: Error al verificar CORS: $($_.Exception.Message)"
-            echo "cors_configured=unknown" >> $env:GITHUB_OUTPUT
-          }
+          echo "extra_failed=$FAILED" >> "$GITHUB_OUTPUT"
+          if [ "$FAILED" -gt 0 ]; then
+            echo "$FAILED additional endpoints failed"
+          fi
 
       - name: Create Issue on Failure
-        if: failure() && (github.event.inputs.create_issue_on_failure != 'false')
+        if: failure() && steps.health_check.outputs.status == 'error' && github.event.inputs.create_issue_on_failure == 'true'
         uses: actions/github-script@v9
         with:
           script: |
@@ -452,116 +131,74 @@ jobs:
                 previousConsecutiveFailures += 1;
                 continue;
               }
-              if (run.conclusion === 'cancelled') {
-                continue;
-              }
+              if (run.conclusion === 'cancelled') continue;
               break;
             }
 
             const currentFailureStreak = previousConsecutiveFailures + 1;
             if (currentFailureStreak < threshold) {
-              core.notice(`Issue omitido: racha de fallos ${currentFailureStreak}/${threshold}`);
+              core.notice(`Issue skipped: failure streak ${currentFailureStreak}/${threshold}`);
               return;
             }
 
             const { data } = await github.rest.issues.listForRepo({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              labels: ['frontend-backend-link', 'monitoring', 'bug'],
+              labels: ['link-check', 'monitoring'],
               state: 'open'
             });
 
             const existingIssue = data.find(issue =>
-              issue.title.includes('Frontend-Backend Connection Failed')
+              issue.title.includes('Frontend-Backend Link Check Failed')
             );
 
             if (!existingIssue) {
-              const frontendStatus = '${{ steps.frontend_check.outputs.frontend_accessible }}';
-              const backendStatus = '${{ steps.backend_check.outputs.backend_accessible }}';
-              const integrationStatus = '${{ steps.integration_check.outputs.integration_status }}';
-              const failedEndpoints = `${{ steps.endpoints_check.outputs.failed_endpoints }}`;
+              const httpCode = '${{ steps.health_check.outputs.http_code }}';
+              const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
               
-              let problemDescription = '';
-              if (frontendStatus === 'false') {
-                problemDescription = '❌ **Frontend no accesible**';
-              } else if (backendStatus === 'false') {
-                problemDescription = '❌ **Backend no responde**';
-              } else if (failedEndpoints) {
-                problemDescription = `❌ **Algunos endpoints fallaron**\n${failedEndpoints}`;
-              } else {
-                problemDescription = '❌ **Error en la integración**';
-              }
-
+              const body = [
+                '## Frontend-Backend Link Check Failed',
+                '',
+                `**Timestamp:** ${new Date().toISOString()}`,
+                `**Workflow Run:** [View Details](${runUrl})`,
+                `**HTTP Status:** ${httpCode}`,
+                '',
+                '### Actions',
+                '1. Check Render backend status',
+                '2. Verify VITE_PUBLIC_API_URL secret',
+                '3. Check Render logs for errors',
+                '',
+                '---',
+                '_Issue created automatically by Frontend-Backend Link Check_'
+              ].join('\n');
+              
               await github.rest.issues.create({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                title: '🚨 Frontend-Backend Connection Failed',
-                body: `
-                ## ❌ Frontend-Backend Link Check Failed
-
-                **Timestamp:** ${new Date().toISOString()}
-                **Workflow Run:** [View Details](${context.payload.workflow_run?.html_url || context.serverUrl + '/' + context.repo.owner + '/' + context.repo.repo + '/actions/runs/' + context.runId})
-
-                ### Problem
-                ${problemDescription}
-
-                ### Status Details
-                - **Frontend Accessible:** ${frontendStatus || 'N/A'}
-                - **Backend Accessible:** ${backendStatus || 'N/A'}
-                - **Integration Status:** ${integrationStatus || 'N/A'}
-                - **Backend Health:** ${'${{ steps.backend_check.outputs.health_status }}' || 'N/A'}
-
-                ### Configuration
-                - **Backend URL:** \`${'${{ steps.integration_check.outputs.backend_url }}'}\`
-                - **CORS Status:** ${'${{ steps.cors_check.outputs.cors_configured }}' || 'unknown'}
-
-                ### Failed Endpoints
-                ${failedEndpoints || 'None checked or all passed'}
-
-                ### Actions Required
-                1. Verificar que el backend esté ejecutándose
-                2. Verificar configuración de VITE_PUBLIC_API_URL
-                3. Revisar configuración CORS del backend
-                4. Verificar que GitHub Pages esté activo
-                5. Revisar logs del backend para errores
-
-                ### Debug Commands
-                \`\`\`bash
-                # Verificar frontend
-                curl -I https://${context.repo.owner}.github.io/sifu
-
-                # Verificar backend
-                curl ${'${{ steps.integration_check.outputs.backend_url }}'}/api/health
-
-                # Verificar CORS
-                curl -I -H "Origin: https://${context.repo.owner}.github.io" ${'${{ steps.integration_check.outputs.backend_url }}'}/api/health
-                \`\`\`
-
-                ---
-                *Issue created automatically by Frontend-Backend Link Check*
-                `,
-                labels: ['frontend-backend-link', 'monitoring', 'bug', 'urgent']
+                title: 'Frontend-Backend Link Check Failed',
+                body,
+                labels: ['link-check', 'monitoring', 'bug']
               });
             }
 
       - name: Auto-close Issue on Recovery
-        if: always() && (steps.frontend_check.outputs.frontend_accessible == 'true') && (steps.backend_check.outputs.backend_accessible == 'true') && (steps.integration_check.outputs.integration_status != 'error')
+        if: always() && steps.health_check.outputs.status != 'error'
         uses: actions/github-script@v9
         with:
           script: |
             const { data } = await github.rest.issues.listForRepo({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              labels: ['frontend-backend-link', 'monitoring', 'bug'],
+              labels: ['link-check', 'monitoring'],
               state: 'open'
             });
 
             const existingIssue = data.find(issue =>
-              issue.title.includes('Frontend-Backend Connection Failed')
+              issue.title.includes('Frontend-Backend Link Check Failed')
             );
 
             if (!existingIssue) {
-              core.info('No hay issue abierto para cerrar.');
+              core.info('No open issue to close.');
               return;
             }
 
@@ -570,7 +207,7 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: existingIssue.number,
-              body: `✅ Recuperado automáticamente en ${new Date().toISOString()}\n\nWorkflow run: ${runUrl}`
+              body: `Recovered automatically at ${new Date().toISOString()}\n\nWorkflow run: ${runUrl}`
             });
 
             await github.rest.issues.update({
@@ -580,83 +217,17 @@ jobs:
               state: 'closed'
             });
 
-            core.notice(`Issue #${existingIssue.number} cerrado por recuperación.`);
+            core.notice(`Issue #${existingIssue.number} closed by recovery.`);
 
       - name: Summary
         if: always()
-        shell: pwsh
         run: |
-          # Build summary with simple string concatenation (YAML-safe)
-          $lines = @()
-          $lines += "### 🔗 Frontend-Backend Link Check Summary"
-          $lines += ""
-          $lines += "**Timestamp:** $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssZ')"
-          $lines += ""
+          STATUS="${{ steps.health_check.outputs.status }}"
+          HTTP_CODE="${{ steps.health_check.outputs.http_code }}"
           
-          # Frontend Status
-          $frontendAccessible = "${{ steps.frontend_check.outputs.frontend_accessible }}"
-          $frontendStatus = "${{ steps.frontend_check.outputs.frontend_status }}"
-          if ($frontendAccessible -eq "true") {
-            $lines += "✅ **Frontend:** Accessible (HTTP $frontendStatus)"
-          } else {
-            $lines += "❌ **Frontend:** Not Accessible (HTTP $frontendStatus)"
-          }
-          
-          # Backend Status
-          $backendAccessible = "${{ steps.backend_check.outputs.backend_accessible }}"
-          $backendStatus = "${{ steps.backend_check.outputs.backend_status }}"
-          $healthStatus = "${{ steps.backend_check.outputs.health_status }}"
-          $tunnelDetected = "${{ steps.tunnel_check.outputs.tunnel_detected }}"
-          $tunnelUrl = "${{ steps.tunnel_check.outputs.tunnel_url }}"
-          $recoveryAttempted = "${{ steps.tunnel_recovery.outputs.recovery_attempted }}"
-          $recoveryTime = "${{ steps.tunnel_recovery.outputs.recovery_time }}"
-          $recoverySuccessful = "${{ steps.tunnel_recovery.outputs.recovery_successful }}"
-          
-          if ($backendAccessible -eq "true") {
-            $lines += "✅ **Backend:** Healthy (HTTP $backendStatus)"
-            $lines += "   - Health Status: $healthStatus"
-          } else {
-            $lines += "❌ **Backend:** Not Accessible (HTTP $backendStatus)"
-            if ($tunnelDetected -eq "true") {
-              $lines += "   - 🔍 Túnel Cloudflare detectado: ``$tunnelUrl``"
-              if ($recoveryAttempted -eq "true") {
-                $lines += "   - 🔄 Recuperación intentada: $recoveryTime"
-                if ($recoverySuccessful -eq "true") {
-                  $lines += "   - ✅ Recuperación exitosa"
-                } else {
-                  $lines += "   - ❌ Recuperación fallida (se requiere intervención manual)"
-                }
-              }
-            }
-          }
-          
-          # Integration Status
-          $integrationStatus = "${{ steps.integration_check.outputs.integration_status }}"
-          $backendUrl = "${{ steps.integration_check.outputs.backend_url }}"
-          $corsConfigured = "${{ steps.cors_check.outputs.cors_configured }}"
-          
-          $lines += ""
-          $lines += "**Integration Status:** $integrationStatus"
-          $lines += "**Backend URL:** ``$backendUrl``"
-          if ($corsConfigured) {
-            $lines += "**CORS:** $corsConfigured"
-          }
-          
-          # Overall Status
-          $lines += ""
-          if ($frontendAccessible -eq "true" -and $backendAccessible -eq "true") {
-            $lines += "### ✅ Overall Status: HEALTHY"
-            $lines += "Frontend y Backend están conectados y funcionando correctamente."
-          } elseif ($recoverySuccessful -eq "true") {
-            $lines += "### ✅ Overall Status: RECOVERED"
-            $lines += "El túnel fue recuperado automáticamente."
-          } else {
-            $lines += "### ❌ Overall Status: DEGRADED"
-            $lines += "Hay problemas con la conexión Frontend-Backend."
-            if ($tunnelDetected -eq "true") {
-              $lines += ""
-              $lines += "**Acción sugerida:** Ejecutar manualmente el workflow 'Update Cloudflare Tunnel'"
-            }
-          }
-          
-          $lines -join "`n" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Encoding utf8 -Append
+          {
+            echo "### Frontend-Backend Link Check"
+            echo "**Status:** $STATUS"
+            echo "**HTTP Code:** $HTTP_CODE"
+            echo "**Timestamp:** $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          } >> "$GITHUB_STEP_SUMMARY"

@@ -36,7 +36,7 @@ concurrency:
 jobs:
   monitor-brou:
     if: ${{ vars.ENABLE_BROU_MONITOR == 'true' || github.event_name == 'workflow_dispatch' }}
-    runs-on: [self-hosted, sifu-local]
+    runs-on: ubuntu-latest
     timeout-minutes: 5
 
     steps:
@@ -45,94 +45,97 @@ jobs:
 
       - name: Check BROU Health
         id: brou_check
-        shell: pwsh
         run: |
-          # Configurar variables
-          $FailOnEmpty = "${{ github.event.inputs.fail_on_empty }}"
-          if ([string]::IsNullOrEmpty($FailOnEmpty)) { $FailOnEmpty = "true" }
-          $MaxAgeMinutes = "${{ github.event.inputs.max_age_minutes }}"
-          if ([string]::IsNullOrEmpty($MaxAgeMinutes)) { $MaxAgeMinutes = "60" }
-          $BrouEndpoint = "${{ secrets.VITE_PUBLIC_API_URL }}/api/brou/current?full=true"
+          # Configuration
+          FAIL_ON_EMPTY="${{ github.event.inputs.fail_on_empty }}"
+          [ -z "$FAIL_ON_EMPTY" ] && FAIL_ON_EMPTY="true"
+          MAX_AGE="${{ github.event.inputs.max_age_minutes }}"
+          [ -z "$MAX_AGE" ] && MAX_AGE="60"
+          BROU_ENDPOINT="${{ secrets.VITE_PUBLIC_API_URL }}/brou/current?full=true"
           
-          Write-Host "Configuración:"
-          Write-Host "- FAIL_ON_EMPTY: $FailOnEmpty"
-          Write-Host "- MAX_AGE_MINUTES: $MaxAgeMinutes"
-          Write-Host "- BROU_ENDPOINT: $BrouEndpoint"
+          echo "Configuration:"
+          echo "- FAIL_ON_EMPTY: $FAIL_ON_EMPTY"
+          echo "- MAX_AGE_MINUTES: $MAX_AGE"
+          echo "- BROU_ENDPOINT: $BROU_ENDPOINT"
           
-          # Hacer request a BROU endpoint
-          Write-Host "Consultando BROU endpoint en producción..."
-          try {
-            $response = Invoke-WebRequest -Uri $BrouEndpoint -UseBasicParsing -TimeoutSec 30
-            $HttpStatus = $response.StatusCode
-            $Body = $response.Content
-          } catch {
-            $HttpStatus = if ($_.Exception.Response) { [int]$_.Exception.Response.StatusCode } else { 0 }
-            $Body = $_.Exception.Message
-            Write-Host "❌ ERROR: BROU endpoint retornó HTTP $HttpStatus"
-            echo "status=error" >> $env:GITHUB_OUTPUT
-            echo "error_type=http_error" >> $env:GITHUB_OUTPUT
-            echo "http_status=$HttpStatus" >> $env:GITHUB_OUTPUT
+          # Make request to BROU endpoint
+          echo "Querying BROU endpoint in production..."
+          HTTP_STATUS=0
+          BODY=""
+          
+          RESPONSE=$(curl -s -w "\n%{http_code}" --max-time 30 "$BROU_ENDPOINT" 2>/dev/null) || true
+          HTTP_STATUS=$(echo "$RESPONSE" | tail -1)
+          BODY=$(echo "$RESPONSE" | sed '$d')
+          
+          echo "HTTP Status: $HTTP_STATUS"
+          
+          if [ "$HTTP_STATUS" -lt 200 ] || [ "$HTTP_STATUS" -ge 500 ] 2>/dev/null; then
+            echo "ERROR: BROU endpoint returned HTTP $HTTP_STATUS"
+            echo "status=error" >> "$GITHUB_OUTPUT"
+            echo "error_type=http_error" >> "$GITHUB_OUTPUT"
+            echo "http_status=$HTTP_STATUS" >> "$GITHUB_OUTPUT"
             exit 1
-          }
+          fi
           
-          Write-Host "HTTP Status: $HttpStatus"
+          # Parse JSON response
+          DATA_COUNT=$(echo "$BODY" | python3 -c "
+          import json, sys
+          try:
+              data = json.load(sys.stdin)
+              dl = data.get('data', [])
+              print(len(dl) if dl else 0)
+          except: print(0)
+          " 2>/dev/null || echo 0)
           
-          # Parsear respuesta JSON
-          try {
-            $data = $Body | ConvertFrom-Json
-            $dataList = $data.data
-            $DataCount = if ($dataList) { $dataList.Count } else { 0 }
-            $Timestamp = $data.timestamp
+          TIMESTAMP=$(echo "$BODY" | python3 -c "
+          import json, sys
+          try:
+              data = json.load(sys.stdin)
+              print(data.get('timestamp', ''))
+          except: print('')
+          " 2>/dev/null || echo "")
+          
+          echo "BROU Data Count: $DATA_COUNT"
+          echo "Timestamp: $TIMESTAMP"
+          echo "data_count=$DATA_COUNT" >> "$GITHUB_OUTPUT"
+          echo "timestamp=$TIMESTAMP" >> "$GITHUB_OUTPUT"
+          
+          # Check for empty data
+          if [ "$DATA_COUNT" -eq 0 ] && [ "$FAIL_ON_EMPTY" = "true" ]; then
+            echo "ERROR: BROU returned 0 currencies (empty data)"
+            echo "status=error" >> "$GITHUB_OUTPUT"
+            echo "error_type=empty_data" >> "$GITHUB_OUTPUT"
+            exit 1
+          fi
+          
+          # Check data freshness if timestamp available
+          if [ -n "$TIMESTAMP" ]; then
+            AGE_MINUTES=$(python3 -c "
+          from datetime import datetime, timezone
+          try:
+              dt = datetime.fromisoformat('$TIMESTAMP'.replace('Z','+00:00'))
+              age = int((datetime.now(timezone.utc) - dt).total_seconds() / 60)
+              print(age)
+          except: print(-1)
+          " 2>/dev/null || echo -1)
             
-            Write-Host "📊 BROU Data Count: $DataCount"
-            Write-Host "🕒 Timestamp: $Timestamp"
+            echo "Data is $AGE_MINUTES minutes old"
+            echo "age_minutes=$AGE_MINUTES" >> "$GITHUB_OUTPUT"
             
-            echo "data_count=$DataCount" >> $env:GITHUB_OUTPUT
-            echo "timestamp=$Timestamp" >> $env:GITHUB_OUTPUT
-          } catch {
-            Write-Host "❌ ERROR: Falló el parsing de la respuesta JSON"
-            echo "status=error" >> $env:GITHUB_OUTPUT
-            echo "error_type=json_parse_error" >> $env:GITHUB_OUTPUT
-            exit 1
-          }
-          
-          # Verificar si hay datos
-          if ($DataCount -eq 0 -and $FailOnEmpty -eq "true") {
-            Write-Host "❌ ERROR: BROU retornó 0 monedas (data vacía)"
-            echo "status=error" >> $env:GITHUB_OUTPUT
-            echo "error_type=empty_data" >> $env:GITHUB_OUTPUT
-            exit 1
-          }
-          
-          # Verificar frescura de datos si hay timestamp
-          if (![string]::IsNullOrEmpty($Timestamp)) {
-            try {
-              $DataTime = [DateTime]::Parse($Timestamp).ToUniversalTime()
-              $CurrentTime = [DateTime]::UtcNow
-              $AgeMinutes = [int]($CurrentTime - $DataTime).TotalMinutes
-              
-              Write-Host "⏱️  Datos tienen $AgeMinutes minutos de antigüedad"
-              echo "age_minutes=$AgeMinutes" >> $env:GITHUB_OUTPUT
-              
-              if ($AgeMinutes -gt [int]$MaxAgeMinutes) {
-                Write-Host "⚠️  ADVERTENCIA: Datos tienen más de $MaxAgeMinutes minutos ($AgeMinutes minutos)"
-                echo "status=warning" >> $env:GITHUB_OUTPUT
-                echo "max_age=$MaxAgeMinutes" >> $env:GITHUB_OUTPUT
-              } else {
-                Write-Host "✅ Datos están frescos ($AgeMinutes minutos)"
-                echo "status=success" >> $env:GITHUB_OUTPUT
-                echo "max_age=$MaxAgeMinutes" >> $env:GITHUB_OUTPUT
-              }
-            } catch {
-              Write-Host "⚠️  No se pudo parsear timestamp: $Timestamp"
-              echo "status=warning" >> $env:GITHUB_OUTPUT
-              echo "timestamp_error=true" >> $env:GITHUB_OUTPUT
-            }
-          } else {
-            Write-Host "ℹ️  No hay timestamp disponible para verificar frescura"
-            echo "status=success" >> $env:GITHUB_OUTPUT
-            echo "age_minutes=0" >> $env:GITHUB_OUTPUT
-          }
+            if [ "$AGE_MINUTES" -gt "$MAX_AGE" ] 2>/dev/null; then
+              echo "WARNING: Data is older than $MAX_AGE minutes ($AGE_MINUTES minutes)"
+              echo "status=warning" >> "$GITHUB_OUTPUT"
+              echo "max_age=$MAX_AGE" >> "$GITHUB_OUTPUT"
+            else
+              echo "Data is fresh ($AGE_MINUTES minutes)"
+              echo "status=success" >> "$GITHUB_OUTPUT"
+              echo "max_age=$MAX_AGE" >> "$GITHUB_OUTPUT"
+            fi
+          else
+            echo "No timestamp available to check freshness"
+            echo "status=success" >> "$GITHUB_OUTPUT"
+            echo "age_minutes=0" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Create Issue on Failure
         if: failure() && steps.brou_check.outputs.status == 'error'
@@ -166,7 +169,7 @@ jobs:
 
             const currentFailureStreak = previousConsecutiveFailures + 1;
             if (currentFailureStreak < threshold) {
-              core.notice(`Issue omitido: racha de fallos ${currentFailureStreak}/${threshold}`);
+              core.notice(`Issue skipped: failure streak ${currentFailureStreak}/${threshold}`);
               return;
             }
 
@@ -187,7 +190,7 @@ jobs:
               const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
               
               const bodyLines = [
-                '## ❌ BROU Health Check Failed',
+                '## BROU Health Check Failed',
                 '',
                 `**Timestamp:** ${new Date().toISOString()}`,
                 `**Workflow Run:** [View Details](${runUrl})`,
@@ -197,10 +200,10 @@ jobs:
                 `- **HTTP Status:** ${httpStatus}`,
                 '',
                 '### Actions Required',
-                '1. Verificar estado del servicio BROU',
-                '2. Revisar logs del backend',
-                '3. Verificar conectividad con fuente BROU',
-                '4. Ejecutar refresh manual si es necesario',
+                '1. Check BROU service status',
+                '2. Review backend logs on Render',
+                '3. Verify connectivity with BROU source',
+                '4. Run manual refresh if needed',
                 '',
                 '---',
                 '_Issue created automatically by BROU Health Monitor_'
@@ -209,7 +212,7 @@ jobs:
               await github.rest.issues.create({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                title: '🚨 BROU Health Check Failed',
+                title: 'BROU Health Check Failed',
                 body: bodyLines.join('\n'),
                 labels: ['BROU', 'monitoring', 'bug', 'urgent']
               });
@@ -232,7 +235,7 @@ jobs:
             );
 
             if (!existingIssue) {
-              core.info('No hay issue abierto para cerrar.');
+              core.info('No open issue to close.');
               return;
             }
 
@@ -241,7 +244,7 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: existingIssue.number,
-              body: `✅ Recuperado automáticamente en ${new Date().toISOString()}\n\nWorkflow run: ${runUrl}`
+              body: `Recovered automatically at ${new Date().toISOString()}\n\nWorkflow run: ${runUrl}`
             });
 
             await github.rest.issues.update({
@@ -251,30 +254,28 @@ jobs:
               state: 'closed'
             });
 
-            core.notice(`Issue #${existingIssue.number} cerrado por recuperación.`);
+            core.notice(`Issue #${existingIssue.number} closed by recovery.`);
 
       - name: Summary
         if: always()
-        shell: pwsh
         run: |
-          $lines = @()
-          $lines += "### BROU Health Monitor Summary"
-          $lines += "**Status:** ${{ steps.brou_check.outputs.status }}"
-          $lines += "**Data Count:** ${{ steps.brou_check.outputs.data_count }}"
-          $lines += "**Age:** ${{ steps.brou_check.outputs.age_minutes }} minutes"
-          $lines += "**Timestamp:** $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssZ')"
-          $lines += ""
+          {
+            echo "### BROU Health Monitor Summary"
+            echo "**Status:** ${{ steps.brou_check.outputs.status }}"
+            echo "**Data Count:** ${{ steps.brou_check.outputs.data_count }}"
+            echo "**Age:** ${{ steps.brou_check.outputs.age_minutes }} minutes"
+            echo "**Timestamp:** $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            echo ""
+          } >> "$GITHUB_STEP_SUMMARY"
           
-          $status = "${{ steps.brou_check.outputs.status }}"
-          if ($status -eq "error") {
-            $lines += "**❌ Status:** FAILED"
-            $lines += "**Error Type:** ${{ steps.brou_check.outputs.error_type }}"
-          } elseif ($status -eq "warning") {
-            $lines += "**⚠️ Status:** WARNING"
-            $lines += "**Issue:** Data is stale (age: ${{ steps.brou_check.outputs.age_minutes }} min, max: ${{ steps.brou_check.outputs.max_age }} min)"
-          } else {
-            $lines += "**✅ Status:** HEALTHY"
-            $lines += "**Data Status:** ${{ steps.brou_check.outputs.data_count }} currencies available"
-          }
-          
-          $lines -join "`n" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Encoding utf8 -Append
+          STATUS="${{ steps.brou_check.outputs.status }}"
+          if [ "$STATUS" = "error" ]; then
+            echo "**Status:** FAILED" >> "$GITHUB_STEP_SUMMARY"
+            echo "**Error Type:** ${{ steps.brou_check.outputs.error_type }}" >> "$GITHUB_STEP_SUMMARY"
+          elif [ "$STATUS" = "warning" ]; then
+            echo "**Status:** WARNING" >> "$GITHUB_STEP_SUMMARY"
+            echo "**Issue:** Data is stale (age: ${{ steps.brou_check.outputs.age_minutes }} min, max: ${{ steps.brou_check.outputs.max_age }} min)" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "**Status:** HEALTHY" >> "$GITHUB_STEP_SUMMARY"
+            echo "**Data Status:** ${{ steps.brou_check.outputs.data_count }} currencies available" >> "$GITHUB_STEP_SUMMARY"
+          fi

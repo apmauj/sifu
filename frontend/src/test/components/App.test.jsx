@@ -155,8 +155,9 @@ describe('App Component', () => {
   describe('Footer', () => {
     it('renders footer basics', async () => {
       await renderAsync(<TestWrapper><App /></TestWrapper>)
-      expect(screen.getByText(/Sistema de Índices Financieros del Uruguay/i)).toBeInTheDocument()
-      expect(screen.getByText(/Fuentes oficiales/i)).toBeInTheDocument()
+      // Use getAllByText to be resilient if BackendWakeOverlay also contains this text
+      expect(screen.getAllByText(/Sistema de Índices Financieros del Uruguay/i).length).toBeGreaterThan(0)
+      expect(screen.getAllByText(/Fuentes oficiales/i).length).toBeGreaterThan(0)
       expect(screen.getByRole('link', { name: /BCU/i })).toBeInTheDocument()
     })
   })

@@ -15,7 +15,7 @@ on:
   workflow_dispatch:
     inputs:
       backend-fail-on:
-        description: 'Backend severidad mínima para fallar (critical|high|medium|low|none)'
+        description: 'Backend severidad minima para fallar (critical|high|medium|low|none)'
         required: false
         default: 'none'
 
@@ -31,7 +31,7 @@ concurrency:
 
 jobs:
   backend-pip-audit:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v6
@@ -40,109 +40,72 @@ jobs:
           python-version: '3.12'
       
       - name: Install deps
-        shell: pwsh
         run: |
           python -m pip install --upgrade pip 'setuptools>=78.1.1'
-          python -m pip install -r requirements.txt 2>$null
-          if (Test-Path "requirements-dev.txt") { python -m pip install -r requirements-dev.txt 2>$null }
-          python -m pip install --upgrade pip-audit
+          pip install -r requirements.txt 2>/dev/null || true
+          if [ -f requirements-dev.txt ]; then pip install -r requirements-dev.txt 2>/dev/null || true; fi
+          pip install --upgrade pip-audit
       
       - name: pip-audit (requirements)
         id: audit_files
-        shell: pwsh
         run: |
-          python -m pip_audit -r requirements-core.txt -r requirements-dev.txt -r requirements.txt -f json 2>$null | Out-File -FilePath pip_audit_requirements.json -Encoding utf8
-          $exitCode = $LASTEXITCODE
-          echo "exit_code=$exitCode" >> $env:GITHUB_OUTPUT
-          # No cortar aquí: el umbral se evalúa en el step siguiente.
+          python -m pip_audit -r requirements-core.txt -r requirements-dev.txt -r requirements.txt -f json > pip_audit_requirements.json 2>/dev/null || true
+          echo "exit_code=$?" >> "$GITHUB_OUTPUT"
           exit 0
       
       - name: pip-audit (installed)
         id: audit_installed
-        shell: pwsh
         run: |
-          python -m pip_audit -l -f json 2>$null | Out-File -FilePath pip_audit_installed.json -Encoding utf8
-          $exitCode = $LASTEXITCODE
-          echo "exit_code=$exitCode" >> $env:GITHUB_OUTPUT
-          # No cortar aquí: el umbral se evalúa en el step siguiente.
+          python -m pip_audit -l -f json > pip_audit_installed.json 2>/dev/null || true
+          echo "exit_code=$?" >> "$GITHUB_OUTPUT"
           exit 0
       
-      - name: Evaluar severidad y decidir
-        shell: pwsh
+      - name: Evaluate severity
         env:
           THRESHOLD: ${{ github.event.inputs.backend-fail-on || 'high' }}
         run: |
-          $Threshold = $env:THRESHOLD
-          if ([string]::IsNullOrEmpty($Threshold)) { $Threshold = "high" }
-          Write-Host "Umbral de fallo (backend): $Threshold"
+          THRESHOLD="${THRESHOLD:-high}"
+          echo "Failure threshold (backend): $THRESHOLD"
           
-          # Mapear severidades a números
-          function Get-SeverityRank($sev) {
-            switch ($sev.ToLower()) {
-              "critical" { return 5 }
-              "high" { return 4 }
-              "medium" { return 3 }
-              "low" { return 2 }
-              "none" { return 1 }
-              default { return 0 }
-            }
-          }
+          # Parse vulnerabilities and check severity
+          FAIL_COUNT=$(python3 -c "
+          import json, sys
+          threshold_rank = {'critical': 5, 'high': 4, 'medium': 3, 'low': 2, 'none': 1}
+          target = threshold_rank.get('$THRESHOLD'.lower(), 4)
+          total = 0
+          fail = 0
+          for f in ['pip_audit_requirements.json', 'pip_audit_installed.json']:
+              try:
+                  data = json.load(open(f))
+                  pkgs = data.get('dependencies', data) if isinstance(data, dict) else data
+                  if isinstance(pkgs, dict): pkgs = pkgs.values()
+                  for pkg in (pkgs if isinstance(pkgs, list) else [pkgs]):
+                      vulns = pkg.get('vulns', []) if isinstance(pkg, dict) else []
+                      for v in vulns:
+                          sev = v.get('severity', {})
+                          if isinstance(sev, dict): sev = sev.get('value', '')
+                          sev = str(sev).lower()
+                          if sev not in threshold_rank: sev = 'unknown'
+                          total += 1
+                          if threshold_rank.get(sev, 0) >= target: fail += 1
+              except: pass
+          print(fail)
+          " 2>/dev/null || echo 0)
           
-          $thresholdNum = Get-SeverityRank $Threshold
+          echo "Total vulnerabilities >= threshold: $FAIL_COUNT"
           
-          # Parsear vulnerabilidades de ambos archivos
-          $vulns = @()
-          foreach ($file in @("pip_audit_requirements.json", "pip_audit_installed.json")) {
-            if (Test-Path $file) {
-              try {
-                $content = Get-Content $file -Raw | ConvertFrom-Json
-                $packages = if ($content.dependencies) { $content.dependencies } else { $content }
-                foreach ($pkg in $packages) {
-                  foreach ($vuln in $pkg.vulns) {
-                    $severity = if ($vuln.severity.value) { $vuln.severity.value } else { $vuln.severity }
-                    if ([string]::IsNullOrEmpty($severity)) { $severity = "unknown" }
-                    $vulns += @{
-                      package = $pkg.name
-                      id = $vuln.id
-                      severity = $severity.ToLower()
-                      fix_versions = $vuln.fix_versions
-                    }
-                  }
-                }
-              } catch {
-                Write-Host "Warning: Could not parse $file"
-              }
-            }
-          }
+          {
+            echo "### Backend pip-audit"
+            echo "Threshold: $THRESHOLD"
+            echo "Vulnerabilities >= threshold: $FAIL_COUNT"
+          } >> "$GITHUB_STEP_SUMMARY"
           
-          # Guardar lista plana para artefactos
-          $vulns | ConvertTo-Json -Depth 5 | Out-File -FilePath backend_vulns_flat.json -Encoding utf8
-          
-          $total = $vulns.Count
-          $failCount = 0
-          foreach ($v in $vulns) {
-            $rank = Get-SeverityRank $v.severity
-            if ($rank -ge $thresholdNum) { $failCount++ }
-          }
-          
-          Write-Host "Total vulnerabilidades detectadas: $total"
-          Write-Host "Vulnerabilidades >= umbral: $failCount"
-          
-          # Summary
-          $summary = @()
-          $summary += "### Backend pip-audit"
-          $summary += "Umbral: $Threshold"
-          $summary += "Total: $total"
-          $summary += ">= Umbral: $failCount"
-          
-          if ($failCount -gt 0) {
-            $summary += "Backend: FAIL ($failCount con severidad >= $Threshold)"
-            $summary -join "`n" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Encoding utf8 -Append
+          if [ "$FAIL_COUNT" -gt 0 ]; then
+            echo "Backend: FAIL ($FAIL_COUNT with severity >= $THRESHOLD)" >> "$GITHUB_STEP_SUMMARY"
             exit 1
-          } else {
-            $summary += "Backend: PASS (sin vulnerabilidades >= $Threshold)"
-            $summary -join "`n" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Encoding utf8 -Append
-          }
+          else
+            echo "Backend: PASS (no vulnerabilities >= $THRESHOLD)" >> "$GITHUB_STEP_SUMMARY"
+          fi
       
       - uses: actions/upload-artifact@v7
         if: always()
@@ -151,68 +114,56 @@ jobs:
           path: |
             pip_audit_requirements.json
             pip_audit_installed.json
-            backend_vulns_flat.json
 
   frontend-npm-audit:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     timeout-minutes: 8
     defaults:
       run:
         working-directory: frontend
     steps:
       - uses: actions/checkout@v6
-      
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
       - name: Install deps
-        shell: pwsh
-        run: |
-          # Use --ignore-scripts to skip husky install (bash syntax incompatible with Windows)
-          npm ci --ignore-scripts
+        run: npm ci --ignore-scripts
       
       - name: npm audit (prod)
         id: audit
-        shell: pwsh
         run: |
-          $exitCode = 0
-          npm audit --omit=dev --json 2>$null | Out-File -FilePath audit.prod.json -Encoding utf8
-          if ($LASTEXITCODE -ne 0) { $exitCode = $LASTEXITCODE }
-          echo "exit_code=$exitCode" >> $env:GITHUB_OUTPUT
-          
-          # También audit completo para referencia
-          npm audit --json 2>$null | Out-File -FilePath audit.all.json -Encoding utf8
+          npm audit --omit=dev --json > audit.prod.json 2>/dev/null || true
+          npm audit --json > audit.all.json 2>/dev/null || true
           exit 0
       
       - name: Fail on High/Critical
-        shell: pwsh
         run: |
-          if (-not (Test-Path "audit.prod.json")) {
-            Write-Host "No audit file found, skipping"
+          if [ ! -f audit.prod.json ]; then
+            echo "No audit file found, skipping"
             exit 0
-          }
+          fi
           
-          try {
-            $audit = Get-Content audit.prod.json -Raw | ConvertFrom-Json
-            $vulns = @()
-            if ($audit.vulnerabilities) {
-              foreach ($key in $audit.vulnerabilities.PSObject.Properties.Name) {
-                $vulns += $audit.vulnerabilities.$key
-              }
-            }
-            
-            $hc = $vulns | Where-Object { $_.severity -in @('high', 'critical') }
-            $hcCount = ($hc | Measure-Object).Count
-            
-            if ($hcCount -gt 0) {
-              Write-Host "FAIL: $hcCount High/Critical vulnerabilities found"
-              echo "Frontend: FAIL ($hcCount High/Critical)" >> $env:GITHUB_STEP_SUMMARY
-              exit 1
-            }
-            
-            Write-Host "Frontend PASS sin High/Critical"
-            echo "Frontend: PASS (sin High/Critical)" >> $env:GITHUB_STEP_SUMMARY
-          } catch {
-            Write-Host "Warning: Could not parse audit.prod.json - $_"
-            echo "Frontend: PASS (audit parse warning)" >> $env:GITHUB_STEP_SUMMARY
-          }
+          HC=$(node -e "
+            try {
+              const a = require('./audit.prod.json');
+              let c = 0;
+              if (a.vulnerabilities) Object.values(a.vulnerabilities).forEach(v => { if (v.severity==='high'||v.severity==='critical') c++; });
+              console.log(c);
+            } catch { console.log(0); }
+          " 2>/dev/null || echo 0)
+          
+          if [ "$HC" -gt 0 ]; then
+            echo "FAIL: $HC High/Critical vulnerabilities found"
+            echo "Frontend: FAIL ($HC High/Critical)" >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+          
+          echo "Frontend PASS"
+          echo "Frontend: PASS (no High/Critical)" >> "$GITHUB_STEP_SUMMARY"
       
       - uses: actions/upload-artifact@v7
         if: always()
@@ -222,26 +173,24 @@ jobs:
           if-no-files-found: ignore
 
   summary:
-    runs-on: [self-hosted, sifu-local]
+    runs-on: ubuntu-latest
     needs: [ backend-pip-audit, frontend-npm-audit ]
     if: always()
     steps:
       - name: Build Summary
-        shell: pwsh
         run: |
-          $lines = @()
-          $lines += "### Security Audit Workflow"
-          $lines += "Backend: ${{ needs.backend-pip-audit.result }}"
-          $lines += "Frontend: ${{ needs.frontend-npm-audit.result }}"
+          {
+            echo "### Security Audit Workflow"
+            echo "Backend: ${{ needs.backend-pip-audit.result }}"
+            echo "Frontend: ${{ needs.frontend-npm-audit.result }}"
+          } >> "$GITHUB_STEP_SUMMARY"
           
-          $backendResult = "${{ needs.backend-pip-audit.result }}"
-          $frontendResult = "${{ needs.frontend-npm-audit.result }}"
+          BACKEND="${{ needs.backend-pip-audit.result }}"
+          FRONTEND="${{ needs.frontend-npm-audit.result }}"
           
-          if ($backendResult -ne "success" -or $frontendResult -ne "success") {
-            $lines += "**Overall: FAILED**"
-            $lines -join "`n" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Encoding utf8 -Append
+          if [ "$BACKEND" != "success" ] || [ "$FRONTEND" != "success" ]; then
+            echo "**Overall: FAILED**" >> "$GITHUB_STEP_SUMMARY"
             exit 1
-          }
+          fi
           
-          $lines += "**Overall: PASS** ✅"
-          $lines -join "`n" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Encoding utf8 -Append
+          echo "**Overall: PASS**" >> "$GITHUB_STEP_SUMMARY"
