@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """
 Script de validación de deploy para SIFU
-Verifica que todas las configuraciones de seguridad estén correctas antes del deploy
+Verifica que todas las configuraciones estén correctas antes del deploy en Render
 """
 
 import sys
+import os
 import subprocess
 from pathlib import Path
 
@@ -26,13 +27,11 @@ def validate_environment():
     """Valida que el entorno esté correctamente configurado"""
     print("🔍 Validando entorno de deploy...")
 
-    # Verificar archivos críticos
+    # Verificar archivos críticos para Render
     required_files = [
-        ".env",
         "requirements.txt",
-        "secret_manager.py",
-        "docker-compose.yml",
-        ".dockerignore",
+        "render.yaml",
+        "runtime.txt",
     ]
 
     missing_files = []
@@ -44,25 +43,45 @@ def validate_environment():
         print(f"❌ Archivos faltantes: {', '.join(missing_files)}")
         return False
 
+    # Verificar runtime.txt tiene formato correcto (solo versión, sin prefijo python-)
+    if Path("runtime.txt").exists():
+        content = Path("runtime.txt").read_text().strip()
+        if content.startswith("python-"):
+            print(f"❌ runtime.txt tiene formato Heroku ('{content}'). Usar solo la versión (ej: '3.12.4')")
+            return False
+
     print("✅ Archivos críticos presentes")
     return True
 
 
-def validate_secrets():
-    """Valida la configuración de secrets"""
-    print("🔐 Validando configuración de secrets...")
+def validate_env_vars():
+    """Valida que las variables de entorno críticas estén definidas"""
+    print("🔐 Validando variables de entorno...")
 
-    # Verificar que secret_manager.py existe y funciona
-    if not Path("secret_manager.py").exists():
-        print("❌ secret_manager.py no encontrado")
-        return False
+    # Env vars que deberían estar configuradas en Render Dashboard
+    critical_vars = ["ALLOW_ORIGINS"]
+    recommended_vars = ["PYTHON_VERSION"]
 
-    success, stdout, stderr = run_command("python secret_manager.py --validate")
-    if not success:
-        print(f"❌ Error en validación de secrets: {stderr}")
-        return False
+    missing_critical = []
+    for var in critical_vars:
+        if not os.environ.get(var):
+            missing_critical.append(var)
 
-    print("✅ Secrets configurados correctamente")
+    if missing_critical:
+        print(f"⚠️  Variables críticas no definidas en entorno: {', '.join(missing_critical)}")
+        print("   Configúralas en Render Dashboard → Environment")
+        # No fallar — en CI estas vars no están, solo importan en Render
+
+    missing_recommended = []
+    for var in recommended_vars:
+        if not os.environ.get(var):
+            missing_recommended.append(var)
+
+    if missing_recommended:
+        print(f"💡 Variables recomendadas no definidas: {', '.join(missing_recommended)}")
+
+    if not missing_critical:
+        print("✅ Variables de entorno críticas presentes")
     return True
 
 
@@ -119,40 +138,6 @@ def validate_dependencies():
     return True
 
 
-def validate_docker():
-    """Valida la configuración de Docker"""
-    print("🐳 Validando configuración Docker...")
-
-    # Verificar que docker-compose.yml use .env
-    with open("docker-compose.yml", "r") as f:
-        compose_content = f.read()
-
-    if "env_file:" not in compose_content:
-        print("❌ docker-compose.yml no está configurado para usar .env file")
-        return False
-
-    # Verificar .dockerignore
-    if not Path(".dockerignore").exists():
-        print("❌ .dockerignore no encontrado")
-        return False
-
-    with open(".dockerignore", "r") as f:
-        dockerignore = f.read()
-
-    sensitive_files = [".env", "__pycache__", "*.pyc"]
-    missing_ignores = []
-
-    for file in sensitive_files:
-        if file not in dockerignore:
-            missing_ignores.append(file)
-
-    if missing_ignores:
-        print(f"⚠️  .dockerignore podría no excluir: {', '.join(missing_ignores)}")
-
-    print("✅ Configuración Docker validada")
-    return True
-
-
 def validate_build():
     """Valida que el proyecto se pueda construir"""
     print("🔨 Validando construcción del proyecto...")
@@ -171,13 +156,12 @@ def validate_build():
 
 def main():
     """Función principal de validación"""
-    print("🚀 Iniciando validación de deploy para SIFU\n")
+    print("🚀 Iniciando validación de deploy para SIFU (Render)\n")
 
     validations = [
         ("Entorno", validate_environment),
-        ("Secrets", validate_secrets),
+        ("Env Vars", validate_env_vars),
         ("Dependencias", validate_dependencies),
-        ("Docker", validate_docker),
         ("Build", validate_build),
     ]
 
@@ -203,3 +187,4 @@ def main():
 
 if __name__ == "__main__":
     sys.exit(main())
+    

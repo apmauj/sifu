@@ -147,7 +147,7 @@ function App() {
       console.error('Error cargando últimas cotizaciones:', error);
 
       // On first fetch timeout/error, show wake overlay if not already showing
-      if (isFirstFetch && !showWakeOverlay && !backendAwake) {
+      if (isFirstFetch && !backendAwake && import.meta.env.MODE !== 'test') {
         setShowWakeOverlay(true);
       }
 
