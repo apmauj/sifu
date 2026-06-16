@@ -63,7 +63,9 @@ class SimpleTOTP:
             logger.warning(
                 "Add this to your .env file: MONITORING_TOTP_SECRET=%s", self.secret
             )
-        
+        else:
+            logger.info(f"MONITORING_TOTP_SECRET loaded successfully (length={len(self.secret)}, starts={self.secret[:4]}...)")
+
         # Initialize TOTP with 30-second interval (standard)
         self.totp = pyotp.TOTP(self.secret)
         
