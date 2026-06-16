@@ -14,6 +14,11 @@ import time
 import os
 from dotenv import load_dotenv
 
+# Load environment variables from .env file
+# Try config/env/.env first, fall back to root for compatibility
+env_path = "config/env/.env" if os.path.exists("config/env/.env") else ".env"
+load_dotenv(env_path)
+
 from threading import Lock
 from threading import Lock as ThreadLock
 from src.application.bootstrap import perform_bootstrap
@@ -172,11 +177,6 @@ from src.infrastructure.correlation_middleware import (
 # Alert and dashboard services
 from src.application.alerts import alert_manager
 from src.domain.dashboard import dashboard_service
-
-# Load environment variables from .env file
-# Try config/env/.env first, fall back to root for compatibility
-env_path = "config/env/.env" if os.path.exists("config/env/.env") else ".env"
-load_dotenv(env_path)
 
 # Configure correlation logging
 setup_correlation_logging()
