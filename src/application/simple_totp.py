@@ -3,6 +3,7 @@ Simple TOTP Service for Monitoring Dashboard Access
 Provides lightweight authentication for internal monitoring without user management.
 """
 
+import code
 import os
 import pyotp
 import logging
@@ -104,6 +105,9 @@ class SimpleTOTP:
             # Track total attempts
             self.total_auth_attempts += 1
             
+            current_code = self.totp.now()
+            logger.info(f"TOTP debug: received={code}, current_server_code_starts={current_code[:2]}**, interval={int(time.time())//30}")
+
             # Verify code with ┬▒1 time window (┬▒30 seconds tolerance)
             is_valid = self.totp.verify(code, valid_window=1)
             
