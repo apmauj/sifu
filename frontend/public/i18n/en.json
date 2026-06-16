@@ -439,5 +439,11 @@
       "close": "Close",
       "refresh": "Refresh"
     }
+  },
+  "wake": {
+    "title": "Waking up the server",
+    "description": "The backend is starting up from sleep mode. This can take up to 30 seconds on the first request.",
+    "elapsed": "{elapsed}s elapsed...",
+    "dismiss": "Dismiss"
   }
 } 

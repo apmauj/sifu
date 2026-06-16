@@ -490,6 +490,12 @@
       "refresh": "Atualizar"
     }
   },
+  "wake": {
+    "title": "Acordando o servidor",
+    "description": "O backend está iniciando do modo de repouso. Isso pode levar até 30 segundos na primeira solicitação.",
+    "elapsed": "{elapsed}s decorridos...",
+    "dismiss": "Fechar"
+  },
   "monitoring": {
     "title": "Acesso ao Monitoramento",
     "subtitle": "Digite o código de 6 dígitos do seu aplicativo de autenticação",

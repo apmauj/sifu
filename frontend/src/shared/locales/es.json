@@ -490,6 +490,12 @@
       "refresh": "Actualizar"
     }
   },
+  "wake": {
+    "title": "Despertando el servidor",
+    "description": "El backend está iniciando desde modo reposo. Esto puede tardar hasta 30 segundos en la primera solicitud.",
+    "elapsed": "{elapsed}s transcurridos...",
+    "dismiss": "Cerrar"
+  },
   "monitoring": {
     "title": "Acceso al Monitoreo",
     "subtitle": "Ingresa el código de 6 dígitos de tu app de autenticación",

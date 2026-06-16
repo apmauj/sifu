@@ -444,5 +444,11 @@
       "close": "Cerrar",
       "refresh": "Actualizar"
     }
+  },
+  "wake": {
+    "title": "Despertando el servidor",
+    "description": "El backend está iniciando desde modo reposo. Esto puede tardar hasta 30 segundos en la primera solicitud.",
+    "elapsed": "{elapsed}s transcurridos...",
+    "dismiss": "Cerrar"
   }
 } 

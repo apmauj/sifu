@@ -490,6 +490,12 @@
       "refresh": "Refresh"
     }
   },
+  "wake": {
+    "title": "Waking up the server",
+    "description": "The backend is starting up from sleep mode. This can take up to 30 seconds on the first request.",
+    "elapsed": "{elapsed}s elapsed...",
+    "dismiss": "Dismiss"
+  },
   "monitoring": {
     "title": "Monitoring Access",
     "subtitle": "Enter the 6-digit code from your authentication app",
