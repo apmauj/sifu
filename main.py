@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+# ruff: noqa: E402
 from fastapi import FastAPI, HTTPException, Depends, BackgroundTasks, Request
 from contextlib import asynccontextmanager
 from fastapi.responses import JSONResponse
