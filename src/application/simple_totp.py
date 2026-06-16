@@ -3,7 +3,7 @@ Simple TOTP Service for Monitoring Dashboard Access
 Provides lightweight authentication for internal monitoring without user management.
 """
 
-import code
+import time
 import os
 import pyotp
 import logging
