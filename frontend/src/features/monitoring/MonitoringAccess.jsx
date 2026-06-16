@@ -36,11 +36,13 @@ const MonitoringAccess = ({ isOpen, onClose, onAccessGranted }) => {
     try {
       const baseUrl = import.meta.env.VITE_PUBLIC_API_URL || '';
       // baseUrl already includes /api suffix from build process
-      const response = await fetch(`${baseUrl}/monitoring/verify?code=${encodeURIComponent(code)}`, {
+      // Code is sent in POST body (not query param) to avoid appearing in server logs
+      const response = await fetch(`${baseUrl}/monitoring/verify`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
+        body: JSON.stringify({ code }),
       });
 
       if (response.ok) {

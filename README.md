@@ -106,10 +106,11 @@ Ver documentación interactiva en `/docs` (Swagger UI) o `/redoc`.
 
 ### Monitoreo (protegido con 2FA TOTP):
 
-- `POST /api/monitoring/verify` - Verificar codigo TOTP de 6 digitos
-- `GET /api/monitoring/status` - Dashboard de monitoreo (requiere sesion)
+- `POST /api/monitoring/verify` - Verificar codigo TOTP (body: `{"code": "123456"}`)
+- `GET /api/monitoring/status` - Dashboard de monitoreo (requiere sesion via header `Authorization: Bearer <token>`)
+- `GET /api/monitoring/session` - Verificar estado de sesion
+- `GET /api/monitoring/metrics` - Metricas de autenticacion (requiere sesion)
 - `GET /api/monitoring/setup` - Generar QR para configurar autenticador (solo development)
-- `GET /api/monitoring/metrics` - Metricas de autenticacion
 - `DELETE /api/monitoring/session` - Cerrar sesion
 
 ### Sistema:
@@ -160,18 +161,34 @@ El backend en Render Free Tier hiberna tras 15 min de inactividad. Un workflow d
 ## Autenticacion 2FA (TOTP)
 
 El acceso al dashboard de monitoreo esta protegido con autenticacion de dos factores (TOTP).
+Sin `MONITORING_TOTP_SECRET`, el backend genera un secreto nuevo en cada cold start de Render,
+lo que invalida la configuracion de tu app de autenticador.
 
-### Setup:
+### Setup en produccion (Render):
 
-1. Setear `MONITORING_TOTP_SECRET` en Render Dashboard (generar con `python -c "import pyotp; print(pyotp.random_base32())"`)
-2. En modo development, acceder a `http://localhost:8000/static/totp-setup.html` para escanear el QR
-3. En produccion, usar el secret para configurar manualmente la app de autenticador
+1. Generar un secret base32:
+   ```bash
+   python -c "import pyotp; print(pyotp.random_base32())"
+   ```
+2. Ir a **Render Dashboard → sifu-backend → Environment**
+3. Agregar variable: `MONITORING_TOTP_SECRET` = `<el-secret-generado>`
+4. Configurar la app de autenticador (Google Authenticator, Authy, etc.) con el secret:
+   - En development: acceder a `http://localhost:8000/static/totp-setup.html` para escanear el QR
+   - En produccion: agregar manualmente el secret como cuenta TOTP en la app
+5. Redeployar el backend en Render para que tome la nueva variable
 
 ### Acceso:
 
 1. Hacer click en el corazon del footer del sitio
 2. Ingresar codigo de 6 digitos de la app de autenticador
 3. Sesion valida por 1 hora (configurable via `MONITORING_SESSION_HOURS`)
+
+### Seguridad:
+
+- El codigo TOTP se envia en el body del POST (no como query param) para evitar que aparezca en logs
+- Los endpoints protegidos usan header `Authorization: Bearer <session_token>`
+- Los intentos fallidos se registran por IP con audit logging
+- El endpoint de setup (`/api/monitoring/setup`) esta deshabilitado en produccion
 
 Ver [docs/TOTP_SETUP.md](docs/TOTP_SETUP.md) para instrucciones detalladas.
 

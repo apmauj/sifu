@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-from fastapi import FastAPI, HTTPException, Depends, BackgroundTasks, Request, Query
+from fastapi import FastAPI, HTTPException, Depends, BackgroundTasks, Request
 from contextlib import asynccontextmanager
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -47,10 +47,8 @@ from src.application.opentelemetry_setup import (
     shutdown_otel,
 )
 
-from starlette.middleware.base import BaseHTTPMiddleware
-
-# HTTPS is handled by Render's managed infrastructure.
-# Security headers (HSTS, CSP, etc.) are added via SecurityHeadersMiddleware below.
+# HTTPS Security Middleware
+from src.infrastructure.https_middleware import HTTPSRedirectMiddleware, SSLHeadersMiddleware
 
 # Authentication and Authorization
 from src.infrastructure.auth_routes import router as auth_router
@@ -442,37 +440,9 @@ app = FastAPI(
 # Add correlation ID middleware (must be first)
 app.add_middleware(CorrelationIdMiddleware)
 
-# Add security headers middleware (replaces removed HTTPSRedirectMiddleware / SSLHeadersMiddleware)
-# Render terminates TLS at the load balancer, so HTTP→HTTPS redirect is unnecessary.
-
-
-class SecurityHeadersMiddleware(BaseHTTPMiddleware):
-    """Add security headers to every response (HSTS, CSP, XSS protection, etc.)."""
-
-    async def dispatch(self, request, call_next):
-        response = await call_next(request)
-        if os.getenv("ENVIRONMENT") == "production":
-            response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
-            response.headers["X-Frame-Options"] = "DENY"
-            response.headers["X-Content-Type-Options"] = "nosniff"
-            response.headers["X-XSS-Protection"] = "1; mode=block"
-            response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
-            response.headers["Content-Security-Policy-Report-Only"] = (
-                "default-src 'self'; "
-                "script-src 'self' 'wasm-unsafe-eval'; "
-                "style-src 'self' 'unsafe-inline'; "
-                "img-src 'self' data: https:; "
-                "font-src 'self' data:; "
-                "connect-src 'self'; "
-                "frame-ancestors 'none'; "
-                "base-uri 'self'; "
-                "form-action 'self'; "
-                "upgrade-insecure-requests"
-            )
-        return response
-
-
-app.add_middleware(SecurityHeadersMiddleware)
+# Add HTTPS security middlewares
+app.add_middleware(HTTPSRedirectMiddleware)
+app.add_middleware(SSLHeadersMiddleware)
 
 # Configure CORS to allow frontend
 app.add_middleware(
@@ -2232,24 +2202,51 @@ async def resolve_alert(alert_id: str):
 # =============================================================================
 
 
+def _get_session_token(request: Request) -> Optional[str]:
+    """Extract session token from Authorization header or fallback query param.
+    Header format: Authorization: Bearer <token>
+    """
+    auth_header = request.headers.get("Authorization", "")
+    if auth_header.startswith("Bearer "):
+        return auth_header[7:].strip()
+    # Fallback: accept token as query param for backward compatibility
+    return request.query_params.get("session_token")
+
+
+def _require_session(request: Request) -> str:
+    """Extract and validate session token. Raises 401 if invalid."""
+    token = _get_session_token(request)
+    if not token or not totp_service.is_session_valid(token):
+        raise HTTPException(
+            status_code=401, detail="Unauthorized. Please verify TOTP code first."
+        )
+    return token
+
+
 @app.post("/api/monitoring/verify", tags=["Monitoring"])
-async def verify_monitoring_access(
-    request: Request,
-    code: str = Query(..., description="6-digit TOTP code")
-):
+async def verify_monitoring_access(request: Request):
     """
     Verify TOTP code and grant access to monitoring dashboard.
     Returns a session token valid for 1 hour.
-    
+
+    Body (JSON): {"code": "123456"}
+    The code is sent in the POST body (not query param) to avoid appearing in server logs.
+
     Rate limiting: Max 5 attempts per minute per IP (handled by middleware).
     """
-    # Note: Rate limiting is already applied by RateLimitMiddleware globally
+    # Parse JSON body
+    try:
+        body = await request.json()
+    except Exception:
+        raise HTTPException(
+            status_code=400, detail="Invalid request body. Send JSON: {\"code\": \"123456\"}"
+        )
 
-    # Get client IP for audit logging
+    code = body.get("code", "")
     client_ip = request.client.host if request.client else "unknown"
 
     # Validate code format
-    if not code or len(code) != 6 or not code.isdigit():
+    if not code or len(str(code)) != 6 or not str(code).isdigit():
         raise HTTPException(
             status_code=400, detail="Invalid code format. Must be 6 digits."
         )
@@ -2258,7 +2255,7 @@ async def verify_monitoring_access(
     session_id = str(uuid.uuid4())
 
     # Verify TOTP code with IP for audit logging
-    if totp_service.verify_code(code, session_id, client_ip):
+    if totp_service.verify_code(str(code), session_id, client_ip):
         return {
             "access": "granted",
             "session_token": session_id,
@@ -2271,15 +2268,18 @@ async def verify_monitoring_access(
 
 
 @app.get("/api/monitoring/session", tags=["Monitoring"])
-async def check_monitoring_session(session_token: Optional[str] = None):
+async def check_monitoring_session(request: Request):
     """
     Check if a monitoring session is still valid.
     Returns session status and remaining time.
+
+    Auth: Authorization: Bearer <session_token>
     """
-    if not session_token:
+    token = _get_session_token(request)
+    if not token:
         raise HTTPException(status_code=401, detail="No session token provided")
 
-    is_valid = totp_service.is_session_valid(session_token)
+    is_valid = totp_service.is_session_valid(token)
 
     if is_valid:
         return {
@@ -2292,33 +2292,30 @@ async def check_monitoring_session(session_token: Optional[str] = None):
 
 
 @app.delete("/api/monitoring/session", tags=["Monitoring"])
-async def logout_monitoring_session(
-    request: Request, session_token: Optional[str] = None
-):
+async def logout_monitoring_session(request: Request):
     """
     Logout from monitoring dashboard by invalidating session.
+
+    Auth: Authorization: Bearer <session_token>
     """
-    if not session_token:
+    token = _get_session_token(request)
+    if not token:
         raise HTTPException(status_code=401, detail="No session token provided")
 
-    # Get client IP for audit logging
     client_ip = request.client.host if request.client else "unknown"
-
-    totp_service.invalidate_session(session_token, client_ip)
+    totp_service.invalidate_session(token, client_ip)
     return {"message": "Session invalidated successfully"}
 
 
 @app.get("/api/monitoring/status", tags=["Monitoring"])
-async def get_monitoring_dashboard(session_token: Optional[str] = None):
+async def get_monitoring_dashboard(request: Request):
     """
     Get comprehensive monitoring dashboard data.
     Requires valid session token from TOTP verification.
+
+    Auth: Authorization: Bearer <session_token>
     """
-    # Verify session
-    if not session_token or not totp_service.is_session_valid(session_token):
-        raise HTTPException(
-            status_code=401, detail="Unauthorized. Please verify TOTP code first."
-        )
+    _require_session(request)
 
     # Return comprehensive monitoring data
     return {
@@ -2335,8 +2332,8 @@ async def get_monitoring_dashboard(session_token: Optional[str] = None):
 async def setup_totp_qr(format: str = "json"):
     """
     Generate QR code URI for TOTP setup.
-    ⚠️ ONLY FOR INITIAL SETUP - Should be disabled in production!
-    
+    ONLY FOR INITIAL SETUP - Disabled in production!
+
     Args:
         format: "json" (default) o "html" para modal interactivo
     """
@@ -2371,12 +2368,12 @@ async def setup_totp_qr(format: str = "json"):
             "uri": uri,
             "qr_code": f"data:image/png;base64,{img_str}",
             "secret": totp_service.secret,
-            "warning": "Save this secret securely! Add to .env as MONITORING_TOTP_SECRET",
+            "warning": "Save this secret securely! Add to Render Environment as MONITORING_TOTP_SECRET",
             "setup_instructions": [
                 "1. Scan QR code with Google Authenticator or Authy",
                 "2. Or manually enter the secret in your authenticator app",
-                "3. Save the secret to .env file: MONITORING_TOTP_SECRET=<secret>",
-                "4. Disable this endpoint in production (set ENVIRONMENT=production)",
+                "3. Save the secret to Render Environment: MONITORING_TOTP_SECRET=<secret>",
+                "4. This endpoint is disabled when ENVIRONMENT=production",
             ],
         }
     except ImportError:
@@ -2389,11 +2386,14 @@ async def setup_totp_qr(format: str = "json"):
 
 
 @app.get("/api/monitoring/metrics", tags=["Monitoring"])
-async def get_monitoring_metrics():
+async def get_monitoring_metrics(request: Request):
     """
     Get TOTP authentication metrics.
-    Returns statistics about authentication attempts and failures.
+    Requires valid session token (same as other monitoring endpoints).
+
+    Auth: Authorization: Bearer <session_token>
     """
+    _require_session(request)
     return totp_service.get_metrics()
 
 

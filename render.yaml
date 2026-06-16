@@ -44,8 +44,8 @@ services:
       # Secrets (configurar en Render Dashboard → Environment)
       # - key: JWT_SECRET_KEY
       #   sync: false    # Setear manualmente en Render
-      # - key: MONITORING_TOTP_SECRET
-      #   sync: false    # Setear manualmente en Render
+      - key: MONITORING_TOTP_SECRET
+        sync: false    # Generar con: python -c "import pyotp; print(pyotp.random_base32())"
 
     # Health check (Render lo usa para saber si el servicio está vivo)
     healthCheckPath: /api/health

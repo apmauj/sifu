@@ -155,16 +155,18 @@ describe('MonitoringAccess', () => {
 
       await waitFor(() => {
         expect(global.fetch).toHaveBeenCalledWith(
-          expect.stringContaining('/monitoring/verify?code=123456'),
+          expect.stringContaining('/monitoring/verify'),
           expect.objectContaining({
-            method: 'POST'
+            method: 'POST',
+            body: JSON.stringify({ code: '123456' })
           })
         );
       });
     });
 
-    it('should encode code in URL', async () => {
-      // Verify that code is properly URL-encoded (even though it's just digits)
+    it('should send code in POST body (not query param)', async () => {
+      // Verify that code is sent in POST body, not as query param,
+      // to avoid appearing in server logs
       global.fetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({
@@ -184,11 +186,15 @@ describe('MonitoringAccess', () => {
 
       await waitFor(() => {
         expect(global.fetch).toHaveBeenCalledWith(
-          expect.stringContaining('/monitoring/verify?code=123456'),
+          expect.stringContaining('/monitoring/verify'),
           expect.objectContaining({
-            method: 'POST'
+            method: 'POST',
+            body: JSON.stringify({ code: '123456' })
           })
         );
+        // Verify code is NOT in the URL (security: avoid server log exposure)
+        const callUrl = global.fetch.mock.calls[0][0];
+        expect(callUrl).not.toContain('?code=');
       });
     });
   });

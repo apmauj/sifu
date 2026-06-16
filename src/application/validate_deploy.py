@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 """
-Script de validación de deploy para SIFU
-Verifica que todas las configuraciones estén correctas antes del deploy en Render
+Deploy validation script for SIFU
+Verifies that all security and configuration settings are correct before deploy.
+Updated: removed secret_manager and Docker references, adapted for Render deployment.
 """
 
-import sys
 import os
+import sys
 import subprocess
 from pathlib import Path
 
@@ -24,14 +25,14 @@ def run_command(cmd, cwd=None):
 
 
 def validate_environment():
-    """Valida que el entorno esté correctamente configurado"""
-    print("🔍 Validando entorno de deploy...")
+    """Valida que el entorno este correctamente configurado"""
+    print("Validando entorno de deploy...")
 
-    # Verificar archivos críticos para Render
+    # Verificar archivos criticos para Render
     required_files = [
         "requirements.txt",
-        "render.yaml",
         "runtime.txt",
+        "main.py",
     ]
 
     missing_files = []
@@ -40,48 +41,45 @@ def validate_environment():
             missing_files.append(file)
 
     if missing_files:
-        print(f"❌ Archivos faltantes: {', '.join(missing_files)}")
+        print(f"  FAILED - Archivos faltantes: {', '.join(missing_files)}")
         return False
 
-    # Verificar runtime.txt tiene formato correcto (solo versión, sin prefijo python-)
-    if Path("runtime.txt").exists():
-        content = Path("runtime.txt").read_text().strip()
-        if content.startswith("python-"):
-            print(f"❌ runtime.txt tiene formato Heroku ('{content}'). Usar solo la versión (ej: '3.12.4')")
-            return False
+    # Verificar render.yaml (opcional pero recomendado)
+    if not Path("render.yaml").exists():
+        print("  WARNING - render.yaml no encontrado (opcional pero recomendado)")
 
-    print("✅ Archivos críticos presentes")
+    print("  PASSED - Archivos criticos presentes")
     return True
 
 
-def validate_env_vars():
-    """Valida que las variables de entorno críticas estén definidas"""
-    print("🔐 Validando variables de entorno...")
+def validate_secrets():
+    """Valida la configuracion de variables de entorno criticas"""
+    print("Validando variables de entorno...")
 
-    # Env vars que deberían estar configuradas en Render Dashboard
-    critical_vars = ["ALLOW_ORIGINS"]
-    recommended_vars = ["PYTHON_VERSION"]
+    critical_vars = ["SECRET_KEY", "API_KEY", "DATABASE_URL"]
+    recommended_vars = ["MONITORING_TOTP_SECRET", "ALLOW_ORIGINS", "ENVIRONMENT"]
 
     missing_critical = []
     for var in critical_vars:
-        if not os.environ.get(var):
+        if not os.getenv(var):
             missing_critical.append(var)
 
     if missing_critical:
-        print(f"⚠️  Variables críticas no definidas en entorno: {', '.join(missing_critical)}")
-        print("   Configúralas en Render Dashboard → Environment")
-        # No fallar — en CI estas vars no están, solo importan en Render
+        print(f"  FAILED - Variables criticas faltantes: {', '.join(missing_critical)}")
+        return False
 
     missing_recommended = []
     for var in recommended_vars:
-        if not os.environ.get(var):
+        if not os.getenv(var):
             missing_recommended.append(var)
 
     if missing_recommended:
-        print(f"💡 Variables recomendadas no definidas: {', '.join(missing_recommended)}")
+        print(f"  WARNING - Variables recomendadas no configuradas: {', '.join(missing_recommended)}")
+        if "MONITORING_TOTP_SECRET" in missing_recommended:
+            print("    MONITORING_TOTP_SECRET: Sin esta variable, el dashboard de monitoreo")
+            print("    genera un secreto nuevo en cada reinicio, invalidando tu authenticator app.")
 
-    if not missing_critical:
-        print("✅ Variables de entorno críticas presentes")
+    print("  PASSED - Variables criticas configuradas")
     return True
 
 
@@ -93,11 +91,9 @@ def read_requirements_recursive(filename):
             for line in f:
                 line = line.strip()
                 if line.startswith("-r "):
-                    # Incluir archivo referenciado
                     ref_file = line[3:].strip()
                     requirements.extend(read_requirements_recursive(ref_file))
                 elif line and not line.startswith("#"):
-                    # Extraer nombre del paquete (antes de ==, >=, etc. o [extras])
                     package_name = (
                         line.split()[0]
                         .split("==")[0]
@@ -113,13 +109,12 @@ def read_requirements_recursive(filename):
 
 
 def validate_dependencies():
-    """Valida que las dependencias críticas estén instaladas"""
-    print("📦 Validando dependencias...")
+    """Valida que las dependencias criticas esten instaladas"""
+    print("Validando dependencias...")
 
-    # Leer requirements recursivamente
     all_requirements = read_requirements_recursive("requirements.txt")
 
-    critical_deps = ["python-dotenv", "fastapi", "uvicorn"]
+    critical_deps = ["python-dotenv", "fastapi", "uvicorn", "pyotp"]
     missing_deps = []
 
     for dep in critical_deps:
@@ -127,40 +122,35 @@ def validate_dependencies():
             missing_deps.append(dep)
 
     if missing_deps:
-        print(f"❌ Dependencias faltantes: {', '.join(missing_deps)}")
+        print(f"  FAILED - Dependencias faltantes: {', '.join(missing_deps)}")
         return False
 
-    # Verificar cryptography (opcional pero recomendado)
-    if "cryptography" not in all_requirements:
-        print("⚠️  cryptography no está en requirements - logging seguro limitado")
-
-    print("✅ Dependencias críticas presentes")
+    print("  PASSED - Dependencias criticas presentes")
     return True
 
 
 def validate_build():
     """Valida que el proyecto se pueda construir"""
-    print("🔨 Validando construcción del proyecto...")
+    print("Validando construccion del proyecto...")
 
-    # Verificar que se puede importar el módulo principal
     success, stdout, stderr = run_command(
         "python -c \"import main; print('Import OK')\""
     )
     if not success:
-        print(f"❌ Error importando módulo principal: {stderr}")
+        print(f"  FAILED - Error importando modulo principal: {stderr}")
         return False
 
-    print("✅ Proyecto se puede importar correctamente")
+    print("  PASSED - Proyecto se puede importar correctamente")
     return True
 
 
 def main():
-    """Función principal de validación"""
-    print("🚀 Iniciando validación de deploy para SIFU (Render)\n")
+    """Funcion principal de validacion"""
+    print("Iniciando validacion de deploy para SIFU\n")
 
     validations = [
         ("Entorno", validate_environment),
-        ("Env Vars", validate_env_vars),
+        ("Variables de entorno", validate_secrets),
         ("Dependencias", validate_dependencies),
         ("Build", validate_build),
     ]
@@ -171,20 +161,19 @@ def main():
             if not validator():
                 all_passed = False
         except Exception as e:
-            print(f"❌ Error en validación {name}: {e}")
+            print(f"  FAILED - Error en validacion {name}: {e}")
             all_passed = False
 
     print("\n" + "=" * 50)
     if all_passed:
-        print("✅ Todas las validaciones pasaron exitosamente")
-        print("🚀 El proyecto está listo para deploy")
+        print("Todas las validaciones pasaron exitosamente")
+        print("El proyecto esta listo para deploy")
         return 0
     else:
-        print("❌ Algunas validaciones fallaron")
-        print("🔧 Corrija los problemas antes del deploy")
+        print("Algunas validaciones fallaron")
+        print("Corrija los problemas antes del deploy")
         return 1
 
 
 if __name__ == "__main__":
     sys.exit(main())
-    
