@@ -200,8 +200,12 @@
             testResultDiv.innerHTML = '<div class="loading">Testing code...</div>';
             
             try {
-                const response = await fetch(`/api/monitoring/verify?code=${encodeURIComponent(cleanCode)}`, {
-                    method: 'POST'
+                const response = await fetch('/api/monitoring/verify', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ code: code })
                 });
                 
                 let result;
