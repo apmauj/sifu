@@ -52,7 +52,7 @@ export const getDirectApiUrl = () => {
  * Configuración común para axios
  */
 export const API_CONFIG = {
-  timeout: import.meta.env.PROD ? 90000 : 30000, // 90s in prod for Render cold starts, 30s in dev,
+  timeout: 60000, // 60s — Render free tier cold starts can take 30-40s
   headers: {
     'Content-Type': 'application/json',
   },

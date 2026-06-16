@@ -47,13 +47,13 @@ function App() {
   const [exchangeError, setExchangeError] = useState(null);
   // Ref para evitar múltiples intentos de auto-inicialización
   const initialExchangeFetchAttemptedRef = useRef(false);
-  
-  // Backend wake overlay state
+
+  // Backend wake overlay state (Render cold starts)
   const [showWakeOverlay, setShowWakeOverlay] = useState(false);
   const [backendAwake, setBackendAwake] = useState(false);
   const wakeTimerRef = useRef(null);
   const firstFetchRef = useRef(true);
-
+  
   // Tab and refresh state
   const [activeTab, setActiveTab] = useState('ui'); // 'ui', 'ur', 'exchange', or 'brou'
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -239,7 +239,6 @@ function App() {
       if (wakeTimerRef.current) clearTimeout(wakeTimerRef.current);
     };
   }, []);
-
   // Refresco horario automático sólo cuando la pestaña de cotizaciones está activa y el tipo actual es 'latest'
   const hourlyExchangeRefresh = useCallback(async () => {
     if (activeTab === 'exchange' && exchangeSearchType === 'latest' && !isExchangeLoading) {
@@ -252,6 +251,8 @@ function App() {
   // Intento de bootstrap inicial si la base está vacía
   const attemptInitialExchangeBootstrap = async () => {
     initialExchangeFetchAttemptedRef.current = true;
+    // Remover toast informativo intrusivo durante inicialización automática
+    // showInfo(safeT('exchange.initial_bootstrap_loading', 'Cargando cotizaciones iniciales (job asíncrono)...'));
     try {
       const jobStart = await exchangeService.startAsyncHistoricalRefresh();
       if (jobStart?.job_id) {
