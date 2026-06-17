@@ -122,7 +122,12 @@ function App() {
         }, 2000); // Show overlay after 2s of no response
       }
 
-      const latest = await exchangeService.getLatest();
+      // Give the first fetch up to 90s before considering it failed
+      const fetchPromise = exchangeService.getLatest();
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('First fetch timeout')), 90000)
+      );
+      const latest = await Promise.race([fetchPromise, timeoutPromise]);
 
       // Backend responded — dismiss overlay and mark as awake
       if (isFirstFetch) {
@@ -401,6 +406,8 @@ function App() {
         isVisible={showWakeOverlay}
         onDismiss={() => setShowWakeOverlay(false)}
       />
+      {!showWakeOverlay && (
+      <>
       <Header 
         onRefresh={handleRefresh} 
         isRefreshing={isRefreshing}
@@ -559,7 +566,9 @@ function App() {
               <BuildInfoFooter />
             </div>
           </footer>
-        </main>
+      </main>
+      </>
+      )}
 
         {/* Dashboard de Monitoreo */}
         <Dashboard 

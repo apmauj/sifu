@@ -447,8 +447,9 @@
   },
   "wake": {
     "title": "Despertando el servidor",
-    "description": "El backend está iniciando desde modo reposo. Esto puede tardar hasta 30 segundos en la primera solicitud.",
+    "description": "El backend está iniciando desde modo reposo. En el plan gratuito esto puede tardar hasta un minuto en la primera solicitud.",
     "elapsed": "{elapsed}s transcurridos...",
+    "takingLong": "Está tardando más de lo normal. El servicio puede estar bajo carga.",
     "dismiss": "Cerrar"
   }
 } 

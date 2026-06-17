@@ -442,8 +442,9 @@
   },
   "wake": {
     "title": "Waking up the server",
-    "description": "The backend is starting up from sleep mode. This can take up to 30 seconds on the first request.",
+    "description": "The backend is starting up from sleep mode. On the free tier this can take up to a minute on the first request.",
     "elapsed": "{elapsed}s elapsed...",
+    "takingLong": "This is taking longer than usual. The service may be under load.",
     "dismiss": "Dismiss"
   }
 } 
